@@ -21,7 +21,7 @@ explicitly recorded here.
 | Inbound attachments | Automated simulation | Standard MIME PDFs are extracted with filename, type, count, and size controls | Gmail attachment payloads and provider redelivery |
 | Human-like replies | Automated simulation | Deterministic template produces one reply per fixture | Natural but bounded model drafting, tone evaluation, clarification loops |
 | Gmail API boundary | Automated simulation | Raw MIME ingestion, threaded send, sent lookup, outbox mapping, OAuth file safety, and error classes pass fake-provider tests | Real OAuth, mailbox delivery, attachment/thread behaviour, quota and revoked-token evidence |
-| WhatsApp | Automated simulation | Twilio Sandbox boundary covers signature-first text/PDF intake, channel isolation, finite send failures, idempotency, and reply-window enforcement | Durable public webhook, account/device sandbox, real media/reply/status callbacks |
+| WhatsApp | Automated simulation | Twilio boundary covers signature-first text/PDF intake, durable lease queue, public route, channel isolation, finite send failures, idempotency, and reply-window enforcement | Account/device sandbox and real media/reply/status callbacks |
 | Delivery safety gate | Automated simulation | Eight deterministic checks block delivery; current gate is rechecked at download | Fault injection around stale packs, concurrent mutation, recovery evidence |
 | Event idempotency | Automated simulation | Accepted and rejected provider IDs are persisted once; concurrent outbox claims are exclusive | Provider redelivery and external delivery reconciliation |
 | Pack determinism | Automated simulation | Twenty clean runs generate the same ZIP hash | Cross-platform/runtime reproducibility and migration compatibility |
@@ -39,8 +39,8 @@ explicitly recorded here.
    exercised locally, but refusal and repeated live-provider variance are not yet measured.
 4. The outbox reconciliation contract is provider-neutral and locally simulated; Gmail search by
    deterministic RFC Message-ID and its consistency window are not yet verified.
-5. WhatsApp has a local signature/media/send boundary, but durable webhook ingestion, ordering,
-   authenticated provider media download, status callbacks, and real provider delivery remain open.
+5. WhatsApp has a durable local signature/media/queue/send boundary, but status callbacks, provider
+   ordering evidence, a joined device, and real provider delivery remain open.
 
 ## Experiment sequence
 
@@ -165,8 +165,11 @@ one allow-listed Twilio-hosted PDF, non-PDF/multiple/oversized/SSRF rejection, c
 isolation, successful text send, missing SID, transient/permanent errors, replay, and deterministic
 24-hour free-form reply expiry. The final ZIP is intentionally withheld from WhatsApp and remains a
 secure Email/review-console handoff. No Twilio account, device, public webhook, or external message
-was used. Remaining before sandbox: durable fast-ack queue/worker, public route, authenticated media
-download, joined test device, real reply/status callbacks, and redacted evidence report.
+was used. A later local run added the 64 KB public form boundary, fail-closed configuration, durable
+fast-ack queue, expiring worker leases, bounded retry/dead-letter states, successful-payload
+redaction, authenticated size-bounded media download with redirects disabled, and explicit one-batch
+inbound/outbound worker commands. Remaining before sandbox: joined test device, exact HTTPS tunnel,
+real signed request/media/reply/status callbacks, evaluated live model, and redacted evidence report.
 
 ### E-06 — External usability
 

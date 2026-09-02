@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import base64
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from importlib import import_module
 from pathlib import Path
 from typing import Any, Protocol
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 from urllib.parse import urlparse
 
 from visa_agent.channels.email_fixture import MAX_ATTACHMENT_BYTES, save_pdf_attachment
@@ -141,6 +144,55 @@ class TwilioWhatsAppSender:
     def find_sent_message(self, rfc_message_id: str) -> str | None:
         del rfc_message_id
         return None
+
+
+class _NoRedirect(urllib_request.HTTPRedirectHandler):
+    def redirect_request(
+        self,
+        request: Any,
+        file_pointer: Any,
+        code: int,
+        message: str,
+        headers: Any,
+        new_url: str,
+    ) -> None:
+        del request, file_pointer, code, message, headers, new_url
+        return None
+
+
+class TwilioMediaDownloader:
+    """Authenticated, size-bounded downloader with redirects disabled to prevent SSRF."""
+
+    def __init__(self, account_sid: str, auth_token: str, timeout_seconds: float = 10) -> None:
+        if not account_sid or not auth_token:
+            raise ValueError("Twilio media credentials are required")
+        self.account_sid = account_sid
+        self.auth_token = auth_token
+        self.timeout_seconds = timeout_seconds
+
+    def download(self, url: str) -> bytes:
+        _validate_twilio_media_url(url)
+        credentials = base64.b64encode(
+            f"{self.account_sid}:{self.auth_token}".encode()
+        ).decode("ascii")
+        request = urllib_request.Request(
+            url,
+            headers={"Authorization": f"Basic {credentials}", "Accept": "application/pdf"},
+        )
+        opener = urllib_request.build_opener(_NoRedirect())
+        try:
+            with opener.open(request, timeout=self.timeout_seconds) as response:
+                content_type = str(response.headers.get_content_type()).casefold()
+                if content_type != "application/pdf":
+                    raise ValueError("Twilio media response was not a PDF")
+                content = bytes(response.read(MAX_ATTACHMENT_BYTES + 1))
+        except urllib_error.HTTPError as error:
+            raise OSError(f"Twilio media download failed with HTTP {error.code}") from error
+        except urllib_error.URLError as error:
+            raise OSError("Twilio media download transport failed") from error
+        if len(content) > MAX_ATTACHMENT_BYTES:
+            raise ValueError(f"WhatsApp PDF exceeds {MAX_ATTACHMENT_BYTES} bytes")
+        return content
 
 
 def _validate_twilio_media_url(url: str) -> None:

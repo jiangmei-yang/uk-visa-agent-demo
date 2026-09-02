@@ -24,6 +24,9 @@ checks, persistence, outbound side effects, and pack generation.
   send the same pending row.
 - Each outbox row owns its channel, recipient, and external thread; a channel worker cannot claim a
   different provider's message.
+- Authenticated webhook events enter a durable, channel-isolated queue before Agent work. Processing
+  uses expiring leases, finite retries, idempotent replay, visible dead letters, and clears the queued
+  raw payload after success.
 - Retryable and permanent provider failures have distinct persisted states; retries are finite and
   use exponential backoff.
 - A claimed send with no recorded result is reconciled by deterministic RFC Message-ID; a definite
@@ -50,6 +53,8 @@ checks, persistence, outbound side effects, and pack generation.
 | Reconciliation finds provider copy | Mark `SENT` using the provider message ID without resending |
 | Reconciliation finds no provider copy | Mark `AMBIGUOUS`; require an explicit operator retry decision |
 | Inbound email cannot be parsed | Store one redacted failure record by provider ID; do not mutate a case |
+| Webhook worker crashes after claim | Lease expires; replay is safe through provider-event idempotency |
+| Inbound processing repeatedly fails | Finite backoff, then visible `FAILED` queue item |
 | Policy stale | Continue intake but block the delivery gate |
 | Unsupported/sensitive case | Move to `HUMAN_REVIEW_REQUIRED` |
 

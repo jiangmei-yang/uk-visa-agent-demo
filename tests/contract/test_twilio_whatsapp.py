@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
@@ -12,6 +13,7 @@ from visa_agent.channels.outbound import (
     TransientChannelError,
 )
 from visa_agent.channels.twilio_whatsapp import (
+    TwilioMediaDownloader,
     TwilioWhatsAppSender,
     TwilioWhatsAppWebhook,
 )
@@ -194,3 +196,43 @@ def test_twilio_send_errors_map_to_finite_channel_semantics(
 
     with pytest.raises(expected, match=f"HTTP {status}"):
         sender.send(_request())
+
+
+def test_authenticated_media_downloader_is_bounded_and_does_not_follow_redirects(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from visa_agent.channels import twilio_whatsapp
+
+    requests: list[Any] = []
+
+    class Headers:
+        def get_content_type(self) -> str:
+            return "application/pdf"
+
+    class Response:
+        headers = Headers()
+
+        def __enter__(self) -> Response:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            del args
+
+        def read(self, limit: int) -> bytes:
+            assert limit > 10 * 1024 * 1024
+            return b"%PDF synthetic"
+
+    class Opener:
+        def open(self, request: object, timeout: float) -> Response:
+            assert timeout == 10
+            requests.append(request)
+            return Response()
+
+    monkeypatch.setattr(twilio_whatsapp.urllib_request, "build_opener", lambda handler: Opener())
+    downloader = TwilioMediaDownloader("AC-synthetic", "synthetic-token")
+
+    content = downloader.download("https://api.twilio.com/2010-04-01/Media/ME")
+
+    assert content == b"%PDF synthetic"
+    request = requests[0]
+    assert request.get_header("Authorization").startswith("Basic ")

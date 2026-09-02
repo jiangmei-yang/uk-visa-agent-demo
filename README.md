@@ -143,7 +143,9 @@ Install optional provider SDKs with `uv sync --extra dev --extra live`.
   transactional outbox. Follow [GMAIL_SANDBOX.md](GMAIL_SANDBOX.md) for the dedicated synthetic test
   account. Never commit OAuth credentials or tokens.
 - `TwilioWhatsAppWebhook` and `TwilioWhatsAppSender` provide the optional WhatsApp Sandbox boundary.
-  They reuse the same typed event, case workflow, and channel-isolated outbox. Follow
+  They reuse the same typed event, durable inbound queue, case workflow, and channel-isolated outbox.
+  Provider commands process one explicit batch at a time, so no external message is sent merely by
+  launching the credential-free Demo. Follow
   [WHATSAPP_SANDBOX.md](WHATSAPP_SANDBOX.md); local contracts are not real-provider evidence.
 
 Live mode is intentionally not part of the default assessment path. Email and WhatsApp sandbox

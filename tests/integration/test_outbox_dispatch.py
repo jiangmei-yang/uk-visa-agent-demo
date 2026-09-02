@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from threading import Barrier
 
 from visa_agent.channels.outbound import (
     OutboxDispatcher,
@@ -217,3 +219,29 @@ def test_channel_workers_claim_only_their_own_outbox_rows(tmp_path: Path) -> Non
         assert all(row["channel"] == "whatsapp_twilio" for row in whatsapp)
     finally:
         store.close()
+
+
+def test_two_concurrent_processes_cannot_claim_the_same_outbox_row(tmp_path: Path) -> None:
+    initial = _demo_store(tmp_path)
+    database = initial.path
+    expected = {str(row["id"]) for row in initial.list_outbox()}
+    initial.close()
+    barrier = Barrier(2)
+    now = datetime(2026, 9, 2, 9, tzinfo=UTC)
+
+    def claim() -> set[str]:
+        store = SQLiteStore(database)
+        try:
+            barrier.wait()
+            return {str(row["id"]) for row in store.claim_pending_outbox(now, limit=3)}
+        finally:
+            store.close()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        first_future = executor.submit(claim)
+        second_future = executor.submit(claim)
+        first = first_future.result()
+        second = second_future.result()
+
+    assert first.isdisjoint(second)
+    assert first | second == expected

@@ -57,6 +57,18 @@ CREATE TABLE IF NOT EXISTS inbound_failures (
     retryable INTEGER NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS inbound_queue (
+    id TEXT PRIMARY KEY,
+    channel TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    attempt_count INTEGER NOT NULL DEFAULT 0,
+    available_at TEXT,
+    lease_until TEXT,
+    last_error TEXT,
+    processed_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 
@@ -99,7 +111,8 @@ class SQLiteStore:
 
     def reset(self) -> None:
         self.connection.executescript(
-            "DELETE FROM deliveries; DELETE FROM outbox; DELETE FROM processed_events; DELETE FROM cases;"
+            """DELETE FROM inbound_queue; DELETE FROM deliveries; DELETE FROM outbox;
+               DELETE FROM processed_events; DELETE FROM cases;"""
         )
         self.connection.commit()
 
@@ -257,6 +270,94 @@ class SQLiteStore:
         ).fetchall()
         return [dict(row) for row in rows]
 
+    def enqueue_inbound(self, event: InboundEvent) -> bool:
+        with self.connection:
+            cursor = self.connection.execute(
+                """INSERT OR IGNORE INTO inbound_queue(id, channel, payload_json)
+                   VALUES (?, ?, ?)""",
+                (event.id, event.channel, event.model_dump_json()),
+            )
+        return cursor.rowcount == 1
+
+    def claim_inbound(
+        self,
+        now: datetime,
+        *,
+        channel: str,
+        limit: int = 20,
+        lease_seconds: int = 300,
+    ) -> list[dict[str, Any]]:
+        lease_until = now + timedelta(seconds=lease_seconds)
+        with self.connection:
+            rows = self.connection.execute(
+                """WITH due AS (
+                       SELECT id FROM inbound_queue
+                       WHERE channel = ?
+                         AND (
+                           (status IN ('PENDING', 'RETRY')
+                            AND (available_at IS NULL OR available_at <= ?))
+                           OR (status = 'PROCESSING' AND lease_until <= ?)
+                         )
+                       ORDER BY created_at, id
+                       LIMIT ?
+                   )
+                   UPDATE inbound_queue
+                   SET status = 'PROCESSING', lease_until = ?,
+                       attempt_count = attempt_count + 1
+                   WHERE id IN (SELECT id FROM due)
+                   RETURNING id, channel, payload_json, status, attempt_count, available_at,
+                             lease_until, last_error, processed_at, created_at""",
+                (
+                    channel,
+                    now.isoformat(),
+                    now.isoformat(),
+                    limit,
+                    lease_until.isoformat(),
+                ),
+            ).fetchall()
+        return sorted((dict(row) for row in rows), key=lambda row: (row["created_at"], row["id"]))
+
+    def mark_inbound_processed(self, event_id: str, processed_at: datetime) -> None:
+        with self.connection:
+            self.connection.execute(
+                """UPDATE inbound_queue
+                   SET status = 'PROCESSED', payload_json = '{}', processed_at = ?, lease_until = NULL,
+                       available_at = NULL, last_error = NULL
+                   WHERE id = ? AND status = 'PROCESSING'""",
+                (processed_at.isoformat(), event_id),
+            )
+
+    def mark_inbound_retry(
+        self,
+        event_id: str,
+        error: str,
+        available_at: datetime,
+    ) -> None:
+        with self.connection:
+            self.connection.execute(
+                """UPDATE inbound_queue
+                   SET status = 'RETRY', available_at = ?, lease_until = NULL, last_error = ?
+                   WHERE id = ? AND status = 'PROCESSING'""",
+                (available_at.isoformat(), error, event_id),
+            )
+
+    def mark_inbound_failed(self, event_id: str, error: str) -> None:
+        with self.connection:
+            self.connection.execute(
+                """UPDATE inbound_queue
+                   SET status = 'FAILED', available_at = NULL, lease_until = NULL, last_error = ?
+                   WHERE id = ? AND status = 'PROCESSING'""",
+                (error, event_id),
+            )
+
+    def list_inbound_queue(self) -> list[dict[str, Any]]:
+        rows = self.connection.execute(
+            """SELECT id, channel, payload_json, status, attempt_count, available_at,
+                      lease_until, last_error, processed_at, created_at
+               FROM inbound_queue ORDER BY created_at, id"""
+        ).fetchall()
+        return [dict(row) for row in rows]
+
     def counts(self) -> dict[str, int]:
         names = ("cases", "processed_events", "outbox", "deliveries")
         return {
@@ -288,26 +389,23 @@ class SQLiteStore:
                 else (now.isoformat(), limit)
             )
             rows = self.connection.execute(
-                f"""SELECT id, case_id, event_id, message_type, payload, channel, recipient,
-                          external_thread_id, send_deadline, reply_subject, status, attempt_count,
-                          next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
-                          references_header, created_at
-                   FROM outbox
-                   WHERE status IN ('PENDING', 'RETRY')
-                     AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
-                     {channel_filter}
-                   ORDER BY created_at, id
-                   LIMIT ?""",
+                f"""WITH due AS (
+                       SELECT id FROM outbox
+                       WHERE status IN ('PENDING', 'RETRY')
+                         AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
+                         {channel_filter}
+                       ORDER BY created_at, id
+                       LIMIT ?
+                   )
+                   UPDATE outbox SET status = 'SENDING'
+                   WHERE id IN (SELECT id FROM due)
+                   RETURNING id, case_id, event_id, message_type, payload, channel, recipient,
+                             external_thread_id, send_deadline, reply_subject, status, attempt_count,
+                             next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
+                             references_header, created_at""",
                 parameters,
             ).fetchall()
-            ids = [str(row["id"]) for row in rows]
-            if ids:
-                placeholders = ",".join("?" for _ in ids)
-                self.connection.execute(
-                    f"UPDATE outbox SET status = 'SENDING' WHERE id IN ({placeholders})",
-                    ids,
-                )
-        return [dict(row) for row in rows]
+        return sorted((dict(row) for row in rows), key=lambda row: (row["created_at"], row["id"]))
 
     def mark_outbox_sent(
         self,

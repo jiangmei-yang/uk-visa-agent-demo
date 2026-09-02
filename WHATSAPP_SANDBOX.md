@@ -7,9 +7,10 @@ deployment.
 ## Current preparation status
 
 The repository has automated contracts for signed inbound form payloads, MessageSid idempotency,
-text/PDF intake, Twilio media-host allow-listing, channel-isolated outbox replies, provider error
-classification, and the 24-hour customer service window. A public webhook, durable inbound worker,
-Twilio account, joined device, and real message exchange are still required before E-05 is complete.
+text/PDF intake, authenticated Twilio media download, durable fast-ack queuing with expiring worker
+leases, channel-isolated outbox replies, provider error classification, and the 24-hour customer
+service window. A Twilio account, HTTPS tunnel, joined device, evaluated live model, and real message
+exchange are still required before E-05 is complete.
 
 ## Provider setup
 
@@ -20,6 +21,9 @@ Twilio account, joined device, and real message exchange are still required befo
    `TWILIO_WEBHOOK_PUBLIC_URL` outside Git.
 5. Configure that exact URL as **When a message comes in** and configure a status callback.
 6. Send synthetic text and one synthetic PDF; never use real applicant data.
+7. Process one durable inbound batch with
+   `uv run visa-agent inbound-worker --channel whatsapp_twilio --model <evaluated-model>`.
+8. Send one due reply batch with `uv run visa-agent whatsapp-dispatch`.
 
 Twilio's current [Sandbox documentation](https://www.twilio.com/docs/whatsapp/sandbox) says it is
 for testing/discovery, uses a shared number, requires each device to join, limits sending to one
