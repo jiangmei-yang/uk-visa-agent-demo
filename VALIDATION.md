@@ -93,6 +93,14 @@ left in `SENDING` is deliberately not auto-reclaimed because provider success is
 worker crash. Remaining: provider reconciliation for ambiguous sends, inbound parse-failure records,
 sender/thread ownership, and delayed/out-of-order event policy.
 
+**Run 2 — 2026-09-02:** inbound mutation guards passed. A sender whose normalized address does not
+match the applicant is recorded as `THREAD_SENDER_MISMATCH` with no case mutation or reply. An event
+older than the last accepted provider timestamp is held as `OUT_OF_ORDER_EVENT`. New information for
+a ready/delivered case is held as `FINALIZED_CASE_NEW_EVENT` for a controlled human revision instead
+of silently reopening or corrupting the pack. Replayed rejected provider IDs remain idempotent.
+Failure records contain codes and minimal operational detail, not raw message bodies. Remaining:
+ambiguous-send reconciliation and transport-level parse-failure persistence.
+
 ### E-03 — Agent stability evaluation
 
 **Question:** Does the selected model produce schema-valid, evidence-grounded proposals and bounded

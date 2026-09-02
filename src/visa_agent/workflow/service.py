@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import UTC, date, datetime
+from email.utils import parseaddr
 from pathlib import Path
 from typing import Any
 from uuid import NAMESPACE_URL, uuid5
@@ -52,6 +53,18 @@ class WorkflowService:
                 applicant_email=event.sender,
                 policy_version=self.policy.version,
             )
+        else:
+            rejection = self._inbound_rejection(case, event)
+            if rejection is not None:
+                reason_code, plan, detail = rejection
+                self.store.record_rejected_event(
+                    event_id=event.id,
+                    case_id=case.id,
+                    thread_id=event.external_thread_id,
+                    reason_code=reason_code,
+                    detail=detail,
+                )
+                return case, False, plan
 
         patch = self.llm.extract_case_patch(event)
         if patch.requires_human_review:
@@ -72,6 +85,7 @@ class WorkflowService:
             advance_stage(case, WorkflowStage.FINAL_CONFIRMATION)
 
         run_consistency_checks(case)
+        case.last_inbound_received_at = event.received_at
         case.updated_at = datetime.now(UTC)
         gate = evaluate_gate(case, self.policy, date.today())
         if case.status != CaseStatus.HUMAN_REVIEW_REQUIRED:
@@ -92,6 +106,42 @@ class WorkflowService:
             case.outbound_message_ids.append(message_id)
         self.store.commit_event(case, event.id, plan, message)
         return case, False, plan
+
+    def _inbound_rejection(
+        self,
+        case: Case,
+        event: InboundEvent,
+    ) -> tuple[str, str, str] | None:
+        applicant_address = parseaddr(case.applicant_email)[1].casefold()
+        sender_address = parseaddr(event.sender)[1].casefold()
+        if not applicant_address or sender_address != applicant_address:
+            return (
+                "THREAD_SENDER_MISMATCH",
+                "sender_mismatch_rejected",
+                "The sender did not match the applicant address recorded for this thread.",
+            )
+        if case.last_inbound_received_at and event.received_at < case.last_inbound_received_at:
+            return (
+                "OUT_OF_ORDER_EVENT",
+                "out_of_order_held",
+                "The message was older than the latest processed event and was held for review.",
+            )
+        if case.status in {
+            CaseStatus.READY_FOR_HUMAN_REVIEW,
+            CaseStatus.DELIVERED_AFTER_CONFIRMATION,
+        }:
+            return (
+                "FINALIZED_CASE_NEW_EVENT",
+                "finalized_case_held",
+                "New information for a finalized case was held for a human-controlled revision.",
+            )
+        if case.status == CaseStatus.HUMAN_REVIEW_REQUIRED:
+            return (
+                "HUMAN_REVIEW_CASE_NEW_EVENT",
+                "human_review_case_held",
+                "Automatic processing remained paused because the case requires human review.",
+            )
+        return None
 
     def _apply_patch(self, case: Case, event: InboundEvent, updates: list[dict[str, Any]]) -> None:
         allowed = set(type(case.profile).model_fields)

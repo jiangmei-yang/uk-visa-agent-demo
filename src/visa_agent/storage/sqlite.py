@@ -41,6 +41,15 @@ CREATE TABLE IF NOT EXISTS deliveries (
     sha256 TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS inbound_failures (
+    id TEXT PRIMARY KEY,
+    case_id TEXT,
+    thread_id TEXT NOT NULL,
+    reason_code TEXT NOT NULL,
+    detail TEXT NOT NULL,
+    retryable INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 
@@ -154,6 +163,35 @@ class SQLiteStore:
                 "INSERT OR IGNORE INTO deliveries(id, case_id, path, sha256) VALUES (?, ?, ?, ?)",
                 (f"delivery-{case_id}", case_id, path, sha256),
             )
+
+    def record_rejected_event(
+        self,
+        *,
+        event_id: str,
+        case_id: str,
+        thread_id: str,
+        reason_code: str,
+        detail: str,
+        retryable: bool = False,
+    ) -> None:
+        with self.connection:
+            self.connection.execute(
+                """INSERT OR IGNORE INTO inbound_failures(
+                       id, case_id, thread_id, reason_code, detail, retryable
+                   ) VALUES (?, ?, ?, ?, ?, ?)""",
+                (event_id, case_id, thread_id, reason_code, detail, int(retryable)),
+            )
+            self.connection.execute(
+                "INSERT OR IGNORE INTO processed_events(event_id, case_id) VALUES (?, ?)",
+                (event_id, case_id),
+            )
+
+    def list_inbound_failures(self) -> list[dict[str, Any]]:
+        rows = self.connection.execute(
+            """SELECT id, case_id, thread_id, reason_code, detail, retryable, created_at
+               FROM inbound_failures ORDER BY created_at, id"""
+        ).fetchall()
+        return [dict(row) for row in rows]
 
     def counts(self) -> dict[str, int]:
         names = ("cases", "processed_events", "outbox", "deliveries")
