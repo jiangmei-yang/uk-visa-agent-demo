@@ -64,6 +64,15 @@ def get_pack(case_id: str) -> FileResponse:
     case = load_case(case_id)
     if case is None or case.delivery_path is None:
         raise HTTPException(status_code=404, detail="Review pack is not available")
+    gate = evaluate_gate(case, policy, date.today())
+    if not gate.allowed:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": "Review pack is withheld because current safety checks did not pass",
+                "failed_checks": gate.reasons,
+            },
+        )
     path = Path(case.delivery_path).resolve()
     allowed_root = settings.output_dir.resolve()
     if allowed_root not in path.parents or not path.is_file():

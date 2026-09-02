@@ -3,9 +3,13 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import pytest
+from fastapi import HTTPException
+
 from visa_agent import web
 from visa_agent.config import Settings
 from visa_agent.demo import run_demo
+from visa_agent.storage.sqlite import SQLiteStore
 
 
 def test_review_console_and_pack_download(tmp_path: Path) -> None:
@@ -29,3 +33,25 @@ def test_review_console_and_pack_download(tmp_path: Path) -> None:
     assert "Delivery gate" in body
     assert "Active evidence ledger" in body
     assert download.media_type == "application/zip"
+
+
+def test_pack_download_is_withheld_if_current_gate_fails(tmp_path: Path) -> None:
+    test_settings = Settings(
+        database_path=tmp_path / "visa.db",
+        output_dir=tmp_path / "output",
+        policy_path=Path("knowledge/uk_standard_visitor_2026-02-25.yaml"),
+    )
+    result = run_demo(test_settings, reset=True)
+    store = SQLiteStore(test_settings.database_path)
+    try:
+        case = store.get_case(result.case.id)
+        assert case is not None and case.delivery_path is not None
+        case.final_summary_confirmed = False
+        store.save_case(case)
+    finally:
+        store.close()
+
+    web.settings = test_settings
+    with pytest.raises(HTTPException) as error:
+        web.get_pack(result.case.id)
+    assert error.value.status_code == 409
