@@ -26,6 +26,10 @@ checks, persistence, outbound side effects, and pack generation.
   use exponential backoff.
 - A claimed send with no recorded result is reconciled by deterministic RFC Message-ID; a definite
   no-match becomes `AMBIGUOUS` and cannot be retried without an explicit operator decision.
+- Every model adapter is wrapped by one patch guard: candidate facts need an allowed field, an exact
+  inbound excerpt, a valid field value, sufficient confidence, and no conflicting candidate.
+- Extraction retries are bounded to two attempts and then abstain to human review. Drafting failure,
+  empty/oversized text, and prohibited outcome claims use deterministic customer wording.
 
 ## Failure behaviour
 
@@ -33,6 +37,8 @@ checks, persistence, outbound side effects, and pack generation.
 |---|---|
 | LLM unavailable/refuses | No patch is applied; queue a bounded fallback or human review |
 | Schema invalid | One constrained retry in live orchestration, then targeted clarification/review |
+| Candidate fact is ungrounded/invalid/conflicting | Reject it before mutation and require human review |
+| Model drafts an approval/submission claim | Discard it and use the deterministic non-advisory reply |
 | PDF unreadable or wrong type | Mark replacement required; do not extract guessed facts |
 | Low-confidence critical fact | Keep unresolved and ask the applicant to confirm |
 | Duplicate event | Return existing state without a new outbox row |

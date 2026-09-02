@@ -123,6 +123,7 @@ make test        # unit, contract, adversarial, golden and integration tests
 make lint        # Ruff
 make typecheck   # strict mypy
 make stability   # repeated clean runs + concurrent review-console reads
+MODEL=<model-id> make agent-eval-live  # optional paid synthetic model evaluation
 make web         # local case-review console
 make start       # build and start the complete Docker demo
 make stop        # stop the Docker demo
@@ -133,8 +134,9 @@ make clean       # delete disposable local demo data
 
 Install optional provider SDKs with `uv sync --extra dev --extra live`.
 
-- `OpenAIStructuredLLM` uses a Pydantic schema through the Responses API. It returns proposals only;
-  the workflow validates and applies them.
+- `OpenAIStructuredLLM` uses a Pydantic schema through the Responses API. The model ID must be chosen
+  explicitly after evaluation. It returns proposals only; the workflow grounds, validates, and
+  applies them behind a mandatory bounded guard.
 - `GmailAdapter` accepts an OAuth-authenticated Gmail API service, polls a configured query, preserves
   thread headers, downloads attachments, and can send replies/ZIP attachments. Follow Google's
   Python OAuth quickstart and use least-privilege scopes. Never commit `credentials.json` or
@@ -180,3 +182,5 @@ The offline extractor recognises deliberately marked synthetic PDF fixtures; it 
 OCR or fraud-detection system. Authentication, malware scanning, encrypted object storage, retention
 jobs, operator roles, Gmail OAuth bootstrapping, and real-user validation remain production work.
 Passing tests is internal evidence, not proof of applicant outcomes or external usability.
+The committed Agent corpus and evaluator are synthetic; a live score exists only when
+`eval_output/agent_eval.json` is produced with an explicitly selected provider model.

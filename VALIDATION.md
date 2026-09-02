@@ -25,8 +25,8 @@ explicitly recorded here.
 | Delivery safety gate | Automated simulation | Eight deterministic checks block delivery; current gate is rechecked at download | Fault injection around stale packs, concurrent mutation, recovery evidence |
 | Event idempotency | Automated simulation | Accepted and rejected provider IDs are persisted once; concurrent outbox claims are exclusive | Provider redelivery and external delivery reconciliation |
 | Pack determinism | Automated simulation | Twenty clean runs generate the same ZIP hash | Cross-platform/runtime reproducibility and migration compatibility |
-| Model extraction | Implemented only | Optional schema-bound OpenAI adapter exists | Mock/provider contract tests, evaluation corpus, variance and failure thresholds |
-| Prompt-injection resistance | Narrow automated simulation | Offline fixture extractor ignores one obvious injection string | Live-model evaluation, document injection, schema escape, exfiltration and tool-authority tests |
+| Model extraction | Automated simulation | Schema-bound adapter contract, grounded patch guard, retries, abstention, and a 12-case corpus exist | Repeated provider runs, threshold calibration, and measured variance |
+| Prompt-injection resistance | Automated simulation | Unknown fields, ungrounded excerpts, conflicting values, unsafe reply claims, and injected failures are contained | Repeated live-model email/document injection and exfiltration tests |
 | Human usability | Internal review only | Implementer inspected the local Demo | Independent interviewer and applicant task observation |
 
 ## High-risk gaps discovered
@@ -35,8 +35,8 @@ explicitly recorded here.
    not natural-language understanding.
 2. `GmailAdapter` is not connected to `WorkflowService`; no inbox poller converts a Gmail payload
    into an `InboundEvent`, and no worker consumes the persisted outbox.
-3. Model timeout, refusal, invalid schema, partial extraction, and inconsistent repeated outputs are
-   documented but not exercised.
+3. Model timeout, malformed values, ungrounded evidence, conflicts, and unsafe reply claims are
+   exercised locally, but refusal and repeated live-provider variance are not yet measured.
 4. The outbox reconciliation contract is provider-neutral and locally simulated; Gmail search by
    deterministic RFC Message-ID and its consistency window are not yet verified.
 5. WhatsApp webhook authenticity, message ordering, media download, and reply delivery do not exist.
@@ -120,6 +120,20 @@ schema, and partial output.
 **Report separately:** schema-valid rate, critical-field precision/recall, unsupported-claim rate,
 boundary-violation rate, clarification quality, latency, and cost. A single aggregate “accuracy” score
 is not sufficient.
+
+**Run 1 — 2026-09-02:** local boundary fault injection passed; provider quality remains untested.
+Every model adapter is now wrapped by a mandatory guard that retries extraction at most once, then
+abstains into human review. It rejects unknown fields, source excerpts absent from the email,
+low-confidence updates, invalid field values, and conflicting values before state mutation. Empty,
+oversized, failing, or prohibited outcome-claim replies use deterministic non-advisory wording; a
+human-review case never delegates its customer message to the model. A committed 12-case synthetic
+corpus covers normal and missing intake, contradictions, unsupported routes, serious history, prompt
+injection, malicious document text, Chinese email, sponsorship, negation, non-inference, and vague
+correction. The live evaluator reports schema validity, field precision/recall, unsupported claims,
+raw boundary violations, human-review decisions, ambiguity detection, latency, token totals, and
+cost separately. Forty-two repository tests pass. No `OPENAI_API_KEY` is present, so no provider
+call or live-model score is claimed. Remaining: run repeated candidates, set release thresholds, and
+record refusal/partial-output behaviour plus dated cost evidence.
 
 ### E-04 — Gmail sandbox
 

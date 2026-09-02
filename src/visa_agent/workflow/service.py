@@ -24,6 +24,7 @@ from visa_agent.domain.models import (
 )
 from visa_agent.domain.policy import Policy
 from visa_agent.domain.rules import advance_stage, evaluate_gate, run_consistency_checks
+from visa_agent.llm.guarded import ensure_guarded
 from visa_agent.llm.ports import LLMClient
 from visa_agent.storage.sqlite import SQLiteStore
 
@@ -36,7 +37,7 @@ class WorkflowService:
     def __init__(self, store: SQLiteStore, policy: Policy, llm: LLMClient) -> None:
         self.store = store
         self.policy = policy
-        self.llm = llm
+        self.llm = ensure_guarded(llm)
 
     def process(self, event: InboundEvent) -> tuple[Case, bool, str]:
         if self.store.event_processed(event.id):
