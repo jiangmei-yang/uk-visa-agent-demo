@@ -105,7 +105,7 @@ class WorkflowService:
         message_id = stable_id("message", f"{event.id}:{plan}")
         if message_id not in case.outbound_message_ids:
             case.outbound_message_ids.append(message_id)
-        self.store.commit_event(case, event.id, plan, message)
+        self.store.commit_event(case, event, plan, message)
         return case, False, plan
 
     def _inbound_rejection(

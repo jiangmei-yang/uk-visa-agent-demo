@@ -148,11 +148,11 @@ class OutboxDispatcher:
         return ReplyRequest(
             outbox_id=outbox_id,
             recipient=case.applicant_email,
-            subject="Re: Standard Visitor application materials",
+            subject=str(row["reply_subject"] or "Re: Standard Visitor application materials"),
             body=str(row["payload"]),
             thread_id=case.email_thread_id,
-            in_reply_to=f"<{row['event_id']}>",
-            references=f"<{row['event_id']}>",
+            in_reply_to=str(row["in_reply_to"] or f"<{row['event_id']}>"),
+            references=str(row["references_header"] or f"<{row['event_id']}>"),
             rfc_message_id=f"<{outbox_id}@visa-agent.local>",
             attachment=attachment,
         )

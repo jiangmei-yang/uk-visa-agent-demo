@@ -102,6 +102,8 @@ def parse_email_bytes(
         subject=str(message.get("Subject", "")),
         body=_body_text(message),
         attachment_paths=attachment_paths,
+        rfc_message_id=(str(message.get("Message-ID")) if message.get("Message-ID") else None),
+        references=(str(message.get("References")) if message.get("References") else None),
         received_at=received_at,
     )
 

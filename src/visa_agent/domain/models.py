@@ -194,6 +194,8 @@ class InboundEvent(BaseModel):
     subject: str
     body: str
     attachment_paths: list[str] = Field(default_factory=list)
+    rfc_message_id: str | None = None
+    references: str | None = None
     received_at: datetime
 
 

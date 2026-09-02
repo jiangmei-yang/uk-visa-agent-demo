@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from visa_agent.domain.models import Case
+from visa_agent.domain.models import Case, InboundEvent
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS cases (
@@ -25,12 +25,15 @@ CREATE TABLE IF NOT EXISTS outbox (
     event_id TEXT NOT NULL,
     message_type TEXT NOT NULL,
     payload TEXT NOT NULL,
+    reply_subject TEXT,
     status TEXT NOT NULL DEFAULT 'PENDING',
     attempt_count INTEGER NOT NULL DEFAULT 0,
     next_attempt_at TEXT,
     last_error TEXT,
     sent_at TEXT,
     provider_message_id TEXT,
+    in_reply_to TEXT,
+    references_header TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(event_id, message_type)
 );
@@ -74,6 +77,9 @@ class SQLiteStore:
             "last_error": "TEXT",
             "sent_at": "TEXT",
             "provider_message_id": "TEXT",
+            "in_reply_to": "TEXT",
+            "references_header": "TEXT",
+            "reply_subject": "TEXT",
         }
         with self.connection:
             for column, declaration in additions.items():
@@ -113,7 +119,18 @@ class SQLiteStore:
         ).fetchall()
         return [Case.model_validate_json(row["snapshot_json"]) for row in rows]
 
-    def commit_event(self, case: Case, event_id: str, message_type: str, payload: str) -> None:
+    def commit_event(
+        self,
+        case: Case,
+        event: InboundEvent,
+        message_type: str,
+        payload: str,
+    ) -> None:
+        in_reply_to = event.rfc_message_id or f"<{event.id}>"
+        references = " ".join(dict.fromkeys(f"{event.references or ''} {in_reply_to}".split()))
+        reply_subject = (
+            event.subject if event.subject.lower().startswith("re:") else f"Re: {event.subject}"
+        )
         with self.connection:
             self.connection.execute(
                 """
@@ -132,11 +149,23 @@ class SQLiteStore:
             )
             self.connection.execute(
                 "INSERT INTO processed_events(event_id, case_id) VALUES (?, ?)",
-                (event_id, case.id),
+                (event.id, case.id),
             )
             self.connection.execute(
-                "INSERT OR IGNORE INTO outbox(id, case_id, event_id, message_type, payload) VALUES (?, ?, ?, ?, ?)",
-                (f"out-{event_id}-{message_type}", case.id, event_id, message_type, payload),
+                """INSERT OR IGNORE INTO outbox(
+                       id, case_id, event_id, message_type, payload, reply_subject, in_reply_to,
+                       references_header
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    f"out-{event.id}-{message_type}",
+                    case.id,
+                    event.id,
+                    message_type,
+                    payload,
+                    reply_subject,
+                    in_reply_to,
+                    references,
+                ),
             )
 
     def save_case(self, case: Case) -> None:
@@ -219,8 +248,9 @@ class SQLiteStore:
 
     def list_outbox(self) -> list[dict[str, Any]]:
         rows = self.connection.execute(
-            """SELECT id, case_id, event_id, message_type, payload, status, attempt_count,
-                      next_attempt_at, last_error, sent_at, provider_message_id, created_at
+            """SELECT id, case_id, event_id, message_type, payload, reply_subject, status, attempt_count,
+                      next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
+                      references_header, created_at
                FROM outbox ORDER BY created_at, id"""
         ).fetchall()
         return [dict(row) for row in rows]
@@ -228,8 +258,9 @@ class SQLiteStore:
     def claim_pending_outbox(self, now: datetime, limit: int = 20) -> list[dict[str, Any]]:
         with self.connection:
             rows = self.connection.execute(
-                """SELECT id, case_id, event_id, message_type, payload, status, attempt_count,
-                          next_attempt_at, last_error, sent_at, provider_message_id, created_at
+                """SELECT id, case_id, event_id, message_type, payload, reply_subject, status, attempt_count,
+                          next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
+                          references_header, created_at
                    FROM outbox
                    WHERE status IN ('PENDING', 'RETRY')
                      AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
@@ -288,8 +319,9 @@ class SQLiteStore:
 
     def list_sending_outbox(self, limit: int = 20) -> list[dict[str, Any]]:
         rows = self.connection.execute(
-            """SELECT id, case_id, event_id, message_type, payload, status, attempt_count,
-                      next_attempt_at, last_error, sent_at, provider_message_id, created_at
+            """SELECT id, case_id, event_id, message_type, payload, reply_subject, status, attempt_count,
+                      next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
+                      references_header, created_at
                FROM outbox WHERE status = 'SENDING' ORDER BY created_at, id LIMIT ?""",
             (limit,),
         ).fetchall()

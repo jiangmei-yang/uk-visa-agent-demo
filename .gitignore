@@ -9,3 +9,6 @@ build/
 demo_output/
 data/
 .env
+.secrets/
+credentials.json
+token.json

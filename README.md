@@ -139,9 +139,9 @@ Install optional provider SDKs with `uv sync --extra dev --extra live`.
   explicitly after evaluation. It returns proposals only; the workflow grounds, validates, and
   applies them behind a mandatory bounded guard.
 - `GmailAdapter` accepts an OAuth-authenticated Gmail API service, polls a configured query, preserves
-  thread headers, downloads attachments, and can send replies/ZIP attachments. Follow Google's
-  Python OAuth quickstart and use least-privilege scopes. Never commit `credentials.json` or
-  `token.json`.
+  thread headers, downloads raw MIME/attachments, and can send replies/ZIP attachments through the
+  transactional outbox. Follow [GMAIL_SANDBOX.md](GMAIL_SANDBOX.md) for the dedicated synthetic test
+  account. Never commit OAuth credentials or tokens.
 
 Live mode is intentionally not part of the default assessment path. WhatsApp is deferred until the
 mandatory email path and safety gates are validated.

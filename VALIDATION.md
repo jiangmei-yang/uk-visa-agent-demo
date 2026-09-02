@@ -20,7 +20,7 @@ explicitly recorded here.
 | Three-email case progression | Automated simulation | Replays both committed fixtures and standards-compliant MIME messages, reaching the expected blocked → corrected → confirmed states | Free-form customer language and provider delivery |
 | Inbound attachments | Automated simulation | Standard MIME PDFs are extracted with filename, type, count, and size controls | Gmail attachment payloads and provider redelivery |
 | Human-like replies | Automated simulation | Deterministic template produces one reply per fixture | Natural but bounded model drafting, tone evaluation, clarification loops |
-| Gmail API boundary | Implemented only | List/get/download/send methods exist | Contract tests, message conversion, OAuth sandbox, retry/error handling, outbox consumption |
+| Gmail API boundary | Automated simulation | Raw MIME ingestion, threaded send, sent lookup, outbox mapping, OAuth file safety, and error classes pass fake-provider tests | Real OAuth, mailbox delivery, attachment/thread behaviour, quota and revoked-token evidence |
 | WhatsApp | Not implemented | Explicitly outside the current slice | Provider choice, webhook verification, media handling, sandbox experiment |
 | Delivery safety gate | Automated simulation | Eight deterministic checks block delivery; current gate is rechecked at download | Fault injection around stale packs, concurrent mutation, recovery evidence |
 | Event idempotency | Automated simulation | Accepted and rejected provider IDs are persisted once; concurrent outbox claims are exclusive | Provider redelivery and external delivery reconciliation |
@@ -33,8 +33,8 @@ explicitly recorded here.
 
 1. The offline extractor reads a hidden `DEMO_FACTS` block. It proves deterministic orchestration,
    not natural-language understanding.
-2. `GmailAdapter` is not connected to `WorkflowService`; no inbox poller converts a Gmail payload
-   into an `InboundEvent`, and no worker consumes the persisted outbox.
+2. Gmail is connected to the shared ingestion/workflow/outbox contracts under fake-provider tests,
+   but no OAuth account or real mailbox has been exercised.
 3. Model timeout, malformed values, ungrounded evidence, conflicts, and unsafe reply claims are
    exercised locally, but refusal and repeated live-provider variance are not yet measured.
 4. The outbox reconciliation contract is provider-neutral and locally simulated; Gmail search by
@@ -140,6 +140,15 @@ record refusal/partial-output behaviour plus dated cost evidence.
 Use a dedicated test account and synthetic applicant only. Exercise OAuth, thread discovery, actual
 MIME/attachment download, reply headers, provider redelivery, revoked credentials, quota/transient
 errors, and permanent failures. Record message IDs and redacted timestamps, never tokens or raw PII.
+
+**Preparation run — 2026-09-02:** fake-provider contract passed; provider sandbox not started. Gmail
+raw MIME now enters the same bounded ingestion and workflow service, and provider re-polling remains
+idempotent. Outbox replies preserve the inbound RFC Message-ID and References chain, set a
+deterministic outbound Message-ID, attach the ready ZIP, and search Sent by that ID for ambiguous-send
+reconciliation. Tests cover unpadded base64url payloads, 429/5xx transient classification, permanent
+4xx classification, missing send IDs, private token permissions, and missing-credential guidance.
+The optional SDKs import successfully. No OAuth client or token is present, so no Gmail request was
+made and E-04 remains open. `GMAIL_SANDBOX.md` contains the explicit test-account runbook.
 
 ### E-05 — WhatsApp sandbox
 
