@@ -74,7 +74,7 @@ class OutboxDispatcher:
             outbox_id = str(row["id"])
             attempt = int(row["attempt_count"]) + 1
             try:
-                request = self._request_for(row)
+                request = self._request_for(row, now)
                 provider_message_id = self.sender.send(request)
             except TransientChannelError as error:
                 if attempt >= self.max_attempts:
@@ -136,13 +136,16 @@ class OutboxDispatcher:
                 outcomes.append(DispatchOutcome(outbox_id, "AMBIGUOUS"))
         return outcomes
 
-    def _request_for(self, row: dict[str, object]) -> ReplyRequest:
+    def _request_for(self, row: dict[str, object], now: datetime) -> ReplyRequest:
         outbox_id = str(row["id"])
         case = self.store.get_case(str(row["case_id"]))
         if case is None:
             raise PermanentChannelError("Outbox case no longer exists")
+        raw_deadline = row.get("send_deadline")
+        if raw_deadline and now > datetime.fromisoformat(str(raw_deadline)):
+            raise PermanentChannelError("The channel's free-form reply window has expired")
         attachment: tuple[str, bytes] | None = None
-        if str(row["message_type"]) == "ready":
+        if str(row["message_type"]) == "ready" and str(row.get("channel")) != "whatsapp_twilio":
             if not case.delivery_path:
                 raise PermanentChannelError("Ready reply has no generated pack")
             pack_path = Path(case.delivery_path)

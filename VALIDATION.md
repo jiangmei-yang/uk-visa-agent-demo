@@ -21,7 +21,7 @@ explicitly recorded here.
 | Inbound attachments | Automated simulation | Standard MIME PDFs are extracted with filename, type, count, and size controls | Gmail attachment payloads and provider redelivery |
 | Human-like replies | Automated simulation | Deterministic template produces one reply per fixture | Natural but bounded model drafting, tone evaluation, clarification loops |
 | Gmail API boundary | Automated simulation | Raw MIME ingestion, threaded send, sent lookup, outbox mapping, OAuth file safety, and error classes pass fake-provider tests | Real OAuth, mailbox delivery, attachment/thread behaviour, quota and revoked-token evidence |
-| WhatsApp | Not implemented | Explicitly outside the current slice | Provider choice, webhook verification, media handling, sandbox experiment |
+| WhatsApp | Automated simulation | Twilio Sandbox boundary covers signature-first text/PDF intake, channel isolation, finite send failures, idempotency, and reply-window enforcement | Durable public webhook, account/device sandbox, real media/reply/status callbacks |
 | Delivery safety gate | Automated simulation | Eight deterministic checks block delivery; current gate is rechecked at download | Fault injection around stale packs, concurrent mutation, recovery evidence |
 | Event idempotency | Automated simulation | Accepted and rejected provider IDs are persisted once; concurrent outbox claims are exclusive | Provider redelivery and external delivery reconciliation |
 | Pack determinism | Automated simulation | Twenty clean runs generate the same ZIP hash | Cross-platform/runtime reproducibility and migration compatibility |
@@ -39,7 +39,8 @@ explicitly recorded here.
    exercised locally, but refusal and repeated live-provider variance are not yet measured.
 4. The outbox reconciliation contract is provider-neutral and locally simulated; Gmail search by
    deterministic RFC Message-ID and its consistency window are not yet verified.
-5. WhatsApp webhook authenticity, message ordering, media download, and reply delivery do not exist.
+5. WhatsApp has a local signature/media/send boundary, but durable webhook ingestion, ordering,
+   authenticated provider media download, status callbacks, and real provider delivery remain open.
 
 ## Experiment sequence
 
@@ -155,6 +156,17 @@ made and E-04 remains open. `GMAIL_SANDBOX.md` contains the explicit test-accoun
 Begin only after E-01 through E-03 pass because WhatsApp must reuse the same typed event contract,
 state machine, outbox semantics, and delivery gate. Validate webhook signatures, reply-window rules,
 media limits, ordering, duplicate delivery, and an email handoff for the final review pack.
+
+**Preparation run — 2026-09-02:** provider selected and local boundary tests passed; provider sandbox
+not started. Twilio WhatsApp Sandbox was selected for functional Demo testing without a registered
+WhatsApp Business sender. Signed form payloads become the same channel-neutral `InboundEvent` and
+use MessageSid as the idempotency key. Tests cover signature-first rejection, exact sender matching,
+one allow-listed Twilio-hosted PDF, non-PDF/multiple/oversized/SSRF rejection, channel worker
+isolation, successful text send, missing SID, transient/permanent errors, replay, and deterministic
+24-hour free-form reply expiry. The final ZIP is intentionally withheld from WhatsApp and remains a
+secure Email/review-console handoff. No Twilio account, device, public webhook, or external message
+was used. Remaining before sandbox: durable fast-ack queue/worker, public route, authenticated media
+download, joined test device, real reply/status callbacks, and redacted evidence report.
 
 ### E-06 — External usability
 

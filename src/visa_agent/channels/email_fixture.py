@@ -15,7 +15,7 @@ MAX_TOTAL_ATTACHMENT_BYTES = 25 * 1024 * 1024
 MAX_MESSAGE_BYTES = 30 * 1024 * 1024
 
 
-def _attachment_path(document_dir: Path, filename: str, content: bytes) -> Path:
+def save_pdf_attachment(document_dir: Path, filename: str, content: bytes) -> Path:
     safe_name = Path(filename).name
     if not safe_name or safe_name in {".", ".."}:
         raise ValueError("Email attachment has no safe filename")
@@ -87,7 +87,7 @@ def parse_email_bytes(
                 raise ValueError(
                     f"Email attachments exceed {MAX_TOTAL_ATTACHMENT_BYTES} total bytes"
                 )
-            attachment_paths.append(str(_attachment_path(document_dir, filename, content)))
+            attachment_paths.append(str(save_pdf_attachment(document_dir, filename, content)))
     else:
         attachment_names = [
             name.strip()

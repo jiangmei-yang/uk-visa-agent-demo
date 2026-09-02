@@ -33,6 +33,7 @@ live = [
   "google-api-python-client>=2.179,<3",
   "google-auth-oauthlib>=1.2,<2",
   "openai>=1.99,<3",
+  "twilio>=9.11,<10",
 ]
 
 [project.scripts]

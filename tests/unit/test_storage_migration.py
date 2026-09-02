@@ -39,6 +39,7 @@ def test_existing_outbox_schema_gains_threading_and_delivery_columns(tmp_path: P
             "channel",
             "recipient",
             "external_thread_id",
+            "send_deadline",
             "reply_subject",
             "in_reply_to",
             "references_header",

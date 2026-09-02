@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS outbox (
     channel TEXT NOT NULL DEFAULT 'email',
     recipient TEXT,
     external_thread_id TEXT,
+    send_deadline TEXT,
     reply_subject TEXT,
     status TEXT NOT NULL DEFAULT 'PENDING',
     attempt_count INTEGER NOT NULL DEFAULT 0,
@@ -86,6 +87,7 @@ class SQLiteStore:
             "channel": "TEXT NOT NULL DEFAULT 'email'",
             "recipient": "TEXT",
             "external_thread_id": "TEXT",
+            "send_deadline": "TEXT",
         }
         with self.connection:
             for column, declaration in additions.items():
@@ -137,6 +139,11 @@ class SQLiteStore:
         reply_subject = (
             event.subject if event.subject.lower().startswith("re:") else f"Re: {event.subject}"
         )
+        send_deadline = (
+            (event.received_at + timedelta(hours=24)).isoformat()
+            if event.channel == "whatsapp_twilio"
+            else None
+        )
         with self.connection:
             self.connection.execute(
                 """
@@ -160,8 +167,9 @@ class SQLiteStore:
             self.connection.execute(
                 """INSERT OR IGNORE INTO outbox(
                        id, case_id, event_id, message_type, payload, channel, recipient,
-                       external_thread_id, reply_subject, in_reply_to, references_header
-                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                       external_thread_id, send_deadline, reply_subject, in_reply_to,
+                       references_header
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     f"out-{event.id}-{message_type}",
                     case.id,
@@ -171,6 +179,7 @@ class SQLiteStore:
                     event.channel,
                     event.sender,
                     event.external_thread_id,
+                    send_deadline,
                     reply_subject,
                     in_reply_to,
                     references,
@@ -258,7 +267,7 @@ class SQLiteStore:
     def list_outbox(self) -> list[dict[str, Any]]:
         rows = self.connection.execute(
             """SELECT id, case_id, event_id, message_type, payload, channel, recipient,
-                      external_thread_id, reply_subject, status, attempt_count,
+                      external_thread_id, send_deadline, reply_subject, status, attempt_count,
                       next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
                       references_header, created_at
                FROM outbox ORDER BY created_at, id"""
@@ -280,7 +289,7 @@ class SQLiteStore:
             )
             rows = self.connection.execute(
                 f"""SELECT id, case_id, event_id, message_type, payload, channel, recipient,
-                          external_thread_id, reply_subject, status, attempt_count,
+                          external_thread_id, send_deadline, reply_subject, status, attempt_count,
                           next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
                           references_header, created_at
                    FROM outbox
@@ -347,7 +356,7 @@ class SQLiteStore:
         parameters: tuple[object, ...] = (channel, limit) if channel is not None else (limit,)
         rows = self.connection.execute(
             f"""SELECT id, case_id, event_id, message_type, payload, channel, recipient,
-                      external_thread_id, reply_subject, status, attempt_count,
+                      external_thread_id, send_deadline, reply_subject, status, attempt_count,
                       next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
                       references_header, created_at
                FROM outbox WHERE status = 'SENDING' {channel_filter}
