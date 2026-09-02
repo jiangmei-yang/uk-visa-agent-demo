@@ -21,3 +21,12 @@ jobs:
       - run: make stability
         env:
           STABILITY_RUNS: "5"
+      - run: docker compose up --build --detach --wait --wait-timeout 180
+      - run: curl --fail --silent --show-error http://127.0.0.1:8000/health
+      - run: |
+          curl --fail --silent --show-error \
+            --output /tmp/visa-application-pack.zip \
+            http://127.0.0.1:8000/api/cases/case-7b2f8d0650eb/pack
+          unzip -t /tmp/visa-application-pack.zip
+      - if: always()
+        run: docker compose down

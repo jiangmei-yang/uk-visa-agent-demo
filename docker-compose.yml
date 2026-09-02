@@ -1,3 +1,5 @@
+name: uk-visa-agent-demo
+
 services:
   review-console:
     build: .
