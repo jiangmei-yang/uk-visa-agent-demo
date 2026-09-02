@@ -107,6 +107,7 @@ make demo        # credential-free deterministic replay
 make test        # unit, contract, adversarial, golden and integration tests
 make lint        # Ruff
 make typecheck   # strict mypy
+make stability   # repeated clean runs + concurrent review-console reads
 make web         # local case-review console
 make clean       # delete disposable local demo data
 ```
@@ -128,7 +129,9 @@ mandatory email path and safety gates are validated.
 ## Policy sources
 
 The snapshot is checked on 2026-09-02 and versioned as 2026-02-25, matching the current update date
-shown by GOV.UK at implementation time. Rules contain source metadata and a review deadline.
+shown by GOV.UK at implementation time. Rules contain source metadata and a review deadline. The
+synthetic replay freezes its evaluation clock at 2026-09-02 so the assessment remains reproducible;
+live/API readiness checks use the actual current date and block after the review deadline.
 
 - [Standard Visitor application information](https://www.gov.uk/standard-visitor/apply-standard-visitor-visa)
 - [Official supporting-document guide](https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk)

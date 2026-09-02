@@ -17,6 +17,8 @@ from visa_agent.llm.offline import OfflineFixtureLLM
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.service import WorkflowService
 
+DEMO_EVALUATION_DATE = date(2026, 9, 2)
+
 
 @dataclass
 class DemoResult:
@@ -26,7 +28,11 @@ class DemoResult:
     counts: dict[str, int]
 
 
-def run_demo(settings: Settings, reset: bool = False) -> DemoResult:
+def run_demo(
+    settings: Settings,
+    reset: bool = False,
+    evaluation_date: date = DEMO_EVALUATION_DATE,
+) -> DemoResult:
     if reset:
         if settings.output_dir.exists():
             shutil.rmtree(settings.output_dir)
@@ -44,7 +50,13 @@ def run_demo(settings: Settings, reset: bool = False) -> DemoResult:
         for eml_path in sorted(Path("samples/emails").glob("*.eml")):
             event = parse_eml(eml_path, document_dir)
             case, duplicate, plan = service.process(event)
-            package, reasons = generate_pack(case, policy, store, settings.output_dir, date.today())
+            package, reasons = generate_pack(
+                case,
+                policy,
+                store,
+                settings.output_dir,
+                evaluation_date,
+            )
             steps.append(
                 {
                     "fixture": eml_path.name,
@@ -78,6 +90,7 @@ def run_demo(settings: Settings, reset: bool = False) -> DemoResult:
         replay_idempotent = counts_before_replay == counts_after_replay
         report = {
             "synthetic_demo": True,
+            "evaluation_date": evaluation_date.isoformat(),
             "case_id": case.id,
             "steps": steps,
             "counts_before_replay": counts_before_replay,

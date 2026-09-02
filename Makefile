@@ -1,4 +1,4 @@
-.PHONY: setup demo test lint typecheck web clean
+.PHONY: setup demo test lint typecheck stability web clean
 
 setup:
 	uv sync --extra dev
@@ -14,6 +14,9 @@ lint:
 
 typecheck:
 	uv run mypy
+
+stability:
+	uv run python scripts/stability_check.py
 
 web:
 	uv run visa-agent web

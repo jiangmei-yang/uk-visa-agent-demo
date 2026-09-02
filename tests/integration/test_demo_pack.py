@@ -61,3 +61,17 @@ def test_clean_runs_generate_identical_pack_bytes(tmp_path: Path) -> None:
         reset=True,
     )
     assert first.package_path.read_bytes() == second.package_path.read_bytes()
+
+
+def test_offline_demo_remains_replayable_after_policy_review_date(tmp_path: Path) -> None:
+    result = run_demo(
+        Settings(
+            database_path=tmp_path / "future.db",
+            output_dir=tmp_path / "future-output",
+            policy_path=Path("knowledge/uk_standard_visitor_2026-02-25.yaml"),
+        ),
+        reset=True,
+    )
+    assert result.package_path.is_file()
+    report = json.loads(result.report_path.read_text(encoding="utf-8"))
+    assert report["evaluation_date"] == "2026-09-02"
