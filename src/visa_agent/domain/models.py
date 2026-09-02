@@ -4,7 +4,7 @@ from datetime import UTC, date, datetime
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 def utc_now() -> datetime:
@@ -151,11 +151,16 @@ class CaseProfile(BaseModel):
 
 
 class Case(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     id: str
-    email_thread_id: str
-    applicant_email: str
+    external_thread_id: str = Field(
+        validation_alias=AliasChoices("external_thread_id", "email_thread_id")
+    )
+    applicant_contact: str = Field(
+        validation_alias=AliasChoices("applicant_contact", "applicant_email")
+    )
+    primary_channel: str = "email"
     status: CaseStatus = CaseStatus.DRAFT
     stage: WorkflowStage = WorkflowStage.NEW
     profile: CaseProfile = Field(default_factory=CaseProfile)

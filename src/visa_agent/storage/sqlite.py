@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS outbox (
     event_id TEXT NOT NULL,
     message_type TEXT NOT NULL,
     payload TEXT NOT NULL,
+    channel TEXT NOT NULL DEFAULT 'email',
+    recipient TEXT,
+    external_thread_id TEXT,
     reply_subject TEXT,
     status TEXT NOT NULL DEFAULT 'PENDING',
     attempt_count INTEGER NOT NULL DEFAULT 0,
@@ -80,6 +83,9 @@ class SQLiteStore:
             "in_reply_to": "TEXT",
             "references_header": "TEXT",
             "reply_subject": "TEXT",
+            "channel": "TEXT NOT NULL DEFAULT 'email'",
+            "recipient": "TEXT",
+            "external_thread_id": "TEXT",
         }
         with self.connection:
             for column, declaration in additions.items():
@@ -142,7 +148,7 @@ class SQLiteStore:
                 """,
                 (
                     case.id,
-                    case.email_thread_id,
+                    case.external_thread_id,
                     case.model_dump_json(),
                     case.updated_at.isoformat(),
                 ),
@@ -153,15 +159,18 @@ class SQLiteStore:
             )
             self.connection.execute(
                 """INSERT OR IGNORE INTO outbox(
-                       id, case_id, event_id, message_type, payload, reply_subject, in_reply_to,
-                       references_header
-                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                       id, case_id, event_id, message_type, payload, channel, recipient,
+                       external_thread_id, reply_subject, in_reply_to, references_header
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     f"out-{event.id}-{message_type}",
                     case.id,
                     event.id,
                     message_type,
                     payload,
+                    event.channel,
+                    event.sender,
+                    event.external_thread_id,
                     reply_subject,
                     in_reply_to,
                     references,
@@ -180,7 +189,7 @@ class SQLiteStore:
                 """,
                 (
                     case.id,
-                    case.email_thread_id,
+                    case.external_thread_id,
                     case.model_dump_json(),
                     case.updated_at.isoformat(),
                 ),
@@ -248,25 +257,39 @@ class SQLiteStore:
 
     def list_outbox(self) -> list[dict[str, Any]]:
         rows = self.connection.execute(
-            """SELECT id, case_id, event_id, message_type, payload, reply_subject, status, attempt_count,
+            """SELECT id, case_id, event_id, message_type, payload, channel, recipient,
+                      external_thread_id, reply_subject, status, attempt_count,
                       next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
                       references_header, created_at
                FROM outbox ORDER BY created_at, id"""
         ).fetchall()
         return [dict(row) for row in rows]
 
-    def claim_pending_outbox(self, now: datetime, limit: int = 20) -> list[dict[str, Any]]:
+    def claim_pending_outbox(
+        self,
+        now: datetime,
+        limit: int = 20,
+        channel: str | None = None,
+    ) -> list[dict[str, Any]]:
         with self.connection:
+            channel_filter = " AND channel = ?" if channel is not None else ""
+            parameters: tuple[object, ...] = (
+                (now.isoformat(), channel, limit)
+                if channel is not None
+                else (now.isoformat(), limit)
+            )
             rows = self.connection.execute(
-                """SELECT id, case_id, event_id, message_type, payload, reply_subject, status, attempt_count,
+                f"""SELECT id, case_id, event_id, message_type, payload, channel, recipient,
+                          external_thread_id, reply_subject, status, attempt_count,
                           next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
                           references_header, created_at
                    FROM outbox
                    WHERE status IN ('PENDING', 'RETRY')
                      AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
+                     {channel_filter}
                    ORDER BY created_at, id
                    LIMIT ?""",
-                (now.isoformat(), limit),
+                parameters,
             ).fetchall()
             ids = [str(row["id"]) for row in rows]
             if ids:
@@ -317,13 +340,19 @@ class SQLiteStore:
                 (error, outbox_id),
             )
 
-    def list_sending_outbox(self, limit: int = 20) -> list[dict[str, Any]]:
+    def list_sending_outbox(
+        self, limit: int = 20, channel: str | None = None
+    ) -> list[dict[str, Any]]:
+        channel_filter = " AND channel = ?" if channel is not None else ""
+        parameters: tuple[object, ...] = (channel, limit) if channel is not None else (limit,)
         rows = self.connection.execute(
-            """SELECT id, case_id, event_id, message_type, payload, reply_subject, status, attempt_count,
+            f"""SELECT id, case_id, event_id, message_type, payload, channel, recipient,
+                      external_thread_id, reply_subject, status, attempt_count,
                       next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
                       references_header, created_at
-               FROM outbox WHERE status = 'SENDING' ORDER BY created_at, id LIMIT ?""",
-            (limit,),
+               FROM outbox WHERE status = 'SENDING' {channel_filter}
+               ORDER BY created_at, id LIMIT ?""",
+            parameters,
         ).fetchall()
         return [dict(row) for row in rows]
 

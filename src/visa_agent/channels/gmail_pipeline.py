@@ -36,6 +36,7 @@ class GmailInboxProcessor:
                 raw_message.raw,
                 provider_message_id=raw_message.provider_message_id,
                 provider_thread_id=raw_message.provider_thread_id,
+                channel="gmail",
             )
             if result.event is None:
                 outcomes.append(

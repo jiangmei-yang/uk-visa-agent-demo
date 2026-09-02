@@ -50,8 +50,9 @@ class WorkflowService:
         if case is None:
             case = Case(
                 id=stable_id("case", event.external_thread_id),
-                email_thread_id=event.external_thread_id,
-                applicant_email=event.sender,
+                external_thread_id=event.external_thread_id,
+                applicant_contact=event.sender,
+                primary_channel=event.channel,
                 policy_version=self.policy.version,
             )
         else:
@@ -113,8 +114,12 @@ class WorkflowService:
         case: Case,
         event: InboundEvent,
     ) -> tuple[str, str, str] | None:
-        applicant_address = parseaddr(case.applicant_email)[1].casefold()
-        sender_address = parseaddr(event.sender)[1].casefold()
+        if case.primary_channel.startswith("whatsapp"):
+            applicant_address = case.applicant_contact.casefold()
+            sender_address = event.sender.casefold()
+        else:
+            applicant_address = parseaddr(case.applicant_contact)[1].casefold()
+            sender_address = parseaddr(event.sender)[1].casefold()
         if not applicant_address or sender_address != applicant_address:
             return (
                 "THREAD_SENDER_MISMATCH",

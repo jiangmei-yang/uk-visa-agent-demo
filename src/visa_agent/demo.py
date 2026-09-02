@@ -77,8 +77,8 @@ def run_demo(
             write_outbound_eml(
                 outbound_dir,
                 index,
-                case.applicant_email,
-                case.email_thread_id,
+                case.applicant_contact,
+                case.external_thread_id,
                 item["event_id"],
                 item["payload"],
             )

@@ -58,6 +58,7 @@ class OutboxDispatcher:
         *,
         max_attempts: int = 3,
         base_backoff_seconds: int = 60,
+        channel: str | None = None,
     ) -> None:
         if max_attempts < 1:
             raise ValueError("max_attempts must be at least 1")
@@ -65,10 +66,11 @@ class OutboxDispatcher:
         self.sender = sender
         self.max_attempts = max_attempts
         self.base_backoff_seconds = base_backoff_seconds
+        self.channel = channel
 
     def dispatch_due(self, now: datetime, limit: int = 20) -> list[DispatchOutcome]:
         outcomes: list[DispatchOutcome] = []
-        for row in self.store.claim_pending_outbox(now, limit):
+        for row in self.store.claim_pending_outbox(now, limit, self.channel):
             outbox_id = str(row["id"])
             attempt = int(row["attempt_count"]) + 1
             try:
@@ -109,7 +111,7 @@ class OutboxDispatcher:
         limit: int = 20,
     ) -> list[DispatchOutcome]:
         outcomes: list[DispatchOutcome] = []
-        for row in self.store.list_sending_outbox(limit):
+        for row in self.store.list_sending_outbox(limit, self.channel):
             outbox_id = str(row["id"])
             rfc_message_id = f"<{outbox_id}@visa-agent.local>"
             try:
@@ -147,10 +149,10 @@ class OutboxDispatcher:
             attachment = (pack_path.name, pack_path.read_bytes())
         return ReplyRequest(
             outbox_id=outbox_id,
-            recipient=case.applicant_email,
+            recipient=str(row["recipient"] or case.applicant_contact),
             subject=str(row["reply_subject"] or "Re: Standard Visitor application materials"),
             body=str(row["payload"]),
-            thread_id=case.email_thread_id,
+            thread_id=str(row["external_thread_id"] or case.external_thread_id),
             in_reply_to=str(row["in_reply_to"] or f"<{row['event_id']}>"),
             references=str(row["references_header"] or f"<{row['event_id']}>"),
             rfc_message_id=f"<{outbox_id}@visa-agent.local>",

@@ -193,3 +193,27 @@ def test_transient_reconciliation_failure_leaves_message_sending(tmp_path: Path)
         assert row["status"] == "SENDING"
     finally:
         store.close()
+
+
+def test_channel_workers_claim_only_their_own_outbox_rows(tmp_path: Path) -> None:
+    store = _demo_store(tmp_path)
+    now = datetime(2026, 9, 2, 9, tzinfo=UTC)
+    try:
+        rows = store.list_outbox()
+        with store.connection:
+            store.connection.execute(
+                "UPDATE outbox SET channel = 'gmail' WHERE id = ?", (rows[0]["id"],)
+            )
+            store.connection.execute(
+                "UPDATE outbox SET channel = 'whatsapp_twilio' WHERE id = ?", (rows[1]["id"],)
+            )
+
+        gmail = store.claim_pending_outbox(now, channel="gmail")
+        whatsapp = store.claim_pending_outbox(now, channel="whatsapp_twilio")
+
+        assert [row["id"] for row in gmail] == [rows[0]["id"]]
+        assert [row["id"] for row in whatsapp] == [rows[1]["id"]]
+        assert all(row["channel"] == "gmail" for row in gmail)
+        assert all(row["channel"] == "whatsapp_twilio" for row in whatsapp)
+    finally:
+        store.close()

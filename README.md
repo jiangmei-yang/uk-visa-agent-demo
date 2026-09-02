@@ -88,10 +88,10 @@ criminal history, unreadable critical evidence, unresolved contradictions, and s
 ## Architecture
 
 ```text
-.eml fixture / Gmail
+Email / WhatsApp provider boundary
         │
         ▼
-typed InboundEvent ── idempotency key
+typed, channel-neutral InboundEvent ── idempotency key
         │
         ▼
 bounded extraction proposal ── Pydantic schema

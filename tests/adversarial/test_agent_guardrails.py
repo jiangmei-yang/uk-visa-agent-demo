@@ -122,8 +122,8 @@ def test_message_failure_uses_bounded_non_advisory_fallback() -> None:
     guarded = GuardedLLM(delegate)
     case = Case(
         id="case-agent-eval",
-        email_thread_id="thread-agent-eval",
-        applicant_email="applicant@example.test",
+        external_thread_id="thread-agent-eval",
+        applicant_contact="applicant@example.test",
         policy_version="test-policy",
     )
 
@@ -139,8 +139,8 @@ def test_unsafe_outcome_claim_uses_fallback_and_is_reported() -> None:
     guarded = GuardedLLM(delegate, on_failure=lambda operation, error: failures.append(operation))
     case = Case(
         id="case-agent-eval",
-        email_thread_id="thread-agent-eval",
-        applicant_email="applicant@example.test",
+        external_thread_id="thread-agent-eval",
+        applicant_contact="applicant@example.test",
         policy_version="test-policy",
     )
 
@@ -154,8 +154,8 @@ def test_human_review_case_never_delegates_customer_message() -> None:
     delegate = ScriptedLLM([], message="ordinary model reply")
     case = Case(
         id="case-agent-eval",
-        email_thread_id="thread-agent-eval",
-        applicant_email="applicant@example.test",
+        external_thread_id="thread-agent-eval",
+        applicant_contact="applicant@example.test",
         policy_version="test-policy",
         status=CaseStatus.HUMAN_REVIEW_REQUIRED,
     )

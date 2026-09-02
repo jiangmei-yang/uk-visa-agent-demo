@@ -34,6 +34,7 @@ class EmailIngestionBoundary:
         *,
         provider_message_id: str,
         provider_thread_id: str,
+        channel: str = "email",
     ) -> EmailIngestionResult:
         try:
             event = parse_email_bytes(
@@ -41,6 +42,7 @@ class EmailIngestionBoundary:
                 self.document_dir,
                 external_thread_id=provider_thread_id,
                 provider_message_id=provider_message_id,
+                channel=channel,
             )
         except ValueError as error:
             code = _failure_code(error)

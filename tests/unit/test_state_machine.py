@@ -7,8 +7,8 @@ from visa_agent.domain.rules import advance_stage, transition
 def make_case() -> Case:
     return Case(
         id="case-test",
-        email_thread_id="thread-test",
-        applicant_email="applicant@example.test",
+        external_thread_id="thread-test",
+        applicant_contact="applicant@example.test",
         policy_version="2026-02-25",
     )
 

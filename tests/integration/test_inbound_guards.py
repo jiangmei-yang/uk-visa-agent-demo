@@ -103,8 +103,8 @@ def test_new_event_for_ready_case_is_held_for_controlled_revision(tmp_path: Path
         held, duplicate, plan = service.process(
             _event(
                 "late-finalized-event",
-                sender=case_before.applicant_email,
-                thread_id=case_before.email_thread_id,
+                sender=case_before.applicant_contact,
+                thread_id=case_before.external_thread_id,
                 received_at=datetime(2026, 9, 2, 14, tzinfo=UTC),
             )
         )

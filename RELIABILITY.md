@@ -22,6 +22,8 @@ checks, persistence, outbound side effects, and pack generation.
 - Attachment text is untrusted data and has no tool or transition authority.
 - Outbound replies are claimed transactionally before provider delivery so concurrent workers cannot
   send the same pending row.
+- Each outbox row owns its channel, recipient, and external thread; a channel worker cannot claim a
+  different provider's message.
 - Retryable and permanent provider failures have distinct persisted states; retries are finite and
   use exponential backoff.
 - A claimed send with no recorded result is reconciled by deterministic RFC Message-ID; a definite

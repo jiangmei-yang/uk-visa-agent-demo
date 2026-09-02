@@ -48,6 +48,7 @@ def parse_email_bytes(
     *,
     external_thread_id: str | None = None,
     provider_message_id: str | None = None,
+    channel: str = "email_fixture",
 ) -> InboundEvent:
     if len(raw) > MAX_MESSAGE_BYTES:
         raise ValueError(f"Email exceeds {MAX_MESSAGE_BYTES} bytes")
@@ -97,6 +98,7 @@ def parse_email_bytes(
 
     return InboundEvent(
         id=str(raw_message_id).strip("<>"),
+        channel=channel,
         external_thread_id=str(raw_thread_id),
         sender=str(sender),
         subject=str(message.get("Subject", "")),
