@@ -1,0 +1,11 @@
+services:
+  review-console:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      VISA_AGENT_DATABASE: /app/data/visa_agent.db
+      VISA_AGENT_OUTPUT_DIR: /app/demo_output
+    volumes:
+      - ./data:/app/data
+      - ./demo_output:/app/demo_output

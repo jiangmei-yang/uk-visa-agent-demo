@@ -1,0 +1,59 @@
+{
+  "synthetic_demo": true,
+  "case_id": "case-7b2f8d0650eb",
+  "steps": [
+    {
+      "fixture": "01_initial_submission.eml",
+      "duplicate": false,
+      "plan": "blocked",
+      "stage": "DOCUMENT_REVIEW",
+      "status": "DRAFT",
+      "package_generated": false,
+      "gate_reasons": [
+        "all blocker requirements resolved",
+        "no unresolved blocker issue",
+        "applicant explicitly confirmed final summary"
+      ],
+      "open_blockers": [
+        "DATE_CONFLICT",
+        "MISSING_CERTIFIED_TRANSLATION"
+      ]
+    },
+    {
+      "fixture": "02_correction_and_translation.eml",
+      "duplicate": false,
+      "plan": "awaiting_confirmation",
+      "stage": "FINAL_CONFIRMATION",
+      "status": "DRAFT",
+      "package_generated": false,
+      "gate_reasons": [
+        "applicant explicitly confirmed final summary"
+      ],
+      "open_blockers": []
+    },
+    {
+      "fixture": "03_final_confirmation.eml",
+      "duplicate": false,
+      "plan": "ready",
+      "stage": "READY_FOR_HUMAN_REVIEW",
+      "status": "READY_FOR_HUMAN_REVIEW",
+      "package_generated": true,
+      "gate_reasons": [],
+      "open_blockers": []
+    }
+  ],
+  "counts_before_replay": {
+    "cases": 1,
+    "processed_events": 3,
+    "outbox": 3,
+    "deliveries": 1
+  },
+  "counts_after_replay": {
+    "cases": 1,
+    "processed_events": 3,
+    "outbox": 3,
+    "deliveries": 1
+  },
+  "replay_idempotent": true,
+  "package_path": "demo_output/visa_application_pack_case-7b2f8d0650eb.zip"
+}

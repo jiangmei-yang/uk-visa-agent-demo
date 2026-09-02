@@ -1,0 +1,38 @@
+From: Lin Chen <lin.chen@example.test>
+To: visa-agent@example.test
+Date: Tue, 01 Sep 2026 09:00:00 +0800
+Message-ID: <demo-message-001@example.test>
+Subject: Standard Visitor documents for London conference
+X-Demo-Thread-ID: demo-thread-lin-chen-001
+X-Demo-Attachments: passport.pdf, conference_invitation_original.pdf, student_letter.pdf, school_funding_letter.pdf, bank_statement.pdf, hong_kong_residence_status.pdf, family_funds_cn.pdf
+Content-Type: text/plain; charset="utf-8"
+
+Hello,
+
+I am an adult PhD student applying from Hong Kong for a Standard Visitor visa to
+attend a conference in London. My university will pay for the flight and hotel,
+and I will pay my personal expenses. I have reviewed the profile below.
+
+PROFILE CONFIRMED
+
+<!-- DEMO_FACTS
+full_name=Lin Chen
+date_of_birth=1997-04-18
+nationality=Chinese
+nationality_country=China
+application_country=Hong Kong
+planned_arrival_date=2026-09-10
+planned_departure_date=2026-09-15
+visit_purpose=conference
+uk_accommodation=Northstar Hotel, London
+estimated_trip_cost_gbp=2200
+current_address=88 Synthetic Road, Hong Kong
+occupation_status=student
+annual_income_gbp=18000
+funding_source=employer_or_school
+has_serious_history=false
+route_confirmed_standard_visitor=true
+-->
+
+Regards,
+Lin

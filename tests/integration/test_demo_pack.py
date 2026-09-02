@@ -1,0 +1,63 @@
+from __future__ import annotations
+
+import json
+import zipfile
+from pathlib import Path
+
+from visa_agent.config import Settings
+from visa_agent.demo import run_demo
+
+EXPECTED_PACK_FILES = {
+    "00_READ_ME_FIRST.pdf",
+    "01_case_summary.pdf",
+    "02_personalised_document_checklist.pdf",
+    "03_document_index.pdf",
+    "04_cover_letter_draft.pdf",
+    "05_application_answers.json",
+    "06_open_issues.pdf",
+}
+
+
+def test_demo_generates_source_linked_pack_and_is_idempotent(tmp_path: Path) -> None:
+    settings = Settings(
+        database_path=tmp_path / "visa.db",
+        output_dir=tmp_path / "output",
+        policy_path=Path("knowledge/uk_standard_visitor_2026-02-25.yaml"),
+    )
+    first = run_demo(settings, reset=True)
+    second = run_demo(settings, reset=False)
+    assert first.counts == second.counts == {
+        "cases": 1,
+        "processed_events": 3,
+        "outbox": 3,
+        "deliveries": 1,
+    }
+    assert first.package_path.read_bytes() == second.package_path.read_bytes()
+    with zipfile.ZipFile(first.package_path) as archive:
+        names = set(archive.namelist())
+        assert names >= EXPECTED_PACK_FILES
+        assert any(name.startswith("supporting_documents/") for name in names)
+        answers = json.loads(archive.read("05_application_answers.json"))
+        assert answers["status"] == "READY_FOR_HUMAN_REVIEW"
+        assert all(item["source_event_id"] for item in answers["facts"])
+
+
+def test_clean_runs_generate_identical_pack_bytes(tmp_path: Path) -> None:
+    policy_path = Path("knowledge/uk_standard_visitor_2026-02-25.yaml")
+    first = run_demo(
+        Settings(
+            database_path=tmp_path / "first.db",
+            output_dir=tmp_path / "first-output",
+            policy_path=policy_path,
+        ),
+        reset=True,
+    )
+    second = run_demo(
+        Settings(
+            database_path=tmp_path / "second.db",
+            output_dir=tmp_path / "second-output",
+            policy_path=policy_path,
+        ),
+        reset=True,
+    )
+    assert first.package_path.read_bytes() == second.package_path.read_bytes()

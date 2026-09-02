@@ -1,0 +1,121 @@
+policy_id: uk-standard-visitor-supporting-documents
+version: "2026-02-25"
+effective_date: "2026-02-25"
+valid_until: "2026-10-02"
+source_updated_at: "2026-02-25"
+checked_at: "2026-09-02"
+review_after: "2026-10-02"
+sources:
+  - https://www.gov.uk/standard-visitor/apply-standard-visitor-visa
+  - https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk
+scope:
+  minimum_age: 18
+  routes: [standard_visitor]
+  purposes: [tourism, family_or_friends, business, conference]
+  occupations: [employed, student, self_employed]
+  funding: [self, employer_or_school, personal_sponsor]
+  excluded:
+    - visa_or_eta_undecided
+    - prior_refusal_or_removal
+    - criminal_or_serious_immigration_history
+    - medical_visit
+    - marriage_visit
+    - transit_only
+    - permitted_paid_engagement
+    - long_term_academic_visit
+requirements:
+  - id: passport
+    title: Valid passport or travel document
+    description: Passport or travel document must be valid for the whole planned UK stay.
+    blocker: true
+    applies_when: always
+    condition: route in scope
+    severity: blocker
+    acceptable_evidence: [passport, travel_document]
+    source_title: Visit the UK as a Standard Visitor - Apply
+    source_url: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa
+    source_updated_at: "2026-02-25"
+    checked_at: "2026-09-02"
+    version: "2026-02-25"
+  - id: status_evidence
+    title: Evidence of employment, study, or self-employment
+    description: Evidence should support the applicant's stated personal circumstances.
+    blocker: true
+    applies_when: always
+    condition: occupation is employed, student, or self-employed
+    severity: blocker
+    acceptable_evidence: [employment_letter, student_letter, self_employment_evidence]
+    source_title: Visiting the UK - guide to supporting documents
+    source_url: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk
+    source_updated_at: "2026-02-25"
+    checked_at: "2026-09-02"
+    version: "2026-02-25"
+  - id: purpose_evidence
+    title: Evidence of the purpose of the visit
+    description: Evidence should support the stated activity; conference cases use organiser evidence.
+    blocker: true
+    applies_when: always
+    condition: always; branch by visit purpose
+    severity: blocker
+    acceptable_evidence: [invitation_letter, conference_invitation, itinerary_description]
+    source_title: Visiting the UK - guide to supporting documents
+    source_url: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk
+    source_updated_at: "2026-02-25"
+    checked_at: "2026-09-02"
+    version: "2026-02-25"
+  - id: funding_evidence
+    title: Evidence of available funds and their source
+    description: Evidence should show access to funds and their origin without inventing a fixed-month rule.
+    blocker: true
+    applies_when: always
+    condition: always; acceptable form depends on funding arrangement
+    severity: blocker
+    acceptable_evidence: [bank_statement, funding_letter, sponsor_evidence]
+    source_title: Visiting the UK - guide to supporting documents
+    source_url: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk
+    source_updated_at: "2026-02-25"
+    checked_at: "2026-09-02"
+    version: "2026-02-25"
+  - id: sponsor_evidence
+    title: Sponsor support, ability, relationship, and UK status where applicable
+    description: A personal sponsor branch needs support terms, means, relationship, and lawful UK status.
+    blocker: true
+    applies_when: funding_personal_sponsor
+    condition: funding_source equals personal_sponsor
+    severity: blocker
+    acceptable_evidence: [sponsor_letter, sponsor_funds, relationship_evidence, sponsor_uk_status]
+    source_title: Visiting the UK - guide to supporting documents
+    source_url: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk
+    source_updated_at: "2026-02-25"
+    checked_at: "2026-09-02"
+    version: "2026-02-25"
+  - id: certified_translation
+    title: Complete certified translation for documents not in English or Welsh
+    description: Each non-English/Welsh document needs a complete certified translation.
+    blocker: true
+    applies_when: non_english_document
+    condition: any applicable document language is neither English nor Welsh
+    severity: blocker
+    acceptable_evidence: [certified_translation]
+    source_title: Visit the UK as a Standard Visitor - Apply
+    source_url: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa
+    source_updated_at: "2026-02-25"
+    checked_at: "2026-09-02"
+    version: "2026-02-25"
+  - id: legal_residence
+    title: Evidence of legal residence when applying outside the country of nationality
+    description: Applicable applicants should evidence lawful residence in the application country.
+    blocker: true
+    applies_when: application_country_differs_from_nationality_country
+    condition: applicant is not applying in the country of nationality
+    severity: blocker
+    acceptable_evidence: [residence_permit, visa, status_document]
+    source_title: Visiting the UK - guide to supporting documents
+    source_url: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk
+    source_updated_at: "2026-02-25"
+    checked_at: "2026-09-02"
+    version: "2026-02-25"
+non_blocking_evidence:
+  - flight_booking
+  - hotel_booking
+disclaimer: Providing supporting documents does not guarantee a successful application.

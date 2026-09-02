@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "uk-visa-agent-demo"
+version = "0.1.0"
+description = "A constrained, email-first UK Standard Visitor visa document-preparation agent demo"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Demo Team" }]
+dependencies = [
+  "fastapi>=0.116,<1",
+  "pydantic>=2.11,<3",
+  "pypdf>=5.9,<7",
+  "PyYAML>=6.0,<7",
+  "reportlab>=4.4,<5",
+  "uvicorn>=0.35,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.28,<1",
+  "mypy>=1.17,<2",
+  "pytest>=8.4,<9",
+  "pytest-cov>=6.2,<8",
+  "ruff>=0.12,<1",
+  "types-PyYAML>=6.0,<7",
+  "types-reportlab>=4.4,<5",
+]
+live = [
+  "google-api-python-client>=2.179,<3",
+  "google-auth-oauthlib>=1.2,<2",
+  "openai>=1.99,<3",
+]
+
+[project.scripts]
+visa-agent = "visa_agent.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/visa_agent"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["visa_agent"]
