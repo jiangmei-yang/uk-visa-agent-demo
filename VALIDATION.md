@@ -85,6 +85,14 @@ and permanent channel failures?
 **Acceptance:** no duplicate customer reply or pack; bounded retries; permanent failures are visible;
 late messages cannot silently corrupt a delivered case.
 
+**Run 1 — 2026-09-02:** partial pass. Outbox delivery now persists `PENDING`, `SENDING`, `RETRY`,
+`SENT`, and `FAILED`, including attempt count, next-attempt time, redacted error, sent time, and
+provider message ID. Tests prove one-time successful dispatch, final-pack attachment, exponential
+backoff, retry exhaustion, permanent failure, and transactional claiming across two workers. A row
+left in `SENDING` is deliberately not auto-reclaimed because provider success is ambiguous after a
+worker crash. Remaining: provider reconciliation for ambiguous sends, inbound parse-failure records,
+sender/thread ownership, and delayed/out-of-order event policy.
+
 ### E-03 — Agent stability evaluation
 
 **Question:** Does the selected model produce schema-valid, evidence-grounded proposals and bounded

@@ -20,6 +20,10 @@ checks, persistence, outbound side effects, and pack generation.
   readiness.
 - A duplicate event creates no duplicate case mutation, reply, document, or delivery.
 - Attachment text is untrusted data and has no tool or transition authority.
+- Outbound replies are claimed transactionally before provider delivery so concurrent workers cannot
+  send the same pending row.
+- Retryable and permanent provider failures have distinct persisted states; retries are finite and
+  use exponential backoff.
 
 ## Failure behaviour
 
@@ -30,8 +34,9 @@ checks, persistence, outbound side effects, and pack generation.
 | PDF unreadable or wrong type | Mark replacement required; do not extract guessed facts |
 | Low-confidence critical fact | Keep unresolved and ask the applicant to confirm |
 | Duplicate event | Return existing state without a new outbox row |
-| Gmail transient failure | Keep outbox item and retry with a finite backoff |
-| Gmail permanent 4xx | Stop automatic retry and expose the failure |
+| Channel transient failure | Persist `RETRY`, increment attempts, and use finite exponential backoff |
+| Channel permanent failure | Persist `FAILED`, stop automatic retry, and expose the failure |
+| Worker stops after claiming | Leave `SENDING` as an ambiguous state for reconciliation; never silently resend |
 | Policy stale | Continue intake but block the delivery gate |
 | Unsupported/sensitive case | Move to `HUMAN_REVIEW_REQUIRED` |
 

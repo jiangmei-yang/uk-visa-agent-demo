@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import sqlite3
+from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from visa_agent.domain.models import Case
 
@@ -23,6 +25,12 @@ CREATE TABLE IF NOT EXISTS outbox (
     event_id TEXT NOT NULL,
     message_type TEXT NOT NULL,
     payload TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    attempt_count INTEGER NOT NULL DEFAULT 0,
+    next_attempt_at TEXT,
+    last_error TEXT,
+    sent_at TEXT,
+    provider_message_id TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(event_id, message_type)
 );
@@ -43,6 +51,25 @@ class SQLiteStore:
         self.connection = sqlite3.connect(path)
         self.connection.row_factory = sqlite3.Row
         self.connection.executescript(SCHEMA)
+        self._migrate_outbox()
+
+    def _migrate_outbox(self) -> None:
+        existing = {
+            str(row["name"])
+            for row in self.connection.execute("PRAGMA table_info(outbox)").fetchall()
+        }
+        additions = {
+            "status": "TEXT NOT NULL DEFAULT 'PENDING'",
+            "attempt_count": "INTEGER NOT NULL DEFAULT 0",
+            "next_attempt_at": "TEXT",
+            "last_error": "TEXT",
+            "sent_at": "TEXT",
+            "provider_message_id": "TEXT",
+        }
+        with self.connection:
+            for column, declaration in additions.items():
+                if column not in existing:
+                    self.connection.execute(f"ALTER TABLE outbox ADD COLUMN {column} {declaration}")
 
     def close(self) -> None:
         self.connection.close()
@@ -87,7 +114,12 @@ class SQLiteStore:
                     snapshot_json=excluded.snapshot_json,
                     updated_at=excluded.updated_at
                 """,
-                (case.id, case.email_thread_id, case.model_dump_json(), case.updated_at.isoformat()),
+                (
+                    case.id,
+                    case.email_thread_id,
+                    case.model_dump_json(),
+                    case.updated_at.isoformat(),
+                ),
             )
             self.connection.execute(
                 "INSERT INTO processed_events(event_id, case_id) VALUES (?, ?)",
@@ -108,7 +140,12 @@ class SQLiteStore:
                     snapshot_json=excluded.snapshot_json,
                     updated_at=excluded.updated_at
                 """,
-                (case.id, case.email_thread_id, case.model_dump_json(), case.updated_at.isoformat()),
+                (
+                    case.id,
+                    case.email_thread_id,
+                    case.model_dump_json(),
+                    case.updated_at.isoformat(),
+                ),
             )
 
     def save_delivery(self, case_id: str, path: str, sha256: str) -> None:
@@ -125,11 +162,71 @@ class SQLiteStore:
             for name in names
         }
 
-    def list_outbox(self) -> list[dict[str, str]]:
+    def list_outbox(self) -> list[dict[str, Any]]:
         rows = self.connection.execute(
-            "SELECT id, case_id, event_id, message_type, payload, created_at FROM outbox ORDER BY created_at, id"
+            """SELECT id, case_id, event_id, message_type, payload, status, attempt_count,
+                      next_attempt_at, last_error, sent_at, provider_message_id, created_at
+               FROM outbox ORDER BY created_at, id"""
         ).fetchall()
-        return [
-            {str(key): str(value) for key, value in dict(row).items()}
-            for row in rows
-        ]
+        return [dict(row) for row in rows]
+
+    def claim_pending_outbox(self, now: datetime, limit: int = 20) -> list[dict[str, Any]]:
+        with self.connection:
+            rows = self.connection.execute(
+                """SELECT id, case_id, event_id, message_type, payload, status, attempt_count,
+                          next_attempt_at, last_error, sent_at, provider_message_id, created_at
+                   FROM outbox
+                   WHERE status IN ('PENDING', 'RETRY')
+                     AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
+                   ORDER BY created_at, id
+                   LIMIT ?""",
+                (now.isoformat(), limit),
+            ).fetchall()
+            ids = [str(row["id"]) for row in rows]
+            if ids:
+                placeholders = ",".join("?" for _ in ids)
+                self.connection.execute(
+                    f"UPDATE outbox SET status = 'SENDING' WHERE id IN ({placeholders})",
+                    ids,
+                )
+        return [dict(row) for row in rows]
+
+    def mark_outbox_sent(
+        self,
+        outbox_id: str,
+        provider_message_id: str,
+        sent_at: datetime,
+    ) -> None:
+        with self.connection:
+            self.connection.execute(
+                """UPDATE outbox
+                   SET status = 'SENT', provider_message_id = ?, sent_at = ?,
+                       next_attempt_at = NULL, last_error = NULL
+                   WHERE id = ? AND status = 'SENDING'""",
+                (provider_message_id, sent_at.isoformat(), outbox_id),
+            )
+
+    def mark_outbox_retry(
+        self,
+        outbox_id: str,
+        error: str,
+        next_attempt_at: datetime,
+    ) -> None:
+        with self.connection:
+            self.connection.execute(
+                """UPDATE outbox
+                   SET status = 'RETRY', attempt_count = attempt_count + 1,
+                       next_attempt_at = ?, last_error = ?
+                   WHERE id = ? AND status = 'SENDING'""",
+                (next_attempt_at.isoformat(), error, outbox_id),
+            )
+
+    def mark_outbox_failed(self, outbox_id: str, error: str) -> None:
+        with self.connection:
+            self.connection.execute(
+                """UPDATE outbox
+                   SET status = 'FAILED', attempt_count = attempt_count + 1,
+                       next_attempt_at = NULL, last_error = ?
+                   WHERE id = ? AND status = 'SENDING'""",
+                (error, outbox_id),
+            )
