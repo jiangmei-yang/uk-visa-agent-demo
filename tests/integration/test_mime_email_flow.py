@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime
 from email import policy
 from email.message import EmailMessage
 from email.parser import BytesParser
@@ -9,6 +9,7 @@ from pathlib import Path
 from visa_agent.channels.email_fixture import parse_email_bytes
 from visa_agent.delivery.pack import generate_pack
 from visa_agent.documents.samples import generate_sample_documents
+from visa_agent.domain.models import DocumentStatus, InboundEvent
 from visa_agent.domain.policy import load_policy
 from visa_agent.llm.offline import OfflineFixtureLLM
 from visa_agent.storage.sqlite import SQLiteStore
@@ -78,5 +79,32 @@ def test_standard_mime_thread_reaches_pack_without_demo_attachment_header(tmp_pa
             assert duplicate is True
             assert plan == "duplicate_ignored"
         assert store.counts() == counts_before_replay
+    finally:
+        store.close()
+
+
+def test_corrupted_pdf_becomes_visible_blocker_instead_of_crashing(tmp_path: Path) -> None:
+    corrupt_pdf = tmp_path / "corrupt.pdf"
+    corrupt_pdf.write_bytes(b"this is not a PDF")
+    policy_snapshot = load_policy(Path("knowledge/uk_standard_visitor_2026-02-25.yaml"))
+    store = SQLiteStore(tmp_path / "visa.db")
+    service = WorkflowService(store, policy_snapshot, OfflineFixtureLLM())
+    event = InboundEvent(
+        id="corrupt-message-1",
+        external_thread_id="corrupt-thread-1",
+        sender="Applicant <applicant@example.test>",
+        subject="Document",
+        body="Please review the attached document.",
+        attachment_paths=[str(corrupt_pdf)],
+        received_at=datetime.now(UTC),
+    )
+    try:
+        case, duplicate, plan = service.process(event)
+        assert duplicate is False
+        assert plan == "blocked"
+        assert case.documents[0].status == DocumentStatus.NEEDS_REPLACEMENT
+        assert case.open_blockers()[0].title == "Document could not be read"
+        assert "replace corrupt.pdf" in case.open_blockers()[0].detail
+        assert "Document could not be read" in store.list_outbox()[0]["payload"]
     finally:
         store.close()

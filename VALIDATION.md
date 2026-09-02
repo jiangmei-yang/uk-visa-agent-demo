@@ -69,6 +69,14 @@ E-01 is complete: malformed date/header corpus, same-name/different-content coll
 attachment-count/total-message limits, and observable safe failure instead of an uncaught parser or
 document exception.
 
+**Run 2 — 2026-09-02:** E-01 parser/workflow acceptance passed. Added invalid-date rejection,
+per-file/aggregate/message-size limits, attachment-count limits, same-name/different-content
+collision preservation, and corrupted/missing PDF handling. A corrupt PDF is now retained as
+`NEEDS_REPLACEMENT`, opens a blocker, and produces a replacement request instead of terminating the
+workflow. The suite now has 22 passing tests; twenty clean Demo runs remain byte-identical and
+100/100 concurrent console reads pass. Persisting transport-level parse failures for retry or manual
+inspection is intentionally tracked by E-02 rather than counted as complete channel delivery.
+
 ### E-02 — Channel and outbox fault injection
 
 **Question:** Does the system recover predictably from duplicate, delayed, out-of-order, transient,

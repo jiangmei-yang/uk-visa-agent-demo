@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 from uuid import NAMESPACE_URL, uuid5
+
+from pypdf.errors import PdfReadError
 
 from visa_agent.documents.processor import inspect_pdf, sha256_file
 from visa_agent.domain.models import (
@@ -13,6 +16,8 @@ from visa_agent.domain.models import (
     DocumentStatus,
     Evidence,
     InboundEvent,
+    Issue,
+    IssueSeverity,
     ProvenanceState,
     WorkflowStage,
 )
@@ -76,8 +81,10 @@ class WorkflowService:
                 advance_stage(case, WorkflowStage.DOCUMENT_REVIEW)
             elif not case.final_summary_confirmed:
                 advance_stage(case, WorkflowStage.FINAL_CONFIRMATION)
-        plan = "ready" if gate.allowed else (
-            "blocked" if case.open_blockers() else "awaiting_confirmation"
+        plan = (
+            "ready"
+            if gate.allowed
+            else ("blocked" if case.open_blockers() else "awaiting_confirmation")
         )
         message = self.llm.render_message(case, plan)
         message_id = stable_id("message", f"{event.id}:{plan}")
@@ -116,11 +123,19 @@ class WorkflowService:
         existing_hashes = {document.sha256 for document in case.documents}
         for raw_path in event.attachment_paths:
             path = Path(raw_path)
-            digest = sha256_file(path)
+            try:
+                digest = sha256_file(path)
+            except OSError:
+                digest = hashlib.sha256(f"{event.id}:{path.name}:unavailable".encode()).hexdigest()
             if digest in existing_hashes:
                 continue
-            kind, language, page_count, facts = inspect_pdf(path)
             document_id = stable_id("doc", digest)
+            try:
+                kind, language, page_count, facts = inspect_pdf(path)
+            except (OSError, ValueError, PdfReadError):
+                self._record_unreadable_document(case, event, path, document_id, digest)
+                existing_hashes.add(digest)
+                continue
             if kind == "conference_invitation":
                 for old in case.documents:
                     if old.kind == kind and old.status == DocumentStatus.ACCEPTED_FOR_REVIEW:
@@ -168,3 +183,36 @@ class WorkflowService:
                         provenance_state=ProvenanceState.DEMO_SYNTHETIC,
                     )
                 )
+
+    def _record_unreadable_document(
+        self,
+        case: Case,
+        event: InboundEvent,
+        path: Path,
+        document_id: str,
+        digest: str,
+    ) -> None:
+        case.documents.append(
+            Document(
+                id=document_id,
+                filename=path.name or "unnamed.pdf",
+                kind="unknown",
+                sha256=digest,
+                mime_type="application/pdf",
+                status=DocumentStatus.NEEDS_REPLACEMENT,
+                source_event_id=event.id,
+                path=str(path),
+            )
+        )
+        issue_code = f"UNREADABLE_DOCUMENT_{document_id}"
+        if not any(issue.code == issue_code for issue in case.issues):
+            case.issues.append(
+                Issue(
+                    id=stable_id("issue", issue_code),
+                    code=issue_code,
+                    title="Document could not be read",
+                    detail=f"Please replace {path.name or 'the unnamed PDF'} with a readable PDF.",
+                    severity=IssueSeverity.BLOCKER,
+                    related_document_ids=[document_id],
+                )
+            )

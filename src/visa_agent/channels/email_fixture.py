@@ -10,6 +10,9 @@ from pathlib import Path
 from visa_agent.domain.models import InboundEvent
 
 MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
+MAX_ATTACHMENT_COUNT = 20
+MAX_TOTAL_ATTACHMENT_BYTES = 25 * 1024 * 1024
+MAX_MESSAGE_BYTES = 30 * 1024 * 1024
 
 
 def _attachment_path(document_dir: Path, filename: str, content: bytes) -> Path:
@@ -46,6 +49,8 @@ def parse_email_bytes(
     external_thread_id: str | None = None,
     provider_message_id: str | None = None,
 ) -> InboundEvent:
+    if len(raw) > MAX_MESSAGE_BYTES:
+        raise ValueError(f"Email exceeds {MAX_MESSAGE_BYTES} bytes")
     message = BytesParser(policy=policy.default).parsebytes(raw)
     raw_message_id = provider_message_id or message.get("Message-ID")
     raw_thread_id = external_thread_id or message.get("X-Demo-Thread-ID")
@@ -68,11 +73,19 @@ def parse_email_bytes(
     attachment_paths: list[str] = []
     mime_attachments = list(message.iter_attachments())
     if mime_attachments:
+        if len(mime_attachments) > MAX_ATTACHMENT_COUNT:
+            raise ValueError(f"Email has more than {MAX_ATTACHMENT_COUNT} attachments")
+        total_attachment_bytes = 0
         for attachment in mime_attachments:
             filename = attachment.get_filename()
             content = attachment.get_payload(decode=True)
             if not filename or not isinstance(content, bytes):
                 raise ValueError("Email attachment is missing a filename or payload")
+            total_attachment_bytes += len(content)
+            if total_attachment_bytes > MAX_TOTAL_ATTACHMENT_BYTES:
+                raise ValueError(
+                    f"Email attachments exceed {MAX_TOTAL_ATTACHMENT_BYTES} total bytes"
+                )
             attachment_paths.append(str(_attachment_path(document_dir, filename, content)))
     else:
         attachment_names = [
