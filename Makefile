@@ -1,4 +1,4 @@
-.PHONY: setup demo test lint typecheck stability web clean
+.PHONY: setup demo test lint typecheck stability web start stop clean
 
 setup:
 	uv sync --extra dev
@@ -20,6 +20,12 @@ stability:
 
 web:
 	uv run visa-agent web
+
+start:
+	docker compose up --build --detach
+
+stop:
+	docker compose down
 
 clean:
 	rm -rf demo_output data .pytest_cache .mypy_cache .ruff_cache

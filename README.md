@@ -16,7 +16,22 @@ summary. Only then does deterministic code generate a `READY_FOR_HUMAN_REVIEW` p
 The language model is never the control plane. It may propose schema-bound facts and draft text,
 but it cannot select requirements, mutate workflow stages, clear issues, or authorise delivery.
 
-## Run in under two minutes
+## Easiest path for an interviewer
+
+No Python, API key, Gmail account, or terminal knowledge is required. Install and open
+[Docker Desktop](https://www.docker.com/products/docker-desktop/), then:
+
+- macOS: double-click `START_DEMO.command` (and approve opening it if macOS asks).
+- Windows: double-click `START_DEMO_WINDOWS.bat`.
+
+The launcher builds the app, prepares the complete synthetic case, waits until the health check
+passes, and opens <http://127.0.0.1:8000>. Use the matching `STOP_DEMO` file when finished. See
+[START_HERE.md](START_HERE.md) for the one-page walkthrough and troubleshooting.
+
+The first launch normally takes a few minutes because Docker downloads the base image. Later
+launches reuse it. All data is synthetic and stays inside the local Docker container.
+
+## Developer path
 
 Requirements: `uv` and Python 3.12 (uv installs the project interpreter automatically).
 
@@ -109,6 +124,8 @@ make lint        # Ruff
 make typecheck   # strict mypy
 make stability   # repeated clean runs + concurrent review-console reads
 make web         # local case-review console
+make start       # build and start the complete Docker demo
+make stop        # stop the Docker demo
 make clean       # delete disposable local demo data
 ```
 
