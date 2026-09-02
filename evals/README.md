@@ -34,6 +34,18 @@ Responses API and Structured Outputs. Pin the chosen production snapshot only af
 comparison. Do not choose a flagship model merely by reputation or the cheapest model merely by
 price; select the least expensive configuration that passes every threshold with margin.
 
+The current comparison includes provider-specific adapters rather than assuming that API-format
+compatibility means behavioural equivalence:
+
+- OpenAI `gpt-5.6-luna` as the efficient baseline;
+- OpenAI `gpt-5.6-terra` as the balanced challenger;
+- DeepSeek `deepseek-v4-flash` as the cross-provider cost challenger.
+
+Run DeepSeek with
+`MODEL=deepseek-v4-flash make agent-eval-deepseek`. A missing `DEEPSEEK_API_KEY` fails before any
+provider request. DeepSeek JSON-schema output still passes through the same exact-excerpt, type,
+confidence, conflict, reply, workflow, and delivery guards.
+
 ## Evidence labels
 
 - Contract/fault-injection tests are **automated simulation**.

@@ -10,6 +10,7 @@ import uvicorn
 
 from visa_agent.config import Settings
 from visa_agent.demo import run_demo
+from visa_agent.llm.ports import LLMClient
 
 
 def main() -> None:
@@ -20,6 +21,11 @@ def main() -> None:
     web_parser = subparsers.add_parser("web", help="Open the local review console")
     web_parser.add_argument("--host", default="127.0.0.1")
     web_parser.add_argument("--port", default=8000, type=int)
+    webhook_server_parser = subparsers.add_parser(
+        "webhook-server", help="Run the provider-only webhook gateway"
+    )
+    webhook_server_parser.add_argument("--host", default="127.0.0.1")
+    webhook_server_parser.add_argument("--port", default=8001, type=int)
     gmail_parser = subparsers.add_parser(
         "gmail-auth", help="Authorize and verify a synthetic Gmail sandbox account"
     )
@@ -31,7 +37,14 @@ def main() -> None:
         "inbound-worker", help="Process one batch from the durable inbound channel queue"
     )
     inbound_parser.add_argument("--channel", required=True)
-    inbound_parser.add_argument("--model", default=os.getenv("OPENAI_MODEL"))
+    inbound_parser.add_argument(
+        "--provider",
+        choices=("openai", "deepseek"),
+        default=os.getenv("LLM_PROVIDER", "openai"),
+    )
+    inbound_parser.add_argument(
+        "--model", default=os.getenv("LLM_MODEL") or os.getenv("OPENAI_MODEL")
+    )
     inbound_parser.add_argument("--limit", type=int, default=20)
     whatsapp_parser = subparsers.add_parser(
         "whatsapp-dispatch", help="Send one due WhatsApp outbox batch"
@@ -48,6 +61,8 @@ def main() -> None:
         print(f"Idempotent counts: {result.counts}")
     elif args.command == "web":
         uvicorn.run("visa_agent.web:app", host=args.host, port=args.port, reload=False)
+    elif args.command == "webhook-server":
+        uvicorn.run("visa_agent.public_webhook:app", host=args.host, port=args.port, reload=False)
     elif args.command == "gmail-auth":
         from visa_agent.channels.gmail_auth import build_gmail_service
 
@@ -58,19 +73,33 @@ def main() -> None:
         print(f"Token stored privately at: {args.token}")
     elif args.command == "inbound-worker":
         if not args.model:
-            raise SystemExit("Set --model or OPENAI_MODEL to an evaluated model ID.")
+            raise SystemExit("Set --model or LLM_MODEL to an evaluated model ID.")
         from visa_agent.channels.inbound_worker import InboundEventWorker
         from visa_agent.domain.policy import load_policy
-        from visa_agent.llm.openai_client import OpenAIStructuredLLM
         from visa_agent.storage.sqlite import SQLiteStore
         from visa_agent.workflow.service import WorkflowService
+
+        live_llm: LLMClient
+        if args.provider == "deepseek":
+            from visa_agent.llm.deepseek_client import DeepSeekStructuredLLM
+
+            deepseek_key = os.getenv("DEEPSEEK_API_KEY", "")
+            if not deepseek_key:
+                raise SystemExit("Set DEEPSEEK_API_KEY for the DeepSeek provider.")
+            live_llm = DeepSeekStructuredLLM(args.model, api_key=deepseek_key)
+        else:
+            if not os.getenv("OPENAI_API_KEY"):
+                raise SystemExit("Set OPENAI_API_KEY for the OpenAI provider.")
+            from visa_agent.llm.openai_client import OpenAIStructuredLLM
+
+            live_llm = OpenAIStructuredLLM(args.model)
 
         store = SQLiteStore(settings.database_path)
         try:
             workflow = WorkflowService(
                 store,
                 load_policy(settings.policy_path),
-                OpenAIStructuredLLM(args.model),
+                live_llm,
             )
             inbound_outcomes = InboundEventWorker(
                 store,

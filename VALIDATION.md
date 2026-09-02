@@ -136,6 +136,12 @@ cost separately. Forty-two repository tests pass. No `OPENAI_API_KEY` is present
 call or live-model score is claimed. Remaining: run repeated candidates, set release thresholds, and
 record refusal/partial-output behaviour plus dated cost evidence.
 
+**Preparation run 2 — 2026-09-03:** DeepSeek was added as an explicitly separate candidate adapter,
+not as an OpenAI alias. The adapter uses DeepSeek's Responses JSON Schema format, omits OpenAI-only
+request fields, disables thinking for the narrow extraction comparison, and returns the same strict
+`CasePatch` to the existing mandatory guard. `deepseek-v4-flash` joins Luna and Terra as a candidate,
+but no `DEEPSEEK_API_KEY` is present and no provider call or score is claimed.
+
 ### E-04 — Gmail sandbox
 
 Use a dedicated test account and synthetic applicant only. Exercise OAuth, thread discovery, actual
@@ -170,6 +176,16 @@ fast-ack queue, expiring worker leases, bounded retry/dead-letter states, succes
 redaction, authenticated size-bounded media download with redirects disabled, and explicit one-batch
 inbound/outbound worker commands. Remaining before sandbox: joined test device, exact HTTPS tunnel,
 real signed request/media/reply/status callbacks, evaluated live model, and redacted evidence report.
+
+**Preparation run 2 — 2026-09-03:** a provider-only FastAPI surface and free TryCloudflare launcher
+were added. The public surface contains only health and the Twilio webhook; the review console, case
+API, and pack download return 404. The webhook still fails closed without test credentials. A public
+URL alone is infrastructure preparation, not Twilio sandbox evidence.
+
+**Free gateway smoke run — 2026-09-03:** the launcher created a real random TryCloudflare HTTPS URL
+and reached the local provider gateway. `/health` returned 200, `/` and `/api/cases` returned 404,
+and an unsigned/unconfigured WhatsApp POST returned 503. The tunnel was then stopped. This proves
+the free ingress path and isolation, but no Twilio request or message was involved.
 
 ### E-06 — External usability
 

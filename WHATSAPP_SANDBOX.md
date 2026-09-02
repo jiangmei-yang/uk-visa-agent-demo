@@ -2,7 +2,8 @@
 
 The selected Demo provider is Twilio WhatsApp Sandbox because it supports functional testing without
 a WhatsApp Business Account or registered sender. It remains a provider sandbox, not a production
-deployment.
+deployment. The repository includes a free provider-only TryCloudflare tunnel launcher; the review
+console and case APIs are not exposed by that gateway.
 
 ## Current preparation status
 
@@ -16,13 +17,14 @@ exchange are still required before E-05 is complete.
 
 1. Create a dedicated Twilio test account and activate the WhatsApp testing environment/Sandbox.
 2. Join the Sandbox from a test WhatsApp device using its displayed join phrase.
-3. Expose only the webhook route over a temporary HTTPS tunnel; do not expose the review console.
+3. On macOS, double-click `START_FREE_WEBHOOK_TUNNEL.command`. Copy the exact generated HTTPS URL;
+   the launcher exposes only the provider webhook application, not the review console.
 4. Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`, and the exact public
    `TWILIO_WEBHOOK_PUBLIC_URL` outside Git.
 5. Configure that exact URL as **When a message comes in** and configure a status callback.
 6. Send synthetic text and one synthetic PDF; never use real applicant data.
-7. Process one durable inbound batch with
-   `uv run visa-agent inbound-worker --channel whatsapp_twilio --model <evaluated-model>`.
+7. Process one durable inbound batch with, for example,
+   `uv run visa-agent inbound-worker --channel whatsapp_twilio --provider deepseek --model deepseek-v4-flash`.
 8. Send one due reply batch with `uv run visa-agent whatsapp-dispatch`.
 
 Twilio's current [Sandbox documentation](https://www.twilio.com/docs/whatsapp/sandbox) says it is
@@ -32,6 +34,11 @@ opens a 24-hour customer-service window for free-form replies. The
 [official webhook security guidance](https://www.twilio.com/docs/usage/security) recommends SDK
 signature validation using the exact configured URL, form parameters, signature header, and account
 Auth Token; this is the contract implemented here.
+
+The free tunnel uses Cloudflare's development-only
+[Quick Tunnel](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/trycloudflare/).
+Its random URL changes on restart, so both the Twilio webhook setting and
+`TWILIO_WEBHOOK_PUBLIC_URL` must match the newly printed URL exactly each time.
 
 ## Evidence checklist
 

@@ -63,6 +63,7 @@ No model is selected by reputation. The live comparison begins with:
 
 1. `gpt-5.6-luna` as the efficient/high-volume baseline.
 2. `gpt-5.6-terra` as the balanced capability/cost challenger.
+3. `deepseek-v4-flash` as a cross-provider cost challenger through its own adapter.
 
 The current [OpenAI model guidance](https://developers.openai.com/api/docs/guides/latest-model)
 describes Luna as the cost-sensitive/high-volume option and Terra as the balance of intelligence and
@@ -70,13 +71,19 @@ cost. Both candidates support the Responses API and Structured Outputs according
 [official model comparison](https://developers.openai.com/api/docs/models/compare). Availability is
 still account-dependent and must be confirmed by the sandbox run.
 
+DeepSeek's current official documentation exposes an OpenAI-compatible Responses API and JSON
+Schema output at `https://api.deepseek.com`. The integration remains a separate
+`DeepSeekStructuredLLM`: it omits OpenAI-only storage/safety request fields, disables thinking for
+the narrow extraction comparison, and parses the returned JSON back into the same strict
+`CasePatch`. This is protocol reuse, not a claim that provider behaviour or safety is equivalent.
+
 Run every candidate at least three times on `evals/agent_cases.yaml`. A candidate is eligible only if
 it passes every threshold in `evals/README.md`; quality and safety are gates, not weighted scores.
 Among passing configurations, choose the lowest measured cost with acceptable p95 latency, then pin
 an evaluated snapshot where the provider offers one. Re-run the same corpus before changing model,
 prompt, schema, reasoning settings, SDK, or guard rules.
 
-The model ID is deliberately mandatory in `OpenAIStructuredLLM`; there is no hidden default that can
+The model ID is deliberately mandatory in every live adapter; there is no hidden default that can
 change behaviour without a review decision.
 
 ## Stability controls

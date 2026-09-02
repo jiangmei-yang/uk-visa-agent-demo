@@ -124,8 +124,10 @@ make test        # unit, contract, adversarial, golden and integration tests
 make lint        # Ruff
 make typecheck   # strict mypy
 make stability   # repeated clean runs + concurrent review-console reads
-MODEL=<model-id> make agent-eval-live  # optional paid synthetic model evaluation
+MODEL=<model-id> make agent-eval-live  # optional OpenAI provider evaluation
+MODEL=deepseek-v4-flash make agent-eval-deepseek  # optional DeepSeek evaluation
 make web         # local case-review console
+make webhook     # provider-only local webhook gateway on port 8001
 make start       # build and start the complete Docker demo
 make stop        # stop the Docker demo
 make clean       # delete disposable local demo data
@@ -138,6 +140,10 @@ Install optional provider SDKs with `uv sync --extra dev --extra live`.
 - `OpenAIStructuredLLM` uses a Pydantic schema through the Responses API. The model ID must be chosen
   explicitly after evaluation. It returns proposals only; the workflow grounds, validates, and
   applies them behind a mandatory bounded guard.
+- `DeepSeekStructuredLLM` is a separate adapter for DeepSeek's OpenAI-compatible Responses API. It
+  requests the same JSON schema but does not send OpenAI-only request fields. Compatibility is not
+  treated as equivalent behaviour: `deepseek-v4-flash` must pass the same repeated corpus and guard
+  thresholds before it can be selected.
 - `GmailAdapter` accepts an OAuth-authenticated Gmail API service, polls a configured query, preserves
   thread headers, downloads raw MIME/attachments, and can send replies/ZIP attachments through the
   transactional outbox. Follow [GMAIL_SANDBOX.md](GMAIL_SANDBOX.md) for the dedicated synthetic test
@@ -147,6 +153,10 @@ Install optional provider SDKs with `uv sync --extra dev --extra live`.
   Provider commands process one explicit batch at a time, so no external message is sent merely by
   launching the credential-free Demo. Follow
   [WHATSAPP_SANDBOX.md](WHATSAPP_SANDBOX.md); local contracts are not real-provider evidence.
+
+`START_FREE_WEBHOOK_TUNNEL.command` starts a free TryCloudflare HTTPS URL backed by a separate
+provider-only app. It exposes `/health` and the Twilio webhook—not the review console, case API, or
+pack download. The webhook remains fail-closed until Twilio test credentials are supplied.
 
 Live mode is intentionally not part of the default assessment path. Email and WhatsApp sandbox
 claims remain withheld until their separate provider experiments pass.
@@ -173,7 +183,7 @@ treated as core blockers. Providing documents does not guarantee a successful ap
 src/visa_agent/domain/      models, state machine, rules, gate
 src/visa_agent/workflow/    event orchestration
 src/visa_agent/channels/    fixture and Gmail boundaries
-src/visa_agent/llm/         deterministic and OpenAI clients
+src/visa_agent/llm/         deterministic, OpenAI, and DeepSeek clients
 src/visa_agent/documents/   synthetic files and PDF evidence extraction
 src/visa_agent/delivery/    deterministic review pack
 src/visa_agent/storage/     SQLite, idempotency, outbox
