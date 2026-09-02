@@ -122,9 +122,9 @@ def _walkthrough() -> str:
     return (
         """
     <section class="walkthrough" id="walkthrough" aria-labelledby="walkthrough-title">
-      <div class="section-heading"><div><p class="kicker">Start here · two-minute walkthrough</p>
-      <h2 id="walkthrough-title">From first submission to review pack</h2></div>
-      <p>Select each email to see what the client sent, what the service decided, and why delivery stopped or continued.</p></div>
+      <div class="section-heading"><div><span class="section-number">01</span>
+      <h2 id="walkthrough-title">See how the adviser handled the case</h2></div>
+      <p>Open each message to follow the client’s documents, the adviser’s response, and the safety decision.</p></div>
       <div class="tabs" role="tablist" aria-label="Three-email case walkthrough">
         <button id="tab-intake" role="tab" aria-selected="true" aria-controls="panel-intake" data-panel="intake"><b>1</b><span><strong>Initial email</strong><small>Paused safely</small></span></button>
         <button id="tab-correction" role="tab" aria-selected="false" aria-controls="panel-correction" data-panel="correction" tabindex="-1"><b>2</b><span><strong>Corrections</strong><small>Awaiting confirmation</small></span></button>
@@ -133,7 +133,7 @@ def _walkthrough() -> str:
       <div id="panel-intake" class="panel" role="tabpanel" aria-labelledby="tab-intake">
         <article class="email"><header><span>LC</span><div><strong>Lin Chen</strong><small>To: Visa preparation · 1 Sep, 09:00</small></div></header><h3>Standard Visitor documents for London conference</h3>
         <blockquote>“My university will pay for the flight and hotel, and I will pay my personal expenses.”</blockquote><p class="attachments"><strong>7 attachments</strong><span>Passport.pdf</span><span>Invitation_original.pdf</span><span>+5 more</span></p></article>
-        <article class="decision warning"><header><div><p class="kicker">Service decision</p><h3>Pack paused — two corrections required</h3></div>"""
+        <article class="decision warning"><header><div><p class="decision-label">Adviser’s decision</p><h3>Pack paused — two corrections required</h3></div>"""
         + badge("Withheld", "warning")
         + """</header>
         <ul class="blockers"><li><strong>Date conflict</strong><span>Invitation ended after the stated trip.</span></li><li><strong>Translation missing</strong><span>A Chinese supporting page had no certified translation.</span></li></ul>
@@ -142,7 +142,7 @@ def _walkthrough() -> str:
       <div id="panel-correction" class="panel" role="tabpanel" aria-labelledby="tab-correction" hidden>
         <article class="email"><header><span>LC</span><div><strong>Lin Chen</strong><small>To: Visa preparation · 1 Sep, 11:00</small></div></header><h3>Re: Standard Visitor documents for London conference</h3>
         <blockquote>“The organiser corrected the invitation… I have also attached a complete certified translation.”</blockquote><p class="attachments"><strong>2 replacements</strong><span>Invitation_corrected.pdf</span><span>Certified_translation.pdf</span></p></article>
-        <article class="decision"><header><div><p class="kicker">Service decision</p><h3>Documents clear — confirmation still required</h3></div>"""
+        <article class="decision"><header><div><p class="decision-label">Adviser’s decision</p><h3>Documents clear — confirmation still required</h3></div>"""
         + badge("Waiting")
         + """</header>
         <div class="diff"><div><small>Before</small><strong>Event ends 18 Sep</strong><span>Outside the trip</span></div><b aria-hidden="true">→</b><div><small>After</small><strong>Event ends 14 Sep</strong><span>Within the trip</span></div></div>
@@ -151,7 +151,7 @@ def _walkthrough() -> str:
       <div id="panel-confirmation" class="panel" role="tabpanel" aria-labelledby="tab-confirmation" hidden>
         <article class="email"><header><span>LC</span><div><strong>Lin Chen</strong><small>To: Visa preparation · 1 Sep, 13:00</small></div></header><h3>Re: Standard Visitor documents for London conference</h3>
         <blockquote>“I reviewed the final facts summary and the listed source documents. I CONFIRM THE FINAL SUMMARY.”</blockquote><p class="attachments"><strong>No attachments</strong> Explicit confirmation recorded</p></article>
-        <article class="decision success"><header><div><p class="kicker">Service decision</p><h3>All eight checks passed — pack released</h3></div>"""
+        <article class="decision success"><header><div><p class="decision-label">Adviser’s decision</p><h3>All eight checks passed — pack released</h3></div>"""
         + badge("Released", "success")
         + """</header>
         <ul class="proof-list"><li><b>8/8</b> delivery checks</li><li><b>0</b> open blockers</li><li><b>1</b> human confirmation</li></ul>
@@ -167,7 +167,6 @@ def render_case(case: Case, gate: GateResult) -> str:
     ready = gate.allowed and bool(case.delivery_path)
     active_docs = sum(doc.status.value != "SUPERSEDED" for doc in case.documents)
     superseded = len(case.documents) - active_docs
-    active_evidence = sum(not item.superseded for item in case.evidence)
     pack_size, pack_hash = _pack_meta(case)
     download = (
         f'<a class="button primary" data-download href="/api/cases/{esc(case.id)}/pack">Download verified pack</a>'
@@ -179,7 +178,6 @@ def render_case(case: Case, gate: GateResult) -> str:
         if ready
         else "Delivery is paused until every safety check passes"
     )
-    gate_count = sum(gate.checks.values())
     manifest = "".join(
         f'<li><span aria-hidden="true">&check;</span>{label}</li>'
         for label in (
@@ -194,20 +192,20 @@ def render_case(case: Case, gate: GateResult) -> str:
     )
     return f"""
     <a class="skip-link" href="#main-content">Skip to case</a>
-    <header class="topbar"><a class="brand" href="/"><i aria-hidden="true">VP</i>Visa preparation Demo</a><span>Synthetic case · no legal advice</span></header>
+    <header class="topbar"><a class="brand" href="/"><i aria-hidden="true">VP</i>Visa preparation</a><span>Demonstration case · not legal advice</span></header>
     <main id="main-content">
-      <section class="hero" aria-labelledby="case-title"><div><p class="kicker">Featured assessment case</p><div class="title"><h1 id="case-title">{esc(profile.full_name or case.id)}</h1>{badge("Ready for human adviser review", "success") if ready else badge("Action required", "warning")}</div>
+      <section class="hero" aria-labelledby="case-title"><div><p class="case-label">Application review</p><div class="title"><h1 id="case-title">{esc(profile.full_name or case.id)}</h1>{badge("Ready for adviser review", "success") if ready else badge("Action required", "warning")}</div>
       <p>Standard Visitor · {esc(humanise(profile.visit_purpose or "visit"))} · applying from {esc(profile.application_country or "Unknown")}</p></div><div class="hero-action">{download}<small id="download-status" aria-live="polite"></small></div></section>
-      <section class="outcome" aria-labelledby="outcome-title"><div><p class="kicker">Current outcome</p><h2 id="outcome-title">{outcome}</h2><p>The service stopped on two evidence problems, accepted corrected files, then waited for Lin’s exact confirmation before releasing anything.</p></div>
-      <dl class="proof-strip"><div><dt>{gate_count}/8</dt><dd>checks passed</dd></div><div><dt>{active_evidence}</dt><dd>source-linked facts</dd></div><div><dt>{active_docs}+{superseded}</dt><dd>active + superseded</dd></div><div><dt>Stable</dt><dd>duplicate replay</dd></div></dl></section>
+      <section class="outcome" aria-labelledby="outcome-title"><div class="adviser-mark" aria-hidden="true">A</div><div class="outcome-copy"><p class="case-label">Current outcome</p><h2 id="outcome-title">{outcome}</h2><p>The adviser stopped on two evidence problems, accepted corrected files, and waited for Lin’s exact confirmation before releasing the pack.</p></div>
+      <aside class="next-step"><strong>What happens next</strong><p>A human adviser reviews the organised evidence before anything is submitted.</p><a href="#walkthrough">Follow the three-message journey</a></aside></section>
       {_walkthrough()}
-      <section class="pack-section" id="pack" aria-labelledby="pack-title"><div class="section-heading"><div><p class="kicker">Final delivery</p><h2 id="pack-title">What the adviser receives</h2></div><p>Generated only from confirmed, source-linked case data. It organises evidence; it does not submit or decide the application.</p></div>
+      <section class="pack-section" id="pack" aria-labelledby="pack-title"><div class="section-heading"><div><span class="section-number">02</span><h2 id="pack-title">Open the final review pack</h2></div><p>Built only from confirmed, source-linked case data. It organises evidence; it does not submit or decide the application.</p></div>
       <div class="pack-layout"><div class="pack-card"><b>ZIP</b><div><h3>Application review pack</h3><p>{pack_size} · SHA-256 <code>{pack_hash}</code></p></div>{download}</div><ul class="manifest">{manifest}<li><span aria-hidden="true">&check;</span>{active_docs} active supporting documents</li></ul></div></section>
-      <section class="details" aria-labelledby="details-title"><div class="section-heading"><div><p class="kicker">Prepared case</p><h2 id="details-title">Corrections, trip facts, and files</h2></div><p>The original replaced evidence stays visible for traceability.</p></div>
+      <section class="details" aria-labelledby="details-title"><div class="section-heading"><div><span class="section-number">03</span><h2 id="details-title">Review the prepared case</h2></div><p>Corrections, confirmed trip facts, and the original replaced evidence remain visible.</p></div>
       <div class="details-grid"><div><h3>Corrections handled</h3><ul class="corrections">{_corrections(case)}</ul></div><aside class="snapshot"><h3>Confirmed trip</h3><dl>
       <div><dt>Travel dates</dt><dd>{format_date(profile.planned_arrival_date)} – {format_date(profile.planned_departure_date)}</dd></div><div><dt>Purpose</dt><dd>{esc(humanise(profile.visit_purpose or "Not confirmed"))}</dd></div><div><dt>Accommodation</dt><dd>{esc(profile.uk_accommodation or "Not confirmed")}</dd></div><div><dt>Estimated cost</dt><dd>£{profile.estimated_trip_cost_gbp or 0:,.0f}</dd></div><div><dt>Funding</dt><dd>{esc(humanise(profile.funding_source or "Not confirmed"))}</dd></div></dl></aside></div>
       <div class="checklist"><h3>Application checklist</h3><ul>{_requirements(case)}</ul></div><div class="documents"><div class="subheading"><h3>Document register</h3><span>{active_docs} active · {superseded} superseded</span></div><div class="table-wrap" role="region" aria-label="Document register; scroll horizontally for all columns" tabindex="0"><table class="doc-table"><thead><tr><th>Document</th><th>Status</th><th>Note</th></tr></thead><tbody>{_document_rows(case)}</tbody></table></div></div></section>
-      <section class="audit" id="audit"><details><summary><span><span class="kicker">Engineering evidence</span><strong>Inspect why delivery was allowed</strong></span><b aria-hidden="true">⌄</b></summary><div class="audit-body"><p>Eight deterministic checks—not model confidence—control delivery. Synthetic data, policy, provenance, lifecycle, and hashes are preserved here.</p><dl class="audit-meta"><div><dt>Case ID</dt><dd><code>{esc(case.id)}</code></dd></div><div><dt>Policy</dt><dd>{esc(case.policy_version)}</dd></div><div><dt>Workflow</dt><dd>{esc(humanise(case.stage.value))}</dd></div></dl>
+      <section class="audit" id="audit"><details><summary><span><span class="case-label">For technical reviewers</span><strong>See why the system allowed delivery</strong></span><b aria-hidden="true">⌄</b></summary><div class="audit-body"><p>Eight deterministic checks—not model confidence—control delivery. Synthetic data, policy, provenance, lifecycle, and hashes are preserved here.</p><dl class="audit-meta"><div><dt>Case ID</dt><dd><code>{esc(case.id)}</code></dd></div><div><dt>Policy</dt><dd>{esc(case.policy_version)}</dd></div><div><dt>Workflow</dt><dd>{esc(humanise(case.stage.value))}</dd></div></dl>
       <div class="audit-grid"><div class="gate"><h3>Delivery gate</h3><ul>{_gate_audit(gate)}</ul></div><div class="audit-panel"><h3>Active evidence ledger</h3><div class="table-wrap" role="region" aria-label="Evidence ledger; scroll horizontally for all columns" tabindex="0"><table><thead><tr><th>Fact</th><th>Value</th><th>Source</th><th>Page</th><th>Confidence</th></tr></thead><tbody>{_evidence_audit(case)}</tbody></table></div></div></div><div class="audit-panel"><h3>Technical document register</h3><div class="table-wrap" role="region" aria-label="Technical document register; scroll horizontally for all columns" tabindex="0"><table><thead><tr><th>File</th><th>Lifecycle</th><th>Language</th><th>SHA-256</th></tr></thead><tbody>{_document_rows(case, True)}</tbody></table></div></div></div></details></section>
       <footer>This synthetic service prepares materials for a human adviser. It does not give legal advice, decide eligibility, submit an application, or predict an outcome.</footer>
     </main>"""
@@ -216,13 +214,13 @@ def render_case(case: Case, gate: GateResult) -> str:
 BASE_CSS = """
 :root {
   color-scheme: light;
-  --canvas: oklch(.972 .007 252);
+  --canvas: oklch(.975 .01 88);
   --paper: oklch(1 0 0);
   --ink: oklch(.235 .025 252);
   --muted: oklch(.46 .024 252);
-  --quiet: oklch(.947 .01 252);
-  --line: oklch(.875 .014 252);
-  --line-strong: oklch(.79 .02 252);
+  --quiet: oklch(.95 .012 88);
+  --line: oklch(.875 .015 82);
+  --line-strong: oklch(.79 .025 82);
   --primary: oklch(.43 .13 252);
   --primary-dark: oklch(.33 .105 252);
   --primary-soft: oklch(.96 .025 252);
@@ -241,14 +239,16 @@ body { margin: 0; color: var(--ink); background: var(--canvas); font: 15px/1.55 
 a { color: inherit; }
 button { font: inherit; }
 a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex="0"]:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
-.skip-link { position: fixed; z-index: 9; top: 10px; left: 10px; padding: 10px 14px; color: white; background: var(--primary-dark); transform: translateY(-160%); }
+.skip-link { min-height: 44px; position: fixed; z-index: 9; top: 10px; left: 10px; display: inline-flex; align-items: center; padding: 10px 14px; color: white; background: var(--primary-dark); transform: translateY(-160%); }
 .skip-link:focus { transform: none; }
 .topbar { height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 max(28px, calc((100vw - 1080px) / 2)); border-bottom: 1px solid var(--line); background: color-mix(in oklch, var(--paper) 94%, transparent); }
 .topbar > span { color: var(--muted); font-size: 12px; }
-.brand { display: flex; align-items: center; gap: 11px; color: var(--primary-dark); text-decoration: none; font-weight: 760; letter-spacing: -.012em; }
+.brand { min-height: 44px; display: flex; align-items: center; gap: 11px; color: var(--primary-dark); text-decoration: none; font-weight: 760; letter-spacing: -.012em; }
 .brand i { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; color: white; background: var(--primary-dark); font-size: 11px; font-style: normal; letter-spacing: 0; }
 main { width: min(100%, 1080px); margin: 0 auto; padding: 30px 28px 56px; }
-.kicker { margin: 0 0 4px; color: var(--muted); font-size: 12px; font-weight: 680; }
+.kicker, .case-label, .decision-label { margin: 0 0 5px; color: var(--muted); font-size: 12px; font-weight: 680; }
+.case-label { letter-spacing: .01em; }
+.decision-label { color: color-mix(in oklch, currentColor 68%, var(--muted)); }
 .hero { display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: 2px 0 22px; }
 .hero > div > p:last-child { margin: 6px 0 0; color: var(--muted); }
 .title { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
@@ -267,15 +267,20 @@ p { text-wrap: pretty; }
 .badge i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .badge--success { color: var(--success); background: var(--success-soft); }
 .badge--warning { color: var(--warning); background: var(--warning-soft); }
-.outcome { display: grid; grid-template-columns: minmax(0, 1fr) minmax(350px, .75fr); align-items: center; gap: 32px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
-.outcome h2 { font-size: 19px; }
-.outcome > div > p:last-child { max-width: 62ch; margin: 5px 0 0; color: var(--muted); font-size: 14px; }
-.proof-strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 22px; margin: 0; }
-.proof-strip div { min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
-.proof-strip dt { font-size: 13px; font-weight: 760; font-variant-numeric: tabular-nums; }
-.proof-strip dd { margin: 0; color: var(--muted); font-size: 11px; white-space: nowrap; }
+.outcome { display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(240px, .62fr); align-items: start; gap: 18px; padding: 24px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); box-shadow: 0 8px 26px color-mix(in oklch, var(--primary-dark) 5%, transparent); }
+.adviser-mark { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: white; background: var(--primary-dark); font-size: 13px; font-weight: 760; }
+.outcome h2 { max-width: 27ch; font-size: 19px; }
+.outcome-copy { min-width: 0; }
+.outcome-copy > p:last-child { max-width: 60ch; margin: 7px 0 0; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.next-step { padding-left: 20px; border-left: 1px solid var(--line); }
+.next-step strong { font-size: 13px; }
+.next-step p { margin: 5px 0 8px; color: var(--muted); font-size: 12px; }
+.next-step a { min-height: 44px; display: inline-flex; align-items: center; color: var(--primary-dark); font-size: 12px; font-weight: 720; text-underline-offset: 3px; }
 .walkthrough, .pack-section, .details, .audit { padding: 38px 0; border-bottom: 1px solid var(--line); }
 .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 28px; margin-bottom: 17px; }
+.section-heading > div { min-width: 0; display: flex; align-items: baseline; gap: 12px; }
+.section-heading h2 { min-width: 0; overflow-wrap: anywhere; }
+.section-number { color: var(--primary); font: 700 11px/1 var(--mono); }
 .section-heading > p { max-width: 52ch; margin: 0; color: var(--muted); font-size: 13px; }
 .tabs { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
 .tabs::before { content: ""; position: absolute; z-index: 0; top: 23px; left: 15%; right: 15%; height: 1px; background: var(--line-strong); }
@@ -315,7 +320,7 @@ p { text-wrap: pretty; }
 .proof-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
 .proof-list li { padding: 10px; border-radius: 7px; background: color-mix(in oklch, var(--paper) 78%, transparent); font-size: 11px; }
 .proof-list b { display: block; color: var(--success); font-size: 18px; }
-.text-link { color: var(--primary-dark); font-weight: 710; }
+.text-link { min-height: 44px; display: inline-flex; align-items: center; color: var(--primary-dark); font-weight: 710; text-underline-offset: 3px; }
 .pack-layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr); gap: 28px; }
 .pack-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
 .pack-card > b { width: 46px; height: 54px; display: grid; place-items: center; border-radius: 6px; color: white; background: var(--primary-dark); font-size: 11px; }
@@ -368,7 +373,8 @@ details[open] summary > b { transform: rotate(180deg); }
 .audit-dot.fail { background: var(--danger); }
 footer { padding-top: 22px; color: var(--muted); font-size: 12px; }
 @media (max-width: 900px) {
-  .outcome { grid-template-columns: 1fr; }
+  .outcome { grid-template-columns: 44px minmax(0, 1fr); }
+  .next-step { grid-column: 2; padding: 14px 0 0; border-top: 1px solid var(--line); border-left: 0; }
   .panel { grid-template-columns: 1fr; }
   .decision { border-left: 0; border-top: 1px solid var(--line); }
   .pack-layout, .details-grid, .audit-grid { grid-template-columns: 1fr; }
@@ -381,14 +387,17 @@ footer { padding-top: 22px; color: var(--muted); font-size: 12px; }
   .topbar > span { display: none; }
   main { padding: 24px 18px 42px; }
   .hero, .section-heading { align-items: start; flex-direction: column; }
+  .section-heading > div { gap: 9px; }
   .hero-action, .hero-action .button { width: 100%; }
   .hero-action { justify-items: stretch; }
   .title { align-items: start; flex-direction: column; }
   h1 { font-size: 27px; }
   h2 { font-size: 21px; }
   .outcome { padding: 18px; }
-  .proof-strip { grid-template-columns: repeat(2, 1fr); }
-  .proof-strip dd { font-size: 11px; }
+  .adviser-mark { width: 38px; height: 38px; }
+  .outcome { grid-template-columns: 38px minmax(0, 1fr); gap: 12px; }
+  .outcome h2 { font-size: 18px; }
+  .next-step { grid-column: 1 / -1; }
   .walkthrough, .pack-section, .details, .audit { padding: 34px 0; }
   .tabs { grid-template-columns: 1fr; gap: 4px; }
   .tabs::before { top: 18px; bottom: 18px; left: 27px; right: auto; width: 1px; height: auto; }

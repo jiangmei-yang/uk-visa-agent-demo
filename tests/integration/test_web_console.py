@@ -40,7 +40,7 @@ def test_review_console_and_pack_download(tmp_path: Path) -> None:
     assert page.status_code == 200
     body = page.body.decode("utf-8")
     assert "The application pack is ready for adviser review" in body
-    assert "From first submission to review pack" in body
+    assert "See how the adviser handled the case" in body
     assert "Service response:" in body
     assert body.index("Current outcome") < body.index("Delivery gate")
     assert "<details>" in body
