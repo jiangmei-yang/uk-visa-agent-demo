@@ -38,10 +38,12 @@ banners, and status displays that rely on colour alone.
 
 ## Design Principles
 
-- Put evidence and blockers before generated prose.
-- Make the deterministic gate inspectable at a glance.
+- Put the current outcome and the next human action before implementation detail.
+- Show the email journey as a sequence of received evidence, pauses, corrections, and confirmation.
+- Explain evidence and blockers in applicant-facing language before exposing rule identifiers.
+- Make readiness understandable at a glance and keep the raw deterministic gate available on demand.
 - Distinguish synthetic, confirmed, unresolved, and stale data explicitly.
-- Keep the interface dense enough for review work while preserving a clear reading order.
+- Use progressive disclosure so evaluators can understand the case before inspecting technical proof.
 - Treat every finalisation action as consequential and show why it is or is not available.
 
 ## Accessibility & Inclusion

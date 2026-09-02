@@ -48,15 +48,30 @@ monospace stack.
 
 ## Layout
 
-The desktop console uses a 248px case rail plus a flexible detail column. At 820px the rail becomes
-a horizontal case summary and tables gain deliberate horizontal overflow. Main content is capped at
-1440px; prose stays under 72ch.
+The desktop workspace uses a 220px navigation rail plus one continuous case canvas. The reading
+order is fixed: current outcome and primary action, email journey, corrections and checklist,
+documents, then collapsed technical audit details. At 760px the rail becomes a compact product bar,
+the outcome and preparation layouts stack, and technical tables gain deliberate local overflow.
+Main content is capped at 1180px; prose stays under 72ch.
 
 ## Components
 
-Use flat, bordered sections with 12px radii and no decorative shadow. State badges always combine a
-label with a shape or icon. Tables keep headers visible, hashes wrap or truncate with accessible full
-text, and blocker panels use a full tinted background rather than a coloured side stripe.
+Use a continuous white canvas separated by rules instead of a dashboard of cards. The current
+outcome may use one quiet tinted surface; state badges always combine a label with a shape. The email
+journey uses a chronological spine and service-response rows. Applicant-facing document tables show
+plain-language lifecycle states. Rule identifiers, confidence values, and hashes live inside a
+native disclosure section, where tables preserve deliberate overflow and accessible full text.
+
+## Interaction model
+
+- The application-pack download is the only primary action on the page.
+- Section navigation uses stable anchors and remains visible while reviewing the case.
+- The default view answers what happened, what changed, and what is ready without requiring domain
+  or engineering vocabulary.
+- Opening audit details reveals the deterministic gate, provenance ledger, policy version, and
+  document hashes without navigating away or interrupting the task with a modal.
+- Technical evidence remains present in the DOM and test contract but is not part of the initial
+  cognitive load.
 
 ## Motion
 

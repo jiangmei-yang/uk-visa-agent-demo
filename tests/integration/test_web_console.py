@@ -21,6 +21,11 @@ def test_review_console_and_pack_download(tmp_path: Path) -> None:
         download = executor.submit(web.get_pack, result.case.id).result()
     assert page.status_code == 200
     body = page.body.decode("utf-8")
+    assert "The application pack is ready for adviser review" in body
+    assert "From first submission to review pack" in body
+    assert "Service response:" in body
+    assert body.index("Current outcome") < body.index("Delivery gate")
+    assert "<details>" in body
     assert "Delivery gate" in body
     assert "Active evidence ledger" in body
     assert download.media_type == "application/zip"
