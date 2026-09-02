@@ -24,6 +24,8 @@ checks, persistence, outbound side effects, and pack generation.
   send the same pending row.
 - Retryable and permanent provider failures have distinct persisted states; retries are finite and
   use exponential backoff.
+- A claimed send with no recorded result is reconciled by deterministic RFC Message-ID; a definite
+  no-match becomes `AMBIGUOUS` and cannot be retried without an explicit operator decision.
 
 ## Failure behaviour
 
@@ -36,7 +38,10 @@ checks, persistence, outbound side effects, and pack generation.
 | Duplicate event | Return existing state without a new outbox row |
 | Channel transient failure | Persist `RETRY`, increment attempts, and use finite exponential backoff |
 | Channel permanent failure | Persist `FAILED`, stop automatic retry, and expose the failure |
-| Worker stops after claiming | Leave `SENDING` as an ambiguous state for reconciliation; never silently resend |
+| Worker stops after claiming | Leave `SENDING` for provider reconciliation; never silently resend |
+| Reconciliation finds provider copy | Mark `SENT` using the provider message ID without resending |
+| Reconciliation finds no provider copy | Mark `AMBIGUOUS`; require an explicit operator retry decision |
+| Inbound email cannot be parsed | Store one redacted failure record by provider ID; do not mutate a case |
 | Policy stale | Continue intake but block the delivery gate |
 | Unsupported/sensitive case | Move to `HUMAN_REVIEW_REQUIRED` |
 

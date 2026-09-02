@@ -33,6 +33,10 @@ class ReplySender(Protocol):
     def send(self, request: ReplyRequest) -> str: ...
 
 
+class ReconciliableReplySender(ReplySender, Protocol):
+    def find_sent_message(self, rfc_message_id: str) -> str | None: ...
+
+
 @dataclass(frozen=True)
 class DispatchOutcome:
     outbox_id: str
@@ -96,6 +100,38 @@ class OutboxDispatcher:
                 outcomes.append(
                     DispatchOutcome(outbox_id, "SENT", provider_message_id=provider_message_id)
                 )
+        return outcomes
+
+    def reconcile_sending(
+        self,
+        sender: ReconciliableReplySender,
+        now: datetime,
+        limit: int = 20,
+    ) -> list[DispatchOutcome]:
+        outcomes: list[DispatchOutcome] = []
+        for row in self.store.list_sending_outbox(limit):
+            outbox_id = str(row["id"])
+            rfc_message_id = f"<{outbox_id}@visa-agent.local>"
+            try:
+                provider_message_id = sender.find_sent_message(rfc_message_id)
+            except TransientChannelError:
+                outcomes.append(DispatchOutcome(outbox_id, "SENDING"))
+                continue
+            except Exception as error:
+                self.store.mark_outbox_ambiguous(outbox_id, _safe_error(error))
+                outcomes.append(DispatchOutcome(outbox_id, "AMBIGUOUS"))
+                continue
+            if provider_message_id:
+                self.store.mark_outbox_sent(outbox_id, provider_message_id, now)
+                outcomes.append(
+                    DispatchOutcome(outbox_id, "SENT", provider_message_id=provider_message_id)
+                )
+            else:
+                self.store.mark_outbox_ambiguous(
+                    outbox_id,
+                    "No matching provider message was found; manual retry approval is required.",
+                )
+                outcomes.append(DispatchOutcome(outbox_id, "AMBIGUOUS"))
         return outcomes
 
     def _request_for(self, row: dict[str, object]) -> ReplyRequest:

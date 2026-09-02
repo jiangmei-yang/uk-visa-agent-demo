@@ -186,6 +186,23 @@ class SQLiteStore:
                 (event_id, case_id),
             )
 
+    def record_inbound_failure(
+        self,
+        *,
+        event_id: str,
+        thread_id: str,
+        reason_code: str,
+        detail: str,
+        retryable: bool,
+    ) -> None:
+        with self.connection:
+            self.connection.execute(
+                """INSERT OR IGNORE INTO inbound_failures(
+                       id, case_id, thread_id, reason_code, detail, retryable
+                   ) VALUES (?, NULL, ?, ?, ?, ?)""",
+                (event_id, thread_id, reason_code, detail, int(retryable)),
+            )
+
     def list_inbound_failures(self) -> list[dict[str, Any]]:
         rows = self.connection.execute(
             """SELECT id, case_id, thread_id, reason_code, detail, retryable, created_at
@@ -268,3 +285,31 @@ class SQLiteStore:
                    WHERE id = ? AND status = 'SENDING'""",
                 (error, outbox_id),
             )
+
+    def list_sending_outbox(self, limit: int = 20) -> list[dict[str, Any]]:
+        rows = self.connection.execute(
+            """SELECT id, case_id, event_id, message_type, payload, status, attempt_count,
+                      next_attempt_at, last_error, sent_at, provider_message_id, created_at
+               FROM outbox WHERE status = 'SENDING' ORDER BY created_at, id LIMIT ?""",
+            (limit,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+    def mark_outbox_ambiguous(self, outbox_id: str, detail: str) -> None:
+        with self.connection:
+            self.connection.execute(
+                """UPDATE outbox SET status = 'AMBIGUOUS', last_error = ?
+                   WHERE id = ? AND status = 'SENDING'""",
+                (detail, outbox_id),
+            )
+
+    def retry_ambiguous_outbox(self, outbox_id: str, next_attempt_at: datetime) -> None:
+        with self.connection:
+            cursor = self.connection.execute(
+                """UPDATE outbox
+                   SET status = 'RETRY', next_attempt_at = ?, last_error = NULL
+                   WHERE id = ? AND status = 'AMBIGUOUS'""",
+                (next_attempt_at.isoformat(), outbox_id),
+            )
+            if cursor.rowcount != 1:
+                raise ValueError("Only an AMBIGUOUS outbox row can be manually retried")

@@ -7,6 +7,8 @@ import pytest
 
 from visa_agent.channels import email_fixture
 from visa_agent.channels.email_fixture import parse_email_bytes, parse_eml
+from visa_agent.channels.email_ingestion import EmailIngestionBoundary
+from visa_agent.storage.sqlite import SQLiteStore
 
 
 def test_fixture_preserves_thread_and_provider_id(tmp_path: Path) -> None:
@@ -133,3 +135,28 @@ def test_mime_parser_limits_attachment_count_and_total_message_size(
     monkeypatch.setattr(email_fixture, "MAX_MESSAGE_BYTES", len(raw) - 1)
     with pytest.raises(ValueError, match="Email exceeds"):
         parse_email_bytes(raw, tmp_path)
+
+
+def test_ingestion_boundary_persists_redacted_transport_failure_once(tmp_path: Path) -> None:
+    store = SQLiteStore(tmp_path / "visa.db")
+    boundary = EmailIngestionBoundary(store, tmp_path / "attachments")
+    raw = b"From: applicant@example.test\r\nDate: invalid\r\n\r\nprivate body"
+    try:
+        first = boundary.ingest(
+            raw,
+            provider_message_id="provider-bad-1",
+            provider_thread_id="provider-thread-1",
+        )
+        second = boundary.ingest(
+            raw,
+            provider_message_id="provider-bad-1",
+            provider_thread_id="provider-thread-1",
+        )
+        assert first.failure_code == second.failure_code == "MALFORMED_EMAIL"
+        failures = store.list_inbound_failures()
+        assert len(failures) == 1
+        assert failures[0]["case_id"] is None
+        assert failures[0]["retryable"] == 0
+        assert "private body" not in failures[0]["detail"]
+    finally:
+        store.close()

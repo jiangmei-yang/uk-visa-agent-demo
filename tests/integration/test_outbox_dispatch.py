@@ -15,13 +15,25 @@ from visa_agent.storage.sqlite import SQLiteStore
 
 
 class FakeSender:
-    def __init__(self, outcomes: list[str | Exception]) -> None:
+    def __init__(
+        self,
+        outcomes: list[str | Exception],
+        find_outcomes: list[str | None | Exception] | None = None,
+    ) -> None:
         self.outcomes = outcomes
+        self.find_outcomes = find_outcomes or []
         self.requests: list[ReplyRequest] = []
 
     def send(self, request: ReplyRequest) -> str:
         self.requests.append(request)
         outcome = self.outcomes.pop(0)
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+    def find_sent_message(self, rfc_message_id: str) -> str | None:
+        assert rfc_message_id.startswith("<out-")
+        outcome = self.find_outcomes.pop(0)
         if isinstance(outcome, Exception):
             raise outcome
         return outcome
@@ -133,3 +145,51 @@ def test_claimed_sending_message_is_not_claimed_by_another_worker(tmp_path: Path
     finally:
         first_store.close()
         second_store.close()
+
+
+def test_ambiguous_send_is_reconciled_or_requires_manual_retry(tmp_path: Path) -> None:
+    found_store = _demo_store(tmp_path / "found")
+    missing_store = _demo_store(tmp_path / "missing")
+    now = datetime(2026, 9, 2, 9, tzinfo=UTC)
+    try:
+        found_row = found_store.claim_pending_outbox(now, limit=1)[0]
+        found_sender = FakeSender([], find_outcomes=["provider-found"])
+        found = OutboxDispatcher(found_store, found_sender).reconcile_sending(found_sender, now)
+        assert found[0].status == "SENT"
+        assert found_store.list_outbox()[0]["provider_message_id"] == "provider-found"
+
+        missing_row = missing_store.claim_pending_outbox(now, limit=1)[0]
+        missing_sender = FakeSender(
+            ["other-provider", "provider-after-approval"], find_outcomes=[None]
+        )
+        dispatcher = OutboxDispatcher(missing_store, missing_sender)
+        missing = dispatcher.reconcile_sending(missing_sender, now)
+        assert missing[0].status == "AMBIGUOUS"
+        ambiguous = next(
+            row for row in missing_store.list_outbox() if row["id"] == missing_row["id"]
+        )
+        assert ambiguous["status"] == "AMBIGUOUS"
+        assert dispatcher.dispatch_due(now, limit=1)[0].outbox_id != missing_row["id"]
+
+        missing_store.retry_ambiguous_outbox(str(missing_row["id"]), now)
+        approved = dispatcher.dispatch_due(now, limit=1)
+        assert approved[0].outbox_id == missing_row["id"]
+        assert approved[0].status == "SENT"
+        assert found_row["id"] != missing_row["id"] or found_store.path != missing_store.path
+    finally:
+        found_store.close()
+        missing_store.close()
+
+
+def test_transient_reconciliation_failure_leaves_message_sending(tmp_path: Path) -> None:
+    store = _demo_store(tmp_path)
+    now = datetime(2026, 9, 2, 9, tzinfo=UTC)
+    try:
+        claimed = store.claim_pending_outbox(now, limit=1)[0]
+        sender = FakeSender([], find_outcomes=[TransientChannelError("search unavailable")])
+        outcomes = OutboxDispatcher(store, sender).reconcile_sending(sender, now)
+        assert outcomes[0].status == "SENDING"
+        row = next(item for item in store.list_outbox() if item["id"] == claimed["id"])
+        assert row["status"] == "SENDING"
+    finally:
+        store.close()

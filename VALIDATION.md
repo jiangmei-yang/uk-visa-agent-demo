@@ -17,13 +17,13 @@ explicitly recorded here.
 
 | Capability | Current evidence | Honest status | Missing proof |
 |---|---|---|---|
-| Three-email case progression | Automated simulation | Replays committed `.eml` fixtures and reaches the expected blocked → corrected → confirmed states | Standard MIME attachments, free-form customer language, provider delivery |
-| Inbound attachments | Automated simulation | Demo-specific header points to generated local PDFs | Actual MIME extraction, malformed files, limits, filename safety, Gmail attachment payloads |
+| Three-email case progression | Automated simulation | Replays both committed fixtures and standards-compliant MIME messages, reaching the expected blocked → corrected → confirmed states | Free-form customer language and provider delivery |
+| Inbound attachments | Automated simulation | Standard MIME PDFs are extracted with filename, type, count, and size controls | Gmail attachment payloads and provider redelivery |
 | Human-like replies | Automated simulation | Deterministic template produces one reply per fixture | Natural but bounded model drafting, tone evaluation, clarification loops |
 | Gmail API boundary | Implemented only | List/get/download/send methods exist | Contract tests, message conversion, OAuth sandbox, retry/error handling, outbox consumption |
 | WhatsApp | Not implemented | Explicitly outside the current slice | Provider choice, webhook verification, media handling, sandbox experiment |
 | Delivery safety gate | Automated simulation | Eight deterministic checks block delivery; current gate is rechecked at download | Fault injection around stale packs, concurrent mutation, recovery evidence |
-| Event idempotency | Automated simulation | Replaying the same three provider IDs does not change counts | Provider redelivery, partial failure between persistence and send, concurrent duplicates |
+| Event idempotency | Automated simulation | Accepted and rejected provider IDs are persisted once; concurrent outbox claims are exclusive | Provider redelivery and external delivery reconciliation |
 | Pack determinism | Automated simulation | Twenty clean runs generate the same ZIP hash | Cross-platform/runtime reproducibility and migration compatibility |
 | Model extraction | Implemented only | Optional schema-bound OpenAI adapter exists | Mock/provider contract tests, evaluation corpus, variance and failure thresholds |
 | Prompt-injection resistance | Narrow automated simulation | Offline fixture extractor ignores one obvious injection string | Live-model evaluation, document injection, schema escape, exfiltration and tool-authority tests |
@@ -31,17 +31,15 @@ explicitly recorded here.
 
 ## High-risk gaps discovered
 
-1. The committed fixtures reference attachments through `X-Demo-Attachments`; they do not yet prove
-   that a normal MIME email with attached PDFs can enter the workflow.
-2. The offline extractor reads a hidden `DEMO_FACTS` block. It proves deterministic orchestration,
+1. The offline extractor reads a hidden `DEMO_FACTS` block. It proves deterministic orchestration,
    not natural-language understanding.
-3. `GmailAdapter` is not connected to `WorkflowService`; no inbox poller converts a Gmail payload
+2. `GmailAdapter` is not connected to `WorkflowService`; no inbox poller converts a Gmail payload
    into an `InboundEvent`, and no worker consumes the persisted outbox.
-4. Outbox rows have no delivery state, attempt count, next-attempt time, or permanent-failure field.
-5. No ordering or sender-identity policy is enforced for later messages in an existing thread.
-6. Model timeout, refusal, invalid schema, partial extraction, and inconsistent repeated outputs are
+3. Model timeout, refusal, invalid schema, partial extraction, and inconsistent repeated outputs are
    documented but not exercised.
-7. WhatsApp webhook authenticity, message ordering, media download, and reply delivery do not exist.
+4. The outbox reconciliation contract is provider-neutral and locally simulated; Gmail search by
+   deterministic RFC Message-ID and its consistency window are not yet verified.
+5. WhatsApp webhook authenticity, message ordering, media download, and reply delivery do not exist.
 
 ## Experiment sequence
 
@@ -100,6 +98,15 @@ a ready/delivered case is held as `FINALIZED_CASE_NEW_EVENT` for a controlled hu
 of silently reopening or corrupting the pack. Replayed rejected provider IDs remain idempotent.
 Failure records contain codes and minimal operational detail, not raw message bodies. Remaining:
 ambiguous-send reconciliation and transport-level parse-failure persistence.
+
+**Run 3 — 2026-09-02:** E-02 local acceptance passed. The ingestion boundary converts malformed,
+oversized, and unsupported email failures into one redacted, idempotent operational record keyed by
+provider message ID; raw message bodies are not stored in failure detail. An outbox row stranded in
+`SENDING` can be reconciled by its deterministic RFC Message-ID: a provider match marks it `SENT`, a
+transient lookup leaves it untouched for a later check, and a definite no-match moves it to
+`AMBIGUOUS`. `AMBIGUOUS` rows are excluded from automatic dispatch and require an explicit operator
+retry decision. Focused contract and integration tests pass. This is provider-neutral automated
+simulation; Gmail-specific lookup and delivery behaviour remain E-04 evidence.
 
 ### E-03 — Agent stability evaluation
 
