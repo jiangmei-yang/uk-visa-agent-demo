@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from datetime import UTC, date, datetime
 from email.utils import parseaddr
 from pathlib import Path
@@ -27,6 +28,30 @@ from visa_agent.domain.rules import advance_stage, evaluate_gate, run_consistenc
 from visa_agent.llm.guarded import ensure_guarded
 from visa_agent.llm.ports import LLMClient
 from visa_agent.storage.sqlite import SQLiteStore
+
+PROFILE_CONFIRMATION_LINES = {
+    "profile confirmed",
+    "i confirm the profile summary",
+    "我确认上述个人资料",
+    "我确认个人资料摘要",
+}
+FINAL_CONFIRMATION_LINES = {
+    "i confirm the final summary",
+    "final summary confirmed",
+    "我确认最终资料摘要",
+    "我确认最终材料清单和资料摘要",
+}
+
+
+def has_explicit_confirmation_line(body: str, accepted_lines: set[str]) -> bool:
+    """Accept only a standalone confirmation line, not a quoted/injected substring."""
+
+    lines = {
+        re.sub(r"\s+", " ", line).strip().casefold()
+        for line in body.splitlines()
+        if line.strip()
+    }
+    return bool(lines & accepted_lines)
 
 
 def stable_id(prefix: str, value: str) -> str:
@@ -76,13 +101,13 @@ class WorkflowService:
         self._apply_patch(case, event, patch.model_dump()["updates"])
         self._ingest_attachments(case, event)
 
-        if "PROFILE CONFIRMED" in event.body.upper():
+        if has_explicit_confirmation_line(event.body, PROFILE_CONFIRMATION_LINES):
             case.profile_confirmed = True
             advance_stage(case, WorkflowStage.COLLECTING_DOCUMENTS)
             for evidence in case.evidence:
                 if evidence.source_document_id is None:
                     evidence.confirmed = True
-        if "I CONFIRM THE FINAL SUMMARY" in event.body.upper():
+        if has_explicit_confirmation_line(event.body, FINAL_CONFIRMATION_LINES):
             case.final_summary_confirmed = True
             advance_stage(case, WorkflowStage.FINAL_CONFIRMATION)
 
@@ -192,13 +217,31 @@ class WorkflowService:
                 self._record_unreadable_document(case, event, path, document_id, digest)
                 existing_hashes.add(digest)
                 continue
+            supersedes_document_id: str | None = None
             if kind == "conference_invitation":
                 for old in case.documents:
                     if old.kind == kind and old.status == DocumentStatus.ACCEPTED_FOR_REVIEW:
+                        supersedes_document_id = old.id
                         old.status = DocumentStatus.SUPERSEDED
                         for old_evidence in case.evidence:
                             if old_evidence.source_document_id == old.id:
                                 old_evidence.superseded = True
+            translation_for_document_id: str | None = None
+            if kind == "certified_translation":
+                translation_target = facts.pop("translation_for_filename", None)
+                if translation_target is not None:
+                    target_filename = str(translation_target[0])
+                    target = next(
+                        (
+                            item
+                            for item in case.documents
+                            if item.filename == target_filename
+                            and item.status != DocumentStatus.SUPERSEDED
+                        ),
+                        None,
+                    )
+                    if target is not None:
+                        translation_for_document_id = target.id
             document = Document(
                 id=document_id,
                 filename=path.name,
@@ -214,15 +257,14 @@ class WorkflowService:
                 path=str(path),
                 language=language,
                 page_count=page_count,
+                supersedes_document_id=supersedes_document_id,
+                translation_for_document_id=translation_for_document_id,
             )
             case.documents.append(document)
             existing_hashes.add(digest)
             for key, (value, page, excerpt) in facts.items():
                 for prior_evidence in case.active_evidence(key):
-                    if (
-                        prior_evidence.source_document_id
-                        and prior_evidence.source_document_id != document.id
-                    ):
+                    if prior_evidence.source_document_id == document.supersedes_document_id:
                         prior_evidence.superseded = True
                 case.evidence.append(
                     Evidence(

@@ -121,6 +121,7 @@ are recorded in [ADR-001](docs/adr/001-agent-and-workflow.md).
 make setup       # install runtime + development dependencies
 make demo        # credential-free deterministic replay
 make test        # unit, contract, adversarial, golden and integration tests
+make accuracy    # committed workflow-accuracy and safety scorecard
 make lint        # Ruff
 make typecheck   # strict mypy
 make stability   # repeated clean runs + concurrent review-console reads
@@ -163,8 +164,9 @@ claims remain withheld until their separate provider experiments pass.
 
 ## Policy sources
 
-The snapshot is checked on 2026-09-02 and versioned as 2026-02-25, matching the current update date
-shown by GOV.UK at implementation time. Rules contain source metadata and a review deadline. The
+The snapshot was checked on 2026-09-02 and reverified against the same live GOV.UK guidance on
+2026-09-03. It is versioned as 2026-02-25, matching GOV.UK's current update date. Rules contain
+source metadata and a review deadline. The
 synthetic replay freezes its evaluation clock at 2026-09-02 so the assessment remains reproducible;
 live/API readiness checks use the actual current date and block after the review deadline.
 
@@ -200,3 +202,4 @@ jobs, operator roles, Gmail OAuth bootstrapping, and real-user validation remain
 Passing tests is internal evidence, not proof of applicant outcomes or external usability.
 The committed Agent corpus and evaluator are synthetic; a live score exists only when
 `eval_output/agent_eval.json` is produced with an explicitly selected provider model.
+See [ACCURACY.md](ACCURACY.md) for the separate workflow and live-model scorecards.

@@ -47,7 +47,7 @@ SAMPLE_DOCUMENTS: dict[str, list[str]] = {
     ],
     "hong_kong_residence_status.pdf": [
         "Synthetic Hong Kong lawful residence evidence - DEMO ONLY",
-        "DOCUMENT_KIND=legal_residence_evidence",
+        "DOCUMENT_KIND=status_document",
         "LANGUAGE=en",
         "FACT full_name=Lin Chen",
     ],
@@ -70,6 +70,7 @@ SAMPLE_DOCUMENTS: dict[str, list[str]] = {
         "Synthetic certified translation - DEMO ONLY",
         "DOCUMENT_KIND=certified_translation",
         "LANGUAGE=en",
+        "FACT translation_for_filename=family_funds_cn.pdf",
         "Translation covers family_funds_cn.pdf in full.",
         "Translator name, qualifications, date, and contact details: SYNTHETIC FIXTURE.",
     ],

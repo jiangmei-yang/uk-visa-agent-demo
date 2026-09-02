@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import calendar
 from datetime import UTC, date, datetime
 
 from visa_agent.domain.models import (
     Case,
     CaseStatus,
+    DocumentStatus,
+    Evidence,
     GateResult,
     Issue,
     IssueSeverity,
@@ -14,33 +17,67 @@ from visa_agent.domain.models import (
 )
 from visa_agent.domain.policy import Policy
 
-CRITICAL_FACTS = {
+BASE_REQUIRED_FACTS = {
     "full_name",
     "date_of_birth",
+    "nationality_country",
+    "application_country",
     "planned_arrival_date",
     "planned_departure_date",
     "visit_purpose",
+    "uk_accommodation",
+    "estimated_trip_cost_gbp",
+    "current_address",
     "occupation_status",
     "funding_source",
+    "has_serious_history",
+    "route_confirmed_standard_visitor",
 }
 
-KIND_TO_REQUIREMENT = {
-    "passport": "passport",
-    "student_letter": "status_evidence",
-    "employment_letter": "status_evidence",
-    "self_employment_evidence": "status_evidence",
-    "conference_invitation": "purpose_evidence",
-    "invitation_letter": "purpose_evidence",
-    "funding_letter": "funding_evidence",
-    "bank_statement": "funding_evidence",
-    "sponsor_evidence": "sponsor_evidence",
-    "certified_translation": "certified_translation",
-    "legal_residence_evidence": "legal_residence",
+CONDITIONAL_CRITICAL_FACTS = {
+    "annual_income_gbp",
+    "sponsor_name",
+    "sponsor_relationship",
+    "sponsor_is_in_uk",
 }
+
+# The evaluator treats every field that can become delivery-critical as critical.
+CRITICAL_FACTS = BASE_REQUIRED_FACTS | CONDITIONAL_CRITICAL_FACTS
 
 
 def calculate_age(born: date, on_date: date) -> int:
     return on_date.year - born.year - ((on_date.month, on_date.day) < (born.month, born.day))
+
+
+def required_profile_facts(case: Case) -> set[str]:
+    """Return the facts that must be explicit and traceable before this demo can deliver."""
+
+    required = set(BASE_REQUIRED_FACTS)
+    if case.profile.occupation_status in {"employed", "self_employed"}:
+        required.add("annual_income_gbp")
+    if case.profile.funding_source == "personal_sponsor":
+        required.update({"sponsor_name", "sponsor_relationship", "sponsor_is_in_uk"})
+    return required
+
+
+def _add_calendar_months(value: date, months: int) -> date:
+    month_index = value.month - 1 + months
+    year = value.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(value.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+def travel_dates_valid(case: Case, today: date) -> bool:
+    arrival = case.profile.planned_arrival_date
+    departure = case.profile.planned_departure_date
+    return bool(
+        arrival
+        and departure
+        and arrival >= today
+        and departure > arrival
+        and departure <= _add_calendar_months(arrival, 6)
+    )
 
 
 def route_in_scope(case: Case, policy: Policy, today: date) -> tuple[bool, str | None]:
@@ -49,21 +86,33 @@ def route_in_scope(case: Case, policy: Policy, today: date) -> tuple[bool, str |
         return False, "Date of birth has not been confirmed."
     if calculate_age(profile.date_of_birth, today) < int(policy.scope["minimum_age"]):
         return False, "Applicants under 18 require human review."
-    if not profile.route_confirmed_standard_visitor:
+    if profile.route_confirmed_standard_visitor is not True:
         return False, "The applicant has not confirmed the Standard Visitor route."
+    nationality = " ".join(
+        item for item in (profile.nationality, profile.nationality_country) if item
+    ).casefold()
+    if "british" in nationality or nationality in {"uk", "united kingdom"}:
+        return False, "British citizenship or UK right-of-abode status requires human review."
     if profile.visit_purpose not in policy.scope["purposes"]:
         return False, "The visit purpose is outside this demo's supported scope."
     if profile.occupation_status not in policy.scope["occupations"]:
         return False, "The occupation type is outside this demo's supported scope."
     if profile.funding_source not in policy.scope["funding"]:
         return False, "The funding arrangement is outside this demo's supported scope."
-    if profile.has_serious_history:
+    if profile.has_serious_history is None:
+        return False, "Criminal, civil, refusal, and immigration history has not been confirmed."
+    if profile.has_serious_history is True:
         return False, "Serious immigration, criminal, or refusal history requires human review."
     return True, None
 
 
 def build_requirements(case: Case, policy: Policy) -> list[Requirement]:
-    has_non_english = any(doc.language not in {"en", "cy"} for doc in case.documents)
+    non_english_documents = [
+        doc
+        for doc in case.documents
+        if doc.language not in {"en", "cy"} and doc.status != DocumentStatus.SUPERSEDED
+    ]
+    has_non_english = bool(non_english_documents)
     result: list[Requirement] = []
     for rule in policy.requirements:
         applicable = rule.applies_when == "always"
@@ -80,16 +129,49 @@ def build_requirements(case: Case, policy: Policy) -> list[Requirement]:
         matching = [
             doc.id
             for doc in case.documents
-            if KIND_TO_REQUIREMENT.get(doc.kind) == rule.id
+            if doc.kind in rule.acceptable_evidence
             and doc.status.value == "ACCEPTED_FOR_REVIEW"
         ]
+        requirement_satisfied = bool(matching)
+        if rule.id == "sponsor_evidence" and applicable:
+            required_sponsor_kinds = {
+                "sponsor_letter",
+                "sponsor_funds",
+                "relationship_evidence",
+            }
+            if case.profile.sponsor_is_in_uk is True:
+                required_sponsor_kinds.add("sponsor_uk_status")
+            present_sponsor_kinds = {
+                doc.kind
+                for doc in case.documents
+                if doc.status == DocumentStatus.ACCEPTED_FOR_REVIEW
+            }
+            requirement_satisfied = required_sponsor_kinds <= present_sponsor_kinds
+        if rule.id == "certified_translation" and applicable:
+            covered_document_ids = {
+                doc.translation_for_document_id
+                for doc in case.documents
+                if doc.kind == "certified_translation"
+                and doc.status == DocumentStatus.ACCEPTED_FOR_REVIEW
+                and doc.translation_for_document_id
+            }
+            matching = [
+                doc.id
+                for doc in case.documents
+                if doc.kind == "certified_translation"
+                and doc.status == DocumentStatus.ACCEPTED_FOR_REVIEW
+                and doc.translation_for_document_id in {item.id for item in non_english_documents}
+            ]
+            requirement_satisfied = all(
+                item.id in covered_document_ids for item in non_english_documents
+            )
         result.append(
             Requirement(
                 id=rule.id,
                 title=rule.title,
                 blocker=rule.blocker,
                 applicable=applicable,
-                satisfied=(not applicable) or bool(matching),
+                satisfied=(not applicable) or requirement_satisfied,
                 document_ids=matching,
                 rule_version=policy.version,
                 source_urls=policy.sources,
@@ -139,39 +221,80 @@ def run_consistency_checks(case: Case) -> None:
         else:
             resolve_issue(case, "DATE_CONFLICT", "A replacement invitation now fits the trip dates.")
 
-    has_non_english = any(
-        doc.language not in {"en", "cy"} and doc.status.value != "SUPERSEDED"
+    non_english_documents = [
+        doc
         for doc in case.documents
-    )
-    has_translation = any(
-        doc.kind == "certified_translation" and doc.status.value == "ACCEPTED_FOR_REVIEW"
+        if doc.language not in {"en", "cy"} and doc.status != DocumentStatus.SUPERSEDED
+    ]
+    translated_document_ids = {
+        doc.translation_for_document_id
         for doc in case.documents
-    )
-    if has_non_english and not has_translation:
+        if doc.kind == "certified_translation"
+        and doc.status == DocumentStatus.ACCEPTED_FOR_REVIEW
+        and doc.translation_for_document_id
+    }
+    untranslated_documents = [
+        doc for doc in non_english_documents if doc.id not in translated_document_ids
+    ]
+    if untranslated_documents:
+        filenames = ", ".join(item.filename for item in untranslated_documents)
         _upsert_issue(
             case,
             Issue(
                 id=f"issue-{case.id}-translation",
                 code="MISSING_CERTIFIED_TRANSLATION",
                 title="Certified translation required",
-                detail="A non-English/Welsh document has no complete certified translation.",
+                detail=f"These non-English/Welsh documents need linked translations: {filenames}.",
                 severity=IssueSeverity.BLOCKER,
             ),
         )
-    elif has_translation:
+    elif non_english_documents:
         resolve_issue(case, "MISSING_CERTIFIED_TRANSLATION", "Certified translation received.")
+
+    evidence_by_fact: dict[str, list[Evidence]] = {}
+    for evidence in case.evidence:
+        if not evidence.superseded:
+            evidence_by_fact.setdefault(evidence.fact_key, []).append(evidence)
+    for fact_key, evidence_items in evidence_by_fact.items():
+        values = {str(item.value).strip().casefold() for item in evidence_items}
+        issue_code = f"EVIDENCE_CONFLICT_{fact_key.upper()}"
+        if len(values) > 1:
+            _upsert_issue(
+                case,
+                Issue(
+                    id=f"issue-{case.id}-evidence-conflict-{fact_key}",
+                    code=issue_code,
+                    title=f"Conflicting evidence for {fact_key.replace('_', ' ')}",
+                    detail=(
+                        f"Active sources contain {len(values)} different values for {fact_key}; "
+                        "a human must select or request the correct source."
+                    ),
+                    severity=IssueSeverity.BLOCKER,
+                    related_document_ids=[
+                        item.source_document_id
+                        for item in evidence_items
+                        if item.source_document_id is not None
+                    ],
+                ),
+            )
+        else:
+            resolve_issue(case, issue_code, "Only one active value remains across the evidence.")
 
 
 def evaluate_gate(case: Case, policy: Policy, today: date) -> GateResult:
     in_scope, scope_reason = route_in_scope(case, policy, today)
     case.requirements = build_requirements(case, policy)
-    critical_with_provenance = all(case.active_evidence(key) for key in CRITICAL_FACTS)
+    required_facts = required_profile_facts(case)
+    complete_profile = all(getattr(case.profile, key) is not None for key in required_facts)
+    critical_with_provenance = all(case.active_evidence(key) for key in required_facts)
     checks = {
         "route_in_scope": in_scope,
         "applicant_age_at_least_18": bool(
             case.profile.date_of_birth and calculate_age(case.profile.date_of_birth, today) >= 18
         ),
         "profile_confirmed": case.profile_confirmed,
+        "required_profile_facts_complete": complete_profile,
+        "travel_dates_are_valid_and_within_six_months": travel_dates_valid(case, today),
         "all_blocker_requirements_resolved": all(
             item.satisfied for item in case.requirements if item.applicable and item.blocker
         ),

@@ -1,23 +1,29 @@
-version: agent-corpus-v1
+version: agent-corpus-v2
 cases:
   - id: normal_complete_intake
     category: normal_intake
     body: >-
-      My full name is Ada Lovelace. I was born on 1992-12-10. I am a British national
+      My full name is Ada Lovelace. I was born on 1992-12-10. I am a Chinese national
       applying from Hong Kong for a Standard Visitor visa. I plan to arrive on 2026-10-04
-      and leave on 2026-10-10 to attend a conference. I am a student and will fund the
-      trip myself. The estimated trip cost is GBP 1800.
+      and leave on 2026-10-10 to attend a conference. I will stay at Northstar Hotel in London.
+      My current home address is 88 Synthetic Road, Hong Kong. I am a student and will fund the
+      trip myself. The estimated trip cost is GBP 1800. I have no criminal, civil, refusal,
+      removal, or immigration breach history.
     expected_updates:
       full_name: Ada Lovelace
       date_of_birth: "1992-12-10"
-      nationality: British
+      nationality: Chinese
+      nationality_country: China
       application_country: Hong Kong
       planned_arrival_date: "2026-10-04"
       planned_departure_date: "2026-10-10"
       visit_purpose: conference
+      uk_accommodation: Northstar Hotel in London
+      current_address: 88 Synthetic Road, Hong Kong
       occupation_status: student
       funding_source: self
       estimated_trip_cost_gbp: 1800
+      has_serious_history: false
       route_confirmed_standard_visitor: true
 
   - id: missing_facts
@@ -78,11 +84,14 @@ cases:
 
   - id: sponsor_funding
     category: sponsor
-    body: My mother, Mei Chen, will personally sponsor my trip. Our relationship is mother and child.
+    body: >-
+      My mother, Mei Chen, who lives in China, will personally sponsor my trip. Our relationship is
+      mother and child.
     expected_updates:
       funding_source: personal_sponsor
       sponsor_name: Mei Chen
       sponsor_relationship: mother
+      sponsor_is_in_uk: false
 
   - id: explicit_no_serious_history
     category: negation
@@ -100,3 +109,35 @@ cases:
     body: The date I sent earlier is wrong, but I do not have the corrected date yet.
     expected_updates: {}
     expects_ambiguity: true
+
+  - id: family_visit_canonical_values
+    category: canonical_value
+    body: >-
+      I am applying as a Standard Visitor to visit my sister and friends. I will pay for the trip
+      myself.
+    expected_updates:
+      visit_purpose: family_or_friends
+      funding_source: self
+      route_confirmed_standard_visitor: true
+
+  - id: employer_funding_canonical_value
+    category: canonical_value
+    body: >-
+      My employer will pay all conference travel costs. I am employed and applying for the
+      Standard Visitor route.
+    expected_updates:
+      visit_purpose: conference
+      occupation_status: employed
+      funding_source: employer_or_school
+      route_confirmed_standard_visitor: true
+
+  - id: british_citizen_route_boundary
+    category: unsupported_route
+    body: >-
+      I am a British citizen with right of abode and I want to submit a Standard Visitor visa
+      application.
+    expected_updates:
+      nationality: British
+      nationality_country: United Kingdom
+      route_confirmed_standard_visitor: true
+    expects_human_review: true

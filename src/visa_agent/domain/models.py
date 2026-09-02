@@ -97,6 +97,7 @@ class Document(BaseModel):
     page_count: int = 0
     received_at: datetime = Field(default_factory=utc_now)
     supersedes_document_id: str | None = None
+    translation_for_document_id: str | None = None
 
 
 class Issue(BaseModel):
@@ -146,7 +147,9 @@ class CaseProfile(BaseModel):
     funding_source: str | None = None
     sponsor_name: str | None = None
     sponsor_relationship: str | None = None
-    has_serious_history: bool = False
+    sponsor_is_in_uk: bool | None = None
+    # Tri-state by design: silence is not an explicit negative declaration.
+    has_serious_history: bool | None = None
     route_confirmed_standard_visitor: bool = False
 
 

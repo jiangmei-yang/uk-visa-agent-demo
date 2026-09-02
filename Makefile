@@ -1,4 +1,4 @@
-.PHONY: setup demo test lint typecheck stability agent-eval-live agent-eval-deepseek web webhook start stop clean
+.PHONY: setup demo test accuracy lint typecheck stability agent-eval-live agent-eval-deepseek web webhook start stop clean
 
 setup:
 	uv sync --extra dev
@@ -8,6 +8,9 @@ demo:
 
 test:
 	uv run pytest
+
+accuracy:
+	uv run pytest tests/unit/test_accuracy_gates.py tests/unit/test_confirmation_accuracy.py tests/adversarial tests/evaluation tests/golden
 
 lint:
 	uv run ruff check .
