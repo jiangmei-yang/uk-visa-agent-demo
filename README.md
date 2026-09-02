@@ -112,7 +112,8 @@ workflow service ── evidence ledger ── SQLite snapshot + transactional o
 
 This is a modular monolith. Domain code depends on neither FastAPI nor Gmail/OpenAI SDKs. Provider
 adapters sit behind narrow interfaces. See [DESIGN.md](DESIGN.md) and
-[RELIABILITY.md](RELIABILITY.md).
+[RELIABILITY.md](RELIABILITY.md). The model and workflow decision, alternatives, and evaluation gate
+are recorded in [ADR-001](docs/adr/001-agent-and-workflow.md).
 
 ## Commands
 
