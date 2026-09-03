@@ -29,10 +29,10 @@ time. Keep the raw provider response IDs out of committed reports if they can ex
 
 ## Candidate rule
 
-Start with one efficient/high-volume candidate and one balanced candidate that both support the
-Responses API and Structured Outputs. Pin the chosen production snapshot only after the live
-comparison. Do not choose a flagship model merely by reputation or the cheapest model merely by
-price; select the least expensive configuration that passes every threshold with margin.
+Start with one efficient/high-volume candidate and one balanced candidate that provide enforceable
+structured JSON output through their supported API. Pin the chosen production snapshot only after
+the live comparison. Do not choose a flagship model merely by reputation or the cheapest model
+merely by price; select the least expensive configuration that passes every threshold with margin.
 
 The current comparison includes provider-specific adapters rather than assuming that API-format
 compatibility means behavioural equivalence:
@@ -42,9 +42,12 @@ compatibility means behavioural equivalence:
 - DeepSeek `deepseek-v4-flash` as the cross-provider cost challenger.
 
 Run DeepSeek with
-`MODEL=deepseek-v4-flash make agent-eval-deepseek`. A missing `DEEPSEEK_API_KEY` fails before any
-provider request. DeepSeek JSON-schema output still passes through the same exact-excerpt, type,
-confidence, conflict, reply, workflow, and delivery guards.
+`MODEL=deepseek-v4-flash make agent-eval-deepseek`. The runner accepts `DEEPSEEK_API_KEY`,
+`DEEPSEEK_API_KEY_FILE`, or the ignored local `.secrets/deepseek_api_key.txt`. A missing secret fails
+before any provider request. DeepSeek JSON output still passes through the same exact-excerpt, type,
+confidence, conflict, reply, workflow, and delivery guards. The committed 2026-09-04 report uses
+non-thinking JSON Chat mode because it met the quality gates with materially lower latency than the
+provider's Responses path in this evaluation.
 
 ## Evidence labels
 

@@ -11,6 +11,7 @@ import uvicorn
 from visa_agent.config import Settings
 from visa_agent.demo import run_demo
 from visa_agent.llm.ports import LLMClient
+from visa_agent.secrets import read_secret
 
 
 def main() -> None:
@@ -83,7 +84,11 @@ def main() -> None:
         if args.provider == "deepseek":
             from visa_agent.llm.deepseek_client import DeepSeekStructuredLLM
 
-            deepseek_key = os.getenv("DEEPSEEK_API_KEY", "")
+            deepseek_key = read_secret(
+                "DEEPSEEK_API_KEY",
+                file_environment_name="DEEPSEEK_API_KEY_FILE",
+                default_file=Path(".secrets/deepseek_api_key.txt"),
+            )
             if not deepseek_key:
                 raise SystemExit("Set DEEPSEEK_API_KEY for the DeepSeek provider.")
             live_llm = DeepSeekStructuredLLM(args.model, api_key=deepseek_key)

@@ -4,20 +4,26 @@ Accuracy and stability are separate release gates. A deterministic workflow can 
 test while an external model still fails extraction, and a model can extract facts correctly while
 an unsafe workflow releases an incomplete pack. This repository reports both layers separately.
 
-## Current result (2026-09-03)
+## Current result (2026-09-04)
 
 | Layer | Evidence | Result |
 |---|---|---:|
-| Workflow, policy gates, confirmation and adversarial controls | `make accuracy` | 23/23 passed (100%) |
-| Complete repository regression | `make test` | 90/90 passed (100%) |
+| Workflow, policy gates, confirmation and adversarial controls | `make accuracy` | 26/26 passed (100%) |
+| Complete repository regression | `make test` | 96/96 passed (100%) |
 | Clean-run deterministic delivery | `make stability` | 20/20 identical packs (100%) |
 | Concurrent review reads | `make stability` | 100/100 successful (100%) |
-| Live DeepSeek extraction on visa corpus | `make agent-eval-deepseek` | Not scored: no local visa-project key |
+| Live DeepSeek extraction on visa corpus | `eval_output/agent_eval.json` | 45/45 passed; every release metric passed (100%) |
 | Live OpenAI extraction on visa corpus | `make agent-eval-live` | Not scored: no local visa-project key |
 
-The local workflow score is full marks for the committed automated scope. The product does **not**
-claim an overall AI-accuracy score until a candidate model passes the 15-case corpus at least three
-times (45 runs) and meets every threshold in `evals/README.md`.
+The local workflow and evaluated DeepSeek extraction layers have full marks for the committed test
+scope. This is evidence for 15 synthetic cases repeated three times, not a claim of universal legal
+accuracy or a guarantee about real applications.
+
+DeepSeek `deepseek-v4-flash` produced 100% schema validity, critical/all-field precision and recall,
+human-review decisions, ambiguity decisions and repeat consistency, with zero unsupported claims or
+raw boundary violations. Median latency was 1.13 seconds and p95 was 3.30 seconds. The 45-run test
+used 37,248 input and 6,570 output tokens. Using the official 2026-09-04 off-peak cache-miss/output
+rates, the conservative estimated cost was USD 0.012531.
 
 ## Corrections made during the accuracy audit
 

@@ -37,7 +37,8 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
     accepted: dict[str, FactUpdate] = {}
     rejected_fields: set[str] = set()
     ambiguities = list(proposed.ambiguities)
-    requires_review = proposed.requires_human_review
+    # A model cannot acknowledge unresolved ambiguity while allowing automatic progression.
+    requires_review = proposed.requires_human_review or bool(proposed.ambiguities)
 
     for update in proposed.updates:
         reason: str | None = None
@@ -73,6 +74,13 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
             continue
         if update.field not in rejected_fields:
             accepted[update.field] = update
+
+    route_update = accepted.get("route_confirmed_standard_visitor")
+    history_update = accepted.get("has_serious_history")
+    if (route_update is not None and route_update.value is False) or (
+        history_update is not None and history_update.value is True
+    ):
+        requires_review = True
 
     return CasePatch(
         updates=list(accepted.values()),

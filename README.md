@@ -138,11 +138,16 @@ make clean       # delete disposable local demo data
 
 Install optional provider SDKs with `uv sync --extra dev --extra live`.
 
+For local DeepSeek use, place the key in `.secrets/deepseek_api_key.txt` and set file permissions to
+`0600`. The directory is excluded from Git and Docker images. `DEEPSEEK_API_KEY` and
+`DEEPSEEK_API_KEY_FILE` remain supported for managed environments.
+
 - `OpenAIStructuredLLM` uses a Pydantic schema through the Responses API. The model ID must be chosen
   explicitly after evaluation. It returns proposals only; the workflow grounds, validates, and
   applies them behind a mandatory bounded guard.
-- `DeepSeekStructuredLLM` is a separate adapter for DeepSeek's OpenAI-compatible Responses API. It
-  requests the same JSON schema but does not send OpenAI-only request fields. Compatibility is not
+- `DeepSeekStructuredLLM` is a separate adapter for DeepSeek's OpenAI-compatible JSON Chat API. It
+  embeds the same JSON schema, validates the returned object locally, disables thinking for bounded
+  extraction, and does not send OpenAI-only request fields. Compatibility is not
   treated as equivalent behaviour: `deepseek-v4-flash` must pass the same repeated corpus and guard
   thresholds before it can be selected.
 - `GmailAdapter` accepts an OAuth-authenticated Gmail API service, polls a configured query, preserves

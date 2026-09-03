@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import statistics
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -49,6 +50,9 @@ class RunScore:
     ambiguity_correct: bool
     latency_ms: float
     semantic_signature: str | None
+    raw_updates: tuple[dict[str, Any], ...] = ()
+    guarded_updates: tuple[dict[str, Any], ...] = ()
+    guarded_ambiguities: tuple[str, ...] = ()
     input_tokens: int = 0
     output_tokens: int = 0
     error_type: str | None = None
@@ -128,6 +132,9 @@ def score_patch(case: EvaluationCase, raw_patch: CasePatch, event: InboundEvent)
         ambiguity_correct=bool(guarded.ambiguities) == case.expects_ambiguity,
         latency_ms=0,
         semantic_signature=semantic_signature,
+        raw_updates=tuple(raw_dump),
+        guarded_updates=tuple(guarded_dump),
+        guarded_ambiguities=tuple(guarded.ambiguities),
     )
 
 
@@ -136,6 +143,7 @@ def evaluate_extractor(
     corpus: EvaluationCorpus,
     *,
     repeats: int = 3,
+    on_run: Callable[[EvaluationCase, int, RunScore], None] | None = None,
 ) -> dict[str, Any]:
     if repeats < 1:
         raise ValueError("repeats must be at least one")
@@ -180,6 +188,8 @@ def evaluate_extractor(
                 )
             scores.append(score)
             case_results.append({"case_id": case.id, "repeat": repeat + 1, **score.__dict__})
+            if on_run is not None:
+                on_run(case, repeat + 1, score)
 
     total = len(scores)
     true_positive = sum(item.true_positive for item in scores)

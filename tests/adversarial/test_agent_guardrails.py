@@ -88,6 +88,51 @@ def test_guard_rejects_both_conflicting_values_for_one_field() -> None:
     assert "Conflicting values proposed for full_name." in guarded.ambiguities
 
 
+def test_any_model_reported_ambiguity_deterministically_requires_review() -> None:
+    proposed = CasePatch(
+        updates=[],
+        ambiguities=["The applicant supplied two unresolved arrival dates."],
+        requires_human_review=False,
+    )
+
+    guarded = validate_case_patch(_event(), proposed)
+
+    assert guarded.ambiguities == proposed.ambiguities
+    assert guarded.requires_human_review is True
+
+
+def test_explicit_unsupported_route_deterministically_requires_review() -> None:
+    body = "I have not chosen the Standard Visitor route."
+    proposed = CasePatch(
+        updates=[
+            _update(
+                "route_confirmed_standard_visitor",
+                False,
+                "I have not chosen the Standard Visitor route.",
+            )
+        ],
+        ambiguities=[],
+        requires_human_review=False,
+    )
+
+    guarded = validate_case_patch(_event(body), proposed)
+
+    assert guarded.requires_human_review is True
+
+
+def test_explicit_serious_history_deterministically_requires_review() -> None:
+    body = "I have a criminal conviction."
+    proposed = CasePatch(
+        updates=[_update("has_serious_history", True, "I have a criminal conviction.")],
+        ambiguities=[],
+        requires_human_review=False,
+    )
+
+    guarded = validate_case_patch(_event(body), proposed)
+
+    assert guarded.requires_human_review is True
+
+
 def test_transient_extraction_retries_once_then_returns_grounded_patch() -> None:
     expected = CasePatch(
         updates=[_update("full_name", "Ada Lovelace", "My name is Ada Lovelace")],

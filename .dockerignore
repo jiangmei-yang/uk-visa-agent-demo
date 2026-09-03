@@ -4,6 +4,10 @@
 .pytest_cache
 .ruff_cache
 .venv
+.env
+.secrets
+credentials.json
+token.json
 __pycache__
 *.py[cod]
 data

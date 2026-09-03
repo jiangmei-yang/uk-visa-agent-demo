@@ -10,7 +10,7 @@ from visa_agent.llm.deepseek_client import DeepSeekStructuredLLM
 from visa_agent.llm.ports import CasePatch, FactUpdate
 
 
-class FakeResponses:
+class FakeCompletions:
     def __init__(self, patch: CasePatch) -> None:
         self.patch = patch
         self.create_arguments: dict[str, Any] = {}
@@ -18,12 +18,16 @@ class FakeResponses:
     def create(self, **kwargs: Any) -> Any:
         self.create_arguments = kwargs
         return SimpleNamespace(
-            output_text=json.dumps(self.patch.model_dump()),
-            usage=SimpleNamespace(input_tokens=80, output_tokens=16, total_tokens=96),
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(content=json.dumps(self.patch.model_dump()))
+                )
+            ],
+            usage=SimpleNamespace(prompt_tokens=80, completion_tokens=16, total_tokens=96),
         )
 
 
-def test_deepseek_extraction_uses_responses_json_schema_without_openai_only_fields() -> None:
+def test_deepseek_extraction_uses_json_chat_without_openai_only_fields() -> None:
     patch = CasePatch(
         updates=[
             FactUpdate(
@@ -35,9 +39,9 @@ def test_deepseek_extraction_uses_responses_json_schema_without_openai_only_fiel
         ],
         ambiguities=[],
     )
-    responses = FakeResponses(patch)
+    completions = FakeCompletions(patch)
     adapter = DeepSeekStructuredLLM.__new__(DeepSeekStructuredLLM)
-    adapter.client = SimpleNamespace(responses=responses)
+    adapter.client = SimpleNamespace(chat=SimpleNamespace(completions=completions))
     adapter.model = "deepseek-v4-flash"
     adapter.version = "deepseek-v4-flash"
     adapter.last_usage = None
@@ -53,10 +57,12 @@ def test_deepseek_extraction_uses_responses_json_schema_without_openai_only_fiel
     result = adapter.extract_case_patch(event)
 
     assert result == patch
-    arguments = responses.create_arguments
+    arguments = completions.create_arguments
     assert arguments["model"] == "deepseek-v4-flash"
-    assert arguments["text"]["format"]["type"] == "json_schema"
-    assert arguments["text"]["format"]["schema"] == CasePatch.model_json_schema()
+    assert arguments["response_format"] == {"type": "json_object"}
+    assert arguments["temperature"] == 0
+    assert arguments["max_tokens"] == 1_200
+    assert "JSON Schema" in arguments["messages"][0]["content"]
     assert arguments["extra_body"] == {"thinking": {"type": "disabled"}}
     assert "store" not in arguments
     assert "safety_identifier" not in arguments
