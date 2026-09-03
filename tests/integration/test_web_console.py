@@ -26,6 +26,24 @@ def _post(path: str, **kwargs: Any) -> httpx.Response:
     return asyncio.run(request())
 
 
+def _get(path: str, **kwargs: Any) -> httpx.Response:
+    async def request() -> httpx.Response:
+        transport = httpx.ASGITransport(app=web.app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            return await client.get(path, **kwargs)
+
+    return asyncio.run(request())
+
+
+def _delete(path: str, **kwargs: Any) -> httpx.Response:
+    async def request() -> httpx.Response:
+        transport = httpx.ASGITransport(app=web.app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            return await client.delete(path, **kwargs)
+
+    return asyncio.run(request())
+
+
 def test_review_console_and_pack_download(tmp_path: Path) -> None:
     test_settings = Settings(
         database_path=tmp_path / "visa.db",
@@ -42,11 +60,58 @@ def test_review_console_and_pack_download(tmp_path: Path) -> None:
     assert "The application pack is ready for adviser review" in body
     assert "See how the adviser handled the case" in body
     assert "Service response:" in body
+    assert "Event ends 16 Sep" in body
+    assert "All ten checks passed" in body
     assert body.index("Current outcome") < body.index("Delivery gate")
     assert "<details>" in body
     assert "Delivery gate" in body
     assert "Active evidence ledger" in body
     assert download.media_type == "application/zip"
+
+
+def test_guided_lab_runs_real_workflow_one_step_at_a_time(tmp_path: Path) -> None:
+    test_settings = Settings(
+        database_path=tmp_path / "visa.db",
+        output_dir=tmp_path / "output",
+        policy_path=Path("knowledge/uk_standard_visitor_2026-02-25.yaml"),
+    )
+    web.settings = test_settings
+
+    page = _get("/try")
+    initial = _post("/api/lab/reset").json()
+    assert page.status_code == 200
+    assert "Try the safety workflow yourself" in page.text
+    assert initial["processed_steps"] == 0
+    assert initial["pack_available"] is False
+
+    first = _post("/api/lab/steps/1")
+    assert first.status_code == 200
+    first_state = first.json()
+    assert first_state["processed_steps"] == 1
+    assert {item["code"] for item in first_state["open_blockers"]} == {
+        "DATE_CONFLICT",
+        "MISSING_CERTIFIED_TRANSLATION",
+    }
+    assert "DEMO_FACTS" not in first_state["conversation"][0]["body"]
+    assert first_state["pack_available"] is False
+
+    out_of_order = _post("/api/lab/steps/3")
+    assert out_of_order.status_code == 409
+
+    second_state = _post("/api/lab/steps/2").json()
+    assert second_state["processed_steps"] == 2
+    assert second_state["open_blockers"] == []
+    assert second_state["gate"]["checks"]["applicant_explicitly_confirmed_final_summary"] is False
+
+    final_state = _post("/api/lab/steps/3").json()
+    assert final_state["processed_steps"] == 3
+    assert final_state["pack_available"] is True
+    assert all(final_state["gate"]["checks"].values())
+    assert _get("/api/lab/pack").status_code == 200
+
+    reset = _post("/api/lab/reset").json()
+    assert reset["processed_steps"] == 0
+    assert _get("/api/lab/pack").status_code == 404
 
 
 def test_pack_download_is_withheld_if_current_gate_fails(tmp_path: Path) -> None:
@@ -69,6 +134,37 @@ def test_pack_download_is_withheld_if_current_gate_fails(tmp_path: Path) -> None
     with pytest.raises(HTTPException) as error:
         web.get_pack(result.case.id)
     assert error.value.status_code == 409
+
+
+def test_case_can_be_exported_and_exactly_confirmed_for_local_deletion(tmp_path: Path) -> None:
+    test_settings = Settings(
+        database_path=tmp_path / "visa.db",
+        output_dir=tmp_path / "output",
+        policy_path=Path("knowledge/uk_standard_visitor_2026-02-25.yaml"),
+    )
+    result = run_demo(test_settings, reset=True)
+    web.settings = test_settings
+
+    exported = _get(f"/api/cases/{result.case.id}/export")
+    assert exported.status_code == 200
+    assert exported.headers["content-disposition"].endswith('"synthetic-case-export.json"')
+    assert exported.json()["case"]["id"] == result.case.id
+    assert len(exported.json()["outbound_messages"]) == 3
+    assert "Raw processed inbound messages are not retained" in exported.json()["data_note"]
+
+    unconfirmed = _delete(f"/api/cases/{result.case.id}")
+    assert unconfirmed.status_code == 400
+    assert result.package_path.is_file()
+
+    deleted = _delete(
+        f"/api/cases/{result.case.id}",
+        headers={"X-Confirm-Case-Deletion": result.case.id},
+    )
+    assert deleted.status_code == 204
+    assert not result.package_path.exists()
+    assert not (test_settings.output_dir / result.case.id).exists()
+    assert _get(f"/api/cases/{result.case.id}").status_code == 404
+    assert _get(f"/api/cases/{result.case.id}/export").status_code == 404
 
 
 def test_whatsapp_webhook_is_disabled_without_explicit_provider_config(

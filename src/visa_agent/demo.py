@@ -43,7 +43,12 @@ def run_demo(
     generate_sample_documents(document_dir)
     policy = load_policy(settings.policy_path)
     store = SQLiteStore(settings.database_path)
-    service = WorkflowService(store, policy, OfflineFixtureLLM())
+    service = WorkflowService(
+        store,
+        policy,
+        OfflineFixtureLLM(),
+        today_provider=lambda: evaluation_date,
+    )
     steps: list[dict[str, object]] = []
     case: Case | None = None
     try:

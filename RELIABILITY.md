@@ -35,6 +35,11 @@ checks, persistence, outbound side effects, and pack generation.
   inbound excerpt, a valid field value, sufficient confidence, and no conflicting candidate.
 - Extraction retries are bounded to two attempts and then abstain to human review. Drafting failure,
   empty/oversized text, and prohibited outcome claims use deterministic customer wording.
+- `awaiting_confirmation` is selected only when final confirmation is the sole failed gate. Missing
+  facts, documents, scope checks, provenance, dates, or policy freshness remain `blocked`.
+- Applicant replies are rejected if they omit an open blocker or required item, claim pack release
+  before confirmation, omit the exact confirmation statement, retain a name placeholder, or omit the
+  human-review boundary after release.
 - The provider receives the email body inside an explicit untrusted-data envelope. Proposed facts
   still require schema validity, an exact source excerpt, an allowed field and a valid type before
   mutation; common relationship wording is canonicalised only after those checks.
@@ -60,6 +65,14 @@ checks, persistence, outbound side effects, and pack generation.
 | Inbound processing repeatedly fails | Finite backoff, then visible `FAILED` queue item |
 | Policy stale | Continue intake but block the delivery gate |
 | Unsupported/sensitive case | Move to `HUMAN_REVIEW_REQUIRED` |
+
+## Local data controls
+
+The Docker review app listens on loopback only. Reviewers can export the canonical case, outbound
+messages, failures, and delivery ledger as JSON. Raw processed inbound messages are intentionally
+not retained. Case deletion needs both a visible browser confirmation and the exact case ID in the
+request header; it deletes database rows, pending events for the same thread, and only that case's
+derived directory and ZIP inside the configured output root.
 
 ## Replay and audit
 

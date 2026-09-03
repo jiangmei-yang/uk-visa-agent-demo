@@ -5,7 +5,12 @@ from importlib import import_module
 from typing import Any, cast
 
 from visa_agent.domain.models import Case, InboundEvent
-from visa_agent.llm.openai_client import EXTRACTION_INSTRUCTIONS, _usage_dict, extraction_input
+from visa_agent.llm.openai_client import (
+    EXTRACTION_INSTRUCTIONS,
+    _usage_dict,
+    extraction_input,
+    message_input,
+)
 from visa_agent.llm.ports import CasePatch
 
 
@@ -35,6 +40,12 @@ class DeepSeekStructuredLLM:
         self.model = model
         self.version = model
         self.last_usage: dict[str, int] | None = None
+        self.usage_history: list[dict[str, int | str]] = []
+
+    def _record_usage(self, response: Any, operation: str) -> None:
+        self.last_usage = _usage_dict(response)
+        if self.last_usage is not None:
+            self.usage_history.append({"operation": operation, **self.last_usage})
 
     def extract_case_patch(self, event: InboundEvent) -> CasePatch:
         schema = json.dumps(CasePatch.model_json_schema(), ensure_ascii=False, separators=(",", ":"))
@@ -55,7 +66,7 @@ class DeepSeekStructuredLLM:
             max_tokens=1_200,
             extra_body={"thinking": {"type": "disabled"}},
         )
-        self.last_usage = _usage_dict(response)
+        self._record_usage(response, "extract_case_patch")
         output_text = cast(str | None, response.choices[0].message.content)
         if output_text is None or not output_text.strip():
             raise ValueError("DeepSeek returned no CasePatch content")
@@ -67,18 +78,14 @@ class DeepSeekStructuredLLM:
             messages=[
                 {
                     "role": "user",
-                    "content": (
-                        "Write a concise, courteous email from this explicit plan. Do not claim "
-                        "eligibility, sufficiency, readiness for approval, or guaranteed success. "
-                        f"Plan: {plan}. Open issues: {[item.title for item in case.open_blockers()]}"
-                    ),
+                    "content": message_input(case, plan),
                 }
             ],
             temperature=0,
             max_tokens=500,
             extra_body={"thinking": {"type": "disabled"}},
         )
-        self.last_usage = _usage_dict(response)
+        self._record_usage(response, "render_message")
         content = cast(str | None, response.choices[0].message.content)
         if content is None:
             raise ValueError("DeepSeek returned no message content")

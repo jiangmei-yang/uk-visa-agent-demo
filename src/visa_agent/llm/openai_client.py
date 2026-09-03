@@ -6,6 +6,7 @@ from importlib import import_module
 from typing import Any, cast
 
 from visa_agent.domain.models import Case, InboundEvent
+from visa_agent.domain.rules import required_profile_facts
 from visa_agent.llm.ports import CasePatch
 
 EXTRACTION_INSTRUCTIONS = (
@@ -60,6 +61,62 @@ def extraction_input(body: str) -> str:
     )
 
 
+def message_input(case: Case, plan: str) -> str:
+    open_issues = [
+        {"title": item.title, "detail": item.detail} for item in case.open_blockers()
+    ]
+    missing_facts = [
+        field.replace("_", " ").title()
+        for field in sorted(required_profile_facts(case))
+        if getattr(case.profile, field) is None
+    ]
+    missing_documents = [
+        item.title
+        for item in case.requirements
+        if item.applicable and item.blocker and not item.satisfied
+        and not (
+            item.id == "certified_translation"
+            and any(issue.code == "MISSING_CERTIFIED_TRANSLATION" for issue in case.open_blockers())
+        )
+    ]
+    if plan == "blocked":
+        required_action = (
+            "State that the review pack cannot be prepared yet. Name every item in open_issues, "
+            "missing_documents, and missing_facts exactly, then ask for the corresponding "
+            "correction, document, or answer."
+        )
+    elif plan == "awaiting_confirmation":
+        required_action = (
+            "State that the document checks show no current blocker, but the pack is still withheld. "
+            "Ask the applicant to review the facts and reply on a standalone line with exactly: "
+            "I CONFIRM THE FINAL SUMMARY"
+        )
+    elif plan == "ready":
+        required_action = (
+            "State only that the preparation pack is ready for human adviser review. Say that it is "
+            "not an approval prediction and has not been submitted."
+        )
+    else:
+        raise ValueError(f"Unsupported message plan: {plan}")
+    payload = {
+        "plan": plan,
+        "applicant_name": case.profile.full_name or "the applicant",
+        "required_action": required_action,
+        "open_issues": open_issues,
+        "missing_facts": missing_facts,
+        "missing_documents": missing_documents,
+    }
+    return (
+        "Write one concise, courteous applicant email from the JSON brief below. Address the "
+        "applicant by applicant_name and sign off as Visa preparation team. Use plain English and "
+        "no subject line, placeholders, markdown, legal advice, eligibility conclusion, approval "
+        "prediction, guarantee, or submission claim. Do not add requirements or facts. Do not use "
+        "the phrases approved, ready for approval, eligible, sufficient for approval, or guaranteed, "
+        "even while negating them. Follow required_action exactly.\n"
+        + json.dumps(payload, ensure_ascii=False)
+    )
+
+
 class OpenAIStructuredLLM:
     """Optional live adapter. Domain state changes remain outside this class."""
 
@@ -97,11 +154,7 @@ class OpenAIStructuredLLM:
         response = self.client.responses.create(
             model=self.model,
             store=False,
-            input=(
-                "Write a concise, courteous email from this explicit plan. Do not claim eligibility, "
-                "sufficiency, readiness for approval, or guaranteed success. "
-                f"Plan: {plan}. Open issues: {[item.title for item in case.open_blockers()]}"
-            ),
+            input=message_input(case, plan),
         )
         self.last_usage = _usage_dict(response)
         return cast(str, response.output_text)

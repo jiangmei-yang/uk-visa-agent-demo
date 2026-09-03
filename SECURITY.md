@@ -6,7 +6,11 @@
   synthetic and visibly labelled.
 - Secrets, OAuth credentials, API keys, and tokens are excluded from Git.
 - The default path performs no provider calls and sends no Email or WhatsApp message.
+- Docker publishes the review app on host loopback only and runs the application as an unprivileged
+  container user.
 - Pack downloads are restricted to the configured output directory.
+- Local JSON export is case-scoped. Deletion requires a visible confirmation plus the exact case ID
+  header and removes only that case's rows and derived files inside the output root.
 - Document content is treated as untrusted evidence, never as an instruction channel.
 - WhatsApp webhooks fail closed without explicit configuration, validate the provider signature
   before parsing, reject duplicate form keys and untrusted media hosts, then enter a durable queue.
@@ -21,7 +25,7 @@
 - MIME sniffing, filename normalisation, malware scanning, decompression limits, OCR sandboxing, and
   maximum file/page/image dimensions.
 - PII-redacted observability; no raw documents or message bodies in routine logs.
-- Configurable export/deletion, legal-hold handling, and verified retention jobs.
+- Authenticated production export/deletion, legal-hold handling, and verified retention jobs.
 - Least-privilege Gmail scopes and independently reviewed Gmail/Twilio/WhatsApp data-processing terms.
 - Prompt-injection, exfiltration, fabricated-evidence, and model-outage evaluations before live use.
 

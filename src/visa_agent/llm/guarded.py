@@ -6,6 +6,7 @@ from collections.abc import Callable
 from pydantic import TypeAdapter, ValidationError
 
 from visa_agent.domain.models import Case, CaseProfile, CaseStatus, InboundEvent
+from visa_agent.domain.rules import required_profile_facts
 from visa_agent.llm.ports import CasePatch, FactUpdate, LLMClient
 
 MIN_ACCEPTED_CONFIDENCE = 0.8
@@ -19,6 +20,8 @@ FORBIDDEN_REPLY_CLAIMS = (
     "guarantee approval",
     "documents are sufficient for approval",
     "application has been submitted",
+    "ready for approval",
+    "sufficient for approval",
 )
 SPONSOR_RELATIONSHIPS = (
     "mother",
@@ -38,6 +41,11 @@ class UnsafeModelOutput(ValueError):
 
 def _normalise_evidence(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip().casefold()
+
+
+def _normalise_message_formatting(value: str) -> str:
+    value = re.sub(r"\*\*(.+?)\*\*", r"\1", value)
+    return re.sub(r"`([^`]+)`", r"\1", value)
 
 
 def _canonical_value(field: str, value: str | int | bool) -> str | int | bool:
@@ -111,8 +119,26 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
 
 def deterministic_fallback_message(case: Case, plan: str) -> str:
     if plan == "blocked":
-        issues = "; ".join(item.title for item in case.open_blockers())
-        detail = f" Please resolve: {issues}." if issues else ""
+        outstanding = [item.title for item in case.open_blockers()]
+        outstanding.extend(
+            item.title
+            for item in case.requirements
+            if item.applicable and item.blocker and not item.satisfied
+            and not (
+                item.id == "certified_translation"
+                and any(
+                    issue.code == "MISSING_CERTIFIED_TRANSLATION"
+                    for issue in case.open_blockers()
+                )
+            )
+        )
+        outstanding.extend(
+            field.replace("_", " ").title()
+            for field in sorted(required_profile_facts(case))
+            if getattr(case.profile, field) is None
+        )
+        issues = "; ".join(dict.fromkeys(outstanding))
+        detail = f" Please resolve or provide: {issues}." if issues else ""
         return (
             "Thank you — your message is recorded, but the review pack cannot be prepared yet."
             f"{detail} A human adviser will review the case. This service does not decide "
@@ -124,8 +150,9 @@ def deterministic_fallback_message(case: Case, plan: str) -> str:
             "submitted visa application."
         )
     return (
-        "Thank you — your message is recorded. A human adviser will review the current summary "
-        "before any pack is released."
+        "Thank you — the current checks show no document blocker, but the review pack remains "
+        "withheld. Please review the facts summary and reply on a standalone line with exactly: "
+        "I CONFIRM THE FINAL SUMMARY. A human adviser will review the pack before anything is used."
     )
 
 
@@ -145,16 +172,22 @@ class GuardedLLM:
         self.max_attempts = max_attempts
         self.on_failure = on_failure
         self.version = f"guarded:{getattr(delegate, 'version', 'unknown')}"
+        self.last_extraction_fallback = False
+        self.last_render_fallback = False
+        self.last_render_error: str | None = None
 
     def extract_case_patch(self, event: InboundEvent) -> CasePatch:
         last_error: Exception | None = None
         for _ in range(self.max_attempts):
             try:
-                return validate_case_patch(event, self.delegate.extract_case_patch(event))
+                patch = validate_case_patch(event, self.delegate.extract_case_patch(event))
+                self.last_extraction_fallback = False
+                return patch
             except Exception as error:  # Provider/SDK failures must not mutate or lose the case.
                 last_error = error
         assert last_error is not None
         self._report("extract_case_patch", last_error)
+        self.last_extraction_fallback = True
         return CasePatch(
             updates=[],
             ambiguities=["Automated extraction was unavailable; manual review is required."],
@@ -163,9 +196,13 @@ class GuardedLLM:
 
     def render_message(self, case: Case, plan: str) -> str:
         if case.status == CaseStatus.HUMAN_REVIEW_REQUIRED:
+            self.last_render_fallback = True
+            self.last_render_error = "case_requires_human_review"
             return deterministic_fallback_message(case, plan)
         try:
-            message = self.delegate.render_message(case, plan).strip()
+            message = _normalise_message_formatting(
+                self.delegate.render_message(case, plan).strip()
+            )
             if not message:
                 raise ValueError("Model returned an empty message")
             if len(message) > MAX_REPLY_CHARACTERS:
@@ -173,9 +210,52 @@ class GuardedLLM:
             normalised = message.casefold()
             if any(claim in normalised for claim in FORBIDDEN_REPLY_CLAIMS):
                 raise UnsafeModelOutput("Model message contained a prohibited outcome claim")
+            if any(
+                placeholder in normalised
+                for placeholder in ("[name]", "[applicant name]", "[your name]")
+            ):
+                raise UnsafeModelOutput("Model message contained an unresolved placeholder")
+            if plan == "blocked" and any(
+                item.title.casefold() not in normalised for item in case.open_blockers()
+            ):
+                raise UnsafeModelOutput("Model message omitted an open blocker")
+            if plan == "blocked" and any(
+                item.title.casefold() not in normalised
+                for item in case.requirements
+                if item.applicable and item.blocker and not item.satisfied
+                and not (
+                    item.id == "certified_translation"
+                    and any(
+                        issue.code == "MISSING_CERTIFIED_TRANSLATION"
+                        for issue in case.open_blockers()
+                    )
+                )
+            ):
+                raise UnsafeModelOutput("Model message omitted a required document")
+            if plan == "blocked" and any(
+                field.replace("_", " ").casefold() not in normalised
+                for field in required_profile_facts(case)
+                if getattr(case.profile, field) is None
+            ):
+                raise UnsafeModelOutput("Model message omitted a required fact")
+            if plan == "awaiting_confirmation" and "i confirm the final summary" not in normalised:
+                raise UnsafeModelOutput("Model message omitted the exact confirmation statement")
+            if plan == "awaiting_confirmation" and any(
+                claim in normalised
+                for claim in ("pack is ready", "pack has been prepared", "pack is released")
+            ):
+                raise UnsafeModelOutput("Model message claimed release before confirmation")
+            if plan == "ready" and (
+                "human" not in normalised or "review" not in normalised
+            ):
+                raise UnsafeModelOutput("Model message omitted the human-review boundary")
+            self.last_render_fallback = False
+            self.last_render_error = None
             return message
         except Exception as error:
             self._report("render_message", error)
+            self.last_render_fallback = True
+            self.last_render_error = f"{type(error).__name__}: {str(error)[:160]}"
             return deterministic_fallback_message(case, plan)
 
     def _report(self, operation: str, error: Exception) -> None:

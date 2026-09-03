@@ -28,6 +28,8 @@ GATE_LABELS = {
     "route_in_scope": "Supported visitor route",
     "applicant_age_at_least_18": "Adult applicant",
     "profile_confirmed": "Applicant details confirmed",
+    "required_profile_facts_complete": "Required applicant facts complete",
+    "travel_dates_are_valid_and_within_six_months": "Travel dates valid and in scope",
     "all_blocker_requirements_resolved": "Required documents present",
     "no_unresolved_blocker_issue": "No unresolved contradictions",
     "every_critical_fact_has_provenance": "Key facts linked to evidence",
@@ -145,16 +147,16 @@ def _walkthrough() -> str:
         <article class="decision"><header><div><p class="decision-label">Adviser’s decision</p><h3>Documents clear — confirmation still required</h3></div>"""
         + badge("Waiting")
         + """</header>
-        <div class="diff"><div><small>Before</small><strong>Event ends 18 Sep</strong><span>Outside the trip</span></div><b aria-hidden="true">→</b><div><small>After</small><strong>Event ends 14 Sep</strong><span>Within the trip</span></div></div>
+        <div class="diff"><div><small>Before</small><strong>Event ends 16 Sep</strong><span>Outside the trip</span></div><b aria-hidden="true">→</b><div><small>After</small><strong>Event ends 14 Sep</strong><span>Within the trip</span></div></div>
         <div class="reply"><strong>Service response:</strong><p>“The checks no longer show a document blocker. Please review the final facts summary and reply with the exact confirmation requested.”</p></div><span class="button disabled">Pack unavailable at this step</span></article>
       </div>
       <div id="panel-confirmation" class="panel" role="tabpanel" aria-labelledby="tab-confirmation" hidden>
         <article class="email"><header><span>LC</span><div><strong>Lin Chen</strong><small>To: Visa preparation · 1 Sep, 13:00</small></div></header><h3>Re: Standard Visitor documents for London conference</h3>
         <blockquote>“I reviewed the final facts summary and the listed source documents. I CONFIRM THE FINAL SUMMARY.”</blockquote><p class="attachments"><strong>No attachments</strong> Explicit confirmation recorded</p></article>
-        <article class="decision success"><header><div><p class="decision-label">Adviser’s decision</p><h3>All eight checks passed — pack released</h3></div>"""
+        <article class="decision success"><header><div><p class="decision-label">Adviser’s decision</p><h3>All ten checks passed — pack released</h3></div>"""
         + badge("Released", "success")
         + """</header>
-        <ul class="proof-list"><li><b>8/8</b> delivery checks</li><li><b>0</b> open blockers</li><li><b>1</b> human confirmation</li></ul>
+        <ul class="proof-list"><li><b>10/10</b> delivery checks</li><li><b>0</b> open blockers</li><li><b>1</b> human confirmation</li></ul>
         <div class="reply"><strong>Service response:</strong><p>“Your review pack has been prepared for human review. This is not an approval prediction.”</p></div><a class="text-link" href="#pack">See the released pack and proof ↓</a></article>
       </div>
       <noscript><p class="notice">Enable JavaScript to switch between the three recorded emails. The initial safe stop remains visible.</p></noscript>
@@ -192,21 +194,22 @@ def render_case(case: Case, gate: GateResult) -> str:
     )
     return f"""
     <a class="skip-link" href="#main-content">Skip to case</a>
-    <header class="topbar"><a class="brand" href="/"><i aria-hidden="true">VP</i>Visa preparation</a><span>Demonstration case · not legal advice</span></header>
+    <header class="topbar"><a class="brand" href="/"><i aria-hidden="true">VP</i>Visa preparation</a><div class="topbar-actions"><span>Demonstration case · not legal advice</span><a href="/try">Try the workflow</a></div></header>
     <main id="main-content">
       <section class="hero" aria-labelledby="case-title"><div><p class="case-label">Application review</p><div class="title"><h1 id="case-title">{esc(profile.full_name or case.id)}</h1>{badge("Ready for adviser review", "success") if ready else badge("Action required", "warning")}</div>
       <p>Standard Visitor · {esc(humanise(profile.visit_purpose or "visit"))} · applying from {esc(profile.application_country or "Unknown")}</p></div><div class="hero-action">{download}<small id="download-status" aria-live="polite"></small></div></section>
       <section class="outcome" aria-labelledby="outcome-title"><div class="adviser-mark" aria-hidden="true">A</div><div class="outcome-copy"><p class="case-label">Current outcome</p><h2 id="outcome-title">{outcome}</h2><p>The adviser stopped on two evidence problems, accepted corrected files, and waited for Lin’s exact confirmation before releasing the pack.</p></div>
       <aside class="next-step"><strong>What happens next</strong><p>A human adviser reviews the organised evidence before anything is submitted.</p><a href="#walkthrough">Follow the three-message journey</a></aside></section>
       {_walkthrough()}
-      <section class="pack-section" id="pack" aria-labelledby="pack-title"><div class="section-heading"><div><span class="section-number">02</span><h2 id="pack-title">Open the final review pack</h2></div><p>Built only from confirmed, source-linked case data. It organises evidence; it does not submit or decide the application.</p></div>
+      <section class="pack-section" id="pack" aria-labelledby="pack-title"><div class="section-heading"><div><h2 id="pack-title">Open the final review pack</h2></div><p>Built only from confirmed, source-linked case data. It organises evidence; it does not submit or decide the application.</p></div>
       <div class="pack-layout"><div class="pack-card"><b>ZIP</b><div><h3>Application review pack</h3><p>{pack_size} · SHA-256 <code>{pack_hash}</code></p></div>{download}</div><ul class="manifest">{manifest}<li><span aria-hidden="true">&check;</span>{active_docs} active supporting documents</li></ul></div></section>
-      <section class="details" aria-labelledby="details-title"><div class="section-heading"><div><span class="section-number">03</span><h2 id="details-title">Review the prepared case</h2></div><p>Corrections, confirmed trip facts, and the original replaced evidence remain visible.</p></div>
+      <section class="details" aria-labelledby="details-title"><div class="section-heading"><div><h2 id="details-title">Review the prepared case</h2></div><p>Corrections, confirmed trip facts, and the original replaced evidence remain visible.</p></div>
       <div class="details-grid"><div><h3>Corrections handled</h3><ul class="corrections">{_corrections(case)}</ul></div><aside class="snapshot"><h3>Confirmed trip</h3><dl>
       <div><dt>Travel dates</dt><dd>{format_date(profile.planned_arrival_date)} – {format_date(profile.planned_departure_date)}</dd></div><div><dt>Purpose</dt><dd>{esc(humanise(profile.visit_purpose or "Not confirmed"))}</dd></div><div><dt>Accommodation</dt><dd>{esc(profile.uk_accommodation or "Not confirmed")}</dd></div><div><dt>Estimated cost</dt><dd>£{profile.estimated_trip_cost_gbp or 0:,.0f}</dd></div><div><dt>Funding</dt><dd>{esc(humanise(profile.funding_source or "Not confirmed"))}</dd></div></dl></aside></div>
       <div class="checklist"><h3>Application checklist</h3><ul>{_requirements(case)}</ul></div><div class="documents"><div class="subheading"><h3>Document register</h3><span>{active_docs} active · {superseded} superseded</span></div><div class="table-wrap" role="region" aria-label="Document register; scroll horizontally for all columns" tabindex="0"><table class="doc-table"><thead><tr><th>Document</th><th>Status</th><th>Note</th></tr></thead><tbody>{_document_rows(case)}</tbody></table></div></div></section>
-      <section class="audit" id="audit"><details><summary><span><span class="case-label">For technical reviewers</span><strong>See why the system allowed delivery</strong></span><b aria-hidden="true">⌄</b></summary><div class="audit-body"><p>Eight deterministic checks—not model confidence—control delivery. Synthetic data, policy, provenance, lifecycle, and hashes are preserved here.</p><dl class="audit-meta"><div><dt>Case ID</dt><dd><code>{esc(case.id)}</code></dd></div><div><dt>Policy</dt><dd>{esc(case.policy_version)}</dd></div><div><dt>Workflow</dt><dd>{esc(humanise(case.stage.value))}</dd></div></dl>
+      <section class="audit" id="audit"><details><summary><span><span class="case-label">For technical reviewers</span><strong>See why the system allowed delivery</strong></span><b aria-hidden="true">⌄</b></summary><div class="audit-body"><p>Ten deterministic checks—not model confidence—control delivery. Synthetic data, policy, provenance, lifecycle, and hashes are preserved here.</p><dl class="audit-meta"><div><dt>Case ID</dt><dd><code>{esc(case.id)}</code></dd></div><div><dt>Policy</dt><dd>{esc(case.policy_version)}</dd></div><div><dt>Workflow</dt><dd>{esc(humanise(case.stage.value))}</dd></div></dl>
       <div class="audit-grid"><div class="gate"><h3>Delivery gate</h3><ul>{_gate_audit(gate)}</ul></div><div class="audit-panel"><h3>Active evidence ledger</h3><div class="table-wrap" role="region" aria-label="Evidence ledger; scroll horizontally for all columns" tabindex="0"><table><thead><tr><th>Fact</th><th>Value</th><th>Source</th><th>Page</th><th>Confidence</th></tr></thead><tbody>{_evidence_audit(case)}</tbody></table></div></div></div><div class="audit-panel"><h3>Technical document register</h3><div class="table-wrap" role="region" aria-label="Technical document register; scroll horizontally for all columns" tabindex="0"><table><thead><tr><th>File</th><th>Lifecycle</th><th>Language</th><th>SHA-256</th></tr></thead><tbody>{_document_rows(case, True)}</tbody></table></div></div></div></details></section>
+      <div class="data-controls"><div><strong>Synthetic case data</strong><p>Export the auditable snapshot or delete this case and its generated pack from the local Demo.</p></div><a class="button secondary" href="/api/cases/{esc(case.id)}/export">Export JSON</a><button class="button danger-button" type="button" data-delete-case="{esc(case.id)}">Delete case</button><small id="case-data-status" role="status"></small></div>
       <footer>This synthetic service prepares materials for a human adviser. It does not give legal advice, decide eligibility, submit an application, or predict an outcome.</footer>
     </main>"""
 
@@ -214,13 +217,13 @@ def render_case(case: Case, gate: GateResult) -> str:
 BASE_CSS = """
 :root {
   color-scheme: light;
-  --canvas: oklch(.975 .01 88);
+  --canvas: oklch(.975 .006 252);
   --paper: oklch(1 0 0);
   --ink: oklch(.235 .025 252);
   --muted: oklch(.46 .024 252);
-  --quiet: oklch(.95 .012 88);
-  --line: oklch(.875 .015 82);
-  --line-strong: oklch(.79 .025 82);
+  --quiet: oklch(.95 .01 252);
+  --line: oklch(.875 .014 252);
+  --line-strong: oklch(.79 .025 252);
   --primary: oklch(.43 .13 252);
   --primary-dark: oklch(.33 .105 252);
   --primary-soft: oklch(.96 .025 252);
@@ -234,6 +237,7 @@ BASE_CSS = """
   --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { background: var(--canvas); scroll-behavior: smooth; }
 body { margin: 0; color: var(--ink); background: var(--canvas); font: 15px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
@@ -243,6 +247,9 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex="0"]:foc
 .skip-link:focus { transform: none; }
 .topbar { height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 max(28px, calc((100vw - 1080px) / 2)); border-bottom: 1px solid var(--line); background: color-mix(in oklch, var(--paper) 94%, transparent); }
 .topbar > span { color: var(--muted); font-size: 12px; }
+.topbar-actions { display: flex; align-items: center; gap: 16px; }
+.topbar-actions span { color: var(--muted); font-size: 12px; }
+.topbar-actions a { min-height: 44px; display: inline-flex; align-items: center; color: var(--primary-dark); font-size: 12px; font-weight: 700; text-underline-offset: 3px; }
 .brand { min-height: 44px; display: flex; align-items: center; gap: 11px; color: var(--primary-dark); text-decoration: none; font-weight: 760; letter-spacing: -.012em; }
 .brand i { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; color: white; background: var(--primary-dark); font-size: 11px; font-style: normal; letter-spacing: 0; }
 main { width: min(100%, 1080px); margin: 0 auto; padding: 30px 28px 56px; }
@@ -267,7 +274,7 @@ p { text-wrap: pretty; }
 .badge i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .badge--success { color: var(--success); background: var(--success-soft); }
 .badge--warning { color: var(--warning); background: var(--warning-soft); }
-.outcome { display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(240px, .62fr); align-items: start; gap: 18px; padding: 24px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); box-shadow: 0 8px 26px color-mix(in oklch, var(--primary-dark) 5%, transparent); }
+.outcome { display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(240px, .62fr); align-items: start; gap: 18px; padding: 24px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
 .adviser-mark { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: white; background: var(--primary-dark); font-size: 13px; font-weight: 760; }
 .outcome h2 { max-width: 27ch; font-size: 19px; }
 .outcome-copy { min-width: 0; }
@@ -371,6 +378,13 @@ details[open] summary > b { transform: rotate(180deg); }
 .audit-dot { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; color: white; font-size: 9px; }
 .audit-dot.pass { background: var(--success); }
 .audit-dot.fail { background: var(--danger); }
+.data-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.data-controls p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+.data-controls .button { border: 0; cursor: pointer; }
+.data-controls .secondary { border: 1px solid var(--line); background: transparent; }
+.danger-button { color: var(--danger); background: color-mix(in oklch, var(--danger) 8%, var(--paper)); }
+.danger-button:hover { background: color-mix(in oklch, var(--danger) 13%, var(--paper)); }
+.data-controls small { grid-column: 1 / -1; color: var(--danger); }
 footer { padding-top: 22px; color: var(--muted); font-size: 12px; }
 @media (max-width: 900px) {
   .outcome { grid-template-columns: 44px minmax(0, 1fr); }
@@ -385,6 +399,7 @@ footer { padding-top: 22px; color: var(--muted); font-size: 12px; }
   body { font-size: 16px; }
   .topbar { height: 58px; padding: 0 18px; }
   .topbar > span { display: none; }
+  .topbar-actions span { display: none; }
   main { padding: 24px 18px 42px; }
   .hero, .section-heading { align-items: start; flex-direction: column; }
   .section-heading > div { gap: 9px; }
@@ -422,6 +437,8 @@ footer { padding-top: 22px; color: var(--muted); font-size: 12px; }
   .gate li > strong { grid-column: 2; }
   .doc-table { min-width: 470px; }
   .audit-panel table { min-width: 560px; }
+  .data-controls { grid-template-columns: 1fr; }
+  .data-controls .button { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
@@ -434,11 +451,86 @@ const tabs=[...document.querySelectorAll('[role="tab"]')],panels=[...document.qu
 function selectTab(tab,focus=false){tabs.forEach(t=>{const active=t===tab;t.setAttribute('aria-selected',String(active));t.tabIndex=active?0:-1});panels.forEach(p=>p.hidden=p.id!==`panel-${tab.dataset.panel}`);if(focus)tab.focus()}
 tabs.forEach((tab,index)=>{tab.addEventListener('click',()=>selectTab(tab));tab.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();let next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;selectTab(tabs[next],true)})});
 document.querySelectorAll('[data-download]').forEach(link=>link.addEventListener('click',()=>{const status=document.querySelector('#download-status');if(status)status.textContent='Download started — check your Downloads folder.'}));
+document.querySelectorAll('[data-delete-case]').forEach(button=>button.addEventListener('click',async()=>{const caseId=button.dataset.deleteCase;if(!window.confirm('Delete this synthetic case and its generated pack from this local Demo? This cannot be undone.'))return;button.disabled=true;const status=document.querySelector('#case-data-status');if(status)status.textContent='Deleting…';try{const response=await fetch(`/api/cases/${encodeURIComponent(caseId)}`,{method:'DELETE',headers:{'X-Confirm-Case-Deletion':caseId}});if(!response.ok)throw new Error('The case could not be deleted.');window.location.assign('/')}catch(error){button.disabled=false;if(status)status.textContent=error.message}}));
 """
 
 
-def page(body: str) -> str:
-    return f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Visa preparation Demo</title><style>{BASE_CSS}</style></head><body>{body}<script>{INTERACTION_JS}</script></body></html>'
+LAB_CSS = """
+.lab-main { max-width: 980px; }
+.lab-intro { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 38px; align-items: end; padding: 12px 0 30px; border-bottom: 1px solid var(--line); }
+.lab-intro h1 { max-width: 22ch; font-size: 30px; }
+.lab-intro p { max-width: 66ch; margin: 9px 0 0; color: var(--muted); }
+.lab-mode { padding: 15px 16px; border-radius: 10px; background: var(--primary-soft); }
+.lab-mode strong, .lab-mode span { display: block; }
+.lab-mode strong { color: var(--primary-dark); font-size: 13px; }
+.lab-mode span { margin-top: 4px; color: var(--muted); font-size: 12px; }
+.lab-progress { display: grid; grid-template-columns: repeat(3, 1fr); margin: 28px 0 0; padding: 0; list-style: none; }
+.lab-progress li { position: relative; display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 9px; min-height: 48px; padding-right: 16px; color: var(--muted); }
+.lab-progress li:not(:last-child)::after { content: ""; position: absolute; top: 23px; left: 30px; right: 0; height: 1px; background: var(--line-strong); }
+.lab-progress b { position: relative; z-index: 1; width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--canvas); font-size: 12px; }
+.lab-progress span { position: relative; z-index: 1; width: fit-content; padding-right: 8px; background: var(--canvas); font-size: 12px; font-weight: 650; }
+.lab-progress li.done { color: var(--success); }
+.lab-progress li.done b { border-color: var(--success); color: white; background: var(--success); }
+.lab-progress li.current { color: var(--primary-dark); }
+.lab-progress li.current b { border-color: var(--primary); color: white; background: var(--primary-dark); }
+.lab-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 275px; gap: 34px; align-items: start; padding: 28px 0 40px; }
+.conversation { min-width: 0; }
+.conversation h2 { margin-bottom: 16px; }
+.lab-empty { min-height: 260px; display: grid; place-content: center; justify-items: center; padding: 34px; border: 1px dashed var(--line-strong); border-radius: 10px; text-align: center; }
+.lab-empty b { width: 42px; height: 42px; display: grid; place-items: center; margin-bottom: 12px; border-radius: 50%; color: var(--primary-dark); background: var(--primary-soft); }
+.lab-empty strong { font-size: 16px; }
+.lab-empty p { max-width: 45ch; margin: 6px 0 0; color: var(--muted); }
+.exchange { padding: 0 0 24px; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
+.exchange-label { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: var(--muted); font-size: 11px; }
+.applicant-message { padding: 18px; border-radius: 10px; background: var(--paper); }
+.applicant-message h3 { margin-bottom: 8px; }
+.applicant-message p { margin: 0; white-space: pre-line; }
+.lab-attachments { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 13px; }
+.lab-attachments span { padding: 4px 7px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); background: var(--canvas); font-size: 11px; }
+.adviser-reply { margin: 12px 0 0 34px; padding: 16px 18px; border-radius: 10px; color: var(--ink); background: var(--primary-soft); }
+.adviser-reply strong { display: block; margin-bottom: 5px; color: var(--primary-dark); font-size: 12px; }
+.adviser-reply p { margin: 0; }
+.lab-controls { position: sticky; top: 18px; padding: 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+.lab-controls h2 { font-size: 16px; }
+.lab-controls > p { margin: 6px 0 16px; color: var(--muted); font-size: 12px; }
+.lab-controls .button { width: 100%; border: 0; cursor: pointer; }
+.lab-controls .button[disabled] { cursor: wait; opacity: .72; }
+.secondary { margin-top: 8px; border: 1px solid var(--line) !important; color: var(--ink); background: transparent; }
+.secondary:hover { background: var(--quiet); }
+.lab-state { margin: 18px 0 0; padding: 14px 0 0; border-top: 1px solid var(--line); }
+.lab-state dt { color: var(--muted); font-size: 11px; }
+.lab-state dd { margin: 1px 0 10px; font-weight: 660; }
+.lab-blockers { margin: 4px 0 14px; padding-left: 18px; color: var(--warning); font-size: 12px; }
+.lab-error { min-height: 20px; margin: 8px 0 0; color: var(--danger); font-size: 12px; }
+@media (max-width: 760px) {
+  .lab-intro, .lab-workspace { grid-template-columns: 1fr; }
+  .lab-intro { gap: 18px; }
+  .lab-progress { grid-template-columns: 1fr; gap: 5px; }
+  .lab-progress li:not(:last-child)::after { top: 30px; bottom: -6px; left: 15px; right: auto; width: 1px; height: auto; }
+  .lab-progress span { background: transparent; }
+  .lab-controls { position: static; grid-row: 1; }
+  .adviser-reply { margin-left: 18px; }
+}
+"""
+
+
+LAB_JS = """
+const lab={state:null,steps:['Send initial email','Send corrected documents','Confirm final summary']};
+const byId=id=>document.getElementById(id);
+function element(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node}
+function renderProgress(state){document.querySelectorAll('.lab-progress li').forEach((item,index)=>{item.className=index<state.processed_steps?'done':index===state.processed_steps?'current':'';item.querySelector('b').textContent=index<state.processed_steps?'✓':String(index+1)})}
+function renderConversation(state){const root=byId('conversation-body');root.replaceChildren();if(!state.conversation.length){const empty=element('div','lab-empty');empty.append(element('b','', '→'),element('strong','', 'Start with the applicant’s first email'),element('p','', 'The workflow will read the synthetic message and documents, then explain exactly why delivery can or cannot continue.'));root.append(empty);return}state.conversation.forEach(message=>{const exchange=element('article','exchange');const label=element('div','exchange-label');label.append(element('strong','',`Step ${message.step} · Applicant`),element('span','',`${message.attachments.length} attachment${message.attachments.length===1?'':'s'}`));const inbound=element('div','applicant-message');inbound.append(element('h3','',message.subject),element('p','',message.body));if(message.attachments.length){const files=element('div','lab-attachments');message.attachments.forEach(file=>files.append(element('span','',file)));inbound.append(files)}const reply=element('div','adviser-reply');reply.append(element('strong','', 'Visa preparation adviser'),element('p','',message.reply));exchange.append(label,inbound,reply);root.append(exchange)});root.lastElementChild?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'nearest'})}
+function renderState(state){lab.state=state;renderProgress(state);renderConversation(state);const checks=state.gate?Object.values(state.gate.checks):[];byId('lab-stage').textContent=state.processed_steps?state.stage.replaceAll('_',' ').toLowerCase():'Not started';byId('lab-checks').textContent=checks.length?`${checks.filter(Boolean).length} of ${checks.length} passed`:'Waiting for first message';const list=byId('lab-blockers');list.replaceChildren();state.open_blockers.forEach(issue=>list.append(element('li','',issue.title)));list.hidden=!state.open_blockers.length;const next=byId('lab-next');if(state.next_step){next.hidden=false;next.textContent=lab.steps[state.next_step-1]}else{next.hidden=true}const pack=byId('lab-pack');pack.hidden=!state.pack_available;byId('lab-complete').hidden=!state.pack_available}
+async function request(url,options){const response=await fetch(url,options);if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.detail||'The guided test could not continue.')}return response.json()}
+async function load(){try{renderState(await request('/api/lab'))}catch(error){byId('lab-error').textContent=error.message}}
+byId('lab-next').addEventListener('click',async event=>{const button=event.currentTarget;button.disabled=true;byId('lab-error').textContent='';try{renderState(await request(`/api/lab/steps/${lab.state.next_step}`,{method:'POST'}))}catch(error){byId('lab-error').textContent=error.message}finally{button.disabled=false}});
+byId('lab-reset').addEventListener('click',async event=>{const button=event.currentTarget;button.disabled=true;byId('lab-error').textContent='';try{renderState(await request('/api/lab/reset',{method:'POST'}))}catch(error){byId('lab-error').textContent=error.message}finally{button.disabled=false}});
+load();
+"""
+
+
+def page(body: str, *, extra_css: str = "", extra_js: str = "") -> str:
+    return f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Visa preparation Demo</title><style>{BASE_CSS}{extra_css}</style></head><body>{body}<script>{INTERACTION_JS}{extra_js}</script></body></html>'
 
 
 def render_page(case: Case, gate: GateResult) -> str:
@@ -448,4 +540,19 @@ def render_page(case: Case, gate: GateResult) -> str:
 def render_empty_page() -> str:
     return page(
         """<a class="skip-link" href="#main-content">Skip to case</a><header class="topbar"><a class="brand" href="/"><i aria-hidden="true">VP</i>Visa preparation Demo</a></header><main id="main-content"><section class="hero"><div><p class="kicker">Assessment mode</p><h1>No demo case is loaded</h1><p>The synthetic case normally prepares itself when the Demo starts.</p></div></section><section class="outcome"><div><p class="kicker">Try this first</p><h2>Refresh in a few seconds</h2><p>If this remains, close the tab and double-click START_DEMO again. It will rebuild the case and reopen this page.</p></div><a class="button primary" href="/">Refresh case</a></section></main>"""
+    )
+
+
+def render_lab_page() -> str:
+    return page(
+        """<a class="skip-link" href="#main-content">Skip to guided test</a>
+        <header class="topbar"><a class="brand" href="/"><i aria-hidden="true">VP</i>Visa preparation</a><div class="topbar-actions"><span>Synthetic local test</span><a href="/">Review finished case</a></div></header>
+        <main id="main-content" class="lab-main">
+          <section class="lab-intro"><div><h1>Try the safety workflow yourself</h1><p>Send three prepared messages as the applicant. Each click runs the real workflow, records evidence, applies deterministic checks, and releases the pack only after the final confirmation.</p></div><aside class="lab-mode"><strong>Guided, credential-free test</strong><span>Uses synthetic data and the deterministic fixture extractor. It does not call an external model or provider.</span></aside></section>
+          <ol class="lab-progress" aria-label="Guided test progress"><li class="current"><b>1</b><span>Initial evidence</span></li><li><b>2</b><span>Corrections</span></li><li><b>3</b><span>Confirmation</span></li></ol>
+          <div class="lab-workspace"><section class="conversation" aria-labelledby="conversation-title"><h2 id="conversation-title">Applicant and adviser</h2><div id="conversation-body" aria-live="polite"></div></section>
+          <aside class="lab-controls"><h2>Run the next step</h2><p>The message and attachments are visible after they are sent. The adviser reply is generated by the workflow.</p><button id="lab-next" class="button primary" type="button">Send initial email</button><a id="lab-pack" class="button primary" href="/api/lab/pack" hidden>Download released pack</a><button id="lab-reset" class="button secondary" type="button">Reset guided test</button><p id="lab-complete" class="lab-error" hidden>Complete: the pack is available for human review.</p><p id="lab-error" class="lab-error" role="alert"></p><dl class="lab-state"><dt>Workflow stage</dt><dd id="lab-stage">Loading…</dd><dt>Safety checks</dt><dd id="lab-checks">Loading…</dd></dl><ul id="lab-blockers" class="lab-blockers" hidden></ul></aside></div>
+        </main>""",
+        extra_css=LAB_CSS,
+        extra_js=LAB_JS,
     )

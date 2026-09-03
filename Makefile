@@ -1,4 +1,4 @@
-.PHONY: setup demo test accuracy lint typecheck stability policy-check agent-eval-live agent-eval-deepseek agent-eval-stress web webhook start stop clean
+.PHONY: setup demo test accuracy lint typecheck stability policy-check agent-eval-live agent-eval-deepseek agent-eval-stress workflow-eval-deepseek web webhook start stop clean
 
 setup:
 	uv sync --extra dev
@@ -32,6 +32,9 @@ agent-eval-deepseek:
 
 agent-eval-stress:
 	uv run python scripts/agent_eval.py --provider deepseek --model "$${MODEL:-deepseek-v4-flash}" --perturbations --repeats 1 --output eval_output/agent_stress_eval.json
+
+workflow-eval-deepseek:
+	uv run python scripts/workflow_eval.py --model "$${MODEL:-deepseek-v4-flash}"
 
 web:
 	uv run visa-agent web

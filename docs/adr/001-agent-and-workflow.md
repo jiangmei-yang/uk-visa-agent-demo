@@ -1,6 +1,6 @@
 # ADR-001: bounded Agent and deterministic case workflow
 
-- Status: accepted architecture; provider model selection pending live evaluation
+- Status: accepted architecture; DeepSeek selected for the optional evaluated live path
 - Date: 2026-09-02
 - Scope: UK Standard Visitor document-preparation Demo
 
@@ -51,7 +51,7 @@ message plan ── blocked / awaiting confirmation / ready
 transactional outbox ── finite retry + ambiguous-send reconciliation
         │
         ▼
-deterministic eight-check delivery gate
+          deterministic ten-check delivery gate
         │ pass only after explicit applicant confirmation
         ▼
 PDF / JSON / ZIP pack for human review
@@ -71,8 +71,7 @@ cost. Both candidates support the Responses API and Structured Outputs according
 [official model comparison](https://developers.openai.com/api/docs/models/compare). Availability is
 still account-dependent and must be confirmed by the sandbox run.
 
-DeepSeek's current official documentation exposes an OpenAI-compatible Responses API and JSON
-Schema output at `https://api.deepseek.com`. The integration remains a separate
+The integration remains a separate
 `DeepSeekStructuredLLM`: it omits OpenAI-only storage/safety request fields, disables thinking for
 the narrow extraction comparison, and parses the returned JSON back into the same strict
 `CasePatch`. This is protocol reuse, not a claim that provider behaviour or safety is equivalent.
@@ -85,6 +84,11 @@ prompt, schema, reasoning settings, SDK, or guard rules.
 
 The model ID is deliberately mandatory in every live adapter; there is no hidden default that can
 change behaviour without a review decision.
+
+For this submission, `deepseek-v4-flash` is the selected optional live path because it passed the
+15-case repeated corpus, the 75-input perturbation suite, and three independent full-workflow runs.
+The credential-free interviewer path deliberately stays deterministic. OpenAI candidates remain
+unevaluated in this repository and are not claimed as equivalent or inferior.
 
 ## Stability controls
 
@@ -99,7 +103,7 @@ change behaviour without a review decision.
 | Wording model unavailable | Reply guard | Deterministic non-advisory template |
 | Duplicate/delayed event | Workflow/storage | Provider ID idempotency, sender and ordering policy |
 | Duplicate reply after crash | Outbox | Transactional claim and RFC Message-ID reconciliation |
-| Premature pack | Delivery gate | Eight deterministic checks re-evaluated at download |
+| Premature pack | Delivery gate | Ten deterministic checks re-evaluated at download |
 
 ## Alternatives rejected
 

@@ -17,17 +17,18 @@ explicitly recorded here.
 
 | Capability | Current evidence | Honest status | Missing proof |
 |---|---|---|---|
-| Three-email case progression | Automated simulation | Replays both committed fixtures and standards-compliant MIME messages, reaching the expected blocked → corrected → confirmed states | Free-form customer language and provider delivery |
+| Three-email case progression | Automated simulation + provider evaluation | Credential-free guided UI runs the real workflow one step at a time; DeepSeek also completed one natural-language blocked → corrected → confirmed path | Real applicant distribution and provider delivery |
 | Inbound attachments | Automated simulation | Standard MIME PDFs are extracted with filename, type, count, and size controls | Gmail attachment payloads and provider redelivery |
-| Human-like replies | Automated simulation | Deterministic template produces one reply per fixture | Natural but bounded model drafting, tone evaluation, clarification loops |
+| Human-like replies | Provider evaluation | Three DeepSeek replies passed plan-specific completeness, premature-release, confirmation, human-review, placeholder, length, and outcome-claim guards | Independent human tone review and broader clarification loops |
 | Gmail API boundary | Automated simulation | Raw MIME ingestion, threaded send, sent lookup, outbox mapping, OAuth file safety, and error classes pass fake-provider tests | Real OAuth, mailbox delivery, attachment/thread behaviour, quota and revoked-token evidence |
 | WhatsApp | Automated simulation | Twilio boundary covers signature-first text/PDF intake, durable lease queue, public route, channel isolation, finite send failures, idempotency, and reply-window enforcement | Account/device sandbox and real media/reply/status callbacks |
-| Delivery safety gate | Automated simulation | Eight deterministic checks block delivery; current gate is rechecked at download | Fault injection around stale packs, concurrent mutation, recovery evidence |
+| Delivery safety gate | Automated simulation + provider evaluation | Ten deterministic checks block delivery, are rechecked at download, and passed 39/39 complete-workflow assertions | Concurrent case mutation and production recovery evidence |
 | Event idempotency | Automated simulation | Accepted and rejected provider IDs are persisted once; concurrent outbox claims are exclusive | Provider redelivery and external delivery reconciliation |
 | Pack determinism | Automated simulation | Twenty clean runs generate the same ZIP hash | Cross-platform/runtime reproducibility and migration compatibility |
 | Model extraction | Provider evaluation | 15 cases x 3 and a separate 75-input formatting/injection stress run completed on DeepSeek; final stress critical precision 100%, recall 97.37% | Real applicant language and production-distribution monitoring |
 | Prompt-injection resistance | Provider evaluation | English and Chinese injection variants completed with unsupported claims and unsafe boundary violations at 0% in the final 75-input run | Real document-borne attacks and production monitoring |
 | Human usability | Internal browser review only | Desktop/narrow-screen layout, three-step interaction, audit expansion, download path and console errors were checked on the Docker build | Independent interviewer and applicant task observation |
+| Local data export/deletion | Automated simulation + browser review | JSON export, exact-confirmation deletion, database cleanup and case-owned artifact cleanup pass; raw processed inbound bodies are not retained | Production retention schedule, access roles and encrypted storage |
 
 ## High-risk gaps discovered
 
@@ -151,6 +152,20 @@ mail as explicit untrusted data and adding a literal excerpt self-check, the fin
 unsafe boundary violations, and 100% human-review and ambiguity decisions. p95 latency was 3.31
 seconds; conservative peak/cache-miss cost was USD 0.046395. Omitted facts fail closed at the
 completeness gate and cannot authorise a pack.
+
+**Provider run 4 — 2026-09-04:** DeepSeek completed the full synthetic natural-language workflow
+three independent times, not just isolated extraction. Nine messages triggered three identical
+`blocked → awaiting_confirmation → ready` sequences; 117/117 workflow, gate, pack, and reply checks
+passed, all nine model replies were accepted without fallback, and semantic repeat consistency was
+100%. All three runs generated the same ZIP hash. The default guided browser lab remains
+deterministic and credential-free, while this report isolates actual model behaviour.
+
+**Internal product run — 2026-09-04:** the Docker build was clicked end-to-end in the in-app browser.
+The initial lab state hid the unavailable pack, the first message showed two blockers and 7/10 gate
+checks, the correction reached 9/10 without releasing the pack, and final confirmation reached 10/10
+with three recorded exchanges and a visible pack action. Desktop and narrow layouts had no DOM
+horizontal overflow; keyboard arrow navigation switched the case walkthrough tabs; no console errors
+were recorded. This is internal review, not E-06 external observation.
 
 **Policy maintenance — 2026-09-04:** a weekly GitHub Action now runs the same policy-window check as
 the live delivery gate. Expiry produces a failing workflow and requires manual GOV.UK source review;

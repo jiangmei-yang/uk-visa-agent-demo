@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from datetime import date
 from pathlib import Path
@@ -8,11 +9,13 @@ from urllib.parse import parse_qsl
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, Response
 
+from visa_agent.case_data import delete_case_artifacts
 from visa_agent.config import Settings
 from visa_agent.domain.models import Case
 from visa_agent.domain.policy import load_policy
 from visa_agent.domain.rules import evaluate_gate
-from visa_agent.review_ui import render_empty_page, render_page
+from visa_agent.lab import get_lab_pack, get_lab_state, process_lab_step, reset_lab
+from visa_agent.review_ui import render_empty_page, render_lab_page, render_page
 from visa_agent.storage.sqlite import SQLiteStore
 
 MAX_WEBHOOK_BODY_BYTES = 64 * 1024
@@ -50,6 +53,37 @@ def index() -> HTMLResponse:
     return HTMLResponse(render_page(case, gate))
 
 
+@app.get("/try", response_class=HTMLResponse)
+def guided_lab() -> HTMLResponse:
+    return HTMLResponse(render_lab_page())
+
+
+@app.get("/api/lab")
+def lab_state() -> dict[str, object]:
+    return get_lab_state(settings)
+
+
+@app.post("/api/lab/steps/{step}")
+def lab_step(step: int) -> dict[str, object]:
+    try:
+        return process_lab_step(settings, step)
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@app.post("/api/lab/reset")
+def lab_reset() -> dict[str, object]:
+    return reset_lab(settings)
+
+
+@app.get("/api/lab/pack")
+def lab_pack() -> FileResponse:
+    path = get_lab_pack(settings)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Guided test pack is not available")
+    return FileResponse(path, filename=path.name, media_type="application/zip")
+
+
 @app.get("/api/cases")
 def list_cases() -> list[dict[str, object]]:
     return [case.model_dump(mode="json") for case in load_cases()]
@@ -61,6 +95,41 @@ def get_case(case_id: str) -> dict[str, object]:
     if case is None:
         raise HTTPException(status_code=404, detail="Case not found")
     return case.model_dump(mode="json")
+
+
+@app.get("/api/cases/{case_id}/export")
+def export_case(case_id: str) -> Response:
+    request_store = SQLiteStore(settings.database_path)
+    try:
+        exported = request_store.export_case_data(case_id)
+    finally:
+        request_store.close()
+    if exported is None:
+        raise HTTPException(status_code=404, detail="Case not found")
+    return Response(
+        content=json.dumps(exported, indent=2, ensure_ascii=False, default=str) + "\n",
+        media_type="application/json",
+        headers={"Content-Disposition": 'attachment; filename="synthetic-case-export.json"'},
+    )
+
+
+@app.delete("/api/cases/{case_id}", status_code=204)
+def delete_case(case_id: str, request: Request) -> Response:
+    if request.headers.get("X-Confirm-Case-Deletion") != case_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Case deletion requires the exact case confirmation header",
+        )
+    request_store = SQLiteStore(settings.database_path)
+    try:
+        case = request_store.get_case(case_id)
+        if case is None:
+            raise HTTPException(status_code=404, detail="Case not found")
+        delete_case_artifacts(case, settings.output_dir)
+        request_store.delete_case(case_id)
+    finally:
+        request_store.close()
+    return Response(status_code=204)
 
 
 @app.get("/api/cases/{case_id}/pack")

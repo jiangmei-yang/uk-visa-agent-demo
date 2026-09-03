@@ -4,8 +4,8 @@ services:
   review-console:
     build: .
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
-      VISA_AGENT_DATABASE: /app/data/visa_agent.db
-      VISA_AGENT_OUTPUT_DIR: /app/demo_output
+      VISA_AGENT_DATABASE: /app/runtime/data/visa_agent.db
+      VISA_AGENT_OUTPUT_DIR: /app/runtime/demo_output
     restart: unless-stopped

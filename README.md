@@ -28,6 +28,11 @@ The launcher builds the app, prepares the complete synthetic case, waits until t
 passes, and opens <http://127.0.0.1:8000>. Use the matching `STOP_DEMO` file when finished. See
 [START_HERE.md](START_HERE.md) for the one-page walkthrough and troubleshooting.
 
+From the finished case, choose **Try the workflow** to run the three-message journey yourself.
+This guided lab uses the actual workflow, evidence ledger, delivery gate, and pack generator. It is
+synthetic and credential-free; the page states clearly that its extractor is deterministic rather
+than an external model.
+
 The first launch normally takes a few minutes because Docker downloads the base image. Later
 launches reuse it. All data is synthetic and stays inside the local Docker container.
 
@@ -129,6 +134,7 @@ make policy-check # fail when the committed policy review window has expired
 MODEL=<model-id> make agent-eval-live  # optional OpenAI provider evaluation
 MODEL=deepseek-v4-flash make agent-eval-deepseek  # optional DeepSeek evaluation
 make agent-eval-stress # optional 75-input DeepSeek formatting/injection stress run
+make workflow-eval-deepseek # optional complete DeepSeek conversation-to-pack run
 make web         # local case-review console
 make webhook     # provider-only local webhook gateway on port 8001
 make start       # build and start the complete Docker demo
@@ -172,6 +178,10 @@ pack download. The webhook remains fail-closed until Twilio test credentials are
 Live mode is intentionally not part of the default assessment path. Email and WhatsApp sandbox
 claims remain withheld until their separate provider experiments pass.
 
+The local review app binds to `127.0.0.1` in Docker. A case can be exported as JSON from the review
+page. Deletion requires a browser confirmation and an exact case-ID request header, then removes the
+case records and case-owned generated artifacts. Processed raw inbound messages are not retained.
+
 ## Policy sources
 
 The snapshot was checked on 2026-09-02 and reverified against the same live GOV.UK guidance on
@@ -210,6 +220,6 @@ The offline extractor recognises deliberately marked synthetic PDF fixtures; it 
 OCR or fraud-detection system. Authentication, malware scanning, encrypted object storage, retention
 jobs, operator roles, Gmail OAuth bootstrapping, and real-user validation remain production work.
 Passing tests is internal evidence, not proof of applicant outcomes or external usability.
-The committed Agent corpus and evaluator are synthetic; a live score exists only when
-`eval_output/agent_eval.json` is produced with an explicitly selected provider model.
+The committed Agent corpus and evaluator are synthetic. DeepSeek reports cover extraction stress
+and one complete natural-language conversation-to-pack path; they are not real-applicant evidence.
 See [ACCURACY.md](ACCURACY.md) for the separate workflow and live-model scorecards.

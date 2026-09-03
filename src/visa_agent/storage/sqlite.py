@@ -140,6 +140,65 @@ class SQLiteStore:
         ).fetchall()
         return [Case.model_validate_json(row["snapshot_json"]) for row in rows]
 
+    def export_case_data(self, case_id: str) -> dict[str, Any] | None:
+        case = self.get_case(case_id)
+        if case is None:
+            return None
+        outbox = self.connection.execute(
+            """SELECT id, event_id, message_type, payload, channel, recipient,
+                      external_thread_id, status, attempt_count, last_error, sent_at,
+                      provider_message_id, created_at
+               FROM outbox WHERE case_id = ? ORDER BY created_at, id""",
+            (case_id,),
+        ).fetchall()
+        failures = self.connection.execute(
+            """SELECT id, thread_id, reason_code, detail, retryable, created_at
+               FROM inbound_failures WHERE case_id = ? ORDER BY created_at, id""",
+            (case_id,),
+        ).fetchall()
+        deliveries = self.connection.execute(
+            """SELECT id, path, sha256, created_at
+               FROM deliveries WHERE case_id = ? ORDER BY created_at, id""",
+            (case_id,),
+        ).fetchall()
+        return {
+            "case": case.model_dump(mode="json"),
+            "outbound_messages": [dict(row) for row in outbox],
+            "inbound_failures": [dict(row) for row in failures],
+            "deliveries": [dict(row) for row in deliveries],
+            "data_note": (
+                "Raw processed inbound messages are not retained. The snapshot keeps only "
+                "bounded evidence excerpts and source identifiers needed for audit."
+            ),
+        }
+
+    def delete_case(self, case_id: str) -> Case | None:
+        case = self.get_case(case_id)
+        if case is None:
+            return None
+        queued_ids: list[str] = []
+        for row in self.connection.execute(
+            "SELECT id, payload_json FROM inbound_queue WHERE payload_json != '{}'"
+        ).fetchall():
+            try:
+                event = InboundEvent.model_validate_json(str(row["payload_json"]))
+            except ValueError:
+                continue
+            if event.external_thread_id == case.external_thread_id:
+                queued_ids.append(str(row["id"]))
+        with self.connection:
+            if queued_ids:
+                placeholders = ",".join("?" for _ in queued_ids)
+                self.connection.execute(
+                    f"DELETE FROM inbound_queue WHERE id IN ({placeholders})", queued_ids
+                )
+            self.connection.execute("DELETE FROM inbound_failures WHERE case_id = ?", (case_id,))
+            self.connection.execute("DELETE FROM deliveries WHERE case_id = ?", (case_id,))
+            self.connection.execute("DELETE FROM outbox WHERE case_id = ?", (case_id,))
+            self.connection.execute("DELETE FROM processed_events WHERE case_id = ?", (case_id,))
+            self.connection.execute("DELETE FROM cases WHERE id = ?", (case_id,))
+        return case
+
     def commit_event(
         self,
         case: Case,

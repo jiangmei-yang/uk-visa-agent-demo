@@ -28,5 +28,20 @@ jobs:
             --output /tmp/visa-application-pack.zip \
             http://127.0.0.1:8000/api/cases/case-7b2f8d0650eb/pack
           unzip -t /tmp/visa-application-pack.zip
+      - name: Run guided workflow inside the built container
+        run: |
+          curl --fail --silent --show-error --request POST \
+            http://127.0.0.1:8000/api/lab/reset >/dev/null
+          curl --fail --silent --show-error --request POST \
+            http://127.0.0.1:8000/api/lab/steps/1 >/tmp/lab-step-1.json
+          curl --fail --silent --show-error --request POST \
+            http://127.0.0.1:8000/api/lab/steps/2 >/tmp/lab-step-2.json
+          curl --fail --silent --show-error --request POST \
+            http://127.0.0.1:8000/api/lab/steps/3 >/tmp/lab-step-3.json
+          python -c 'import json; data=json.load(open("/tmp/lab-step-3.json")); assert data["processed_steps"] == 3 and data["pack_available"] and all(data["gate"]["checks"].values())'
+          curl --fail --silent --show-error \
+            --output /tmp/guided-visa-application-pack.zip \
+            http://127.0.0.1:8000/api/lab/pack
+          unzip -t /tmp/guided-visa-application-pack.zip
       - if: always()
         run: docker compose down

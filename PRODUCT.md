@@ -20,6 +20,9 @@ The product demonstrates one complete, auditable preparation loop: receive a syn
 thread and documents, preserve evidence provenance, identify blockers without making legal
 claims, obtain corrections and explicit confirmation, and produce a reviewable application pack.
 
+An evaluator can replay that loop interactively through a guided local lab. The lab is explicitly
+labelled deterministic and synthetic; live-model evidence is reported separately.
+
 ## Positioning
 
 Human-feeling guidance with a deterministic control plane: language can be flexible, but scope,

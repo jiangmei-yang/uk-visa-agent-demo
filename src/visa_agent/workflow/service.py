@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Callable
 from datetime import UTC, date, datetime
 from email.utils import parseaddr
 from pathlib import Path
@@ -59,10 +60,18 @@ def stable_id(prefix: str, value: str) -> str:
 
 
 class WorkflowService:
-    def __init__(self, store: SQLiteStore, policy: Policy, llm: LLMClient) -> None:
+    def __init__(
+        self,
+        store: SQLiteStore,
+        policy: Policy,
+        llm: LLMClient,
+        *,
+        today_provider: Callable[[], date] = date.today,
+    ) -> None:
         self.store = store
         self.policy = policy
         self.llm = ensure_guarded(llm)
+        self.today_provider = today_provider
 
     def process(self, event: InboundEvent) -> tuple[Case, bool, str]:
         if self.store.event_processed(event.id):
@@ -114,7 +123,7 @@ class WorkflowService:
         run_consistency_checks(case)
         case.last_inbound_received_at = event.received_at
         case.updated_at = datetime.now(UTC)
-        gate = evaluate_gate(case, self.policy, date.today())
+        gate = evaluate_gate(case, self.policy, self.today_provider())
         if case.status != CaseStatus.HUMAN_REVIEW_REQUIRED:
             if gate.allowed:
                 advance_stage(case, WorkflowStage.READY_FOR_HUMAN_REVIEW)
@@ -122,11 +131,10 @@ class WorkflowService:
                 advance_stage(case, WorkflowStage.DOCUMENT_REVIEW)
             elif not case.final_summary_confirmed:
                 advance_stage(case, WorkflowStage.FINAL_CONFIRMATION)
-        plan = (
-            "ready"
-            if gate.allowed
-            else ("blocked" if case.open_blockers() else "awaiting_confirmation")
-        )
+        failed_checks = {key for key, passed in gate.checks.items() if not passed}
+        plan = "ready" if gate.allowed else "blocked"
+        if failed_checks == {"applicant_explicitly_confirmed_final_summary"}:
+            plan = "awaiting_confirmation"
         message = self.llm.render_message(case, plan)
         message_id = stable_id("message", f"{event.id}:{plan}")
         if message_id not in case.outbound_message_ids:

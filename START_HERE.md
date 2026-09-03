@@ -20,12 +20,17 @@ The featured case begins with two blockers: conflicting trip dates and a missing
 translation. Follow-up evidence resolves those issues, but delivery remains blocked until the
 applicant explicitly confirms the final summary. The final status is **Ready for human review**.
 
-In the console, inspect:
+In the console:
 
-1. the current case status and deterministic delivery decision;
-2. the evidence ledger and superseded document;
-3. the rule results and resolved issues;
-4. the generated application-pack download.
+1. choose **Try the workflow** and send the three prepared applicant messages;
+2. see the first pack withheld for two named evidence problems;
+3. see the corrections clear those blockers while the pack still waits for confirmation;
+4. send the exact final confirmation and download the released pack;
+5. return to the finished case to inspect the evidence ledger, superseded document, and rule results.
+
+The guided test is synthetic and deterministic, so it needs no API key and gives every interviewer
+the same auditable result. The repository separately includes a real DeepSeek full-workflow report;
+that live provider is not silently used by the credential-free page.
 
 The language model cannot clear blockers or authorise delivery. Those decisions are made by
 versioned rules, an allow-listed workflow, and an explicit confirmation gate.
@@ -34,6 +39,8 @@ versioned rules, an allow-listed workflow, and an explicit confirmation gate.
 
 - Double-click `STOP_DEMO.command` on macOS or `STOP_DEMO_WINDOWS.bat` on Windows.
 - Starting again recreates the same case and produces byte-identical output.
+- The finished-case page can export its local synthetic case data. Deleting a case requires a clear
+  confirmation; restarting the Demo recreates it.
 
 ## If the browser does not open
 

@@ -67,7 +67,7 @@ def test_whatsapp_event_reuses_workflow_outbox_and_idempotency(tmp_path: Path) -
         replayed, replay_duplicate, replay_plan = service.process(event)
 
         assert duplicate is False
-        assert plan == "awaiting_confirmation"
+        assert plan == "blocked"
         assert replay_duplicate is True
         assert replay_plan == "duplicate_ignored"
         assert replayed == case

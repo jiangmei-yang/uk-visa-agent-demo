@@ -45,6 +45,7 @@ def test_deepseek_extraction_uses_json_chat_without_openai_only_fields() -> None
     adapter.model = "deepseek-v4-flash"
     adapter.version = "deepseek-v4-flash"
     adapter.last_usage = None
+    adapter.usage_history = []
     event = InboundEvent(
         id="provider-1",
         external_thread_id="thread-1",
@@ -68,3 +69,11 @@ def test_deepseek_extraction_uses_json_chat_without_openai_only_fields() -> None
     assert "store" not in arguments
     assert "safety_identifier" not in arguments
     assert adapter.last_usage == {"input_tokens": 80, "output_tokens": 16, "total_tokens": 96}
+    assert adapter.usage_history == [
+        {
+            "operation": "extract_case_patch",
+            "input_tokens": 80,
+            "output_tokens": 16,
+            "total_tokens": 96,
+        }
+    ]

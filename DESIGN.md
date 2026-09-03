@@ -14,7 +14,7 @@ snapshot plus idempotency, outbox, and delivery records. Generated PDFs/JSON/ZIP
 The MVP excludes visa/ETA advice, other routes, minors, application submission, legal conclusions,
 approval prediction, real-person data, WhatsApp, production OCR, and document authenticity decisions.
 
-The primary completion event is one pack generated after all eight gate checks pass. Guardrails are
+The primary completion event is one pack generated after all ten gate checks pass. Guardrails are
 zero unsupported-route finalisations, zero packs with an open blocker, zero duplicate side effects on
 replay, and zero unprovenanced critical facts.
 
@@ -68,6 +68,9 @@ preserve deliberate overflow and accessible full text.
 - The application-pack download is the only primary action and is present only while the current
   delivery gate passes.
 - Three keyboard-operable tabs replay the initial pause, correction, and confirmation states.
+- A separate **Try the workflow** route lets an evaluator send the three synthetic messages through
+  the actual workflow one at a time, with current blockers, passed checks, replies, and pack release
+  updated after each action.
 - The default view shows the exact first email and safe stop; the current outcome remains visible
   above it so historical state cannot be mistaken for current status.
 - The view answers what happened, what changed, and what is ready without requiring domain or
@@ -76,6 +79,8 @@ preserve deliberate overflow and accessible full text.
   document hashes without navigating away or interrupting the task with a modal.
 - Technical evidence remains present in the DOM and test contract but is not part of the initial
   cognitive load.
+- Export and destructive deletion stay below the audit evidence; deletion uses the browser's familiar
+  confirmation dialog and exact case-scoped server confirmation rather than a custom modal.
 
 ## Motion
 

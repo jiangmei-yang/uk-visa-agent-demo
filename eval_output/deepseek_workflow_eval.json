@@ -1,0 +1,393 @@
+{
+  "synthetic": true,
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "evaluation_date": "2026-09-02",
+  "scope": "natural-language intake through deterministic pack release",
+  "repeat_count": 3,
+  "runs": [
+    {
+      "repeat": 1,
+      "synthetic": true,
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "evaluation_date": "2026-09-02",
+      "scope": "natural-language intake through deterministic pack release",
+      "steps": [
+        {
+          "step": 1,
+          "plan": "blocked",
+          "stage": "DOCUMENT_REVIEW",
+          "open_blockers": [
+            "Certified translation required",
+            "Travel and invitation dates differ"
+          ],
+          "gate_reasons": [
+            "all blocker requirements resolved",
+            "no unresolved blocker issue",
+            "applicant explicitly confirmed final summary"
+          ],
+          "reply": "Dear Lin Chen,\n\nWe cannot prepare your review pack yet. Please address the following items:\n\n1. Travel and invitation dates differ: Your current trip ends on 2026-09-15, but the invitation states the event ends on 2026-09-16. Please correct the dates so they match.\n\n2. Certified translation required: The document family_funds_cn.pdf needs a certified translation linked to it. Please provide this.\n\nOnce you have made the correction and supplied the translation, we can proceed.\n\nBest regards,  \nVisa preparation team",
+          "model_reply_accepted": true,
+          "render_fallback_reason": null,
+          "latency_ms": 5752.84,
+          "checks": {
+            "not_duplicate": true,
+            "expected_plan": true,
+            "expected_blockers": true,
+            "pack_release_boundary": true,
+            "gate_release_boundary": true,
+            "extraction_did_not_fallback": true,
+            "non_empty": true,
+            "within_length_limit": true,
+            "no_prohibited_outcome_claim": true,
+            "every_open_blocker_named": true,
+            "confirmation_boundary_present": true,
+            "no_premature_pack_release_claim": true,
+            "human_review_boundary_present": true
+          },
+          "passed": true
+        },
+        {
+          "step": 2,
+          "plan": "awaiting_confirmation",
+          "stage": "FINAL_CONFIRMATION",
+          "open_blockers": [],
+          "gate_reasons": [
+            "applicant explicitly confirmed final summary"
+          ],
+          "reply": "Dear Lin Chen,\n\nOur document checks show no current blocker, but we are still withholding the pack at this stage. Please review the facts and reply on a standalone line with exactly: I CONFIRM THE FINAL SUMMARY\n\nBest regards,  \nVisa preparation team",
+          "model_reply_accepted": true,
+          "render_fallback_reason": null,
+          "latency_ms": 1639.94,
+          "checks": {
+            "not_duplicate": true,
+            "expected_plan": true,
+            "expected_blockers": true,
+            "pack_release_boundary": true,
+            "gate_release_boundary": true,
+            "extraction_did_not_fallback": true,
+            "non_empty": true,
+            "within_length_limit": true,
+            "no_prohibited_outcome_claim": true,
+            "every_open_blocker_named": true,
+            "confirmation_boundary_present": true,
+            "no_premature_pack_release_claim": true,
+            "human_review_boundary_present": true
+          },
+          "passed": true
+        },
+        {
+          "step": 3,
+          "plan": "ready",
+          "stage": "READY_FOR_HUMAN_REVIEW",
+          "open_blockers": [],
+          "gate_reasons": [],
+          "reply": "Dear Lin Chen,\n\nYour preparation pack is now ready for review by a human adviser. Please note that this does not predict the outcome of any application, and the pack has not been submitted.\n\nBest regards,  \nVisa preparation team",
+          "model_reply_accepted": true,
+          "render_fallback_reason": null,
+          "latency_ms": 1957.9,
+          "checks": {
+            "not_duplicate": true,
+            "expected_plan": true,
+            "expected_blockers": true,
+            "pack_release_boundary": true,
+            "gate_release_boundary": true,
+            "extraction_did_not_fallback": true,
+            "non_empty": true,
+            "within_length_limit": true,
+            "no_prohibited_outcome_claim": true,
+            "every_open_blocker_named": true,
+            "confirmation_boundary_present": true,
+            "no_premature_pack_release_claim": true,
+            "human_review_boundary_present": true
+          },
+          "passed": true
+        }
+      ],
+      "metrics": {
+        "workflow_steps_passed": 3,
+        "workflow_step_count": 3,
+        "individual_checks_passed": 39,
+        "individual_check_count": 39,
+        "model_replies_accepted": 3,
+        "reply_count": 3,
+        "provider_call_count": 6,
+        "input_tokens": 3626,
+        "output_tokens": 1033,
+        "latency_ms_median": 1957.9,
+        "latency_ms_max": 5752.84,
+        "pack_sha256": "db235a4d95de313f4767338f2dc4296eb022c0c7c523bf82d79f8a3c20f95bc0"
+      },
+      "passed": true,
+      "limitations": [
+        "All applicant data and documents are synthetic.",
+        "The document reader is the deterministic PDF fixture extractor, not production OCR.",
+        "This run does not exercise Gmail, WhatsApp, or a real applicant."
+      ]
+    },
+    {
+      "repeat": 2,
+      "synthetic": true,
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "evaluation_date": "2026-09-02",
+      "scope": "natural-language intake through deterministic pack release",
+      "steps": [
+        {
+          "step": 1,
+          "plan": "blocked",
+          "stage": "DOCUMENT_REVIEW",
+          "open_blockers": [
+            "Certified translation required",
+            "Travel and invitation dates differ"
+          ],
+          "gate_reasons": [
+            "all blocker requirements resolved",
+            "no unresolved blocker issue",
+            "applicant explicitly confirmed final summary"
+          ],
+          "reply": "Dear Lin Chen,\n\nWe cannot prepare your review pack yet. Please address the following items:\n\n1. Travel and invitation dates differ: Your current trip ends on 2026-09-15, but the invitation states the event ends on 2026-09-16. Please correct the dates so they match.\n\n2. Certified translation required: The document family_funds_cn.pdf needs a certified translation linked to it. Please provide this.\n\nOnce you have made the correction and supplied the translation, we can proceed.\n\nBest regards,  \nVisa preparation team",
+          "model_reply_accepted": true,
+          "render_fallback_reason": null,
+          "latency_ms": 5389.58,
+          "checks": {
+            "not_duplicate": true,
+            "expected_plan": true,
+            "expected_blockers": true,
+            "pack_release_boundary": true,
+            "gate_release_boundary": true,
+            "extraction_did_not_fallback": true,
+            "non_empty": true,
+            "within_length_limit": true,
+            "no_prohibited_outcome_claim": true,
+            "every_open_blocker_named": true,
+            "confirmation_boundary_present": true,
+            "no_premature_pack_release_claim": true,
+            "human_review_boundary_present": true
+          },
+          "passed": true
+        },
+        {
+          "step": 2,
+          "plan": "awaiting_confirmation",
+          "stage": "FINAL_CONFIRMATION",
+          "open_blockers": [],
+          "gate_reasons": [
+            "applicant explicitly confirmed final summary"
+          ],
+          "reply": "Dear Lin Chen,\n\nOur document checks show no current blocker, but we are still withholding the pack at this stage. Please review the facts and reply on a standalone line with exactly: I CONFIRM THE FINAL SUMMARY\n\nBest regards,  \nVisa preparation team",
+          "model_reply_accepted": true,
+          "render_fallback_reason": null,
+          "latency_ms": 1843.74,
+          "checks": {
+            "not_duplicate": true,
+            "expected_plan": true,
+            "expected_blockers": true,
+            "pack_release_boundary": true,
+            "gate_release_boundary": true,
+            "extraction_did_not_fallback": true,
+            "non_empty": true,
+            "within_length_limit": true,
+            "no_prohibited_outcome_claim": true,
+            "every_open_blocker_named": true,
+            "confirmation_boundary_present": true,
+            "no_premature_pack_release_claim": true,
+            "human_review_boundary_present": true
+          },
+          "passed": true
+        },
+        {
+          "step": 3,
+          "plan": "ready",
+          "stage": "READY_FOR_HUMAN_REVIEW",
+          "open_blockers": [],
+          "gate_reasons": [],
+          "reply": "Dear Lin Chen,\n\nYour preparation pack is now ready for review by a human adviser. Please note that this does not predict the outcome of any application, and the pack has not been submitted.\n\nBest regards,  \nVisa preparation team",
+          "model_reply_accepted": true,
+          "render_fallback_reason": null,
+          "latency_ms": 1989.76,
+          "checks": {
+            "not_duplicate": true,
+            "expected_plan": true,
+            "expected_blockers": true,
+            "pack_release_boundary": true,
+            "gate_release_boundary": true,
+            "extraction_did_not_fallback": true,
+            "non_empty": true,
+            "within_length_limit": true,
+            "no_prohibited_outcome_claim": true,
+            "every_open_blocker_named": true,
+            "confirmation_boundary_present": true,
+            "no_premature_pack_release_claim": true,
+            "human_review_boundary_present": true
+          },
+          "passed": true
+        }
+      ],
+      "metrics": {
+        "workflow_steps_passed": 3,
+        "workflow_step_count": 3,
+        "individual_checks_passed": 39,
+        "individual_check_count": 39,
+        "model_replies_accepted": 3,
+        "reply_count": 3,
+        "provider_call_count": 6,
+        "input_tokens": 3626,
+        "output_tokens": 1033,
+        "latency_ms_median": 1989.76,
+        "latency_ms_max": 5389.58,
+        "pack_sha256": "db235a4d95de313f4767338f2dc4296eb022c0c7c523bf82d79f8a3c20f95bc0"
+      },
+      "passed": true,
+      "limitations": [
+        "All applicant data and documents are synthetic.",
+        "The document reader is the deterministic PDF fixture extractor, not production OCR.",
+        "This run does not exercise Gmail, WhatsApp, or a real applicant."
+      ]
+    },
+    {
+      "repeat": 3,
+      "synthetic": true,
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "evaluation_date": "2026-09-02",
+      "scope": "natural-language intake through deterministic pack release",
+      "steps": [
+        {
+          "step": 1,
+          "plan": "blocked",
+          "stage": "DOCUMENT_REVIEW",
+          "open_blockers": [
+            "Certified translation required",
+            "Travel and invitation dates differ"
+          ],
+          "gate_reasons": [
+            "all blocker requirements resolved",
+            "no unresolved blocker issue",
+            "applicant explicitly confirmed final summary"
+          ],
+          "reply": "Dear Lin Chen,\n\nWe cannot prepare your review pack yet. Please address the following items:\n\n1. Travel and invitation dates differ: Your current trip ends on 2026-09-15, but the invitation states the event ends on 2026-09-16. Please correct the relevant date.\n\n2. Certified translation required: The document family_funds_cn.pdf needs a linked certified translation. Please provide this.\n\nBest regards,  \nVisa preparation team",
+          "model_reply_accepted": true,
+          "render_fallback_reason": null,
+          "latency_ms": 4584.02,
+          "checks": {
+            "not_duplicate": true,
+            "expected_plan": true,
+            "expected_blockers": true,
+            "pack_release_boundary": true,
+            "gate_release_boundary": true,
+            "extraction_did_not_fallback": true,
+            "non_empty": true,
+            "within_length_limit": true,
+            "no_prohibited_outcome_claim": true,
+            "every_open_blocker_named": true,
+            "confirmation_boundary_present": true,
+            "no_premature_pack_release_claim": true,
+            "human_review_boundary_present": true
+          },
+          "passed": true
+        },
+        {
+          "step": 2,
+          "plan": "awaiting_confirmation",
+          "stage": "FINAL_CONFIRMATION",
+          "open_blockers": [],
+          "gate_reasons": [
+            "applicant explicitly confirmed final summary"
+          ],
+          "reply": "Dear Lin Chen,\n\nOur document checks show no current blocker, but we are still withholding the pack at this stage. Please review the facts and reply on a standalone line with exactly: I CONFIRM THE FINAL SUMMARY\n\nBest regards,  \nVisa preparation team",
+          "model_reply_accepted": true,
+          "render_fallback_reason": null,
+          "latency_ms": 1947.88,
+          "checks": {
+            "not_duplicate": true,
+            "expected_plan": true,
+            "expected_blockers": true,
+            "pack_release_boundary": true,
+            "gate_release_boundary": true,
+            "extraction_did_not_fallback": true,
+            "non_empty": true,
+            "within_length_limit": true,
+            "no_prohibited_outcome_claim": true,
+            "every_open_blocker_named": true,
+            "confirmation_boundary_present": true,
+            "no_premature_pack_release_claim": true,
+            "human_review_boundary_present": true
+          },
+          "passed": true
+        },
+        {
+          "step": 3,
+          "plan": "ready",
+          "stage": "READY_FOR_HUMAN_REVIEW",
+          "open_blockers": [],
+          "gate_reasons": [],
+          "reply": "Dear Lin Chen,\n\nYour preparation pack is now ready for review by a human adviser. Please note that this does not predict the outcome of any application, and the pack has not been submitted.\n\nBest regards,  \nVisa preparation team",
+          "model_reply_accepted": true,
+          "render_fallback_reason": null,
+          "latency_ms": 1837.09,
+          "checks": {
+            "not_duplicate": true,
+            "expected_plan": true,
+            "expected_blockers": true,
+            "pack_release_boundary": true,
+            "gate_release_boundary": true,
+            "extraction_did_not_fallback": true,
+            "non_empty": true,
+            "within_length_limit": true,
+            "no_prohibited_outcome_claim": true,
+            "every_open_blocker_named": true,
+            "confirmation_boundary_present": true,
+            "no_premature_pack_release_claim": true,
+            "human_review_boundary_present": true
+          },
+          "passed": true
+        }
+      ],
+      "metrics": {
+        "workflow_steps_passed": 3,
+        "workflow_step_count": 3,
+        "individual_checks_passed": 39,
+        "individual_check_count": 39,
+        "model_replies_accepted": 3,
+        "reply_count": 3,
+        "provider_call_count": 6,
+        "input_tokens": 3626,
+        "output_tokens": 1009,
+        "latency_ms_median": 1947.88,
+        "latency_ms_max": 4584.02,
+        "pack_sha256": "db235a4d95de313f4767338f2dc4296eb022c0c7c523bf82d79f8a3c20f95bc0"
+      },
+      "passed": true,
+      "limitations": [
+        "All applicant data and documents are synthetic.",
+        "The document reader is the deterministic PDF fixture extractor, not production OCR.",
+        "This run does not exercise Gmail, WhatsApp, or a real applicant."
+      ]
+    }
+  ],
+  "metrics": {
+    "workflow_runs_passed": 3,
+    "workflow_run_count": 3,
+    "workflow_steps_passed": 9,
+    "workflow_step_count": 9,
+    "individual_checks_passed": 117,
+    "individual_check_count": 117,
+    "model_replies_accepted": 9,
+    "reply_count": 9,
+    "provider_call_count": 18,
+    "input_tokens": 10878,
+    "output_tokens": 3075,
+    "semantic_repeat_consistency_rate": 1.0,
+    "latency_ms_median": 1957.9,
+    "latency_ms_max": 5752.84,
+    "unique_pack_hash_count": 1
+  },
+  "passed": true,
+  "limitations": [
+    "All applicant data and documents are synthetic.",
+    "The document reader is the deterministic PDF fixture extractor, not production OCR.",
+    "This run does not exercise Gmail, WhatsApp, or a real applicant."
+  ]
+}

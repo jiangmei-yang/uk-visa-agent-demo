@@ -89,7 +89,7 @@ def test_gmail_raw_message_reaches_workflow_and_replay_is_idempotent(tmp_path: P
         )
         second = processor.process_query("label:visa-agent is:unread")
 
-        assert first[0].status == "awaiting_confirmation"
+        assert first[0].status == "blocked"
         assert second[0].status == "duplicate_ignored"
         assert store.counts() == counts
         assert dispatch[0].status == "SENT"
