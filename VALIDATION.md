@@ -25,9 +25,9 @@ explicitly recorded here.
 | Delivery safety gate | Automated simulation | Eight deterministic checks block delivery; current gate is rechecked at download | Fault injection around stale packs, concurrent mutation, recovery evidence |
 | Event idempotency | Automated simulation | Accepted and rejected provider IDs are persisted once; concurrent outbox claims are exclusive | Provider redelivery and external delivery reconciliation |
 | Pack determinism | Automated simulation | Twenty clean runs generate the same ZIP hash | Cross-platform/runtime reproducibility and migration compatibility |
-| Model extraction | Automated simulation | Schema-bound adapter contract, grounded patch guard, retries, abstention, and a 12-case corpus exist | Repeated provider runs, threshold calibration, and measured variance |
-| Prompt-injection resistance | Automated simulation | Unknown fields, ungrounded excerpts, conflicting values, unsafe reply claims, and injected failures are contained | Repeated live-model email/document injection and exfiltration tests |
-| Human usability | Internal review only | Implementer inspected the local Demo | Independent interviewer and applicant task observation |
+| Model extraction | Provider evaluation | 15 cases x 3 and a separate 75-input formatting/injection stress run completed on DeepSeek; final stress critical precision 100%, recall 97.37% | Real applicant language and production-distribution monitoring |
+| Prompt-injection resistance | Provider evaluation | English and Chinese injection variants completed with unsupported claims and unsafe boundary violations at 0% in the final 75-input run | Real document-borne attacks and production monitoring |
+| Human usability | Internal browser review only | Desktop/narrow-screen layout, three-step interaction, audit expansion, download path and console errors were checked on the Docker build | Independent interviewer and applicant task observation |
 
 ## High-risk gaps discovered
 
@@ -35,8 +35,8 @@ explicitly recorded here.
    not natural-language understanding.
 2. Gmail is connected to the shared ingestion/workflow/outbox contracts under fake-provider tests,
    but no OAuth account or real mailbox has been exercised.
-3. Model timeout, malformed values, ungrounded evidence, conflicts, and unsafe reply claims are
-   exercised locally, but refusal and repeated live-provider variance are not yet measured.
+3. DeepSeek provider variance is measured on the release corpus and a 75-input stress suite. The
+   suite remains synthetic, so real-applicant language distribution and drift are still unmeasured.
 4. The outbox reconciliation contract is provider-neutral and locally simulated; Gmail search by
    deterministic RFC Message-ID and its consistency window are not yet verified.
 5. WhatsApp has a durable local signature/media/queue/send boundary, but status callbacks, provider
@@ -137,10 +137,24 @@ call or live-model score is claimed. Remaining: run repeated candidates, set rel
 record refusal/partial-output behaviour plus dated cost evidence.
 
 **Preparation run 2 — 2026-09-03:** DeepSeek was added as an explicitly separate candidate adapter,
-not as an OpenAI alias. The adapter uses DeepSeek's Responses JSON Schema format, omits OpenAI-only
-request fields, disables thinking for the narrow extraction comparison, and returns the same strict
+not as an OpenAI alias. The adapter uses DeepSeek's JSON Chat mode, omits OpenAI-only request fields,
+disables thinking for the narrow extraction comparison, and returns the same strict
 `CasePatch` to the existing mandatory guard. `deepseek-v4-flash` joins Luna and Terra as a candidate,
 but no `DEEPSEEK_API_KEY` is present and no provider call or score is claimed.
+
+**Provider run 3 — 2026-09-04:** `deepseek-v4-flash` passed the 15-case release corpus three times
+(45/45). A separate 75-input stress run then applied realistic mail noise, quoted reply history,
+English injection suffixes and Chinese injection wrappers. The first run exposed an ungrounded
+multi-field proposal; the deterministic guard rejected every invented excerpt. After serializing
+mail as explicit untrusted data and adding a literal excerpt self-check, the final full run reached
+100% schema validity and critical precision, 97.37% critical recall, 0% unsupported claims, 0%
+unsafe boundary violations, and 100% human-review and ambiguity decisions. p95 latency was 3.31
+seconds; conservative peak/cache-miss cost was USD 0.046395. Omitted facts fail closed at the
+completeness gate and cannot authorise a pack.
+
+**Policy maintenance — 2026-09-04:** a weekly GitHub Action now runs the same policy-window check as
+the live delivery gate. Expiry produces a failing workflow and requires manual GOV.UK source review;
+the job does not automatically rewrite legal rules.
 
 ### E-04 — Gmail sandbox
 

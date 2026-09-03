@@ -49,6 +49,12 @@ confidence, conflict, reply, workflow, and delivery guards. The committed 2026-0
 non-thinking JSON Chat mode because it met the quality gates with materially lower latency than the
 provider's Responses path in this evaluation.
 
+Run `make agent-eval-stress` for the 75-input surface-form and injection suite. It deterministically
+expands every committed case into five semantically equivalent formats and reports each perturbation
+slice separately. The quoted-history variant keeps the current applicant statement unquoted; facts
+that appear only in a forwarded quotation are deliberately not treated as a verified current
+statement.
+
 ## Evidence labels
 
 - Contract/fault-injection tests are **automated simulation**.

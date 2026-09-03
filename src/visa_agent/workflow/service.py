@@ -227,6 +227,7 @@ class WorkflowService:
                             if old_evidence.source_document_id == old.id:
                                 old_evidence.superseded = True
             translation_for_document_id: str | None = None
+            translation_target_document: Document | None = None
             if kind == "certified_translation":
                 translation_target = facts.pop("translation_for_filename", None)
                 if translation_target is not None:
@@ -242,6 +243,7 @@ class WorkflowService:
                     )
                     if target is not None:
                         translation_for_document_id = target.id
+                        translation_target_document = target
             document = Document(
                 id=document_id,
                 filename=path.name,
@@ -261,6 +263,8 @@ class WorkflowService:
                 translation_for_document_id=translation_for_document_id,
             )
             case.documents.append(document)
+            if translation_target_document is not None:
+                translation_target_document.status = DocumentStatus.ACCEPTED_FOR_REVIEW
             existing_hashes.add(digest)
             for key, (value, page, excerpt) in facts.items():
                 for prior_evidence in case.active_evidence(key):

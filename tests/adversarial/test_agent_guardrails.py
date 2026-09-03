@@ -101,6 +101,26 @@ def test_any_model_reported_ambiguity_deterministically_requires_review() -> Non
     assert guarded.requires_human_review is True
 
 
+def test_sponsor_relationship_is_canonicalised_without_changing_evidence() -> None:
+    event = _event("Our relationship is mother and child.")
+    proposed = CasePatch(
+        updates=[
+            FactUpdate(
+                field="sponsor_relationship",
+                value="mother and child",
+                source_excerpt="mother and child",
+                confidence=1,
+            )
+        ],
+        ambiguities=[],
+    )
+
+    guarded = validate_case_patch(event, proposed)
+
+    assert guarded.updates[0].value == "mother"
+    assert guarded.updates[0].source_excerpt == "mother and child"
+
+
 def test_explicit_unsupported_route_deterministically_requires_review() -> None:
     body = "I have not chosen the Standard Visitor route."
     proposed = CasePatch(

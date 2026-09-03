@@ -63,6 +63,7 @@ def test_deepseek_extraction_uses_json_chat_without_openai_only_fields() -> None
     assert arguments["temperature"] == 0
     assert arguments["max_tokens"] == 1_200
     assert "JSON Schema" in arguments["messages"][0]["content"]
+    assert '"email_body": "My name is Ada Lovelace"' in arguments["messages"][1]["content"]
     assert arguments["extra_body"] == {"thinking": {"type": "disabled"}}
     assert "store" not in arguments
     assert "safety_identifier" not in arguments

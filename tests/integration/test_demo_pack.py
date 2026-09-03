@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import json
 import zipfile
+from io import BytesIO
 from pathlib import Path
+
+from pypdf import PdfReader
 
 from visa_agent.config import Settings
 from visa_agent.demo import run_demo
@@ -40,6 +43,23 @@ def test_demo_generates_source_linked_pack_and_is_idempotent(tmp_path: Path) -> 
         answers = json.loads(archive.read("05_application_answers.json"))
         assert answers["status"] == "READY_FOR_HUMAN_REVIEW"
         assert all(item["source_event_id"] for item in answers["facts"])
+        summary_text = PdfReader(BytesIO(archive.read("01_case_summary.pdf"))).pages[0].extract_text()
+        cover_text = PdfReader(BytesIO(archive.read("04_cover_letter_draft.pdf"))).pages[0].extract_text()
+        assert "Funding source: Employer or school" in summary_text
+        assert "Sponsor name: Not applicable" in summary_text
+        assert "The estimated trip cost is GBP 2,200" in cover_text
+        assert "Adviser note: verify every statement" in cover_text
+    snapshot = json.loads(
+        next((first.package_path.parent / first.case.id / "audit").glob("case_snapshot.json"))
+        .read_text(encoding="utf-8")
+    )
+    assert snapshot["status"] == "READY_FOR_HUMAN_REVIEW"
+    assert snapshot["stage"] == "READY_FOR_HUMAN_REVIEW"
+    assert snapshot["delivery_path"] == str(first.package_path)
+    translated_original = next(
+        item for item in snapshot["documents"] if item["filename"] == "family_funds_cn.pdf"
+    )
+    assert translated_original["status"] == "ACCEPTED_FOR_REVIEW"
 
 
 def test_clean_runs_generate_identical_pack_bytes(tmp_path: Path) -> None:

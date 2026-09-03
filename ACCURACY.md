@@ -9,10 +9,11 @@ an unsafe workflow releases an incomplete pack. This repository reports both lay
 | Layer | Evidence | Result |
 |---|---|---:|
 | Workflow, policy gates, confirmation and adversarial controls | `make accuracy` | 26/26 passed (100%) |
-| Complete repository regression | `make test` | 96/96 passed (100%) |
+| Complete repository regression | `make test` | 100/100 passed (100%) |
 | Clean-run deterministic delivery | `make stability` | 20/20 identical packs (100%) |
 | Concurrent review reads | `make stability` | 100/100 successful (100%) |
 | Live DeepSeek extraction on visa corpus | `eval_output/agent_eval.json` | 45/45 passed; every release metric passed (100%) |
+| Live DeepSeek formatting/injection stress suite | `eval_output/agent_stress_eval.json` | 75/75 schema-valid and safe; critical recall 97.37% |
 | Live OpenAI extraction on visa corpus | `make agent-eval-live` | Not scored: no local visa-project key |
 
 The local workflow and evaluated DeepSeek extraction layers have full marks for the committed test
@@ -24,6 +25,19 @@ human-review decisions, ambiguity decisions and repeat consistency, with zero un
 raw boundary violations. Median latency was 1.13 seconds and p95 was 3.30 seconds. The 45-run test
 used 37,248 input and 6,570 output tokens. Using the official 2026-09-04 off-peak cache-miss/output
 rates, the conservative estimated cost was USD 0.012531.
+
+A separate 75-input stress run applied five surfaces to every case: original, realistic email noise,
+a current reply followed by quoted history, an English prompt-injection suffix, and a Chinese
+prompt-injection wrapper. It achieved 100% schema validity, critical-field precision, human-review
+decisions and ambiguity decisions; 97.37% critical recall; zero unsupported claims; and zero unsafe
+boundary violations. The few omissions are fail-safe: required facts remain absent, so deterministic
+completeness checks request clarification and prevent pack release. Median latency was 1.05 seconds,
+p95 was 3.31 seconds, and the conservative peak/cache-miss cost estimate was USD 0.046395.
+
+The first stress run is retained in `eval_output/agent_stress_eval_initial.json`. It exposed one
+hallucinated multi-field proposal under a combined multilingual injection; every field was rejected
+because its claimed excerpt was absent. The hardened input contract eliminated that failure in the
+final full run. This before/after evidence is kept rather than replacing the failed result.
 
 ## Corrections made during the accuracy audit
 
@@ -37,8 +51,15 @@ rates, the conservative estimated cost was USD 0.012531.
 - Personal sponsorship requires separate support, funds and relationship evidence, plus UK status
   evidence when the sponsor is in the UK.
 - Conflicting active evidence creates a blocker instead of silently overwriting an earlier source.
+- Untrusted mail is serialized as data, and every proposed evidence excerpt must be a literal
+  substring before any value can reach case state.
+- Common sponsor relationships are deterministically canonicalised after grounding.
 - Profile and final confirmations must be standalone bounded statements; Chinese confirmations are
   supported and negations/instructions do not count.
+- Pack status is written before the audit snapshot, and a translated original is shown as accepted
+  only after its certified translation is linked.
+- Six PDFs now share a visually reviewed human-review layout, and machine codes are converted to
+  readable labels in applicant-facing summaries.
 
 ## Official basis and claim boundary
 

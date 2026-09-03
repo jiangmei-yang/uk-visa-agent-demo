@@ -57,4 +57,8 @@ def test_openai_extraction_contract_uses_private_schema_bound_request() -> None:
     assert responses.parse_arguments["store"] is False
     assert responses.parse_arguments["safety_identifier"] != event.sender
     assert len(responses.parse_arguments["safety_identifier"]) == 32
+    assert (
+        '"email_body": "My name is Ada Lovelace"'
+        in responses.parse_arguments["input"][1]["content"]
+    )
     assert adapter.last_usage == {"input_tokens": 100, "output_tokens": 20, "total_tokens": 120}

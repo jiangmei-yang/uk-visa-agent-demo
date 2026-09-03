@@ -125,14 +125,19 @@ make accuracy    # committed workflow-accuracy and safety scorecard
 make lint        # Ruff
 make typecheck   # strict mypy
 make stability   # repeated clean runs + concurrent review-console reads
+make policy-check # fail when the committed policy review window has expired
 MODEL=<model-id> make agent-eval-live  # optional OpenAI provider evaluation
 MODEL=deepseek-v4-flash make agent-eval-deepseek  # optional DeepSeek evaluation
+make agent-eval-stress # optional 75-input DeepSeek formatting/injection stress run
 make web         # local case-review console
 make webhook     # provider-only local webhook gateway on port 8001
 make start       # build and start the complete Docker demo
 make stop        # stop the Docker demo
 make clean       # delete disposable local demo data
 ```
+
+A weekly GitHub Actions check runs `make policy-check`. After the policy review boundary it fails
+closed and requires a human to recheck the linked GOV.UK sources before extending the snapshot.
 
 ## Optional live providers
 

@@ -5,7 +5,7 @@ from importlib import import_module
 from typing import Any, cast
 
 from visa_agent.domain.models import Case, InboundEvent
-from visa_agent.llm.openai_client import EXTRACTION_INSTRUCTIONS, _usage_dict
+from visa_agent.llm.openai_client import EXTRACTION_INSTRUCTIONS, _usage_dict, extraction_input
 from visa_agent.llm.ports import CasePatch
 
 
@@ -48,7 +48,7 @@ class DeepSeekStructuredLLM:
                         f"Schema exactly: {schema}"
                     ),
                 },
-                {"role": "user", "content": event.body},
+                {"role": "user", "content": extraction_input(event.body)},
             ],
             response_format={"type": "json_object"},
             temperature=0,
@@ -57,9 +57,7 @@ class DeepSeekStructuredLLM:
         )
         self.last_usage = _usage_dict(response)
         output_text = cast(str | None, response.choices[0].message.content)
-        if output_text is None:
-            raise ValueError("DeepSeek returned no CasePatch content")
-        if not output_text.strip():
+        if output_text is None or not output_text.strip():
             raise ValueError("DeepSeek returned no CasePatch content")
         return CasePatch.model_validate_json(output_text)
 

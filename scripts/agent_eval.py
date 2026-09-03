@@ -5,7 +5,11 @@ import json
 from pathlib import Path
 
 from visa_agent.llm.deepseek_client import DeepSeekStructuredLLM
-from visa_agent.llm.evaluation import evaluate_extractor, load_corpus
+from visa_agent.llm.evaluation import (
+    evaluate_extractor,
+    expand_corpus_with_perturbations,
+    load_corpus,
+)
 from visa_agent.llm.openai_client import OpenAIStructuredLLM
 from visa_agent.secrets import read_secret
 
@@ -15,6 +19,11 @@ def main() -> None:
     parser.add_argument("--provider", choices=("openai", "deepseek"), default="openai")
     parser.add_argument("--model", required=True)
     parser.add_argument("--repeats", type=int, default=3)
+    parser.add_argument(
+        "--perturbations",
+        action="store_true",
+        help="Expand every case into deterministic formatting and injection stress variants.",
+    )
     parser.add_argument("--case-id", action="append", default=[])
     parser.add_argument("--timeout-seconds", type=float, default=20.0)
     parser.add_argument("--input-price-per-million-usd", type=float)
@@ -39,6 +48,8 @@ def main() -> None:
             "remain available through `uv run pytest tests/adversarial`."
         )
     corpus = load_corpus(args.corpus)
+    if args.perturbations:
+        corpus = expand_corpus_with_perturbations(corpus)
     if args.case_id:
         selected = [case for case in corpus.cases if case.id in set(args.case_id)]
         missing = sorted(set(args.case_id) - {case.id for case in selected})

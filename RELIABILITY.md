@@ -35,6 +35,9 @@ checks, persistence, outbound side effects, and pack generation.
   inbound excerpt, a valid field value, sufficient confidence, and no conflicting candidate.
 - Extraction retries are bounded to two attempts and then abstain to human review. Drafting failure,
   empty/oversized text, and prohibited outcome claims use deterministic customer wording.
+- The provider receives the email body inside an explicit untrusted-data envelope. Proposed facts
+  still require schema validity, an exact source excerpt, an allowed field and a valid type before
+  mutation; common relationship wording is canonicalised only after those checks.
 
 ## Failure behaviour
 

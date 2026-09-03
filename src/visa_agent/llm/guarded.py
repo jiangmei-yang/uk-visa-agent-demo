@@ -20,6 +20,16 @@ FORBIDDEN_REPLY_CLAIMS = (
     "documents are sufficient for approval",
     "application has been submitted",
 )
+SPONSOR_RELATIONSHIPS = (
+    "mother",
+    "father",
+    "sister",
+    "brother",
+    "spouse",
+    "partner",
+    "friend",
+    "employer",
+)
 
 
 class UnsafeModelOutput(ValueError):
@@ -28,6 +38,15 @@ class UnsafeModelOutput(ValueError):
 
 def _normalise_evidence(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip().casefold()
+
+
+def _canonical_value(field: str, value: str | int | bool) -> str | int | bool:
+    if field == "sponsor_relationship" and isinstance(value, str):
+        normalised = _normalise_evidence(value)
+        matches = [item for item in SPONSOR_RELATIONSHIPS if item in normalised]
+        if len(matches) == 1:
+            return matches[0]
+    return value
 
 
 def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
@@ -41,6 +60,7 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
     requires_review = proposed.requires_human_review or bool(proposed.ambiguities)
 
     for update in proposed.updates:
+        update = update.model_copy(update={"value": _canonical_value(update.field, update.value)})
         reason: str | None = None
         field_info = CaseProfile.model_fields.get(update.field)
         if field_info is None:
