@@ -96,3 +96,22 @@ def test_service_does_not_claim_email_or_final_pack_outbox(tmp_path):
         assert calls == [] and all(row["status"] == "PENDING" for row in store.list_outbox())
     finally:
         store.close()
+
+
+def test_service_rechecks_reply_window_after_intake(tmp_path):
+    store, workflow, sender, calls = setup(tmp_path)
+    # Model/document processing began inside the window, but dispatch happens outside it.
+    cycle_started = datetime.now(UTC) - timedelta(minutes=2)
+    incoming = event("near-deadline", cycle_started - timedelta(hours=24) + timedelta(minutes=1))
+    store.enqueue_inbound(incoming)
+    try:
+        result = run_cycle(store, workflow, sender, cycle_started)
+        assert result["dispatch_outcomes"] == ["FAILED"]
+        assert calls == []
+        row = store.list_outbox()[0]
+        assert "window has expired" in row["last_error"]
+        assert store.list_inbound_queue()[0]["status"] == "PROCESSED"
+        assert store.get_case(row["case_id"]) is not None
+        assert run_cycle(store, workflow, sender, datetime.now(UTC))["dispatched"] == 0
+    finally:
+        store.close()

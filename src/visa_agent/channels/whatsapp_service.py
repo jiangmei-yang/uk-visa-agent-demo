@@ -1,6 +1,6 @@
 """Supervised WhatsApp intake/reply cycles; final packs remain operator-reviewed."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from visa_agent.channels.inbound_worker import InboundEventWorker, InboundWorkflow
@@ -57,7 +57,9 @@ def run_cycle(store: SQLiteStore, workflow: InboundWorkflow, sender: CurrentWhat
               AND message_type IN ('blocked','awaiting_profile_confirmation','awaiting_confirmation')
               AND EXISTS (SELECT 1 FROM outbox newer WHERE newer.case_id=old.case_id AND newer.rowid>old.rowid)
         """, (CHANNEL,)).rowcount
-    dispatched = dispatcher.dispatch_due(now, limit=1)
+    # Intake may spend minutes reading documents or waiting on a provider. A window
+    # valid at cycle start can have expired by the time its reply is ready to send.
+    dispatched = dispatcher.dispatch_due(datetime.now(UTC), limit=1)
     return {"phase": "idle", "processed": len(processed), "withheld": withheld,
             "dispatch_outcomes": [item.status for item in dispatched],
             "dispatched": len(dispatched), "reconciled": len(reconciled)}

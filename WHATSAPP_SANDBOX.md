@@ -148,3 +148,15 @@ The media-download contract was also checked against the official
 API retrieval returns the media content. Redirects remain disabled; this source check is not a
 successful live PDF download. Secure applicant-facing final handoff and device receipt still need
 end-to-end evidence; a ready text notification alone does not establish delivery of the materials.
+
+## Reply window crossing during processing (local evidence, 2026-09-04)
+
+The continuous worker formerly reused its cycle-start timestamp for dispatch after intake and
+model/document processing. A regression with an inbound message whose window was open at cycle
+start but expired at dispatch reproduced `SENT` through the capture sender. The worker now reads
+the current UTC time after intake before dispatch. The same regression returns `FAILED`, does not
+call the provider, retains the processed intake/case/outbox, and does not resend on a later cycle.
+Existing in-window sending controls also pass. This is a deterministic local clock-boundary test,
+not an actual Twilio expiry experiment or a guarantee against time passing during network transit.
+All 345 local tests, lint and typing pass; the suite emits a Starlette/httpx deprecation warning.
+No live WhatsApp service was started and no credentials or recipient enrollment were changed.
