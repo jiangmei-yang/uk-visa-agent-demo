@@ -37,6 +37,13 @@ from visa_agent.llm.guarded import ensure_guarded
 from visa_agent.llm.ports import LLMClient
 from visa_agent.privacy.consent import ConsentLedger, ProcessingConsentRequired
 from visa_agent.storage.sqlite import SQLiteStore
+from visa_agent.workflow.advice_continuation import (
+    continue_advice,
+    has_advice_continuation_request,
+    is_advice_continuation,
+    reconcile_answered_advice,
+    remember_advice_plan,
+)
 from visa_agent.workflow.adviser_guidance import APPLICATION_URL, preparation_guidance
 from visa_agent.workflow.conversation import (
     clear_natural_confirmation,
@@ -51,7 +58,7 @@ from visa_agent.workflow.conversation import (
     update_deferred_questions,
     waiting_acknowledgement,
 )
-from visa_agent.workflow.customer_questions import grounded_customer_answers
+from visa_agent.workflow.customer_questions import grounded_customer_answer_plan
 from visa_agent.workflow.next_step import select_next_step
 
 PROFILE_CONFIRMATION_LINES = {
@@ -141,6 +148,7 @@ class WorkflowService:
 
         processing_epoch = self._require_processing(case)
         prior_outbox = [row for row in self.store.list_outbox() if row["case_id"] == case.id]
+        reconcile_answered_advice(case, prior_outbox)
         sent_events = {row["event_id"] for row in prior_outbox if row["status"] == "SENT"}
         # Existing deployments have the last question set but no event ledger yet.
         # Associate it only with the matching, actually sent last reply, not arbitrary history.
@@ -177,6 +185,26 @@ class WorkflowService:
             case.customer_language = "zh"
         elif len(re.findall(r"[A-Za-z]+", customer_event.body)) > 4:
             case.customer_language = "en"
+        if not event.attachment_paths and is_advice_continuation(customer_event.body):
+            # A pure consultation continuation has no fact, preparation-resume,
+            # summary-confirmation or delivery authority. It needs no model guess.
+            self.llm.last_extraction_fallback = False
+            self.llm.last_extraction_error = None
+            case.latest_changes = {}
+            case.latest_received_facts = {}
+            case.latest_deferred_fields = []
+            case.latest_preparation_action = None
+            case.proactive_guidance_offered = False
+            case.customer_question_topics = ["advice_continuation"]
+            case.customer_question_exclusions = []
+            case.customer_answers = continue_advice(case, event.id, prior_outbox, self.today_provider())
+            case.question_plan = []
+            case.pending_question_fields = prior_pending
+            case.last_requested_fields = []
+            case.last_inbound_received_at = event.received_at
+            case.updated_at = datetime.now(UTC)
+            self._render_and_commit(case, event, "blocked", processing_epoch)
+            return case, False, "blocked"
         prior_profile = summary_fingerprint(case, include_documents=False)
         prior_confirmation = case.confirmation_fingerprint
         prior_kind = case.confirmation_kind
@@ -187,6 +215,10 @@ class WorkflowService:
         )
         patch = self.llm.extract_case_patch(customer_event)
         self._require_processing(case, processing_epoch)
+        continuation_requested = has_advice_continuation_request(customer_event.body)
+        current_questions = [item for item in patch.customer_questions if not (
+            continuation_requested and is_advice_continuation(item.source_excerpt)
+        )]
         was_paused = case.preparation_paused
         case.latest_preparation_action = None
         if patch.preparation_intent is not None:
@@ -204,15 +236,18 @@ class WorkflowService:
         # A restart of preparation is not consent to a previously sent summary.
         may_confirm = not was_paused and not case.preparation_paused
         case.proactive_guidance_offered = False
-        case.customer_question_topics = [item.topic for item in patch.customer_questions]
-        case.customer_question_exclusions = [item.source_excerpt for item in patch.customer_questions
+        case.customer_question_topics = [item.topic for item in current_questions]
+        case.customer_question_exclusions = [item.source_excerpt for item in current_questions
                                              if item.topic in {"off_topic", "unsupported", "next_step"}]
-        case.customer_answers = grounded_customer_answers(
+        answer_plan = grounded_customer_answer_plan(
             customer_event.body, case.customer_language, self.today_provider(),
             sent_application_guidance=case.guidance_events.get("application_overview_v1") in sent_events,
-            semantic_questions=patch.customer_questions,
+            semantic_questions=current_questions,
             include_unsupported=not patch.requires_human_review,
         )
+        case.customer_answers = answer_plan.answers
+        remember_advice_plan(case, event.id, customer_event.body, current_questions,
+                             answer_plan, prior_outbox, self.today_provider())
         if patch.requires_human_review:
             case.status = CaseStatus.HUMAN_REVIEW_REQUIRED
             advance_stage(case, WorkflowStage.HUMAN_REVIEW_REQUIRED)
@@ -359,6 +394,13 @@ class WorkflowService:
             # Asking for a step is not resume, profile consent or final consent.
             case.next_step_advice = select_next_step(case, self.policy, gate)
             case.customer_answers.append(case.next_step_advice.message)
+        if (continuation_requested and not case.customer_answers and not case.customer_question_topics
+                and case.status == CaseStatus.DRAFT):
+            # Mixed facts/files still pass normal validation above. A separate
+            # continuation question is answered after that work, not turned into
+            # the next missing personal field. A fresh independent FAQ has priority.
+            case.customer_answers = continue_advice(case, event.id, prior_outbox, self.today_provider())
+            case.customer_question_topics = ["advice_continuation"]
         # Separate answers to the customer's current question from proactive
         # guidance below. Supplying one fact alongside a FAQ does not ask us to
         # resume the rest of the intake form.

@@ -303,12 +303,16 @@ class SQLiteStore:
             "processing_scope": [dict(row) for row in self.connection.execute(
                 "SELECT scope_id,scope_json FROM processing_scope WHERE singleton=1")],
             "data_note": (
-                "Raw processed inbound messages are not retained. The snapshot keeps only "
-                "bounded evidence excerpts and source identifiers needed for audit. "
-                "Exceptions: unprocessed applicant updates held for human review retain their "
+                "The case retains the latest customer message and the original question context "
+                "for unfinished consultation, including any personal details in that context. "
+                "It also retains evidence excerpts, source identifiers and outbound replies for audit. "
+                "Answered consultation context is cleared on a later processed event after verified sending; "
+                "there is no automatic time-based expiry for unanswered context. "
+                "Unprocessed applicant updates held for human review retain their "
                 "event body and attachment references for pending review; case deletion removes them. "
-                "Before processing consent, only routing/receipt identifiers and the subject needed "
+                "For configured Gmail preflight before processing consent, only routing/receipt identifiers and the subject needed "
                 "for an in-thread notice are retained, not the applicant body or attachments. "
+                "Generic inbound queues can retain the original pending payload while awaiting consent. "
                 "Consent decisions retain a bounded control statement for audit."
             ),
         }

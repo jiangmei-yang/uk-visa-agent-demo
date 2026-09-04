@@ -1,6 +1,7 @@
 """Small reviewed answer set, not open-ended immigration advice."""
 
 import re
+from dataclasses import dataclass
 from datetime import date
 
 from visa_agent.llm.ports import CustomerQuestion
@@ -427,7 +428,16 @@ def validated_customer_questions(body: str, proposals: list[CustomerQuestion]) -
     return list(accepted.values())
 
 
-def _capped_answers(answers: list[tuple[str, str]], language: str) -> list[str]:
+@dataclass(frozen=True)
+class ReviewedAnswerPlan:
+    answers: list[str]
+    reviewed_answers: list[tuple[str, str]]
+    selected_topics: list[str]
+    omitted_topics: list[str]
+    omission_notice: str = ""
+
+
+def capped_answer_plan(answers: list[tuple[str, str]], language: str) -> ReviewedAnswerPlan:
     """Limit reading load without silently dropping an unanswered-risk notice."""
     unique: list[tuple[str, str]] = []
     seen: set[str] = set()
@@ -436,7 +446,8 @@ def _capped_answers(answers: list[tuple[str, str]], language: str) -> list[str]:
             unique.append(item)
             seen.add(item[1])
     if len(unique) <= 3:
-        return [answer for _, answer in unique]
+        return ReviewedAnswerPlan([answer for _, answer in unique], unique,
+                                  [topic for topic, _ in unique], [])
 
     boundaries = [item for item in unique if item[0] in {"unsupported", "off_topic"}]
     selected = [item for item in unique if item[0] not in {"unsupported", "off_topic"}][:3 - len(boundaries)] + boundaries
@@ -456,7 +467,11 @@ def _capped_answers(answers: list[tuple[str, str]], language: str) -> list[str]:
     )
     result = [answer for _, answer in selected]
     result[-1] += "\n" + note
-    return result
+    return ReviewedAnswerPlan(result, unique, [topic for topic, _ in selected], omitted, note)
+
+
+def _capped_answers(answers: list[tuple[str, str]], language: str) -> list[str]:
+    return capped_answer_plan(answers, language).answers
 
 
 def _reviewed_answer(topic: str, language: str, *, body: str = "") -> str:
@@ -750,6 +765,17 @@ def grounded_customer_answers(
     semantic_questions: list[CustomerQuestion] | None = None,
     include_unsupported: bool = True,
 ) -> list[str]:
+    return grounded_customer_answer_plan(
+        body, language, today, sent_application_guidance=sent_application_guidance,
+        semantic_questions=semantic_questions, include_unsupported=include_unsupported,
+    ).answers
+
+
+def grounded_customer_answer_plan(
+    body: str, language: str, today: date, *, sent_application_guidance: bool = False,
+    semantic_questions: list[CustomerQuestion] | None = None,
+    include_unsupported: bool = True,
+) -> ReviewedAnswerPlan:
     """Reviewed facts only, capped at three relevant answers, never a case-state update."""
     current = latest_reply_text(body)
     semantic = validated_customer_questions(current, semantic_questions or [])
@@ -924,4 +950,4 @@ def grounded_customer_answers(
         answers = [(topic, answer.replace("下面的 GOV.UK 页面", "GOV.UK 官方申请页面")
                    .replace("the GOV.UK page below", "the official GOV.UK application page"))
                    for topic, answer in answers]
-    return _capped_answers(answers, language)
+    return capped_answer_plan(answers, language)

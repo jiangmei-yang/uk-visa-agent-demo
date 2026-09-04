@@ -168,6 +168,34 @@ class NextStepAdvice(BaseModel):
     requirement_id: str | None = None
 
 
+class AdviceSourceQuestion(BaseModel):
+    """Original proposed question, revalidated before any later reviewed answer."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    topic: str
+    source_excerpt: str
+    confidence: float = Field(ge=0, le=1)
+
+
+class AdviceAnswerAttempt(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    event_id: str
+    answer: str
+
+
+class PendingAdviceQuestion(BaseModel):
+    """Unanswered consultation, not a missing applicant fact or permission."""
+
+    model_config = ConfigDict(extra="forbid")
+    topic: str
+    source_event_id: str
+    source_body: str
+    source_questions: list[AdviceSourceQuestion] = Field(default_factory=list)
+    offered_notice: str
+    source_checked_at: date
+    answer_attempts: list[AdviceAnswerAttempt] = Field(default_factory=list)
+
+
 class Case(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
@@ -191,6 +219,7 @@ class Case(BaseModel):
     latest_preparation_action: Literal["pause", "resume"] | None = None
     customer_language: str = "en"
     customer_answers: list[str] = Field(default_factory=list)
+    pending_advice: list[PendingAdviceQuestion] = Field(default_factory=list)
     # Topics from this turn only; not applicant facts or permission to progress.
     customer_question_topics: list[str] = Field(default_factory=list)
     customer_question_exclusions: list[str] = Field(default_factory=list)

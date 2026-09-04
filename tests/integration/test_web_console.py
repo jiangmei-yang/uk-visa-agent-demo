@@ -216,7 +216,7 @@ def test_case_can_be_exported_and_exactly_confirmed_for_local_deletion(tmp_path:
     assert exported.headers["content-disposition"].endswith('"synthetic-case-export.json"')
     assert exported.json()["case"]["id"] == result.case.id
     assert len(exported.json()["outbound_messages"]) == 3
-    assert "Raw processed inbound messages are not retained" in exported.json()["data_note"]
+    assert "retains the latest customer message and the original question context" in exported.json()["data_note"]
 
     unconfirmed = _delete(f"/api/cases/{result.case.id}")
     assert unconfirmed.status_code == 400

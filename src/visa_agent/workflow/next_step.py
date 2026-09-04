@@ -19,6 +19,7 @@ from visa_agent.workflow.conversation import (
     latest_reply_text,
     next_fact_questions,
 )
+from visa_agent.workflow.preparation_obstacles import reviewed_obstacle_next_step
 
 _DETAILS_EN = {
     "full_name": "the name in your passport", "date_of_birth": "your date of birth",
@@ -153,6 +154,10 @@ def select_next_step(case: Case, policy: Policy, gate: GateResult) -> NextStepAd
             "The next step is to check the summary below, especially your name, dates and who pays for the trip. "
             "Point out anything that needs correcting."
         ), kind="waiting")
+
+    obstacle_step = reviewed_obstacle_next_step(case, policy, gate)
+    if obstacle_step is not None:
+        return obstacle_step
 
     # Ignore this turn's prior pacing selection while preserving every fact and
     # date deferral. This shallow copy is read-only; no nested data is modified.

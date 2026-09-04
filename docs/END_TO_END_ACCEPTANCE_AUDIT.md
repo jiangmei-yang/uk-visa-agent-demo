@@ -32,9 +32,11 @@ for these outcomes.
 5. **Consultant usefulness beyond canned scenarios.** The [seven-item independent
    review](ADVISER_USEFULNESS_REVIEW_2026-09-04.md) records ordinary questions that
    a linked response or one-question limit did not solve. Specific-document help,
-   exploratory consultation and foreign-work context now have local repairs;
-   deferred FAQ continuation and advice when evidence cannot be obtained remain
-   open. No new live model run or independent recipient trial is implied.
+   exploratory consultation and foreign-work context now have local repairs.
+   [Delivery-backed FAQ continuation and two preparation obstacles](ADVICE_CONTINUATION.md)
+   now have bounded local/captured-sender repairs, including mixed facts/files.
+   Broader paraphrases, other unavailable evidence and bounded consultation-context
+   retention still need work. No new live model run or independent recipient trial is implied.
 
 ## Bounded recovery added in this work
 

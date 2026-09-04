@@ -15,9 +15,10 @@ explicitly recorded here.
 
 ## Current capability ledger
 
-Updated 2026-09-04. The dated experiment entries below are historical records, not current
+Updated 2026-09-05. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **3,059 passing tests**; see the latest [independent usefulness review and repairs](docs/ADVISER_USEFULNESS_REVIEW_2026-09-04.md),
+The local suite has **3,214 passing tests**; see the latest [consultation continuation and obstacle repair](docs/ADVICE_CONTINUATION.md),
+[independent usefulness review and repairs](docs/ADVISER_USEFULNESS_REVIEW_2026-09-04.md),
 [processing-permission boundary](docs/PROCESSING_CONSENT.md),
 [earlier consultant-usefulness repair](docs/CONSULTANT_REPLY_DESIGN.md),
 [remaining acceptance audit](docs/END_TO_END_ACCEPTANCE_AUDIT.md),
@@ -28,15 +29,36 @@ The local suite has **3,059 passing tests**; see the latest [independent usefuln
 and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
 
-Latest local repair: **3,059 passed**, Ruff and strict Mypy passed (66 source files).
+Latest local repair: **3,214 passed in 48.15s**, Ruff and strict Mypy passed (68 source files).
+The existing one FastAPI/Starlette test-client deprecation warning remains.
+New consultation memory requires actually SENT omission/answer text; failed,
+pending and uncertain drafts do not consume a question. Pure information
+continuation bypasses extraction, while mixed facts/files retain normal processing
+and can answer the remaining consultation. Current independent FAQs take priority.
+Employer-letter and undecided-date obstacles give a concrete, conditional next
+action without changing evidence requirements, dates or confirmations. Missing
+background still prompts a necessary question rather than a false route rejection.
+Retention/export notes now disclose original unfinished-question context, including
+personal details and no automatic TTL. Captured actual reviewed/guarded senders and
+isolated DBs were used; no paid model calls or real mailbox sends were made.
+The original six full-suite pacing failures and focused continuation/mixed/casing
+failures are recorded in [the repair note](docs/ADVICE_CONTINUATION.md), not hidden.
+The supervised Gmail worker was reloaded as PID 97795 and observed idle at
+2026-09-04 16:12:25 UTC (2026-09-05 locally), with its configuration, existing
+business projection and nine SENT records unchanged. Consent remains unknown.
+The persistent Docker service is healthy; all 68 deployed source hashes match,
+the existing ZIP bytes are unchanged, and the separate `--network none` fixture
+still completes. See [dated rollout evidence](eval_output/advice_continuation_rollout_2026-09-05.json).
+
+Previous 2026-09-04 local repair: **3,059 passed**, Ruff and strict Mypy passed (66 source files).
 The full run retains one FastAPI/Starlette test-client deprecation warning.
 No paid model calls or real mailbox test sends were made in this repair. Five
 [captured reviewed replies](eval_output/adviser_usefulness_repair_2026-09-04.json)
 show specific document instructions, exploratory consultation without a personal
 questionnaire, and foreign self-employment distinguished from work in the UK.
-Original seven-item review failures remain visible; deferred FAQ continuation,
-evidence that cannot be obtained and date-undecided next-step usefulness are not
-closed by these fixes. Source documentation was rechecked on GOV.UK on 2026-09-04;
+Original seven-item review failures remain visible; that earlier repair alone did
+not close deferred FAQ continuation, evidence that cannot be obtained or
+date-undecided next-step usefulness. Source documentation was rechecked on GOV.UK on 2026-09-04;
 this does not add live web retrieval to the product.
 
 Applicant-processing permission now uses a versioned canonical scope/notice,

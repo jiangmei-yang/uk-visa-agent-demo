@@ -1,0 +1,66 @@
+{
+  "observed_at_utc": "2026-09-04T16:12:25.281011+00:00",
+  "local_date": "2026-09-05 Asia/Hong_Kong",
+  "evidence_class": "local deployment verification, not a new live applicant journey",
+  "baseline_commit": "f986e6779db439eb3e5599f95a32285dadd5cc99",
+  "tests": {
+    "passed": 3214,
+    "warnings": 1,
+    "seconds": 48.15,
+    "ruff": "passed",
+    "mypy_source_files": 68,
+    "mypy": "passed"
+  },
+  "deployment_source_check": {
+    "local_files": 68,
+    "deployed_files": 68,
+    "all_source_hashes_match": true
+  },
+  "gmail_worker": {
+    "pid": 97795,
+    "phase": "idle",
+    "liveness": "ps verified",
+    "configuration_sha256": "a82564de8ab818088e5afb363de951b1a7ad6a93459e21ae4a645aa487587d7e",
+    "configuration_unchanged": true,
+    "cases": 1,
+    "outbox": {
+      "SENT": 9
+    },
+    "deliveries": 0,
+    "processing_consent": {
+      "unknown": 1
+    },
+    "consent_control_events": 0,
+    "deferred_events": 0,
+    "existing_business_projection_sha256": "939aac258e7e217b002f2eea3857727698bfbc24047c4fc016a68d718af5cac0",
+    "projection_unchanged": true,
+    "no_manual_send_or_replay": true
+  },
+  "docker": {
+    "container": "ad597e433cd2526342ee25a44e8789b4b17cab061701eec942121b3f78817396",
+    "image": "sha256:aaa9067991dbec1f6974e96fefe45721a670b832c68869e7a0e05614849ae76e",
+    "health": "healthy",
+    "volume": "uk-visa-agent-demo_review-runtime",
+    "counts": {
+      "cases": 1,
+      "outbox": 3,
+      "deliveries": 1
+    },
+    "existing_pack_sha256": "8bc0681a837437d30675da7650cd9c61e1ecc69532ea969c77ceb383c458f724",
+    "existing_pack_unchanged": true,
+    "offline_network_none": {
+      "cases": 1,
+      "processed_events": 3,
+      "outbox": 3,
+      "deliveries": 1,
+      "zip_sha256": "7e27fe057a2643dd892bd41e94ed47245a225ff716bb99a7a4802bb0447b641f"
+    },
+    "build_warning": "Compose warned buildx was missing; classic build succeeded with frozen lockfile"
+  },
+  "limitations": [
+    "No paid model calls or real mailbox test sends in this repair.",
+    "Unknown processing consent was not changed into granted.",
+    "No independent uncoached recipient or WhatsApp device trial.",
+    "Unfinished original question context is retained without automatic TTL; export/deletion documentation updated."
+  ]
+}
