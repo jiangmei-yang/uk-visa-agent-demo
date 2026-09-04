@@ -25,7 +25,7 @@ In the console:
 1. choose **Try the workflow** and send the three prepared applicant messages;
 2. see the first pack withheld for two named evidence problems;
 3. see the corrections clear those blockers while the pack still waits for confirmation;
-4. send the exact final confirmation and download the released pack;
+4. check the displayed summary, confirm it, and download the released pack;
 5. return to the finished case to inspect the evidence ledger, superseded document, and rule results.
 
 The guided test is synthetic and deterministic, so it needs no API key and gives every interviewer
@@ -38,9 +38,22 @@ versioned rules, an allow-listed workflow, and an explicit confirmation gate.
 ## Stop or restart
 
 - Double-click `STOP_DEMO.command` on macOS or `STOP_DEMO_WINDOWS.bat` on Windows.
-- Starting again recreates the same case and produces byte-identical output.
+- Starting again preserves existing cases in the Docker volume; it does not reset customer data.
+- The credential-free synthetic workflow produces byte-identical packs for the same fixture input.
 - The finished-case page can export its local synthetic case data. Deleting a case requires a clear
-  confirmation; restarting the Demo recreates it.
+  confirmation. Do not use deletion or remove the Docker volume as a troubleshooting shortcut.
+
+## What this does not demonstrate by itself
+
+The local guided page is an offline fixture replay, not a connected inbox. Gmail has a separate
+registered-sender service, and WhatsApp still requires account/device setup and real exchanges.
+Neither a running console nor a green automated-test result proves those integrations work.
+See `GMAIL_AUTOMATIC_SERVICE.md` and `WHATSAPP_SANDBOX.md` for the distinct operating modes.
+
+An operator with the Python environment installed can run
+`uv run python scripts/check_live_setup.py` to see missing local configuration without contacting
+a provider or printing secret values. It does not log in, validate credentials, send messages or
+prove delivery. An `.env` file alone is not automatically loaded by the worker.
 
 ## If the browser does not open
 

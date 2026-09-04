@@ -13,6 +13,12 @@ leases, channel-isolated outbox replies, provider error classification, and the 
 service window. A Twilio account, HTTPS tunnel, joined device, evaluated live model, and real message
 exchange are still required before E-05 is complete.
 
+Run `uv run python scripts/check_live_setup.py` from the project to check local prerequisite
+presence without network calls or printing secrets. It reads the current process environment,
+not a copied `.env` file. A true check means presence/URL shape only, not credential validity,
+Sandbox membership, public reachability or actual receipt on a device. The status callback
+variable is included in `.env.example`; export the values into both gateway/worker processes.
+
 ## Provider setup
 
 1. Create a dedicated Twilio test account and activate the WhatsApp testing environment/Sandbox.
