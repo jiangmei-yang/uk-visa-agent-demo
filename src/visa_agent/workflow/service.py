@@ -109,6 +109,7 @@ class WorkflowService:
                     thread_id=event.external_thread_id,
                     reason_code=reason_code,
                     detail=detail,
+                    held_event=event if reason_code != "THREAD_SENDER_MISMATCH" else None,
                 )
                 return case, False, plan
 

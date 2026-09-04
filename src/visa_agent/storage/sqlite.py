@@ -65,6 +65,13 @@ CREATE TABLE IF NOT EXISTS inbound_failures (
     retryable INTEGER NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS held_inbound_events (
+    id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    reason_code TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE IF NOT EXISTS delivery_versions (
     case_id TEXT NOT NULL,
     path TEXT NOT NULL,
@@ -126,7 +133,7 @@ class SQLiteStore:
 
     def reset(self) -> None:
         self.connection.executescript(
-            """DELETE FROM inbound_queue; DELETE FROM deliveries; DELETE FROM outbox;
+            """DELETE FROM held_inbound_events; DELETE FROM inbound_queue; DELETE FROM deliveries; DELETE FROM outbox;
                DELETE FROM processed_events; DELETE FROM cases;"""
         )
         self.connection.commit()
@@ -180,10 +187,13 @@ class SQLiteStore:
             "case": case.model_dump(mode="json"),
             "outbound_messages": [dict(row) for row in outbox],
             "inbound_failures": [dict(row) for row in failures],
+            "held_inbound_events": self.list_held_inbound(case_id),
             "deliveries": [dict(row) for row in deliveries],
             "data_note": (
                 "Raw processed inbound messages are not retained. The snapshot keeps only "
-                "bounded evidence excerpts and source identifiers needed for audit."
+                "bounded evidence excerpts and source identifiers needed for audit. "
+                "Exceptions: unprocessed applicant updates held for human review retain their "
+                "event body and attachment references for pending review; case deletion removes them."
             ),
         }
 
@@ -208,6 +218,7 @@ class SQLiteStore:
                     f"DELETE FROM inbound_queue WHERE id IN ({placeholders})", queued_ids
                 )
             self.connection.execute("DELETE FROM inbound_failures WHERE case_id = ?", (case_id,))
+            self.connection.execute("DELETE FROM held_inbound_events WHERE case_id = ?", (case_id,))
             self.connection.execute("DELETE FROM deliveries WHERE case_id = ?", (case_id,))
             self.connection.execute(
                 "DELETE FROM channel_delivery_receipts WHERE outbox_id IN "
@@ -327,8 +338,19 @@ class SQLiteStore:
         reason_code: str,
         detail: str,
         retryable: bool = False,
+        held_event: InboundEvent | None = None,
     ) -> None:
+        if held_event is not None and (
+            held_event.id != event_id or held_event.external_thread_id != thread_id
+            or reason_code not in {"OUT_OF_ORDER_EVENT", "HUMAN_REVIEW_CASE_NEW_EVENT", "FINALIZED_CASE_NEW_EVENT"}
+        ):
+            raise ValueError("Held event must match an eligible applicant review hold")
         with self.connection:
+            if held_event is not None:
+                self.connection.execute(
+                    "INSERT OR IGNORE INTO held_inbound_events(id, case_id, reason_code, payload_json) VALUES (?, ?, ?, ?)",
+                    (event_id, case_id, reason_code, held_event.model_dump_json()),
+                )
             self.connection.execute(
                 """INSERT OR IGNORE INTO inbound_failures(
                        id, case_id, thread_id, reason_code, detail, retryable
@@ -339,6 +361,13 @@ class SQLiteStore:
                 "INSERT OR IGNORE INTO processed_events(event_id, case_id) VALUES (?, ?)",
                 (event_id, case_id),
             )
+
+    def list_held_inbound(self, case_id: str) -> list[dict[str, Any]]:
+        rows = self.connection.execute(
+            "SELECT id, reason_code, payload_json, created_at FROM held_inbound_events "
+            "WHERE case_id=? ORDER BY created_at, id", (case_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
 
     def record_inbound_failure(
         self,

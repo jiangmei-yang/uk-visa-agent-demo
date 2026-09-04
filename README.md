@@ -196,6 +196,10 @@ claims remain withheld until their separate provider experiments pass.
 The local review app binds to `127.0.0.1` in Docker. A case can be exported as JSON from the review
 page. Deletion requires a browser confirmation and an exact case-ID request header, then removes the
 case records and case-owned generated artifacts. Processed raw inbound messages are not retained.
+Exception: applicant updates paused for human review, controlled revision or out-of-order handling
+retain their event body and attachment references privately in the case database. They are included
+in the case data export and removed from the database on case deletion. This does not imply remote
+mailbox deletion or removal of independently retained uploads/backups. See `HUMAN_REVIEW_RECOVERY.md`.
 
 ## Policy sources
 
