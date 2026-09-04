@@ -1,21 +1,36 @@
 """Bounded automatic service replies; final packs still require reviewed dispatch."""
 
 import re
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from email.utils import getaddresses
 
 from visa_agent.channels.gmail import GmailAdapter, GmailReplySender
 from visa_agent.channels.outbound import PermanentChannelError, ReplyRequest
-from visa_agent.domain.models import CaseStatus, InboundEvent
-from visa_agent.llm.guarded import deterministic_fallback_message
+from visa_agent.domain.models import Case, CaseStatus, InboundEvent
+from visa_agent.llm.guarded import GuardedLLM, deterministic_fallback_message
+from visa_agent.llm.ports import CasePatch
 from visa_agent.storage.sqlite import SQLiteStore
 
 
+@dataclass
+class StoredDraft:
+    text: str
+    version: str = 'stored-workflow-draft'
+
+    def extract_case_patch(self, event: InboundEvent) -> CasePatch:
+        raise RuntimeError('Stored drafts cannot extract applicant facts')
+
+    def render_message(self, case: Case, plan: str) -> str:
+        return self.text
+
+
 class AutomaticGmailReplySender(GmailReplySender):
-    def __init__(self, adapter: GmailAdapter, store: SQLiteStore, allowed_sender: str) -> None:
+    def __init__(self, adapter: GmailAdapter, store: SQLiteStore, allowed_sender: str,
+                 *, allow_guarded_drafts: bool = False) -> None:
         super().__init__(adapter)
         self.store = store
         self.allowed_sender = allowed_sender
+        self.allow_guarded_drafts = allow_guarded_drafts
 
     def queue_finalized_update_receipts(self) -> int:
         """A receipt for retained corrections, never a revised pack or approval."""
@@ -117,10 +132,18 @@ class AutomaticGmailReplySender(GmailReplySender):
             raise PermanentChannelError("Unsupported automatic reply plan")
         body = (self._held_receipt(case.id, row['event_id']) if row['message_type'] == 'held_update_received'
                 else deterministic_fallback_message(case, row["message_type"]))
+        render_mode = 'reviewed'
+        render_error = None
+        if self.allow_guarded_drafts and row['message_type'] == 'blocked':
+            guard = GuardedLLM(StoredDraft(request.body))
+            body = guard.render_message(case, 'blocked')
+            render_mode = 'reviewed_fallback' if guard.last_render_fallback else 'guarded_draft'
+            render_error = guard.last_render_error
         # Persist the exact body before the side effect, including on a send-response crash.
         with self.store.connection:
             self.store.connection.execute(
-                "UPDATE outbox SET payload = ? WHERE id = ? AND status = 'SENDING'",
-                (body, request.outbox_id),
+                "UPDATE outbox SET payload = ?, reply_render_mode=?, reply_render_error=? "
+                "WHERE id = ? AND status = 'SENDING'",
+                (body, render_mode, render_error, request.outbox_id),
             )
         return super().send(replace(request, body=body))

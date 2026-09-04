@@ -306,3 +306,62 @@ required questions are present. Eight new regressions pass; all 401 local tests,
 The retained v2 report predates these guard changes, and no third provider run or live model-prose
 rollout is claimed. Broad paraphrase validation and acceptance of natural model-written Gmail replies
 remain unfinished; this narrower formatting tolerance is not presented as solving them.
+
+## Birthday retention and useful adviser guidance, 2026-09-04
+
+The owner's screenshots showed a birthday supplied in dotted year-first notation being requested
+again. Read-only inspection found one persistent case, not a new case per reply. The later Chinese
+date spelling had already populated its birthday, accommodation and budget. Private names, dates,
+email bodies and addresses are not reproduced in these public fixtures.
+
+The old `has_calendar_day` did not recognise dotted dates and silently dropped even a correct
+model proposal. An initial excerpt-only fix then failed a real fictional DeepSeek extraction:
+the provider returned `1998.5.12` as the value, not ISO. The failed proposal and both failure modes
+are retained in `eval_output/birthday_guard_failure_2026-09-04.json`. The final fix canonicalizes
+only explicit, valid year-first values, then still checks original quoted evidence. Ambiguous
+day/month order, invented years and invalid calendar values are not normalized into accepted facts.
+Replaying the retained proposal and one new real extraction both accepted the expected ISO date.
+Four integration cases cover ISO/raw dotted/Chinese values, reopening SQLite, corrections retaining
+superseded evidence, no birthday/date re-asking, and duplicate-event/no-resend behaviour.
+
+The service also lacked useful preparation information. It now gives small, reviewed, source-linked
+answers about official application steps, application/decision timing, translation and booking,
+plus case-specific preparation suggestions for self-funded students and conferences. Unsettled
+routes get the official checker instead of a claimed visa requirement. These are dated, bounded
+answers, not live web research or unconstrained immigration advice. The sources were directly
+checked on 2026-09-04, with recheck required after 2026-10-04:
+
+- https://www.gov.uk/check-uk-visa
+- https://www.gov.uk/standard-visitor/apply-standard-visitor-visa
+- https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk
+
+Each case stores advice topic/event references. A topic is suppressed on subsequent turns only
+when its outbound event was actually `SENT`; this does not claim the recipient read it. Pending
+drafts do not count. Explicit questions can request an explanation again. Declined links and pure
+later-reply messages do not trigger unsolicited guidance. Replies carrying a substantive answer
+ask at most two missing fact fields; official answers are also retained in confirmation replies.
+New birthday, accommodation, budget and travel-date facts receive an acknowledgement rather than
+the generic introduction. No facts, requirements, consent or release gates are weakened.
+
+Two real-model, captured-Gmail runs are retained. The first,
+`eval_output/gmail_adviser_guidance_2026-09-04.json`, passed the old mechanical checks but **failed
+manual usefulness review**: guidance was accidentally waiting for route confirmation. That is not
+a successful guidance run. Conditional preparation information no longer waits for, or grants,
+route confirmation. The updated evaluator explicitly checks the application link, answer-before-
+questions order, student-funding explanation and non-repeated application introduction. The second,
+`eval_output/gmail_adviser_guidance_2026-09-04-v2.json`, passed all eight fictional turns under those
+checks. Both use real DeepSeek extraction but captured transport and reviewed prose, not Gmail
+network sending or model-prose acceptance. Subsequent local edits removed a duplicated disclaimer
+and acknowledged newly received travel dates; they are covered locally, not by a third provider run.
+
+Independent internal reading still found unanswered name/birthday questions repeated across turns
+and the enum phrase "employer or school" instead of preserving "school". These remain experience
+defects; the reviewer supported only a controlled incremental release. This is not an independent
+customer usability study or a perfect-naturalness claim. The complete local suite passes 501 tests,
+ruff and mypy (55 source files), with the existing Starlette/httpx deprecation warning.
+
+The registered-sender Gmail worker was reloaded under its existing state-directory lock. New PID
+53498 completed an idle cycle at 2026-09-04T10:16:07Z; a separate process check confirmed liveness.
+The existing one-case database and sent-message history were preserved. No historic messages were
+manually replayed or resent, and the optional guarded-draft flag remains off. This proves loading
+and polling; the new wording has not yet been observed in a new recipient-side Gmail exchange.

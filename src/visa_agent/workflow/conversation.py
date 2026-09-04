@@ -173,7 +173,8 @@ def next_fact_questions(case: Case) -> list[str]:
         )
     ]
     actionable = [field for field in missing if field not in case.deferred_fields]
-    return actionable[: max(0, 3 - len(case.open_blockers()))]
+    question_budget = 2 if case.customer_answers else 3
+    return actionable[: max(0, question_budget - len(case.open_blockers()))]
 
 
 def update_deferred_questions(case: Case, body: str) -> None:
@@ -222,7 +223,18 @@ def received_context(case: Case) -> str:
         }
         received = [values[facts[key]] for key, values in phrases.items()
                     if facts.get(key) in values]
-        return "Thanks, " + " and ".join(received[:2]) + "." if received else ""
+        if received:
+            return "Thanks, " + " and ".join(received[:2]) + "."
+        recorded = []
+        if "date_of_birth" in facts:
+            recorded.append("your date of birth")
+        if "uk_accommodation" in facts:
+            recorded.append("your proposed accommodation")
+        if "estimated_trip_cost_gbp" in facts:
+            recorded.append("your estimated budget")
+        if "planned_arrival_date" in facts or "planned_departure_date" in facts:
+            recorded.append("your updated travel dates")
+        return "I've recorded " + ", ".join(recorded) + "." if recorded else ""
     parts = []
     purposes = {"tourism": "你打算去英国旅游", "conference": "你准备去英国参加会议",
                 "family_or_friends": "你打算去英国探亲访友", "business": "这次是商务访问"}
@@ -236,7 +248,18 @@ def received_context(case: Case) -> str:
                "personal_sponsor": "这次有个人资助"}
     if facts.get("funding_source") in funding:
         parts.append(funding[facts["funding_source"]])
-    return "了解了，" + "，".join(parts[:2]) + "。" if parts else ""
+    if parts:
+        return "了解了，" + "，".join(parts[:2]) + "。"
+    recorded = []
+    if "date_of_birth" in facts:
+        recorded.append("生日")
+    if "uk_accommodation" in facts:
+        recorded.append("计划住宿")
+    if "estimated_trip_cost_gbp" in facts:
+        recorded.append("旅行预算")
+    if "planned_arrival_date" in facts or "planned_departure_date" in facts:
+        recorded.append("行程日期")
+    return "你提供的" + "、".join(recorded) + "已记下。" if recorded else ""
 
 
 DOCUMENT_LABELS_ZH = {
@@ -284,6 +307,8 @@ QUESTION_TEXT_ZH = {
     "occupation_status": "你目前在工作、读书，还是自己经营业务？",
     "funding_source": "这次旅行的费用由你自己承担，还是有人或单位资助？",
     "uk_accommodation": "在英国准备住哪里？还没确定的话也可以直接说。",
+    "estimated_trip_cost_gbp": "这趟旅行大约打算花多少英镑？先给一个估计就好。",
+    "annual_income_gbp": "你目前有收入吗？有的话，大约每年多少英镑？没有收入也可以直接说明。",
     "current_address": "你目前实际居住的地址是什么？这里需要的是住址，不是工作地点。",
     "route_confirmed_standard_visitor": "我们目前只支持 Standard Visitor 材料准备。你是否已确认按这一路线准备？不确定的话先告诉我。",
 }
@@ -298,6 +323,9 @@ QUESTION_TEXT_EN = {
     "occupation_status": "Are you currently employed, studying or self-employed?",
     "funding_source": "Who will pay for the trip?",
     "uk_accommodation": "Where are you planning to stay in the UK? It's fine if you haven't decided yet.",
+    "estimated_trip_cost_gbp": "Roughly how much do you expect the trip to cost in pounds? An estimate is fine.",
+    "annual_income_gbp": "Do you currently have an income? If so, roughly how much per year in pounds? It's fine to say if you have none.",
+    "current_address": "What is your current home address? This will be needed for the application form, rather than your workplace address.",
 }
 
 
@@ -482,7 +510,7 @@ def blocked_customer_message(case: Case) -> str:
         )
     # A concrete acknowledgement already opens the reply; do not restart the introduction.
     contextual = bool(acknowledgements)
-    sections = [intro] if contextual else [greeting, intro]
+    sections = [intro] if contextual else ([] if case.customer_answers else [greeting, intro])
     if case.latest_deferred_fields:
         sections.append(
             "日期先留空，等你确定后再补。我们先整理其他信息。"
@@ -552,7 +580,8 @@ def confirmation_message(case: Case, *, profile_only: bool = False) -> str:
                 if zh
                 else f"- {fact_label(case, field)}: {display}"
             )
-    text = intro + "\n\n" + ("资料摘要\n" if zh else "FACTS SUMMARY\n") + "\n".join(rows)
+    text = ("\n\n".join(case.customer_answers) + "\n\n" if case.customer_answers else "")
+    text += intro + "\n\n" + ("资料摘要\n" if zh else "FACTS SUMMARY\n") + "\n".join(rows)
     if not profile_only:
         text += "\n\n" + ("这次整理使用的材料\n" if zh else "CURRENT DOCUMENTS\n")
         text += "\n".join(

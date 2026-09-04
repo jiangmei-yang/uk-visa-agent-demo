@@ -38,6 +38,8 @@ def main() -> None:
         help="Optional exact subject; omit to accept ordinary subjects from the allowed sender",
     )
     parser.add_argument("--model", default="deepseek-v4-flash")
+    parser.add_argument("--reply-style", choices=("reviewed", "guarded-draft"), default="reviewed",
+                        help="Optional revalidated workflow prose for blocked/intake replies only")
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument(
         "--watch", action="store_true", help="Repeat prepare or controlled serve cycles"
@@ -112,7 +114,8 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
         if args.action == "serve":
             from visa_agent.channels.automatic_reply import AutomaticGmailReplySender
 
-            automatic_sender = AutomaticGmailReplySender(adapter, store, args.sender)
+            automatic_sender = AutomaticGmailReplySender(adapter, store, args.sender,
+                allow_guarded_drafts=getattr(args, 'reply_style', 'reviewed') == 'guarded-draft')
             dispatcher = OutboxDispatcher(store, automatic_sender, channel="gmail",
                 allowed_message_types=("blocked", "awaiting_profile_confirmation", "awaiting_confirmation", "held_update_received"))
             dispatcher.reconcile_sending(automatic_sender, datetime.now(UTC))

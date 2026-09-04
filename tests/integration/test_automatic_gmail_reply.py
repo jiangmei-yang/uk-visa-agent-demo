@@ -264,3 +264,56 @@ def test_existing_gmail_case_recovers_missed_date_deferral_and_keeps_it_across_t
         assert len(adapter.calls) == 3
     finally:
         store.close()
+
+
+@pytest.mark.parametrize('unsafe', [False, True])
+def test_opt_in_draft_is_revalidated_and_exact_decision_persisted(tmp_path, unsafe):
+    from visa_agent.workflow.conversation import reply_items
+
+    store = SQLiteStore(tmp_path / 'db')
+    now = datetime.now(UTC)
+    case = Case(id='c', external_thread_id='t', applicant_contact='user@example.test', policy_version='v')
+    draft = "Let's start with your travel plans.\n\n" + '\n'.join(reply_items(case)[1])
+    if unsafe:
+        draft += '\nNo documents are needed from you at this stage.'
+    event = InboundEvent(id='e',external_thread_id='t',sender=case.applicant_contact,
+                        subject='UK plans',body='Hello',channel='gmail',received_at=now)
+    store.commit_event(case,event,'blocked',draft)
+    adapter = CaptureAdapter()
+    sender = AutomaticGmailReplySender(adapter,store,case.applicant_contact,allow_guarded_drafts=True)
+    try:
+        dispatcher = OutboxDispatcher(store,sender,channel='gmail',allowed_message_types=('blocked',))
+        assert dispatcher.dispatch_due(now)[0].status == 'SENT'
+        row = store.list_outbox()[0]
+        assert row['payload'] == adapter.calls[0]['body']
+        if unsafe:
+            assert row['payload'] != draft and 'No documents are needed' not in row['payload']
+            assert row['reply_render_mode'] == 'reviewed_fallback'
+            assert 'unsupported preparation waiver' in row['reply_render_error']
+        else:
+            assert row['payload'] == draft
+            assert row['reply_render_mode'] == 'guarded_draft'
+            assert row['reply_render_error'] is None
+        exported = store.export_case_data(case.id)['outbound_messages'][0]
+        assert exported['reply_render_mode'] == row['reply_render_mode']
+        assert dispatcher.dispatch_due(now) == [] and len(adapter.calls) == 1
+    finally:
+        store.close()
+
+
+def test_opt_in_draft_does_not_replace_confirmation(tmp_path):
+    store = SQLiteStore(tmp_path / 'db')
+    now = datetime.now(UTC)
+    case = Case(id='c',external_thread_id='t',applicant_contact='user@example.test',policy_version='v')
+    event = InboundEvent(id='e',external_thread_id='t',sender=case.applicant_contact,
+        subject='UK plans',body='Here are my details',channel='gmail',received_at=now)
+    store.commit_event(case,event,'awaiting_confirmation','Uncontrolled confirmation wording')
+    adapter = CaptureAdapter()
+    try:
+        sender = AutomaticGmailReplySender(adapter,store,case.applicant_contact,allow_guarded_drafts=True)
+        assert OutboxDispatcher(store,sender).dispatch_due(now)[0].status == 'SENT'
+        assert 'Uncontrolled confirmation' not in adapter.calls[0]['body']
+        assert 'CURRENT DOCUMENTS' in adapter.calls[0]['body']
+        assert store.list_outbox()[0]['reply_render_mode'] == 'reviewed'
+    finally:
+        store.close()

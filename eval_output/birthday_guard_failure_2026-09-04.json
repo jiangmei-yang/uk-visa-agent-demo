@@ -1,0 +1,19 @@
+{
+  "scope": "One real DeepSeek extraction; fictional input; no Gmail calls or live case changes",
+  "model": "deepseek-v4-flash",
+  "input": "我不是说了旅行日期还没定吗？我的出生日期是1998.5.12",
+  "provider_proposal": {
+    "updates": [{"field": "date_of_birth", "value": "1998.5.12", "source_excerpt": "我的出生日期是1998.5.12", "confidence": 1.0}],
+    "ambiguities": [],
+    "requires_human_review": false,
+    "question_deferrals": [
+      {"field": "planned_arrival_date", "source_excerpt": "旅行日期还没定", "confidence": 1.0},
+      {"field": "planned_departure_date", "source_excerpt": "旅行日期还没定", "confidence": 1.0}
+    ]
+  },
+  "old_guard": {"accepted_dob": false, "requires_human_review": false, "failure": "has_calendar_day silently skipped dotted dates"},
+  "first_fix": {"accepted_dob": false, "requires_human_review": true, "failure": "Raw model date value remained dotted, not ISO; first fix only added excerpt recognition"},
+  "all_passed": false,
+  "usage": {"input_tokens": 1820, "output_tokens": 103, "total_tokens": 1923},
+  "note": "Failed probe retained. A later fix must canonicalize unambiguous explicit date values and still verify original source evidence. Not a claim about the historical user's raw model output, which was not retained."
+}

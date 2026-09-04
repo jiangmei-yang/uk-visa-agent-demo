@@ -133,6 +133,8 @@ class SQLiteStore:
             "recipient": "TEXT",
             "external_thread_id": "TEXT",
             "send_deadline": "TEXT",
+            "reply_render_mode": "TEXT",
+            "reply_render_error": "TEXT",
         }
         with self.connection:
             for column, declaration in additions.items():
@@ -180,7 +182,7 @@ class SQLiteStore:
         outbox = self.connection.execute(
             """SELECT id, event_id, message_type, payload, channel, recipient,
                       external_thread_id, status, attempt_count, last_error, sent_at,
-                      provider_message_id, created_at
+                      provider_message_id, created_at, reply_render_mode, reply_render_error
                FROM outbox WHERE case_id = ? ORDER BY created_at, id""",
             (case_id,),
         ).fetchall()
@@ -518,7 +520,7 @@ class SQLiteStore:
             """SELECT id, case_id, event_id, message_type, payload, channel, recipient,
                       external_thread_id, send_deadline, reply_subject, status, attempt_count,
                       next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
-                      references_header, created_at
+                      references_header, created_at, reply_render_mode, reply_render_error
                FROM outbox ORDER BY created_at, id"""
         ).fetchall()
         return [dict(row) for row in rows]

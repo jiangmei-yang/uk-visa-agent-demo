@@ -172,6 +172,9 @@ class Case(BaseModel):
     final_summary_confirmed: bool = False
     customer_language: str = "en"
     customer_answers: list[str] = Field(default_factory=list)
+    # Advice topic -> most recent event whose reply offered it; a SENT outbox row
+    # is required before subsequent turns suppress it as already communicated.
+    guidance_events: dict[str, str] = Field(default_factory=dict)
     latest_changes: dict[str, str] = Field(default_factory=dict)
     latest_received_facts: dict[str, str] = Field(default_factory=dict)
     deferred_fields: list[str] = Field(default_factory=list)

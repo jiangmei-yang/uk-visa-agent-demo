@@ -37,6 +37,23 @@ do not switch scope by deleting its database. Use a separate state directory for
 
 ## Local supervised deployment evidence, 2026-09-04
 
+### Reviewed guidance and optional draft transport
+
+The default remains `--reply-style reviewed`. Reviewed replies now include source-linked answers
+to application/process, timing, translation and booking questions, and small case-specific
+preparation suggestions. Advice topic IDs refer to outbound events; only an accepted `SENT` reply
+suppresses that unsolicited topic on later turns. This records sending, not whether a customer read
+it. New explicit questions can request the information again. Facts, date deferrals, evidence and
+consent remain in the same SQLite case across worker restarts.
+
+`--reply-style guarded-draft` is an opt-in candidate, not enabled in the installed LaunchAgent.
+Only blocked/intake drafts can pass through, and the sender revalidates them against current state.
+Confirmation summaries, held-update receipts and final-delivery restrictions remain controlled.
+The exact transmitted body and `reply_render_mode` / `reply_render_error` are persisted before send.
+`guarded_draft` identifies the validation path, not proof of original model authorship: the workflow
+may already have used its fallback. Local transport tests cover both passing and rejected drafts;
+this is not a claim of accepted naturalness or live model-prose rollout.
+
 A macOS LaunchAgent `com.visa-agent.gmail-user` was installed for the owner's additional test mailbox,
 with a 60-second interval, no subject restriction, an explicit activation boundary and private
 state/logs under `data/gmail-live-user`. `launchctl print gui/501/com.visa-agent.gmail-user` confirmed

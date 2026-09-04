@@ -6,7 +6,7 @@ from collections.abc import Callable
 
 from pydantic import TypeAdapter, ValidationError
 
-from visa_agent.domain.date_evidence import date_is_grounded, has_calendar_day
+from visa_agent.domain.date_evidence import canonical_date_value, date_is_grounded, has_calendar_day
 from visa_agent.domain.models import Case, CaseProfile, CaseStatus, InboundEvent
 from visa_agent.llm.ports import CasePatch, FactUpdate, LLMClient
 from visa_agent.workflow.conversation import (
@@ -75,6 +75,8 @@ def _question_format_key(value: str) -> str:
 
 
 def _canonical_value(field: str, value: str | int | bool) -> str | int | bool:
+    if field in {"date_of_birth", "planned_arrival_date", "planned_departure_date"} and isinstance(value, str):
+        return canonical_date_value(value)
     if field == "sponsor_relationship" and isinstance(value, str):
         normalised = _normalise_evidence(value)
         matches = [item for item in SPONSOR_RELATIONSHIPS if item in normalised]

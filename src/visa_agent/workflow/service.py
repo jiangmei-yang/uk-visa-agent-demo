@@ -30,6 +30,7 @@ from visa_agent.domain.rules import advance_stage, evaluate_gate, run_consistenc
 from visa_agent.llm.guarded import ensure_guarded
 from visa_agent.llm.ports import LLMClient
 from visa_agent.storage.sqlite import SQLiteStore
+from visa_agent.workflow.adviser_guidance import APPLICATION_URL, preparation_guidance
 from visa_agent.workflow.conversation import (
     clear_natural_confirmation,
     confirmation_has_caveat,
@@ -37,6 +38,7 @@ from visa_agent.workflow.conversation import (
     next_fact_questions,
     summary_fingerprint,
     update_deferred_questions,
+    waiting_acknowledgement,
 )
 from visa_agent.workflow.customer_questions import grounded_customer_answers
 
@@ -245,6 +247,17 @@ class WorkflowService:
                 case, include_documents=case.confirmation_kind == "final"
             )
             case.confirmation_request_event_id = event.id
+        if plan == "blocked" and not waiting_acknowledgement(case):
+            sent_events = {row["event_id"] for row in self.store.list_outbox()
+                           if row["case_id"] == case.id and row["status"] == "SENT"}
+            sent_topics = {topic for topic, source_event in case.guidance_events.items()
+                           if source_event in sent_events}
+            guidance = preparation_guidance(case, self.today_provider(), sent_topics)
+            for topic, answer in guidance:
+                case.customer_answers.append(answer)
+                case.guidance_events[topic] = event.id
+            if any(APPLICATION_URL in answer for answer in case.customer_answers):
+                case.guidance_events["application_overview_v1"] = event.id
         case.last_requested_fields = next_fact_questions(case) if plan == "blocked" else []
         message = self.llm.render_message(case, plan)
         message_id = stable_id("message", f"{event.id}:{plan}")

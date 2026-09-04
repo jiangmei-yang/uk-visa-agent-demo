@@ -57,6 +57,20 @@ transactional outbox ── finite retry + ambiguous-send reconciliation
 PDF / JSON / ZIP pack for human review
 ```
 
+## Customer continuity and role boundaries (2026-09-04)
+
+The current persistent unit is a Case keyed by the provider conversation thread, with sender
+ownership checked before mutation. It contains profile facts, their evidence, deferred questions,
+documents, issues, confirmation and delivery state. It is **not** a cross-channel customer CRM:
+another email thread creates another case, and Gmail and WhatsApp identities are not automatically
+merged. A future Customer/contact/case mapping needs verified linking; matching names is unsafe.
+
+Customer-facing continuity takes precedence over adding autonomous agents. Keep one outward adviser,
+bounded extraction/document review/wording roles, and one workflow with authority to commit state and
+send messages. Parallel document analysis can be added when it has a measurable benefit; separate
+agents must not keep competing case memories or independently question the customer. The repeated
+birthday defect was a grounding/canonicalization failure, not a lack of agent count.
+
 ## Model selection
 
 No model is selected by reputation. The live comparison begins with:

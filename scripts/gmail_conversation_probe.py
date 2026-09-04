@@ -16,6 +16,7 @@ from visa_agent.llm.deepseek_client import DeepSeekStructuredLLM
 from visa_agent.llm.guarded import deterministic_fallback_message
 from visa_agent.secrets import read_secret
 from visa_agent.storage.sqlite import SQLiteStore
+from visa_agent.workflow.adviser_guidance import APPLICATION_URL
 from visa_agent.workflow.conversation import next_fact_questions, reply_items
 from visa_agent.workflow.service import WorkflowService
 
@@ -66,6 +67,8 @@ def main() -> None:
                         help='Use indirect undecided-travel expressions rather than keyword variants')
     parser.add_argument('--model-prose', action='store_true',
                         help='Capture real model prose before the guard and automatic Gmail replacement')
+    parser.add_argument('--guarded-sending', action='store_true',
+                        help='Capture the opt-in revalidated workflow-draft sending path')
     args = parser.parse_args()
     if args.output.exists():
         parser.error('Choose a new report path; retained evidence must not be overwritten')
@@ -75,7 +78,8 @@ def main() -> None:
         parser.error('Missing DeepSeek key')
     report: dict[str, Any] = {'scope': 'real DeepSeek extraction; fictional text; captured Gmail sends',
         'model': 'deepseek-v4-flash', 'semantic_intent': args.semantic_intent,
-        'model_prose': args.model_prose, 'completed': False, 'results': []}
+        'model_prose': args.model_prose, 'guarded_sending': args.guarded_sending,
+        'completed': False, 'results': []}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open('x') as output:
         json.dump(report, output)
@@ -95,7 +99,8 @@ def main() -> None:
                 model, today_provider=lambda: date(2026, 9, 4))
             capture = CaptureGmail()
             dispatcher = OutboxDispatcher(store,
-                AutomaticGmailReplySender(capture, store, 'fictional@example.test'), channel='gmail',
+                AutomaticGmailReplySender(capture, store, 'fictional@example.test',
+                    allow_guarded_drafts=args.guarded_sending), channel='gmail',
                 allowed_message_types=('blocked', 'awaiting_profile_confirmation', 'awaiting_confirmation'))
             try:
                 for index, body in enumerate(messages):
@@ -122,6 +127,15 @@ def main() -> None:
                         'language': case.customer_language == language,
                         'no_release': not case.delivery_path and not case.final_summary_confirmed,
                     }
+                    if index == 0:
+                        checks['official_application_entry_provided'] = APPLICATION_URL in reply
+                        checks['guidance_before_questions'] = bool(case.customer_answers and
+                            reply.index(case.customer_answers[0]) < reply.index(reply_items(case)[1][0]))
+                    if index == 1:
+                        checks['student_funding_explained'] = (
+                            '预算数字本身不能代替资金证明' in reply if language == 'zh'
+                            else 'a budget figure is not funding evidence' in reply)
+                        checks['application_intro_not_repeated'] = APPLICATION_URL not in reply
                     if index >= 1:
                         checks['student'] = case.profile.occupation_status == 'student'
                         checks['funding'] = case.profile.funding_source == ('self' if index == 1 else 'employer_or_school')
@@ -147,6 +161,8 @@ def main() -> None:
                         'raw_model_draft': getattr(model, 'raw_reply', None),
                         'guarded_model_draft': guarded_draft, 'render_fallback': render_fallback,
                         'render_error': render_error,
+                        'send_render_mode': stored['reply_render_mode'],
+                        'send_render_error': stored['reply_render_error'],
                         'provider_bound_body': reply, 'usage': model.usage_history[usage_start:]})
                     print(language, index + 1, 'PASS' if all(checks.values()) else 'FAIL', flush=True)
                     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
