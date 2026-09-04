@@ -160,11 +160,12 @@ def assert_no_intake_questions(case: Case, body: str) -> None:
     assert "计划哪天" not in body and "哪天离开" not in body
 
 
-def test_first_sent_turn_asks_identity_without_restarting_unknown_dates(tmp_path: Path) -> None:
+def test_first_sent_turn_gives_material_value_without_restarting_unknown_dates(tmp_path: Path) -> None:
     conversation = Conversation(tmp_path)
     case, body = conversation.turn(FIRST_BODY)
-    assert next_fact_questions(case) == ["full_name"]
-    assert QUESTION_TEXT_ZH["full_name"] in body
+    assert next_fact_questions(case) == []
+    assert all(term in body for term in ("Apply now", "在读证明", "资金来源"))
+    assert QUESTION_TEXT_ZH["full_name"] not in body
     assert QUESTION_TEXT_ZH["date_of_birth"] not in body
     assert len(conversation.gmail.calls) == 1
     assert case.profile.occupation_status == "student"
@@ -180,7 +181,11 @@ def test_correction_is_answered_without_repeating_or_expanding_unanswered_questi
     assert case.profile.visit_purpose == "conference"
     assert case.profile.funding_source == "employer_or_school"
     assert "参加会议" in body and "学校" in body
-    assert "邀请函" in body and "gov.uk" in body
+    assert "邀请函" in body and "gov.uk" not in body
+    sent_bodies = "\n".join(call["body"] for call in conversation.gmail.calls)
+    assert sent_bodies.count(
+        "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents"
+    ) == 1
     assert_no_intake_questions(case, body)
     assert case.profile.full_name is None and case.profile.date_of_birth is None
 
@@ -189,9 +194,13 @@ def test_unreviewed_summary_is_not_consent_or_a_reason_to_repeat_identity(tmp_pa
     conversation = Conversation(tmp_path)
     conversation.turn(FIRST_BODY)
     conversation.turn(CORRECTION_BODY)
+    asked, asked_body = conversation.turn("现在可以继续了，下一步需要什么？")
+    assert next_fact_questions(asked) == ["full_name"]
+    assert QUESTION_TEXT_ZH["full_name"] in asked_body
     case, body = conversation.turn("如果都没问题可以继续，不过我还没检查摘要。")
     assert not case.profile_confirmed and not case.final_summary_confirmed
     assert_no_intake_questions(case, body)
+    assert case.pending_question_fields == ["full_name"]
     assert case.profile.full_name is None and case.profile.date_of_birth is None
 
 
@@ -199,7 +208,9 @@ def test_explicit_resume_returns_one_focused_missing_question(tmp_path: Path) ->
     conversation = Conversation(tmp_path)
     conversation.turn(FIRST_BODY)
     conversation.turn(CORRECTION_BODY)
-    conversation.turn("我还没检查摘要，稍后再处理。")
+    waiting, waiting_body = conversation.turn("我还没核对其他资料，稍后回复。")
+    assert next_fact_questions(waiting) == []
+    assert "等你方便时" in waiting_body
     case, body = conversation.turn("现在可以继续了，下一步需要什么？")
     questions = next_fact_questions(case)
     assert questions == ["full_name"]
@@ -234,22 +245,25 @@ def test_identity_volunteered_after_pause_is_saved_and_advances_without_reasking
 
 def test_unsent_draft_is_not_treated_as_a_question_the_customer_received(tmp_path: Path) -> None:
     conversation = Conversation(tmp_path)
-    first, _ = conversation.turn(FIRST_BODY, send=False)
+    conversation.turn(FIRST_BODY)
+    conversation.turn(CORRECTION_BODY)
+    resume = "现在可以继续了，下一步需要什么？"
+    first, _ = conversation.turn(resume, send=False)
     assert next_fact_questions(first) == ["full_name"]
-    assert conversation.gmail.calls == []
-    case, body = conversation.turn(CORRECTION_BODY)
+    assert len(conversation.gmail.calls) == 2
+    case, body = conversation.turn(resume)
     assert next_fact_questions(case) == ["full_name"]
     assert QUESTION_TEXT_ZH["full_name"] in body
     assert QUESTION_TEXT_ZH["date_of_birth"] not in body
-    assert len(conversation.gmail.calls) == 1
+    assert len(conversation.gmail.calls) == 3
     store = SQLiteStore(conversation.db_path)
     try:
         rows = store.list_outbox()
-        first_row = next(row for row in rows if row["event_id"] == "frontier-inbound-1")
+        first_row = next(row for row in rows if row["event_id"] == "frontier-inbound-3")
         assert first_row["status"] == "FAILED"
         assert first_row["last_error"] == "Obsolete unsent reply withheld"
         assert first_row["attempt_count"] == 0 and first_row["provider_message_id"] is None
-        assert [row["status"] for row in rows if row["event_id"] == "frontier-inbound-2"] == ["SENT"]
+        assert [row["status"] for row in rows if row["event_id"] == "frontier-inbound-4"] == ["SENT"]
     finally:
         store.close()
 
@@ -278,12 +292,17 @@ def test_legacy_case_recovers_only_the_matching_sent_question_set(tmp_path: Path
 
 def test_pure_waiting_receipt_does_not_claim_unsent_questions_were_asked(tmp_path: Path) -> None:
     conversation = Conversation(tmp_path)
-    conversation.turn(FIRST_BODY, send=False)
+    conversation.turn(FIRST_BODY)
+    conversation.turn(CORRECTION_BODY)
+    resume = "现在可以继续了，下一步需要什么？"
+    unsent, _ = conversation.turn(resume, send=False)
+    assert next_fact_questions(unsent) == ["full_name"]
     waiting, reply = conversation.turn("我稍后回复。")
     assert "等你方便时" in reply and '?' not in reply and '？' not in reply
     assert next_fact_questions(waiting) == []
-    assert all("frontier-inbound-2" not in ids for ids in waiting.question_event_ids.values())
-    case, body = conversation.turn(CORRECTION_BODY)
+    assert waiting.pending_question_fields == []
+    assert all("frontier-inbound-4" not in ids for ids in waiting.question_event_ids.values())
+    case, body = conversation.turn(resume)
     assert next_fact_questions(case) == ["full_name"]
     assert QUESTION_TEXT_ZH["full_name"] in body
     assert QUESTION_TEXT_ZH["date_of_birth"] not in body

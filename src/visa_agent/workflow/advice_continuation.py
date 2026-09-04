@@ -15,15 +15,19 @@ from visa_agent.domain.models import (
     PendingAdviceQuestion,
 )
 from visa_agent.llm.ports import CustomerQuestion
+from visa_agent.workflow.consultant_overview import (
+    comprehensive_case_overview,
+    comprehensive_overview_requested,
+)
 from visa_agent.workflow.conversation import latest_reply_text
 from visa_agent.workflow.customer_questions import (
     APPLICATION_SOURCE,
-    CHECKED_AT,
     ReviewedAnswerPlan,
     _active_clauses,
     capped_answer_plan,
     grounded_customer_answer_plan,
 )
+from visa_agent.workflow.guidance_freshness import CHECKED_AT
 
 
 def is_advice_continuation(body: str) -> bool:
@@ -87,7 +91,17 @@ def reconcile_answered_advice(case: Case, rows: list[dict[str, Any]]) -> None:
 
 
 def _current_answer(item: PendingAdviceQuestion, language: str, today: date,
-                    rows: list[dict[str, Any]] | None = None) -> str | None:
+                    rows: list[dict[str, Any]] | None = None, case: Case | None = None) -> str | None:
+    if item.topic == "personal_overview":
+        if case and comprehensive_overview_requested(case, item.source_body):
+            return comprehensive_case_overview(
+                case,
+                today,
+                include_first_action=not any(
+                    question.topic == "next_step" for question in item.source_questions
+                ),
+            )
+        return None
     # Validation is repeated by the compiler, against the full original body.
     questions = [CustomerQuestion.model_validate(question.model_dump()) for question in item.source_questions]
     sent_context = bool(item.source_application_guidance_event_id and any(
@@ -95,7 +109,7 @@ def _current_answer(item: PendingAdviceQuestion, language: str, today: date,
         and APPLICATION_SOURCE in row["payload"] for row in rows or []
     ))
     plan = grounded_customer_answer_plan(item.source_body, language, today, semantic_questions=questions,
-                                         sent_application_guidance=sent_context)
+                                         sent_application_guidance=sent_context, case=case)
     matches = list(dict.fromkeys(answer for topic, answer in plan.reviewed_answers if topic == item.topic))
     if len(matches) == 1:
         return matches[0]
@@ -113,7 +127,7 @@ def remember_advice_plan(
     for item in case.pending_advice:
         if not _sent_text(rows, item.notice_event_id or item.source_event_id, item.offered_notice):
             continue
-        expected = _current_answer(item, case.customer_language, today, rows)
+        expected = _current_answer(item, case.customer_language, today, rows, case)
         if expected and any(expected in answer for answer in plan.answers):
             item.answer_attempts.append(AdviceAnswerAttempt(event_id=event_id, answer=expected))
     for topic in dict.fromkeys(plan.omitted_topics):

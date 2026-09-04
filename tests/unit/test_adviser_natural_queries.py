@@ -45,7 +45,11 @@ def test_requesting_process_again_still_receives_explanation(body: str, language
     )
     assert len(answers) == 1
     assert APPLICATION_SOURCE in answers[0] and "Apply now" in answers[0]
-    assert ("在线填写申请" in answers[0] and "预约签证中心" in answers[0]) if language == "zh" else ("Apply online" in answers[0])
+    assert (
+        ("在线填写申请" in answers[0] and "预约签证中心" in answers[0])
+        if language == "zh"
+        else ("complete the online form" in answers[0] and "application centre appointment" in answers[0])
+    )
 
 
 @pytest.mark.parametrize(("body", "language"), [
@@ -69,6 +73,21 @@ def test_short_link_followup_requires_previously_sent_application_guidance(
     assert len(answers[0].splitlines()) == 2
     assert "流程是" not in answers[0] and "Apply online" not in answers[0]
     assert "不代表" not in answers[0] and "does not yet confirm" not in answers[0]
+
+
+@pytest.mark.parametrize(("body", "language"), [
+    ("刚才的申请链接可以再发一次吗？", "zh"),
+    ("Could you send the application link again?", "en"),
+])
+def test_explicit_application_link_resend_is_concise_after_it_was_already_sent(body, language):
+    first = grounded_customer_answers(body, language, date(2026, 9, 4))
+    repeated = grounded_customer_answers(
+        body, language, date(2026, 9, 4), sent_application_guidance=True,
+    )
+
+    assert len(first) == len(repeated) == 1
+    assert APPLICATION_SOURCE in repeated[0] and len(repeated[0].splitlines()) == 2
+    assert "流程是" not in repeated[0] and "Apply online" not in repeated[0]
 
 
 @pytest.mark.parametrize("body", [
@@ -113,7 +132,7 @@ def test_fee_answer_is_current_conditional_and_not_total_service_cost(body: str,
     answer = answers[0]
     assert "£135" in answer and APPLICATION_SOURCE in answer
     assert "6" in answer and "Standard Visitor" in answer
-    assert ("不包含" in answer) if language == "zh" else ("cost extra" in answer)
+    assert ("另外收费" in answer) if language == "zh" else ("cost extra" in answer)
 
 
 @pytest.mark.parametrize(("body", "language"), [

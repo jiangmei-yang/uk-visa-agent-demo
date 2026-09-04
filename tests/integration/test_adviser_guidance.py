@@ -120,8 +120,8 @@ def assert_useful_guidance_before_questions(case: Case, body: str) -> None:
     assert not {"date_of_birth", "estimated_trip_cost_gbp",
                 "planned_arrival_date", "planned_departure_date"} & set(case.last_requested_fields)
     questions = reply_items(case)[1]
-    assert 0 < len(questions) <= 2
-    assert body.count("？") <= 2
+    assert len(questions) <= 1
+    assert body.count("？") <= 1
     for question in questions:
         assert body.index(APPLICATION_URL) < body.index(question)
         assert body.index(DOCUMENTS_URL) < body.index(question)

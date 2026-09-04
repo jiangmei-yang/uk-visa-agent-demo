@@ -231,12 +231,27 @@ def test_pure_off_topic_preserves_independent_sent_question_ledger(
     tmp_path: Path, text: str, language: str,
 ) -> None:
     conversation = Conversation(tmp_path, language)
-    before, _ = conversation.turn("I am a student and paying for the trip myself.", patch_for(updates=[
+    circumstances = (
+        "我是在读学生，费用自己承担。" if language == "zh"
+        else "I am a student and paying for the trip myself."
+    )
+    conversation.turn(circumstances, patch_for(updates=[
         FactUpdate(field="occupation_status", value="student",
-                   source_excerpt="I am a student", confidence=0.99),
+                   source_excerpt="在读学生" if language == "zh" else "I am a student", confidence=0.99),
         FactUpdate(field="funding_source", value="self",
-                   source_excerpt="paying for the trip myself", confidence=0.99),
+                   source_excerpt="费用自己承担" if language == "zh" else "paying for the trip myself", confidence=0.99),
     ]))
+    # Consultant-first pacing delivers the itinerary and residence actions
+    # before an administrative name question. Reach that real SENT question
+    # rather than relying on the retired questionnaire-first behaviour.
+    step = (
+        "我的英国访问签证下一步应该准备什么材料？" if language == "zh"
+        else "What should I prepare next for my UK visitor application?"
+    )
+    first_action, _ = conversation.turn(step, patch_for(question("next_step", step)))
+    second_action, _ = conversation.turn(step, patch_for(question("next_step", step)))
+    before, _ = conversation.turn(step, patch_for(question("next_step", step)))
+    assert first_action.last_requested_fields == second_action.last_requested_fields == []
     assert before.last_requested_fields and before.question_event_ids
     case, body = conversation.turn(text, patch_for(question("off_topic", text)))
     assert case.question_event_ids == before.question_event_ids
@@ -575,6 +590,15 @@ def test_independent_continue_request_is_not_swallowed_by_off_topic_clause(
             FactUpdate(field="funding_source", value="self",
                        source_excerpt="paying for the trip myself", confidence=0.99),
         ]))
+        # The adviser now gives the relevant study/funding and itinerary actions
+        # before moving to administrative intake. Progress through those useful
+        # turns so this branch still establishes a genuinely SENT pending
+        # question rather than manufacturing one from the first fact update.
+        step = "下一步需要我补什么？" if language == "zh" else "What should I provide next?"
+        for _ in range(6):
+            if before.last_requested_fields:
+                break
+            before, _ = conversation.turn(step, patch_for(question("next_step", step)))
         assert before.question_event_ids and before.last_requested_fields
     text = resume + "\n" + off_topic
     assert customer_requests_next_step(text)
@@ -645,8 +669,19 @@ def test_repeated_distinct_scope_questions_do_not_revive_fee_or_document_keyword
     ))
     assert case.customer_question_topics == [topic, topic]
     assert case.customer_question_exclusions == [first, second]
-    assert len(case.customer_answers) == 1 and body == case.customer_answers[0]
-    assert "£135" not in body and "http" not in body and "GOV.UK" not in body
+    assert all(answer in body for answer in case.customer_answers)
+    if topic == "unsupported" and conflict == "document_checklist":
+        # A work-visa checklist is outside this bounded Visitor service, but a
+        # real adviser should still give the official route-checking next step.
+        # Keep the separate refusal question visible without duplicating that
+        # route boundary or pretending to supply work-route documents.
+        assert len(case.customer_answers) == 2
+        assert body.count("https://www.gov.uk/check-uk-visa") == 1
+        assert ("另行核实" in body) if language == "zh" else ("separate check" in body)
+    else:
+        assert len(case.customer_answers) == 1 and body == case.customer_answers[0]
+        assert "http" not in body and "GOV.UK" not in body
+    assert "£135" not in body
     assert case.last_requested_fields == [] and reply_items(case)[2] == []
     if topic == "off_topic":
         assert_no_unrelated_requests(case, body)
@@ -715,7 +750,9 @@ def test_current_other_route_blocks_visitor_contextual_source_even_outside_excer
 ) -> None:
     conversation = Conversation(tmp_path, language, only_dates_missing=True)
     case, body = conversation.turn(route + "\n" + medical, patch_for(question("unsupported", medical)))
-    assert len(case.customer_answers) == 1 and "http" not in body
+    assert len(case.customer_answers) == 1
+    assert body.count("https://www.gov.uk/check-uk-visa") == 1
+    assert "standard-visitor/visit-for-medical-reasons" not in body
     assert "医疗访问有专门" not in body and "Medical visits have specific" not in body
     assert_no_added_authority(conversation.initial, case)
 
@@ -775,10 +812,12 @@ def test_continue_preparation_with_separate_dates_later_gets_useful_reviewed_ste
         patch.question_deferrals = [QuestionDeferral(field=field, source_excerpt=date_update, confidence=0.99)
                                     for field in ("planned_arrival_date", "planned_departure_date")]
     case, body = conversation.turn(resume + "\n" + date_update, patch)
-    assert case.proactive_guidance_offered and case.customer_answers
-    assert APPLICATION_SOURCE in body and "Apply now" in body
-    assert SOURCE in body
-    assert case.customer_question_topics == []
+    assert not case.proactive_guidance_offered and case.customer_answers
+    assert case.next_step_advice is not None
+    assert case.next_step_advice.kind == "document"
+    assert case.next_step_advice.requirement_id == "passport"
+    assert APPLICATION_SOURCE in body and "PDF" in body
+    assert case.customer_question_topics == ["next_step"]
     assert case.deferred_fields == conversation.initial.deferred_fields
     assert case.last_requested_fields == []
     assert all(QUESTION_TEXT_ZH[field] not in body and QUESTION_TEXT_EN[field] not in body
@@ -821,14 +860,22 @@ def test_continue_preparation_dates_later_and_off_topic_keep_independent_questio
         FactUpdate(field="occupation_status", value="student", source_excerpt="I am a student", confidence=0.99),
         FactUpdate(field="funding_source", value="self", source_excerpt="paying for the trip myself", confidence=0.99),
     ]))
+    step = "下一步需要我补什么？" if language == "zh" else "What should I provide next?"
+    for _ in range(6):
+        if before.last_requested_fields:
+            break
+        before, _ = conversation.turn(step, patch_for(question("next_step", step)))
     assert before.last_requested_fields
     text = "\n".join([resume, date_update, off_topic])
     case, body = conversation.turn(text, patch_for(question("off_topic", off_topic)))
     assert customer_requests_next_step(text)
-    assert case.customer_question_topics == ["off_topic"] and case.customer_answers[0] in body
-    assert len(case.last_requested_fields) == 1
-    assert set(case.last_requested_fields) <= set(before.last_requested_fields)
-    assert not set(case.deferred_fields) & set(case.last_requested_fields)
+    assert case.customer_question_topics == ["off_topic", "next_step"]
+    assert case.customer_answers[0] in body
+    assert case.last_requested_fields == []
+    assert set(case.pending_question_fields) <= set(before.last_requested_fields)
+    assert not set(case.deferred_fields) & set(case.pending_question_fields)
+    assert "PDF" in body
+    assert ("不重复提问" in body) if language == "zh" else ("will not repeat the question" in body)
     questions = QUESTION_TEXT_ZH if language == "zh" else QUESTION_TEXT_EN
-    assert all(questions[field] in body for field in case.last_requested_fields)
+    assert all(questions[field] not in body for field in before.last_requested_fields)
     assert_no_added_authority(before, case)

@@ -20,7 +20,7 @@ from visa_agent.workflow.document_purpose import DOCUMENTS_SOURCE
 
 _STUDENT = r"在读证明|在学证明|在學證明|学校证明|\b(?:enrol(?:l)?ment|student status|student) letter\b|\bletter confirming (?:my )?enrol(?:l)?ment\b"
 _EMPLOYMENT = r"在职证明|雇主信|工作证明|\b(?:employment|employer(?:'s|’s)?) letter\b|\bletter from (?:my|the) employer\b"
-_INVITATION = r"邀请函|邀请信|\binvitation letter\b|\bletter of invitation\b"
+_INVITATION = r"邀请函|邀请信|\binvitation(?: letter)?\b|\bletter of invitation\b"
 _SELF_EMPLOYED = r"自雇|自己经营|自己做生意|个体户|\bself[- ]employed\b|\b(?:run|own) my (?:own )?business\b"
 _NO_HR = r"没有.{0,8}(?:HR|人事|雇主)|\b(?:no|without|do not have|don't have|don’t have)\s+(?:an?\s+)?(?:HR|human resources|employer)\b"
 _ACTION = (
@@ -65,6 +65,83 @@ _UK_WORK = (
     r"\bwork(?:ing)?\s+(?:remotely\s+)?(?:in|for)\s+(?:the\s+)?(?:UK|Britain|a British company)\b|"
     r"\b(?:run|start|set up)\s+(?:(?:my|a|the|own)\s+)*business\s+in\s+(?:the\s+)?(?:UK|Britain)\b"
 )
+
+
+def host_not_sponsor_financial_question(text: str) -> bool:
+    """Recognise an own-case question separating accommodation from funding.
+
+    Keep this deliberately narrow: one invitation mention cannot hide an
+    unrelated legal, route or financial-sufficiency question in the same email.
+    """
+    from visa_agent.workflow.conversation import latest_reply_text
+
+    if not text or len(text) > 6000:
+        return False
+    current = latest_reply_text(text).strip()
+    reported_other_applicant = (
+        r"(?:朋友|同学|同事|客户|申请人|他|她)(?:说|问|想问|的问题|让我转述)|"
+        r"(?:帮|替|代)(?:我的?|一位)?(?:朋友|同学|同事|客户|他|她).{0,12}(?:问|申请|准备)|"
+        r"\b(?:(?:my|a|the)\s+)?(?:friend|sister|brother|client|customer|applicant)\s+"
+        r"(?:asks?|asked|said|wrote|wants? to know)\b|\bon behalf of\b"
+    )
+    if re.search(
+        _UNSAFE_OR_OUTSIDE + "|" + _CONDITION_OR_DECLINED + "|" + reported_other_applicant + "|" + _UK_WORK,
+        current,
+        re.I,
+    ):
+        return False
+    host = bool(re.search(
+        r"(?:姐姐|妹妹|哥哥|弟弟|亲友|朋友|家人).{0,18}(?:接待|提供住宿|住.{0,5}家)|"
+        r"(?:住|住在).{0,8}(?:姐姐|妹妹|哥哥|弟弟|亲友|朋友|家人)(?:家|那里)|"
+        r"\b(?:my\s+)?(?:sister|brother|friend|relative|family member|host)\b.{0,28}"
+        r"(?:host(?:ing)?|provide(?:s|d)? accommodation|stay(?:ing)? with)|"
+        r"\b(?:stay(?:ing)? with|hosted by)\b.{0,24}"
+        r"(?:my\s+)?(?:sister|brother|friend|relative|family member|host)\b",
+        current,
+        re.I,
+    ))
+    not_funding = bool(re.search(
+        r"(?:他|她|对方|姐姐|妹妹|哥哥|弟弟|亲友|朋友|家人).{0,12}"
+        r"(?:不|不会|没有|没).{0,8}(?:资助|出钱|支付|承担费用)|"
+        r"(?:费用|旅费|机票).{0,12}(?:自己承担|我自己付)|"
+        r"\b(?:but\s+)?(?:he|she|they|my (?:sister|brother|friend|relative|host))\b.{0,18}"
+        r"(?:will not|won['’]t|does not|doesn['’]t|is not|isn['’]t)\s+"
+        r"(?:fund|pay|cover|sponsor)|"
+        r"\bI(?:'ll| will| am going to)?\s+(?:pay|cover|fund).{0,18}(?:myself|the trip)\b",
+        current,
+        re.I,
+    ))
+    bank_question = bool(re.search(
+        r"(?:还|是否|要不要|需不需要|需要|要).{0,12}"
+        r"(?:交|提供|准备).{0,8}(?:他|她|对方|姐姐|亲友|接待人)(?:的)?"
+        r".{0,8}(?:银行流水|对账单|资金证明)|"
+        r"(?:他|她|对方|姐姐|亲友|接待人)(?:的)?.{0,8}"
+        r"(?:银行流水|对账单|资金证明).{0,12}(?:要交|需要|必须|要不要|吗|[?？])|"
+        r"\b(?:does|do|should|must)\b.{0,24}"
+        r"(?:my\s+)?(?:sister|brother|friend|relative|host|they|he|she)\b.{0,24}"
+        r"(?:bank statements?|financial evidence)|"
+        r"\b(?:bank statements?|financial evidence)\b.{0,24}"
+        r"(?:from|for)\s+(?:my\s+)?(?:sister|brother|friend|relative|host|them|him|her)\b",
+        current,
+        re.I,
+    ))
+    if not (host and not_funding and bank_question):
+        return False
+    question_clauses = [
+        clause for clause in re.split(r"[。！!\n；;]|\.(?:\s|$)", current)
+        if re.search(
+            r"[?？]|(?:吗|呢)？?$|\b(?:what|who|where|how|do|does|should|must|need)\b",
+            clause,
+            re.I,
+        )
+    ]
+    return bool(question_clauses) and all(re.search(
+        _INVITATION
+        + r"|接待|住宿|资助|资助人|银行流水|对账单|资金证明|"
+        r"\b(?:host|accommodation|sponsor|fund|pay|bank statements?|financial evidence)\b",
+        clause,
+        re.I,
+    ) for clause in question_clauses)
 
 SCHOOL_RECORD_TOPIC = "student_online_record_obstacle_v1"
 _SCHOOL = r"学校|校方|大学|\b(?:school|university|college|registry)\b"
@@ -246,6 +323,10 @@ def _request_kind(text: str) -> str | None:
     if not text or len(text) > 6000:
         return None
     current = latest_reply_text(text).strip()
+    if host_not_sponsor_financial_question(current):
+        # A pronoun in "does she need to provide bank statements?" refers to
+        # the host's evidence, not a separate applicant asking through the sender.
+        return "invitation"
     # Keep qualifiers intact before considering individual clauses. A quoted,
     # conditional or unsafe request must not become direct by trimming its prefix.
     if re.search(_UNSAFE_OR_OUTSIDE + "|" + _UNAVAILABLE + "|" + _CONDITION_OR_DECLINED + "|" + _THIRD_PARTY_REQUEST + "|" + _UK_WORK,
@@ -354,6 +435,23 @@ def reviewed_document_preparation(text: str, language: str) -> str | None:
                 "Describe accommodation and financial support separately, without assuming your host is your sponsor. "
                 "The invitation explains the visit arrangements; it does not replace other evidence."
             ))
+            if host_not_sponsor_financial_question(text):
+                answer += ((
+                    "\n\n按你说的分工，姐姐只提供住宿，就不要把她写成经济资助人。"
+                    "当前访客材料指南没有要求所有接待人都因为提供住宿而交银行流水；"
+                    "她的邀请说明可以写清住宿地址和接待安排。"
+                    "如果费用由你自己承担，就用你本人的资金材料解释旅费和日常开支；"
+                    "如果另有实际资助人，再按那位资助人的安排准备。"
+                    "如果实时申请页面另外列出与住宿有关的文件，再按当时页面核对。"
+                ) if zh else (
+                    "\n\nOn the arrangement you described, your sister is providing accommodation only, so do not "
+                    "describe her as the financial sponsor. The current visitor guide does not require every host to "
+                    "provide bank statements merely because they provide accommodation. Her invitation can state the "
+                    "address and hosting arrangement. If you pay for the trip yourself, use your own financial evidence "
+                    "to explain the travel and living costs; if someone else is actually sponsoring you, prepare the "
+                    "evidence for that person's arrangement instead. If the live application later lists a separate "
+                    "accommodation document, check that request then."
+                ))
         return answer + "\nGOV.UK: " + DOCUMENTS_SOURCE
     else:
         return None

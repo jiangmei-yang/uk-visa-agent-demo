@@ -446,13 +446,17 @@ def test_explicit_checklist_explains_multiple_items_and_uses_requirement_sources
         else:
             assert "to check your identity" in body and "ask your school" in body
             assert "where the money comes from" in body and "not a universal mandatory checklist" in body
-        assert "Apply now" not in body
         sources = {source for item in case.requirements
                    if item.applicable and item.blocker and not item.satisfied for source in item.source_urls}
         assert sources
         if decline_links:
+            assert "Apply now" not in body
             assert "http://" not in body and "https://" not in body
         else:
+            # The seeded case has an already-confirmed Standard Visitor route,
+            # so a useful checklist may name the application action alongside
+            # the reviewed requirement sources.
+            assert "Apply now" in body
             assert all(source in body for source in sources)
             assert all(source.startswith("https://www.gov.uk/") for source in sources)
         assert case.profile == before.profile and case.evidence == before.evidence
@@ -474,7 +478,9 @@ def test_single_employment_correction_uses_a_natural_english_acknowledgement(tmp
         case, body = process_and_capture(store, TypedQuestionModel({event.id: patch}), CaptureGmail(), event)
         assert case.latest_changes == {"occupation_status": "employed"}
         assert case.profile.occupation_status == "employed"
-        assert "Thanks for clarifying—I've noted that you're employed." in body
+        assert "Thanks for clarifying." in body
+        assert "you're currently employed" in body
+        assert "employer letter" in body and "current-status check" in body
         assert "Occupation Status:" not in body and "occupation_status" not in body
         assert case.profile.planned_arrival_date is None and case.profile.planned_departure_date is None
         assert not case.profile_confirmed and not case.final_summary_confirmed
@@ -506,10 +512,10 @@ def test_timing_answer_takes_priority_over_a_repeated_typed_date_deferral(
         assert case.last_requested_fields == [] and reply_items(case)[2] == []
         assert APPLICATION_SOURCE in body
         if language == "zh":
-            assert body.startswith("如果你需要申请 Standard Visitor")
+            assert body.startswith("Standard Visitor 最早可在出发前 3 个月申请")
             assert "日期先留空" not in body and "日期确定后再告诉我" not in body
         else:
-            assert body.startswith("If you need a Standard Visitor visa")
+            assert body.startswith("You can apply for a Standard Visitor visa up to 3 months before travel")
             assert "leave the dates open" not in body and "when your dates are decided" not in body
         assert case.profile == before.profile and case.evidence == before.evidence
         assert not case.profile_confirmed and not case.final_summary_confirmed

@@ -31,7 +31,7 @@ from visa_agent.llm.guarded import deterministic_fallback_message, validate_case
 from visa_agent.llm.ports import CasePatch
 from visa_agent.secrets import read_secret
 from visa_agent.storage.sqlite import SQLiteStore
-from visa_agent.workflow.conversation import latest_reply_text
+from visa_agent.workflow.conversation import customer_requests_next_step, latest_reply_text
 from visa_agent.workflow.service import WorkflowService
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -297,6 +297,13 @@ def exercise_workflow(
             changed = expected_paused != item["initially_paused"]
             expected_transition = item["expected_action"] if changed else None
             expected_epoch = initial.preparation_control_epoch + int(changed)
+            guarded_topics = [question.topic for question in guarded.customer_questions]
+            deterministic_next_step_only = (
+                "next_step" not in guarded_topics
+                and case.customer_question_topics == [*guarded_topics, "next_step"]
+                and customer_requests_next_step(event.body)
+                and case.latest_preparation_action != "resume"
+            )
             checks = {
                 "workflow_first_processing_not_duplicate": not duplicate,
                 "workflow_no_extraction_fallback": not workflow.llm.last_extraction_fallback,
@@ -306,8 +313,9 @@ def exercise_workflow(
                 "transition_event_exact": case.preparation_control_event_id == (
                     event.id if changed else initial.preparation_control_event_id),
                 "profile_matches_expected": after == expected_profile,
-                "workflow_preserves_guarded_question_topics": case.customer_question_topics == [
-                    question.topic for question in guarded.customer_questions],
+                "workflow_preserves_guarded_question_topics": (
+                    case.customer_question_topics == guarded_topics or deterministic_next_step_only
+                ),
                 "no_profile_or_final_confirmation": not case.profile_confirmed and not case.final_summary_confirmed,
                 "no_pack_or_release": case.delivery_path is None and plan != "ready",
                 "single_isolated_case": len(store.list_cases()) == 1 and case.id == initial.id,

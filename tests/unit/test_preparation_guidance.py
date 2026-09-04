@@ -132,8 +132,8 @@ def test_changed_circumstances_do_not_repeat_self_funding_advice():
     case.profile.visit_purpose = "conference"
     case.profile.funding_source = "employer_or_school"
     guidance = preparation_guidance(case, date(2026, 9, 4), {"application_overview_v1", "student_self_preparation_v1"})
-    assert [topic for topic, _ in guidance] == ["conference_preparation_v1"]
-    assert "主办方" in guidance[0][1]
+    assert [topic for topic, _ in guidance] == ["conference_organisation_funding_preparation_v1"]
+    assert all(term in guidance[0][1] for term in ("主办方", "单位", "资助"))
 
 
 @pytest.mark.parametrize("language", ["zh", "en"])

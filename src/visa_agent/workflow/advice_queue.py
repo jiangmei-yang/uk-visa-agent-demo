@@ -18,18 +18,18 @@ from visa_agent.domain.models import (
 from visa_agent.llm.ports import CustomerQuestion
 from visa_agent.workflow.advice_continuation import _current_answer, _sent_text
 from visa_agent.workflow.advice_preferences import (
+    _current_clauses,
     defer_previous_advice,
     excluded_advice_topics,
     route_change_pending,
     wants_no_links,
 )
 from visa_agent.workflow.customer_questions import (
-    CHECKED_AT,
-    REVIEW_AFTER,
     ReviewedAnswerPlan,
     _question_clauses,
     capped_answer_plan,
 )
+from visa_agent.workflow.guidance_freshness import CHECKED_AT, REVIEW_AFTER
 
 
 def _same_request(left: PendingAdviceQuestion, right: PendingAdviceQuestion) -> bool:
@@ -76,9 +76,22 @@ def _uncertain(item: PendingAdviceQuestion, rows: list[dict[str, Any]]) -> bool:
 def apply_current_format(answer: str, body: str) -> str:
     if not wants_no_links(body):
         return answer
-    return re.sub(r"(?m)^[ \t]*GOV\.UK:[^\n]*(?:\n|$)", "", answer).strip().replace(
+    answer = re.sub(r"(?m)^[^\n]*https?://[^\n]*(?:\n|$)", "", answer)
+    answer = re.sub(
+        r"(?m)^(?:官方入口（都是 GOV\.UK）|Official GOV\.UK pages)[ \t]*(?:\n|$)",
+        "",
+        answer,
+    )
+    return answer.strip().replace(
         "下面的 GOV.UK 页面", "GOV.UK 官方申请页面").replace(
         "the GOV.UK page below", "the official GOV.UK application page")
+
+
+def _answer_without_source_lines(answer: str) -> str:
+    return "\n".join(
+        line for line in answer.splitlines()
+        if not re.fullmatch(r"\s*GOV\.UK:\s*https?://\S+\s*", line)
+    ).strip().casefold()
 
 
 def merge_unsent_advice(case: Case, event_id: str, body: str, current: ReviewedAnswerPlan,
@@ -90,9 +103,23 @@ def merge_unsent_advice(case: Case, event_id: str, body: str, current: ReviewedA
     """
     excluded = excluded_advice_topics(body)
     defer_old = defer_previous_advice(body) or route_change_pending(body)
+    current_topics = set(current.selected_topics)
+    sponsor_boundary = bool(
+        {"unsupported", "off_topic"}.intersection(current_topics)
+        and any(re.search(
+            r"资助|担保|资助信|资助说明|资助材料|关系证明|"
+            r"\b(?:sponsor(?:ship)?|financial support|sponsor letter)\b",
+            clause,
+            re.I,
+        ) for clause in _current_clauses(body))
+    )
     item: PendingAdviceQuestion
     for item in [*case.unsent_advice, *case.pending_advice]:
-        if item.topic in excluded or (defer_old and item.source_event_id != event_id):
+        if (item.topic in excluded or (defer_old and item.source_event_id != event_id)
+                or (item.topic == "sponsor_support" and "sponsor_support" in current_topics
+                    and item.source_event_id != event_id)
+                or (item.topic == "sponsor_support" and sponsor_boundary
+                    and item.source_event_id != event_id)):
             item.deferred_by_event_id = event_id
     active = [item for item in case.unsent_advice if not item.deferred_by_event_id
               and (item.source_event_id == event_id or explicit or not case.preparation_paused)]
@@ -106,7 +133,7 @@ def merge_unsent_advice(case: Case, event_id: str, body: str, current: ReviewedA
             uncertain = True
             continue
         answer = (item.source_answer if item.source_event_id == event_id
-                  else _current_answer(item, case.customer_language, today, rows))
+                  else _current_answer(item, case.customer_language, today, rows, case))
         if not CHECKED_AT <= today <= REVIEW_AFTER or not answer:
             unresolved = unresolved or item.source_event_id != event_id
             continue
@@ -120,8 +147,11 @@ def merge_unsent_advice(case: Case, event_id: str, body: str, current: ReviewedA
         pairs = [(item.topic, answer) for item, answer in candidates]
     plan = capped_answer_plan(pairs, case.customer_language)
     for item, answer in candidates:
-        if any(answer.casefold() in text.casefold() for text in plan.answers):
-            attempt = AdviceAnswerAttempt(event_id=event_id, answer=answer)
+        planned = next((text for topic, text in plan.reviewed_answers
+                        if topic == item.topic
+                        and _answer_without_source_lines(text) == _answer_without_source_lines(answer)), None)
+        if planned and any(planned.casefold() in text.casefold() for text in plan.answers):
+            attempt = AdviceAnswerAttempt(event_id=event_id, answer=planned)
             if attempt not in item.answer_attempts:
                 item.answer_attempts.append(attempt)
             for previous in case.pending_advice:

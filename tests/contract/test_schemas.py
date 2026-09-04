@@ -32,8 +32,9 @@ def test_case_patch_schema_contains_no_state_field() -> None:
     assert question['additionalProperties'] is False
     assert set(question['properties']) == {'topic', 'source_excerpt', 'confidence'}
     assert set(question['properties']['topic']['enum']) == {
-        'application', 'timing', 'translation', 'booking', 'fees', 'bank_period',
-        'document_checklist', 'next_step', 'unsupported', 'off_topic',
+        'application', 'route_orientation', 'eligibility_overview', 'biometrics', 'after_apply',
+        'timing', 'translation', 'booking', 'fees', 'bank_period',
+        'sponsor_support', 'document_checklist', 'next_step', 'unsupported', 'off_topic',
     }
     assert properties['customer_questions']['maxItems'] == 4
 

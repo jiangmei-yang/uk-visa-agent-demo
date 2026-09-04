@@ -409,7 +409,12 @@ def test_date_deferral_receipt_does_not_claim_other_preparation_is_continuing(
     assert set(case.latest_deferred_fields) == {"planned_arrival_date", "planned_departure_date"}
     assert case.profile.planned_arrival_date is None and case.profile.planned_departure_date is None
     assert not case.proactive_guidance_offered and "Apply now" not in reply
-    assert re.search(r"日期先留空|leave the dates open", reply, re.I), reply
+    assert re.search(
+        r"日期先留空|(?:不会反复|先不)追问.{0,8}日期|"
+        r"leave the dates open|not keep asking (?:you )?for the dates",
+        reply,
+        re.I,
+    ), reply
     assert not re.search(
         r"先整理其他|继续准备|继续整理|collect the other details first|"
         r"continue (?:preparing|preparation)|carry on preparing", reply, re.I,

@@ -17,6 +17,7 @@ from visa_agent.workflow.advice_preferences import (
     ("I am not asking about translation.", {"translation"}),
     ("Please leave out the hotel booking question.", {"booking"}),
     ("Don't explain the bank statement requirements.", {"bank_period"}),
+    ("Don't explain the Standard Visitor eligibility requirements.", {"eligibility_overview"}),
     ("费用先不用说了。", {"fees"}),
     ("请不要回答银行流水和翻译的问题。", {"bank_period", "translation"}),
     ("先别讲申请流程和审理时间。", {"application", "timing"}),

@@ -20,6 +20,7 @@ from visa_agent.domain.rules import evaluate_gate
 from visa_agent.llm.guarded import GuardedLLM, deterministic_fallback_message
 from visa_agent.llm.ports import CasePatch
 from visa_agent.storage.sqlite import SQLiteStore
+from visa_agent.workflow.advice_preferences import wants_no_links
 from visa_agent.workflow.conversation import reply_items
 from visa_agent.workflow.preparation_obstacles import preparation_obstacle_kind
 from visa_agent.workflow.service import WorkflowService
@@ -183,18 +184,25 @@ def test_qualified_or_noncurrent_request_does_not_borrow_date_advice(tmp_path, b
     assert_no_authority(result.case)
 
 
-@pytest.mark.parametrize(("body", "suffix", "links"), [
-    ("日期还没确定。我现在能先准备什么？", "这次不用给我链接。", False),
-    ("My travel dates are still undecided. What can I prepare now?", "Please do not include any links in this reply.", False),
-    ("日期还没确定。我现在能先准备什么？", "旧邮件里写着‘不用链接’。", True),
-    ("My travel dates are still undecided. What can I prepare now?", "An old email contains the phrase 'no links'.", True),
+@pytest.mark.parametrize(("body", "suffix", "suppresses_links"), [
+    ("日期还没确定。我现在能先准备什么？", "这次不用给我链接。", True),
+    ("My travel dates are still undecided. What can I prepare now?", "Please do not include any links in this reply.", True),
+    ("日期还没确定。我现在能先准备什么？", "旧邮件里写着‘不用链接’。", False),
+    ("My travel dates are still undecided. What can I prepare now?", "An old email contains the phrase 'no links'.", False),
 ])
-def test_link_scope_does_not_remove_useful_action_or_apply_quoted_preferences(tmp_path, body, suffix, links):
+def test_link_scope_does_not_remove_useful_action_or_apply_quoted_preferences(
+    tmp_path, body, suffix, suppresses_links,
+):
     journey = Journey(tmp_path)
     journey.background()
-    result = journey.turn(body + " " + suffix, patch(question=body))
+    customer_message = body + " " + suffix
+    assert wants_no_links(customer_message) is suppresses_links
+    result = journey.turn(customer_message, patch(question=body))
     assert result.case.next_step_advice.requirement_id == "status_evidence"
-    assert ("GOV.UK:" in result.body) is links
+    assert "GOV.UK:" not in result.body
+    sent_bodies = "\n".join(request["body"] for request in journey.gmail.requests)
+    assert sent_bodies.count("https://www.gov.uk/standard-visitor/apply-standard-visitor-visa") == 1
+    assert sent_bodies.count("https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents") == 1
     assert result.case.last_requested_fields == []
     assert_no_authority(result.case)
 
@@ -213,25 +221,44 @@ def test_paused_request_is_information_only_and_does_not_resume(tmp_path):
     assert_no_authority(result.case)
 
 
-@pytest.mark.parametrize(("arrival_day", "departure_day", "kind"), [(30, 20, "review"), (20, 30, "question")])
-def test_existing_dates_are_not_erased_or_hidden_by_an_undecided_date_request(tmp_path, arrival_day, departure_day, kind):
+def test_current_undecided_statement_withdraws_existing_dates_without_reasking(tmp_path):
     journey = Journey(tmp_path)
     journey.background()
-    arrival = f"My arrival date is {arrival_day} September 2026."
-    departure = f"My departure date is {departure_day} September 2026."
+    arrival = "My arrival date is 20 September 2026."
+    departure = "My departure date is 30 September 2026."
     recorded = journey.turn(arrival + " " + departure, patch(facts=[
-        ("planned_arrival_date", f"2026-09-{arrival_day}", arrival),
-        ("planned_departure_date", f"2026-09-{departure_day}", departure),
+        ("planned_arrival_date", "2026-09-20", arrival),
+        ("planned_departure_date", "2026-09-30", departure),
     ])).case
-    assert recorded.profile.planned_arrival_date == date(2026, 9, arrival_day)
-    assert recorded.profile.planned_departure_date == date(2026, 9, departure_day)
+    assert recorded.profile.planned_arrival_date == date(2026, 9, 20)
+    assert recorded.profile.planned_departure_date == date(2026, 9, 30)
+    old_date_evidence_ids = {
+        item.id
+        for item in recorded.evidence
+        if item.fact_key in {"planned_arrival_date", "planned_departure_date"}
+        and not item.superseded
+    }
+    assert len(old_date_evidence_ids) == 2
+
     result = journey.turn(EN, patch(question=EN))
-    assert result.case.profile == recorded.profile
-    assert result.case.next_step_advice.kind == kind
-    assert result.case.next_step_advice.requirement_id is None
-    assert "headed letter confirming current enrolment" not in result.body
-    if kind == "review":
-        assert "date order" in result.body and result.case.last_requested_fields == []
+
+    assert result.case.profile.planned_arrival_date is None
+    assert result.case.profile.planned_departure_date is None
+    assert set(result.case.deferred_fields) == {
+        "planned_arrival_date", "planned_departure_date",
+    }
+    assert all(
+        item.superseded
+        for item in result.case.evidence
+        if item.id in old_date_evidence_ids
+    )
+    assert result.case.next_step_advice is not None
+    assert result.case.next_step_advice.kind == "document"
+    assert result.case.next_step_advice.requirement_id == "status_evidence"
+    assert "headed letter confirming current enrolment" in result.body
+    assert "planned travel dates" in result.body
+    assert result.case.question_plan == result.case.last_requested_fields == []
+    assert not set(result.case.pending_question_fields) & set(result.case.deferred_fields)
     assert_no_authority(result.case)
 
 

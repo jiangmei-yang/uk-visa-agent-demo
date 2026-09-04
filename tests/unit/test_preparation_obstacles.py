@@ -111,6 +111,36 @@ def test_date_obstacle_uses_actual_occupation_without_requiring_identity(occupat
     assert result.question_field is None
 
 
+@pytest.mark.parametrize(
+    ("language", "terms"),
+    [
+        ("zh", ("主办方", "邀请函", "学校", "机票", "住宿", "可核实的联系人")),
+        ("en", ("organiser", "invitation", "university", "flights", "accommodation", "verifiable contact")),
+    ],
+)
+def test_open_dates_prioritise_conference_and_school_funding_over_generic_student_letter(
+    language,
+    terms,
+):
+    body = (
+        "旅行日期还没有确定。应该先准备什么？"
+        if language == "zh" else
+        "My travel dates are still undecided. What should I prepare first?"
+    )
+    case = _case(body, language)
+    case.profile.visit_purpose = "conference"
+    case.profile.occupation_status = "student"
+    case.profile.funding_source = "employer_or_school"
+
+    result = select_next_step(case, POLICY, evaluate_gate(case, POLICY, TODAY))
+
+    assert result.requirement_id == "purpose_evidence"
+    assert all(term in result.message for term in terms)
+    assert "先向学校索取确认当前在读" not in result.message
+    assert "headed letter confirming current enrolment" not in result.message
+    assert result.question_field is None
+
+
 @pytest.mark.parametrize(("funding", "term"), [
     ("self", "银行"), ("employer_or_school", "资助单位或学校"), ("personal_sponsor", "资助人"),
 ])

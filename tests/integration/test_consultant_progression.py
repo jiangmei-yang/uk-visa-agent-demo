@@ -11,8 +11,9 @@ import re
 import pytest
 from test_consultant_value import Conversation, _context, _patch
 
+from visa_agent.llm.ports import QuestionDeferral
 from visa_agent.workflow.adviser_guidance import DOCUMENTS_URL
-from visa_agent.workflow.conversation import reply_items
+from visa_agent.workflow.conversation import QUESTION_TEXT_EN, QUESTION_TEXT_ZH, reply_items
 
 SCENARIOS = {
     "zh": {
@@ -94,12 +95,17 @@ def test_answering_passport_and_location_receives_contextual_acknowledgement_aft
 
 @pytest.mark.parametrize("language", ["zh", "en"])
 def test_new_application_location_offers_a_bounded_residence_evidence_action_not_eligibility(tmp_path, language):
-    _, location = _up_to_location(Conversation(tmp_path), language)
+    dialogue = Conversation(tmp_path)
+    _, location = _up_to_location(dialogue, language)
     _assert_no_invented_profile(location)
     assert re.search(r"(?:居留|居住).{0,12}(?:证明|身份)|(?:residen\w*|immigration status)",
                      location.body, re.I), location.body
     assert re.search(r"核对|准备|整理|找|查看|check|gather|prepare|look for", location.body, re.I), location.body
-    assert DOCUMENTS_URL in location.body, location.body
+    # The supporting-evidence source was already supplied with the itinerary
+    # action. Keep the residence advice source-bound without pasting the same
+    # long GOV.UK page into every follow-up email.
+    assert DOCUMENTS_URL not in location.body, location.body
+    assert sum(DOCUMENTS_URL in call["body"] for call in dialogue.gmail.calls) == 1
     # The message must connect the action to applying outside nationality, without
     # inventing which local status/document the applicant holds or deciding the route.
     assert re.search(r"申请地|香港|Hong Kong|applying|apply from", location.body, re.I), location.body
@@ -110,11 +116,15 @@ def test_new_application_location_offers_a_bounded_residence_evidence_action_not
 def test_supplied_name_is_acknowledged_without_restarting_a_welcome_questionnaire(tmp_path, language):
     dialogue = Conversation(tmp_path)
     first = dialogue.turn(*_context("student"))
-    assert first.case.last_requested_fields == ["full_name"]
+    # A complete first description should receive case-specific preparation
+    # value before administrative form intake. The applicant may still provide
+    # their name naturally, and that unsolicited fact must remain usable.
+    assert first.case.last_requested_fields == []
+    assert re.search(r"在读|资金|enrolment|fund", first.body, re.I), first.body
     words = SCENARIOS[language]
     result = dialogue.turn(words["name"], _patch(
         updates=[("full_name", words["full_name"], words["name"])]))
-    assert result.case.id == first.case.id and result.model.events[0].requested_fields == ["full_name"]
+    assert result.case.id == first.case.id and result.model.events[0].requested_fields == []
     assert result.case.profile.full_name == words["full_name"]
     assert result.case.active_evidence("full_name")[0].source_event_id == result.event.id
     assert re.search(r"(?:收到|记下|记录|姓名|名字)|(?:noted|recorded|received|name)", result.body, re.I), result.body
@@ -193,3 +203,93 @@ def test_new_location_alongside_faq_does_not_trigger_an_unrequested_residence_gu
     again = dialogue.turn(words["faq"], _patch(questions=[("translation", words["faq"])]))
     assert not re.search(r"居留|居住|residen\w*|immigration status|Apply now", again.body, re.I), again.body
     assert again.case.question_plan == again.case.last_requested_fields == []
+
+
+@pytest.mark.parametrize(
+    ("language", "context", "updates", "deferral", "next_step", "name_body", "name", "dob_body"),
+    [
+        (
+            "zh",
+            "我持中国护照，会在香港申请，去英国旅游。我目前在读书，费用由自己承担，旅行日期还没有确定。",
+            [
+                ("nationality_country", "China", "中国护照"),
+                ("application_country", "Hong Kong", "香港申请"),
+                ("visit_purpose", "tourism", "去英国旅游"),
+                ("occupation_status", "student", "目前在读书"),
+                ("funding_source", "self", "费用由自己承担"),
+            ],
+            "旅行日期还没有确定",
+            "下一步我该准备什么？",
+            "护照姓名是陈示例。",
+            "陈示例",
+            "生日是2000年1月2日。",
+        ),
+        (
+            "en",
+            "I hold a Chinese passport and will apply in Hong Kong for a UK holiday. I am a student and "
+            "will pay for the trip myself. My travel dates are not decided yet.",
+            [
+                ("nationality_country", "China", "Chinese passport"),
+                ("application_country", "Hong Kong", "apply in Hong Kong"),
+                ("visit_purpose", "tourism", "UK holiday"),
+                ("occupation_status", "student", "I am a student"),
+                ("funding_source", "self", "pay for the trip myself"),
+            ],
+            "travel dates are not decided yet",
+            "What should I prepare next?",
+            "My passport name is Example Chen.",
+            "Example Chen",
+            "My date of birth is 2 January 2000.",
+        ),
+    ],
+)
+def test_identity_fact_follow_ups_sound_consultative_and_ask_only_one_new_detail(
+    tmp_path, language, context, updates, deferral, next_step, name_body, name, dob_body,
+):
+    dialogue = Conversation(tmp_path)
+    deferred_patch = _patch(updates=updates).model_copy(update={
+        "question_deferrals": [
+            QuestionDeferral(field=field, source_excerpt=deferral, confidence=1)
+            for field in ("planned_arrival_date", "planned_departure_date")
+        ],
+    })
+    current = dialogue.turn(context, deferred_patch)
+    for _ in range(4):
+        if current.case.last_requested_fields == ["full_name"]:
+            break
+        current = dialogue.turn(next_step, _patch(questions=[("next_step", next_step)]))
+    assert current.case.last_requested_fields == ["full_name"], current.body
+
+    questions = QUESTION_TEXT_ZH if language == "zh" else QUESTION_TEXT_EN
+    named = dialogue.turn(name_body, _patch(updates=[("full_name", name, name_body)]))
+    assert named.model.events[0].requested_fields == ["full_name"]
+    assert named.case.profile.full_name == name
+    assert named.case.last_requested_fields == ["date_of_birth"]
+    assert reply_items(named.case)[1] == [questions["date_of_birth"]]
+    assert questions["full_name"] not in named.body
+    if language == "zh":
+        assert "好的，护照姓名已经记下了。" in named.body
+        assert "出生日期" in named.body and "护照资料页" in named.body and "申请表" in named.body
+    else:
+        assert "Thanks — I've noted your passport name." in named.body
+        assert "date of birth" in named.body and "passport details" in named.body
+        assert "application information" in named.body
+
+    birth = dialogue.turn(dob_body, _patch(updates=[("date_of_birth", "2000-01-02", dob_body)]))
+    assert birth.model.events[0].requested_fields == ["date_of_birth"]
+    assert str(birth.case.profile.date_of_birth) == "2000-01-02"
+    assert birth.case.last_requested_fields == ["uk_accommodation"]
+    assert reply_items(birth.case)[1] == [questions["uk_accommodation"]]
+    assert questions["full_name"] not in birth.body and questions["date_of_birth"] not in birth.body
+    assert not {"planned_arrival_date", "planned_departure_date"}.intersection(
+        birth.case.last_requested_fields
+    )
+    assert questions["planned_arrival_date"] not in birth.body
+    assert questions["planned_departure_date"] not in birth.body
+    if language == "zh":
+        assert "好的，出生日期也记下了。" in birth.body
+        assert "住宿安排" in birth.body and "预计行程" in birth.body and "申请表" in birth.body
+    else:
+        assert "Thanks — I've noted your date of birth." in birth.body
+        assert "UK accommodation" in birth.body and "visit plan" in birth.body
+        assert "application form" in birth.body

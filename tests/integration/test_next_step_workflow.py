@@ -101,19 +101,22 @@ def test_mixed_faq_and_next_document_are_both_delivered_without_reasking_unknown
     assert "What dates" not in reply and "We'll also need these documents" not in reply
 
 
-def test_current_fact_correction_is_applied_before_choosing_one_missing_question(tmp_path: Path) -> None:
+def test_current_fact_correction_is_applied_before_choosing_a_practical_preparation_step(tmp_path: Path) -> None:
     initial = _seed()
     initial.profile.full_name = None
     initial.profile.date_of_birth = None
-    statement = "My date of birth is 1997.7.1."
+    statement = "My date of birth is 2000.1.2."
     case, reply, _ = _turn(tmp_path / "case.db", initial, statement + " " + STEP,
-        _patch(("next_step", STEP), updates=[FactUpdate(field="date_of_birth", value="1997-07-01",
+        _patch(("next_step", STEP), updates=[FactUpdate(field="date_of_birth", value="2000-01-02",
             source_excerpt=statement, confidence=.99)]))
-    assert case.profile.date_of_birth == date(1997, 7, 1)
-    assert case.next_step_advice and case.next_step_advice.question_field == "full_name"
-    assert case.question_plan == case.last_requested_fields == ["full_name"]
-    assert case.question_event_ids["full_name"] == ["step-1"]
-    assert "date of birth?" not in reply and reply.count("?") == 1
+    assert case.profile.date_of_birth == date(2000, 1, 2)
+    # The customer's request is about preparation, so case-specific evidence
+    # guidance comes before an administrative passport-name field. The supplied
+    # date is retained and neither identity field is mechanically re-asked.
+    assert case.next_step_advice is None
+    assert case.question_plan == case.last_requested_fields == []
+    assert "date of birth?" not in reply and "name as it appears" not in reply
+    assert "enrolment" in reply.lower() and "fund" in reply.lower()
 
 
 @pytest.mark.parametrize("missing", [False, True])

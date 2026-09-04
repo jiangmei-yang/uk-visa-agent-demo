@@ -68,6 +68,10 @@ def test_practical_direct_request_has_action_reason_and_official_source(text, la
     "How do I explain my self-employment for a work visa?",
     "如果在香港自雇，我应该如何说明业务？",
     "My friend asked how should I explain being self-employed in Hong Kong?",
+    "If my sister hosts me but does not pay, does she need to provide bank statements?",
+    "My sister asked: if she hosts me but does not pay, does she need to provide bank statements?",
+    "我姐姐问：如果她接待我但不资助，她要交银行流水吗？",
+    "I will stay with my sister and she will not pay. Does she need bank statements to guarantee my approval?",
 ])
 def test_declined_quoted_conditional_unsafe_or_unrelated_request_is_not_answered(text):
     assert reviewed_document_preparation(text, "zh") is None
@@ -83,6 +87,31 @@ def test_host_is_not_mistaken_for_a_third_party_applicant():
     answer = reviewed_document_preparation(
         "My friend will host me. Who should write my invitation letter?", "en")
     assert answer and "actual host" in answer and "without assuming" in answer
+
+
+@pytest.mark.parametrize(("text", "language", "parts"), [
+    (
+        "我住姐姐家。姐姐的邀请信要写什么？她不资助我，还要交她的银行流水吗？",
+        "zh",
+        ("只提供住宿", "不要把她写成经济资助人", "没有要求所有接待人", "如果费用由你自己承担", "如果另有实际资助人"),
+    ),
+    (
+        "I will stay with my sister. What should her invitation say? She is not paying for the trip; "
+        "does she need to provide bank statements?",
+        "en",
+        ("accommodation only", "do not describe her as the financial sponsor", "does not require every host", "If you pay for the trip yourself", "if someone else is actually sponsoring you"),
+    ),
+])
+def test_host_only_arrangement_answers_the_bank_statement_question_directly(
+    text: str,
+    language: str,
+    parts: tuple[str, ...],
+) -> None:
+    answer = reviewed_document_preparation(text, language)
+
+    assert answer is not None
+    assert all(part in answer for part in parts)
+    assert DOCUMENTS_SOURCE in answer
 
 
 def test_preparation_help_is_deterministic_and_does_not_require_or_mutate_a_case():

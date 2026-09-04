@@ -11,6 +11,7 @@ import pytest
 from visa_agent.llm.ports import CustomerQuestion
 from visa_agent.workflow.customer_questions import (
     APPLICATION_SOURCE,
+    ROUTE_CHECK_SOURCE,
     _general_application_proposal,
     grounded_customer_answer_plan,
     reviewed_application_requests,
@@ -56,6 +57,27 @@ def proposal(topic, excerpt, confidence=0.91):
     return CustomerQuestion.model_validate({
         "topic": topic, "source_excerpt": excerpt, "confidence": confidence,
     })
+
+
+@pytest.mark.parametrize("topic", ["route_orientation", "unsupported", "application"])
+def test_visa_eta_start_is_one_coherent_answer_even_when_model_adds_a_boundary(topic):
+    body = "我不知道应该申请签证还是 ETA，也不知道从哪里开始。"
+    raw = proposal(topic, body)
+
+    plan = grounded_customer_answer_plan(
+        body,
+        "zh",
+        TODAY,
+        semantic_questions=[raw],
+    )
+    text = "\n".join(plan.answers)
+
+    assert plan.selected_topics == ["route_check"]
+    assert text.count(ROUTE_CHECK_SOURCE) == 1
+    assert text.count(APPLICATION_SOURCE) == 1
+    assert "Apply now" in text
+    assert "可能不是普通 Standard Visitor" not in text
+    assert "不能直接套用" not in text
 
 
 @pytest.fixture(autouse=True)
@@ -181,3 +203,56 @@ def test_literal_grounding_and_confidence_still_gate_neighbouring_proposals():
     unrelated = proposal("unsupported", "Where do I apply for a UK visitor visa?")
     uncertain = proposal("next_step", body, 0.79)
     assert validated_customer_questions(body, [unrelated, uncertain]) == []
+
+
+@pytest.mark.parametrize(
+    ("body", "excerpt", "language"),
+    [
+        (
+            "Please send me the Standard Visitor application page and related information.",
+            "related information",
+            "en",
+        ),
+        (
+            "请把英国标准访客签证的申请网页和相关信息发给我。",
+            "相关信息",
+            "zh",
+        ),
+    ],
+)
+def test_uninformative_unsupported_excerpt_inside_reviewed_application_request_does_not_erase_it(
+    body, excerpt, language,
+):
+    raw = proposal("unsupported", excerpt)
+
+    accepted = validated_customer_questions(body, [raw])
+    plan = grounded_customer_answer_plan(body, language, TODAY, semantic_questions=[raw])
+
+    # The model's generic words are not relabelled as an application intent;
+    # the reviewed whole-clause matcher independently supplies the safe answer.
+    assert [(item.topic, item.source_excerpt) for item in accepted] == [("unsupported", excerpt)]
+    assert plan.selected_topics == ["application"]
+    assert APPLICATION_SOURCE in "\n".join(plan.answers)
+
+
+def test_separate_uninformative_unsupported_clause_does_not_erase_application_or_hide_unknown_scope():
+    body = (
+        "Please send me the Standard Visitor application page. "
+        "Separately, please give me related information."
+    )
+    raw = proposal("unsupported", "related information")
+
+    plan = grounded_customer_answer_plan(body, "en", TODAY, semantic_questions=[raw])
+
+    assert set(plan.selected_topics) == {"application", "unsupported"}
+    assert APPLICATION_SOURCE in "\n".join(plan.answers)
+
+
+def test_substantive_unsafe_excerpt_in_same_clause_remains_a_conservative_boundary():
+    body = "Which webpage should I use to apply for a UK visitor visa and can you guarantee approval?"
+    unsafe = proposal("unsupported", "can you guarantee approval?")
+
+    plan = grounded_customer_answer_plan(body, "en", TODAY, semantic_questions=[unsafe])
+
+    assert plan.selected_topics == ["unsupported"]
+    assert APPLICATION_SOURCE not in "\n".join(plan.answers)

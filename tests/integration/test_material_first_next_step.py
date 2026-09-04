@@ -22,6 +22,7 @@ from visa_agent.domain.rules import evaluate_gate
 from visa_agent.llm.guarded import GuardedLLM, deterministic_fallback_message
 from visa_agent.llm.ports import CasePatch
 from visa_agent.storage.sqlite import SQLiteStore
+from visa_agent.workflow.advice_preferences import wants_no_links
 from visa_agent.workflow.conversation import reply_items
 
 TODAY = date(2026, 9, 5)
@@ -185,10 +186,17 @@ def test_material_instructions_obey_only_current_link_preferences(tmp_path, lang
     journey = Journey(tmp_path)
     journey.known_context()
     question = MATERIAL[language]
-    result = journey.turn(prefix + question, patch(questions=[("next_step", question)]))
+    customer_message = prefix + question
+    assert wants_no_links(customer_message) is (not include_link)
+    result = journey.turn(customer_message, patch(questions=[("next_step", question)]))
     assert result.case.next_step_advice.kind == "document"
     assert result.case.question_plan == [] and "PDF" in result.body
-    assert ("https://www.gov.uk/" in result.body) is include_link
+    # The reviewed source was already sent with the opening context. A natural
+    # follow-up does not paste the same GOV.UK URL again, independently of
+    # whether a quoted/future "no links" phrase is recognised as a preference.
+    assert "https://www.gov.uk/" not in result.body
+    all_replies = "\n".join(request["body"] for request in journey.gmail.requests)
+    assert all_replies.count("https://www.gov.uk/standard-visitor/apply-standard-visitor-visa") == 1
     assert_no_authority(result.case)
 
 

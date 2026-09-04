@@ -185,7 +185,25 @@ def reviewed_obstacle_next_step(case: Case, policy: Policy, gate: GateResult) ->
     }[funding_source]
     choices = [("funding_evidence", funding)]
     if obstacle == "dates":
-        choices.insert(0, ("status_evidence", status))
+        if profile.visit_purpose == "conference" and funding_source == "employer_or_school":
+            # For a conference funded by the applicant's institution, the
+            # invitation and funding arrangement are the two sides of the same
+            # immediate preparation task.  A generic student letter is valid
+            # background evidence, but it is not the most useful answer to
+            # "what can I prepare while my dates are open?".
+            choices.insert(0, ("purpose_evidence", (
+                ("invitation_letter", "conference_invitation", "funding_letter", "sponsor_funds"),
+                "可以先把会议和费用安排分成两份真实说明来准备：向主办方索取邀请函，核对活动名称、地点、"
+                "预计日期和你参加的原因；同时请学校用正式抬头说明承担机票、住宿或其他费用、怎样支付，"
+                "并留下可核实的联系人。日期未定的地方先标注待确认，不要写成已经定下来。",
+                "You can first prepare the conference and funding arrangements as two truthful, matching records: "
+                "ask the organiser for an invitation showing the event, location, intended dates and why you are "
+                "attending; and ask your university for a headed letter stating which flights, accommodation or "
+                "other costs it will cover, how it will pay, and a verifiable contact. Mark open dates as provisional "
+                "rather than presenting them as confirmed.",
+            )))
+        else:
+            choices.insert(0, ("status_evidence", status))
     choices.extend([
         ("passport", (("passport", "travel_document"),
             "可以先把现有护照资料页整理成清晰、完整的副本，核对文字和页边没有被裁掉。",

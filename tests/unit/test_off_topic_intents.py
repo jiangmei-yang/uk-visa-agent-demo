@@ -17,7 +17,9 @@ from visa_agent.workflow.customer_questions import (
     CHECKED_AT,
     MEDICAL_SOURCE,
     REVIEW_AFTER,
+    ROUTE_CHECK_SOURCE,
     SOURCE,
+    STUDENT_SOURCE,
     grounded_customer_answers,
 )
 
@@ -220,8 +222,10 @@ def test_explicit_other_visa_route_remains_route_check_not_off_topic(
     answers = grounded_customer_answers(text, language, TODAY, semantic_questions=[
         question("fees", text),
     ])
-    assert len(answers) == 1 and expected in answers[0]
-    assert "£135" not in answers[0]
+    assert len(answers) == 2
+    joined = "\n".join(answers)
+    assert expected in joined and ROUTE_CHECK_SOURCE in joined and STUDENT_SOURCE in joined
+    assert "£135" not in joined
 
 
 @pytest.mark.parametrize(("topic", "first", "second", "language"), [
@@ -348,7 +352,7 @@ def test_other_visa_route_in_current_context_does_not_borrow_visitor_work_or_med
     text = route + "\n" + visa_request
     excerpt = text if route_in_excerpt else visa_request
     answers = grounded_customer_answers(text, language, TODAY, semantic_questions=[question("unsupported", excerpt)])
-    assert len(answers) == 1 and "http" not in answers[0]
+    assert len(answers) == 1 and ROUTE_CHECK_SOURCE in answers[0]
     assert "Standard Visitors generally cannot" not in answers[0] and "Medical visits have specific" not in answers[0]
     assert "关于在英国工作" not in answers[0] and "医疗访问有专门" not in answers[0]
 
@@ -401,7 +405,8 @@ def test_off_topic_two_unsupported_requests_and_fee_keep_three_answers(language:
     assert len(answers) == 3
     assert any("£135" in answer and APPLICATION_SOURCE in answer for answer in answers)
     assert any(ACTIVITIES_SOURCE in answer and MEDICAL_SOURCE in answer for answer in answers)
-    assert any("不属于英国签证准备" in answer or "outside UK visa preparation" in answer for answer in answers)
+    assert any("不在我核对的签证资料范围" in answer or "outside the visa-document work" in answer
+               for answer in answers)
 
 
 @pytest.mark.parametrize("text", [

@@ -49,10 +49,10 @@ def test_application_question_links_to_official_entry_with_conditional_route(bod
     assert APPLICATION_SOURCE in answer
     assert "Apply now" in answer
     if language == "zh":
-        assert all(part in answer for part in ["如果", "在线", "签证中心", "保存", "具体是否适用", "结合你的情况确认"])
+        assert all(part in answer for part in ["路线核对后", "如果确实需要", "在线", "签证中心", "保存"])
     else:
-        assert all(part in answer for part in ["If you need", "online", "visa application centre", "save",
-                                              "Which visa route you need", "depends on your circumstances"])
+        assert all(part in answer for part in ["After checking the route", "if you need", "online",
+                                              "visa application centre", "save"])
 
 
 @pytest.mark.parametrize(("body", "language"), [
@@ -66,10 +66,10 @@ def test_registration_subquestion_is_not_silently_omitted_or_guessed(body, langu
     assert len(answers) == 1
     assert ("没有核验" if language == "zh" else "haven't verified") in answers[0]
     assert ("答案必须用英文" if language == "zh" else "answers must be in English") in answers[0]
-    assert ("中文、中国大陆示例" if language == "zh" else "Simplified Chinese/mainland China example") in answers[0]
-    assert ("地点确认后不能更改" if language == "zh" else "cannot be changed after confirmation") in answers[0]
-    assert ("不要照着示例选" if language == "zh" else "not the example") in answers[0]
-    assert "https://visas-immigration.service.gov.uk/apply-visa-type/visit" in answers[0]
+    assert ("递交线上申请后" if language == "zh" else "After you submit the online application") in answers[0]
+    assert ("签证中心有可能位于另一个国家" if language == "zh" else "A centre may be in another country") in answers[0]
+    assert "https://www.gov.uk/find-a-visa-application-centre" in answers[0]
+    assert "cannot be changed after confirmation" not in answers[0]
 
 
 def test_registration_in_unrelated_bank_question_does_not_leak_into_application_answer() -> None:

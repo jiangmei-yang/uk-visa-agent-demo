@@ -37,14 +37,14 @@ QUESTIONS = {
     "zh": [
         ("application", "访问签证在哪里申请？"),
         ("timing", "最早什么时候能申请？"),
-        ("fees", "申请费是多少？"),
         ("translation", "中文的存款证明要怎么翻译？"),
+        ("fees", "申请费是多少？"),
     ],
     "en": [
         ("application", "Where do I apply for my UK visitor visa?"),
         ("timing", "How early can I apply?"),
-        ("fees", "What is the visitor visa application fee?"),
         ("translation", "How should I translate my Chinese supporting documents?"),
+        ("fees", "What is the visitor visa application fee?"),
     ],
 }
 

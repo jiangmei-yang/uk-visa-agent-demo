@@ -20,7 +20,7 @@ def test_whole_information_continuation(body):
     "继续", "好的", "请继续准备我的材料", "恢复申请", "PROFILE CONFIRMED",
     "不要接着讲刚才没说的", "如果我确定了再接着讲刚才没说的",
     "朋友让我问你接着讲刚才没说的", '“接着讲刚才没说的”', '> 接着讲刚才没说的',
-    "接着讲刚才没说的。我的生日是1997年7月1日。", "接着讲刚才没说的。另外英国签证费用多少？",
+    "接着讲刚才没说的。我的生日是2000年1月2日。", "接着讲刚才没说的。另外英国签证费用多少？",
     "接着讲刚才没说的。恢复准备。", "Please continue with the unanswered questions if my employer agrees.",
     "Don't continue with the unanswered questions.", 'My friend said "continue with the unanswered questions".',
     "Continue with the unanswered questions. My name is Fictional Lee.",

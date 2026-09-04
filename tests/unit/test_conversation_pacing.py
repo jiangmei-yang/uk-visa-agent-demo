@@ -3,13 +3,21 @@ from pathlib import Path
 
 import pytest
 
-from visa_agent.domain.models import Case, CaseStatus, InboundEvent
+from visa_agent.domain.models import (
+    Case,
+    CaseStatus,
+    Document,
+    DocumentStatus,
+    Evidence,
+    InboundEvent,
+)
 from visa_agent.domain.policy import load_policy
 from visa_agent.domain.rules import build_requirements, evaluate_gate
 from visa_agent.llm.guarded import GuardedLLM, deterministic_fallback_message
 from visa_agent.llm.offline import OfflineFixtureLLM
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.conversation import (
+    change_acknowledgement,
     clear_natural_confirmation,
     document_label,
     next_fact_questions,
@@ -30,6 +38,28 @@ def example() -> Case:
     return case
 
 
+def test_status_correction_explains_that_an_old_student_letter_no_longer_proves_current_work() -> None:
+    case = example()
+    case.profile.occupation_status = "employed"
+    case.latest_changes = {"occupation_status": "employed"}
+    case.documents = [Document(
+        id="old-student-letter",
+        filename="student-letter.pdf",
+        kind="student_letter",
+        sha256="a" * 64,
+        mime_type="application/pdf",
+        status=DocumentStatus.ACCEPTED_FOR_REVIEW,
+        source_event_id="earlier-email",
+        path="/fictional/student-letter.pdf",
+    )]
+
+    reply = change_acknowledgement(case)
+
+    assert reply is not None
+    assert all(text in reply for text in ("目前在职", "在职证明", "在读证明", "不再作为"))
+    assert "工作或学习情况：受雇工作" not in reply
+
+
 def test_material_drivers_are_asked_before_identity_details() -> None:
     case = example()
     assert next_fact_questions(case) == ["occupation_status"]
@@ -42,7 +72,7 @@ def test_unknown_dates_are_deferred_but_cannot_pass_delivery_gate() -> None:
     update_deferred_questions(case, "行程日期还没定，其他资料我可以先准备。")
     assert set(case.deferred_fields) == {"planned_arrival_date", "planned_departure_date"}
     assert not set(case.deferred_fields) & set(next_fact_questions(case))
-    assert "日期先留空" in deterministic_fallback_message(case, "blocked")
+    assert "材料准备阶段先不追问日期" in deterministic_fallback_message(case, "blocked")
     restored = Case.model_validate_json(case.model_dump_json())
     assert restored.deferred_fields == case.deferred_fields
     policy = load_policy(Path("knowledge/uk_standard_visitor_2026-02-25.yaml"))
@@ -51,14 +81,73 @@ def test_unknown_dates_are_deferred_but_cannot_pass_delivery_gate() -> None:
     assert not case.final_summary_confirmed
 
 
-def test_new_dates_clear_deferral_without_deleting_existing_dates() -> None:
+def test_new_exact_date_clears_only_its_prior_deferral() -> None:
     case = example()
     update_deferred_questions(case, "My dates are not fixed yet.")
     case.profile.planned_arrival_date = date(2026, 11, 10)
     update_deferred_questions(case, "我定了11月10日到。")
     assert case.deferred_fields == ["planned_departure_date"]
-    update_deferred_questions(case, "日期还没定")
+
+
+@pytest.mark.parametrize("body", [
+    "之前给你的行程日期作废，新的日期还没定。",
+    "旅行日期还是没有确定。",
+    "抵英和离英日期都待定。",
+    "日期暂定不了，我确定后再告诉你。",
+    "Please disregard the dates I gave earlier; my new travel dates are still undecided.",
+    "My arrival and departure dates are still TBC.",
+    "The trip dates are not final yet.",
+    "I'll confirm my travel dates later.",
+])
+def test_current_unknown_date_statement_withdraws_saved_dates_and_defers_them(body: str) -> None:
+    case = example()
+    case.profile.planned_arrival_date = date(2026, 11, 10)
+    case.profile.planned_departure_date = date(2026, 11, 17)
+    case.evidence = [
+        Evidence(
+            id=f"e-{field}", fact_key=field, value=value.isoformat(), source_event_id="old",
+            source_excerpt=value.isoformat(), extraction_method="test", model_version="test",
+            confidence=1,
+        )
+        for field, value in (
+            ("planned_arrival_date", case.profile.planned_arrival_date),
+            ("planned_departure_date", case.profile.planned_departure_date),
+        )
+    ]
+
+    update_deferred_questions(case, body)
+
+    assert case.profile.planned_arrival_date is None
+    assert case.profile.planned_departure_date is None
+    assert set(case.latest_deferred_fields) == {
+        "planned_arrival_date", "planned_departure_date",
+    }
+    assert case.deferred_fields == case.latest_deferred_fields
+    assert all(item.superseded for item in case.evidence)
+    assert not set(next_fact_questions(case)) & set(case.deferred_fields)
+
+
+@pytest.mark.parametrize("body", [
+    "如果旅行日期还没定，我会再写邮件。",
+    "朋友说她的旅行日期还没定。",
+    "旧邮件里写着“旅行日期还没定”。",
+    "旅行日期不再是未定。",
+    "If my travel dates are still undecided, I will write again.",
+    "My friend said her travel dates are still undecided.",
+    'An old email says "My travel dates are still undecided."',
+    "Are my travel dates still undecided?",
+    "The dates are now confirmed.",
+])
+def test_noncurrent_or_confirmed_date_text_does_not_withdraw_saved_dates(body: str) -> None:
+    case = example()
+    case.profile.planned_arrival_date = date(2026, 11, 10)
+    case.profile.planned_departure_date = date(2026, 11, 17)
+
+    update_deferred_questions(case, body)
+
     assert case.profile.planned_arrival_date == date(2026, 11, 10)
+    assert case.profile.planned_departure_date == date(2026, 11, 17)
+    assert case.deferred_fields == []
 
 
 @pytest.mark.parametrize('body', [
@@ -71,7 +160,7 @@ def test_coarse_travel_horizon_with_no_plan_defers_dates_without_inventing_them(
     assert set(case.deferred_fields) == {'planned_arrival_date', 'planned_departure_date'}
     assert not set(next_fact_questions(case)) & set(case.deferred_fields)
     assert case.profile.planned_arrival_date is None and case.profile.planned_departure_date is None
-    assert '日期先留空' in deterministic_fallback_message(case, 'blocked')
+    assert '材料准备阶段先不追问日期' in deterministic_fallback_message(case, 'blocked')
 
 
 def test_unplanned_budget_does_not_defer_travel_dates():
@@ -91,7 +180,9 @@ def test_coarse_horizon_does_not_erase_known_dates():
 
 
 @pytest.mark.parametrize('body', ['日期没定，姓名是示例申请人。', '日期没确定', '还没确定日期',
-    '我没有决定具体出行日期。', "I don't know the travel dates yet.", 'The dates are undecided.'])
+    '我没有决定具体出行日期。', '我还没决定什么时候出发和回程。',
+    "I don't know the travel dates yet.", 'The dates are undecided.',
+    "I haven't decided when I will arrive and leave."])
 def test_plain_unknown_dates_are_remembered(body):
     case = example()
     update_deferred_questions(case, body)
@@ -102,12 +193,27 @@ def test_plain_unknown_dates_are_remembered(body):
     assert not set(next_fact_questions(restored)) & set(case.deferred_fields)
 
 
-@pytest.mark.parametrize('body', ['出生日期没确定', '预算没定',
+@pytest.mark.parametrize('body', ['出生日期没确定', '出生日期待定', '预算没定',
     'Hello\n\nOn Friday, Adviser wrote:\n日期没定'])
 def test_other_unknown_fields_and_quoted_text_do_not_defer_trip_dates(body):
     case = example()
     update_deferred_questions(case, body)
     assert case.deferred_fields == []
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "公司将直接支付机票和住宿。旅行日期还没有确定。",
+        "My employer will pay for flights and accommodation. My travel dates are not fixed yet.",
+    ],
+)
+def test_date_deferral_does_not_cross_a_sentence_and_invent_accommodation_deferral(body):
+    case = example()
+    update_deferred_questions(case, body)
+
+    assert set(case.deferred_fields) == {"planned_arrival_date", "planned_departure_date"}
+    assert "uk_accommodation" not in case.latest_deferred_fields
 
 
 def test_exhausted_actionable_fields_do_not_restart_deferred_questions():
@@ -357,7 +463,7 @@ def test_workflow_remembers_unknown_dates_and_duplicate_is_not_another_turn(tmp_
         result, duplicate, _ = service.process(event)
         assert not duplicate and len(result.deferred_fields) == 2
         assert not set(result.last_requested_fields) & set(result.deferred_fields)
-        assert "日期先留空" in store.list_outbox()[0]["payload"]
+        assert "材料准备阶段先不追问日期" in store.list_outbox()[0]["payload"]
         again, duplicate, _ = service.process(event)
         assert duplicate and again.deferred_fields == result.deferred_fields
         assert len(store.list_outbox()) == 1

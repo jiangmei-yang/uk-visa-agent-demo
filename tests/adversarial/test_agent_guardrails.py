@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+import pytest
+
 from visa_agent.domain.models import Case, CaseStatus, InboundEvent
-from visa_agent.llm.guarded import GuardedLLM, validate_case_patch
+from visa_agent.llm.guarded import GuardedLLM, deterministic_fallback_message, validate_case_patch
 from visa_agent.llm.ports import CasePatch, FactUpdate
 
 
@@ -27,6 +29,7 @@ class ScriptedLLM:
         self.extraction = extraction
         self.message = message
         self.extraction_calls = 0
+        self.render_calls = 0
 
     def extract_case_patch(self, event: InboundEvent) -> CasePatch:
         del event
@@ -38,6 +41,7 @@ class ScriptedLLM:
 
     def render_message(self, case: Case, plan: str) -> str:
         del case, plan
+        self.render_calls += 1
         if isinstance(self.message, Exception):
             raise self.message
         return self.message
@@ -155,6 +159,34 @@ def test_explicit_serious_history_deterministically_requires_review() -> None:
     assert guarded.requires_human_review is True
 
 
+@pytest.mark.parametrize(
+    ("language", "expected"),
+    [
+        ("zh", ("拒签决定书", "时间线", "不要猜或省略", "人工顾问")),
+        ("en", ("refusal decision", "timeline", "do not guess or leave it out", "human adviser")),
+    ],
+)
+def test_serious_history_review_reply_gives_one_concrete_preparation_action(
+    language: str,
+    expected: tuple[str, ...],
+) -> None:
+    case = Case(
+        id="case-history-review",
+        external_thread_id="thread-history-review",
+        applicant_contact="applicant@example.test",
+        customer_language=language,
+        policy_version="test-policy",
+        status=CaseStatus.HUMAN_REVIEW_REQUIRED,
+    )
+    case.profile.has_serious_history = True
+    case.latest_received_facts = {"has_serious_history": "true"}
+
+    message = deterministic_fallback_message(case, "blocked")
+
+    assert all(item.casefold() in message.casefold() for item in expected)
+    assert "approved" not in message.casefold()
+
+
 def test_transient_extraction_retries_once_then_returns_grounded_patch() -> None:
     expected = CasePatch(
         updates=[_update("full_name", "Ada Lovelace", "My name is Ada Lovelace")],
@@ -198,6 +230,23 @@ def test_message_failure_uses_bounded_non_advisory_fallback() -> None:
 
     assert "human review" in message.lower()
     assert "not an approval prediction" in message.lower()
+
+
+def test_reviewed_only_mode_never_buys_a_draft_that_the_sender_will_replace() -> None:
+    delegate = ScriptedLLM([], message="This model draft must not be requested.")
+    guarded = GuardedLLM(delegate, allow_model_rendering=False)
+    case = Case(
+        id="case-agent-eval",
+        external_thread_id="thread-agent-eval",
+        applicant_contact="applicant@example.test",
+        policy_version="test-policy",
+    )
+
+    message = guarded.render_message(case, "blocked")
+
+    assert delegate.render_calls == 0
+    assert message != delegate.message
+    assert guarded.last_render_fallback is False
 
 
 def test_unsafe_outcome_claim_uses_fallback_and_is_reported() -> None:

@@ -21,6 +21,7 @@ def example(body: str, language: str) -> Case:
 
 @pytest.mark.parametrize(("body", "language"), [
     ("这次不用给我链接。我现在读书，旅行自费，想准备材料。", "zh"),
+    ("这封不要给我链接。我现在读书，旅行自费，想准备材料。", "zh"),
     ("先不用链接，我现在想准备材料。", "zh"),
     ("Don't send links; I want to prepare my documents.", "en"),
     ("Please explain without links. I want to prepare my documents.", "en"),

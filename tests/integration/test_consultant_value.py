@@ -113,6 +113,108 @@ class Conversation:
             store.close()
 
 
+@pytest.mark.parametrize(("language", "pause", "resume", "step"), [
+    ("zh", "我最近忙，先暂停准备。", "现在恢复", "告诉我下一步做什么"),
+    ("en", "Please pause the preparation for now.", "Resume now", "tell me what I should do next"),
+])
+def test_paused_case_accepts_a_natural_contextual_resume_before_next_step(
+    tmp_path, language, pause, resume, step,
+):
+    dialogue = Conversation(tmp_path)
+    first = (
+        "中国护照，香港申请，旅游、在读、自费，日期还没定。"
+        if language == "zh" else
+        "Chinese passport, applying in Hong Kong, holiday, student, self-funded; dates not fixed."
+    )
+    dialogue.turn(first, _patch(updates=[
+        ("nationality_country", "China", "中国护照" if language == "zh" else "Chinese passport"),
+        ("application_country", "Hong Kong", "香港申请" if language == "zh" else "applying in Hong Kong"),
+        ("visit_purpose", "tourism", "旅游" if language == "zh" else "holiday"),
+        ("occupation_status", "student", "在读" if language == "zh" else "student"),
+        ("funding_source", "self", "自费" if language == "zh" else "self-funded"),
+    ], deferred=True))
+    paused = dialogue.turn(pause, _patch(control=("pause", pause)))
+    assert paused.case.preparation_paused
+
+    body = f"{resume}，{step}。" if language == "zh" else f"{resume} and {step}."
+    result = dialogue.turn(
+        body,
+        _patch(control=("resume", resume), questions=[("next_step", step)]),
+    )
+
+    assert not result.case.preparation_paused
+    assert result.case.latest_preparation_action == "resume"
+    assert "保持暂停" not in result.body and "keep the preparation on hold" not in result.body
+    assert result.case.last_requested_fields or result.case.next_step_advice is not None
+
+
+@pytest.mark.parametrize(
+    ("body", "relationship", "name", "relationship_excerpt", "location_excerpt"),
+    [
+        ("是我父亲陈建国资助，他不在英国。", "father", "陈建国", "我父亲", "他不在英国"),
+        (
+            "My father Jian Chen is sponsoring my trip and he doesn't live in the UK.",
+            "father", "Jian Chen", "My father", "he doesn't live in the UK",
+        ),
+    ],
+)
+def test_natural_single_sponsor_answer_is_saved_and_not_reasked(
+    tmp_path, body, relationship, name, relationship_excerpt, location_excerpt,
+):
+    dialogue = Conversation(tmp_path)
+    dialogue.turn(
+        "我拿中国护照，在香港申请，去英国旅游。我在工作，旅行由家人资助，日期还没定。",
+        _patch(updates=[
+            ("nationality_country", "China", "中国护照"),
+            ("application_country", "Hong Kong", "香港申请"),
+            ("visit_purpose", "tourism", "去英国旅游"),
+            ("occupation_status", "employed", "我在工作"),
+            ("funding_source", "personal_sponsor", "旅行由家人资助"),
+        ], deferred=True),
+    )
+
+    result = dialogue.turn(body, _patch(updates=[
+        ("sponsor_relationship", relationship, relationship_excerpt),
+        ("sponsor_name", name, name),
+        ("sponsor_is_in_uk", False, location_excerpt),
+    ]))
+
+    assert result.case.profile.sponsor_relationship == relationship
+    assert result.case.profile.sponsor_name == name
+    assert result.case.profile.sponsor_is_in_uk is False
+    assert not {"sponsor_relationship", "sponsor_name", "sponsor_is_in_uk"}.intersection(
+        result.case.last_requested_fields
+    )
+    assert name in result.body
+
+
+def test_conference_follow_up_which_one_first_keeps_the_invitation_as_first_action(tmp_path):
+    dialogue = Conversation(tmp_path)
+    dialogue.turn(
+        "我去伦敦参加行业会议，公司付机票酒店。我在深圳工作，持中国护照，在中国申请，日期还没定。",
+        _patch(updates=[
+            ("visit_purpose", "conference", "参加行业会议"),
+            ("funding_source", "employer_or_school", "公司付机票酒店"),
+            ("occupation_status", "employed", "在深圳工作"),
+            ("nationality_country", "China", "中国护照"),
+            ("application_country", "China", "在中国申请"),
+        ], deferred=True),
+    )
+    dialogue.turn(
+        "请一次说清楚我要准备的全部资料。",
+        _patch(questions=[("document_checklist", "请一次说清楚我要准备的全部资料。")]),
+    )
+
+    result = dialogue.turn("先做哪一份？", _patch(questions=[("next_step", "先做哪一份？")]))
+
+    assert result.case.next_step_advice is not None
+    assert result.case.next_step_advice.kind == "document"
+    assert result.case.next_step_advice.requirement_id == "purpose_evidence"
+    assert "会议主办方的邀请函" in result.body
+    assert "护照上的姓名" not in result.body
+    assert result.case.last_requested_fields == []
+
+
 def _context(kind):
     updates = [("nationality_country", "China", "我持中国护照。"),
                ("application_country", "Hong Kong", "我会在香港递交申请。")]
@@ -135,7 +237,9 @@ def _assert_limited_intake_and_dates_preserved(result):
     assert all(getattr(case.profile, field) is None for field in TRAVEL_FIELDS)
     assert not TRAVEL_FIELDS.intersection(case.last_requested_fields)
     assert all(QUESTION_TEXT_ZH[field] not in body for field in TRAVEL_FIELDS)
-    assert "日期" in body and any(word in body for word in ("确定后", "先留空", "定下来", "以后"))
+    assert "日期" in body and any(
+        word in body for word in ("确定后", "先留空", "定下来", "以后", "不追问", "正式提交前")
+    )
     assert not case.preparation_paused  # Deferring dates is not pausing the application.
 
 
@@ -206,6 +310,133 @@ def test_followup_faq_is_answered_without_appending_a_new_preparation_questionna
     assert len(dialogue.gmail.calls) == 2
 
 
+@pytest.mark.parametrize("model_topic", ["document_checklist", "unsupported", None])
+def test_explicit_full_list_gets_a_complete_personal_adviser_overview_even_when_model_mislabels_it(
+    tmp_path, model_topic,
+):
+    dialogue = Conversation(tmp_path)
+    initial = dialogue.turn(*_context("student"))
+    profile_before = initial.case.profile.model_dump(mode="json")
+    question = "总共需要哪些资料，可以一次性跟我说清楚吗？"
+    questions = [] if model_topic is None else [(model_topic, question)]
+
+    result = dialogue.turn(question, _patch(questions=questions))
+
+    assert result.case.profile.model_dump(mode="json") == profile_before
+    assert result.case.question_plan == result.case.last_requested_fields == []
+    assert set(result.case.deferred_fields) == TRAVEL_FIELDS
+    assert all(QUESTION_TEXT_ZH[field] not in result.body for field in TRAVEL_FIELDS)
+    assert all(term in result.body for term in ("中国护照", "香港递交", "在读", "自己承担", "日期还没定"))
+    assert "在线申请表" in result.body and "证明材料" in result.body
+    assert all(term in result.body for term in (
+        "父母姓名", "近 10 年旅行记录", "香港合法居留证明", "在读证明",
+        "旅游计划", "自费资金", "资金可用及来源", "威尔士文", "译者姓名和签名",
+    ))
+    assert "不需要为了提供证明而先买机票或订酒店" in result.body
+    assert "最先做的一步：先向学校申请在读证明" in result.body
+    assert all(url in result.body for url in (ROUTE_CHECK_URL, APPLICATION_URL, DOCUMENTS_URL))
+    assert "资助说明" not in result.body and "固定 3 个月" not in result.body
+    assert "保证获批" not in result.body and "已预订" in result.body  # It warns not to claim a booking.
+    assert len(dialogue.gmail.calls) == 2
+
+
+def test_full_personal_overview_respects_no_links_without_removing_the_practical_advice(tmp_path):
+    dialogue = Conversation(tmp_path)
+    dialogue.turn(*_context("student"))
+    question = "总共需要哪些资料，请一次性说清楚，但不要发链接。"
+
+    result = dialogue.turn(question, _patch(questions=[("document_checklist", question)]))
+
+    assert "https://" not in result.body
+    assert all(term in result.body for term in (
+        "在线申请表", "香港合法居留证明", "自费资金", "机票或订酒店", "最先做的一步",
+    ))
+    assert "Check if you need a UK visa" in result.body
+    assert result.case.question_plan == result.case.last_requested_fields == []
+
+
+@pytest.mark.parametrize("model_topic", ["sponsor_support", "unsupported", "document_checklist", None])
+def test_parent_sponsor_question_gets_a_practical_consultant_answer_across_model_labels(
+    tmp_path, model_topic,
+):
+    dialogue = Conversation(tmp_path)
+    initial = dialogue.turn(*_context("parents"))
+    profile_before = initial.case.profile.model_dump(mode="json")
+    question = "资助信具体应该写什么？父亲承担机票和住宿，父子关系用什么材料说明？"
+    questions = [] if model_topic is None else [(model_topic, question)]
+
+    result = dialogue.turn(question, _patch(questions=questions))
+
+    assert result.case.profile.model_dump(mode="json") == profile_before
+    assert result.case.customer_question_topics == ([] if model_topic is None else ["sponsor_support"])
+    assert result.case.question_plan == result.case.last_requested_fields == []
+    assert all(term in result.body for term in (
+        "父亲准备承担机票、住宿", "哪一次赴英访问", "具体承担哪些费用", "怎样支付",
+        "资金和来源", "出生证明", "官方户籍记录", "不要为了凑材料而编造",
+        "最先做的一步", "#if-you-have-a-sponsor",
+    ))
+    assert "固定余额或流水月数" in result.body
+    assert "只能提供出生证明" not in result.body and "保证获批" not in result.body
+    assert set(result.case.deferred_fields) == TRAVEL_FIELDS
+
+
+@pytest.mark.parametrize(
+    ("question", "wrong_excerpt", "conditional_text", "not_asserted"),
+    [
+        (
+            "我住姐姐家。姐姐的邀请信要写什么？她不资助我，还要交她的银行流水吗？",
+            "她不资助我",
+            "如果费用由你自己承担",
+            "费用由你自己承担。",
+        ),
+        (
+            "I will stay with my sister. What should her invitation say? She is not paying for the trip; "
+            "does she need to provide bank statements?",
+            "She is not paying for the trip",
+            "If you pay for the trip yourself",
+            "You pay for the trip yourself.",
+        ),
+    ],
+)
+def test_host_only_negative_does_not_let_a_wrong_model_invent_self_funding(
+    tmp_path, question, wrong_excerpt, conditional_text, not_asserted,
+):
+    result = Conversation(tmp_path).turn(
+        question,
+        _patch(
+            updates=[("funding_source", "self", wrong_excerpt)],
+            questions=[("unsupported", question)],
+        ),
+    )
+
+    assert result.case.profile.funding_source is None
+    assert conditional_text in result.body
+    assert not_asserted not in result.body
+    assert result.case.human_review_reason is None
+    assert result.case.status == CaseStatus.DRAFT
+    assert "没有核验过的依据" not in result.body
+    assert "I don't have reviewed evidence" not in result.body
+
+
+def test_english_full_overview_is_personal_and_separates_form_information_from_evidence(tmp_path):
+    dialogue = Conversation(tmp_path)
+    dialogue.turn(*_context("student"))
+    question = "Could you give me the complete list of documents and explain everything in one message?"
+
+    result = dialogue.turn(question, _patch(questions=[("document_checklist", question)]))
+
+    assert result.case.customer_language == "en"
+    assert all(term in result.body for term in (
+        "Chinese passport", "apply in Hong Kong", "currently studying", "pay for the trip yourself",
+        "Information to prepare for the online form", "Evidence to prepare for your circumstances",
+        "travel history for the past 10 years", "lawful residence in Hong Kong", "enrolment",
+        "Self-funding", "English or Welsh", "do not need to buy flights or book hotels",
+        "Your first practical step", "Apply online",
+    ))
+    assert all(url in result.body for url in (ROUTE_CHECK_URL, APPLICATION_URL, DOCUMENTS_URL))
+    assert result.case.question_plan == result.case.last_requested_fields == []
+
+
 def test_explicit_next_step_alongside_faq_can_ask_one_missing_fact_without_dropping_the_answer(tmp_path):
     dialogue = Conversation(tmp_path)
     dialogue.turn(*_context("student"))
@@ -216,6 +447,26 @@ def test_explicit_next_step_alongside_faq_can_ask_one_missing_fact_without_dropp
     assert result.case.next_step_advice is not None and len(reply_items(result.case)[1]) == 1
     assert not TRAVEL_FIELDS.intersection(result.case.last_requested_fields)
     assert not result.case.preparation_paused and len(dialogue.gmail.calls) == 2
+
+
+def test_date_independent_preparation_request_is_answered_as_work_not_an_identity_form(tmp_path):
+    dialogue = Conversation(tmp_path)
+    initial = dialogue.turn(*_context("student"))
+
+    result = dialogue.turn(
+        "日期真的没定，我现在只能先准备不依赖日期的资料。",
+        _patch(deferred=True),
+    )
+
+    assert result.case.id == initial.case.id
+    assert result.case.customer_question_topics == ["next_step"]
+    assert all(term in result.body for term in ("预计行程", "不需要", "机票", "酒店"))
+    assert "方便告诉我护照上的姓名吗" not in result.body
+    assert "你好" not in result.body
+    assert result.case.question_plan == result.case.last_requested_fields == []
+    assert set(result.case.deferred_fields) == TRAVEL_FIELDS
+    assert result.case.profile.model_dump() == initial.case.profile.model_dump()
+    assert len(dialogue.gmail.calls) == 2
 
 
 def test_paused_customer_can_get_faq_information_without_restarting_guidance_or_intake(tmp_path):
@@ -255,8 +506,17 @@ def test_explicit_next_step_combines_both_unknown_dates_in_one_sent_question_wit
 def test_sent_name_question_then_supplied_name_keeps_same_case_and_asks_only_dob_after_reopen(tmp_path):
     dialogue = Conversation(tmp_path)
     initial = dialogue.turn(*_context("student"))
-    assert initial.case.last_requested_fields == ["full_name"]
-    assert len(reply_items(initial.case)[1]) == 1
+    assert initial.case.last_requested_fields == []
+    next_step = "下一步我该准备什么？"
+    itinerary_step = dialogue.turn(next_step, _patch(questions=[("next_step", next_step)]))
+    assert "预计行程" in itinerary_step.body
+    assert itinerary_step.case.last_requested_fields == []
+    evidence_step = dialogue.turn(next_step, _patch(questions=[("next_step", next_step)]))
+    assert "合法居留" in evidence_step.body
+    assert evidence_step.case.last_requested_fields == []
+    name_step = dialogue.turn(next_step, _patch(questions=[("next_step", next_step)]))
+    assert name_step.case.last_requested_fields == ["full_name"]
+    assert len(reply_items(name_step.case)[1]) == 1
     name = "我的姓名是示例安宁。"
     answered = dialogue.turn(name, _patch(updates=[("full_name", "示例安宁", name)]))
     assert answered.case.id == initial.case.id
@@ -275,8 +535,11 @@ def test_sent_name_question_then_supplied_name_keeps_same_case_and_asks_only_dob
     try:
         assert len(store.list_cases()) == 1
         rows = store.list_outbox()
-        assert len(rows) == len(dialogue.gmail.calls) == 2
-        assert {row["event_id"] for row in rows} == {initial.event.id, answered.event.id}
+        assert len(rows) == len(dialogue.gmail.calls) == 5
+        assert {row["event_id"] for row in rows} == {
+            initial.event.id, itinerary_step.event.id, evidence_step.event.id,
+            name_step.event.id, answered.event.id,
+        }
         assert all(row["status"] == "SENT" for row in rows)
         assert store.get_case(initial.case.id).model_dump() == answered.case.model_dump()
     finally:

@@ -188,7 +188,8 @@ def test_financial_boundary_does_not_borrow_visitor_rules_for_student_route() ->
         "I am applying for a student visa. " + funds, "en", TODAY,
         semantic_questions=[question("unsupported", funds)],
     )
-    assert len(answers) == 1 and "verified guidance" in answers[0]
+    assert len(answers) == 1 and "separate route check" in answers[0]
+    assert "savings figure alone" not in answers[0]
     assert SOURCE not in answers[0] and "trip costs" not in answers[0]
 
 
@@ -201,10 +202,15 @@ def test_financial_boundary_does_not_borrow_visitor_rules_for_student_route() ->
 ])
 def test_unknown_unsupported_questions_keep_the_existing_default_boundary(body: str) -> None:
     answers = grounded_customer_answers(body, "en", TODAY, semantic_questions=[question("unsupported", body)])
-    assert answers == [
-        "I don't currently have verified guidance to answer that point reliably. "
-        "That point needs a separate check before using it to assess whether your evidence meets the requirements."
-    ]
+    if "visa" in body.casefold() and "previous refusal" not in body.casefold():
+        assert len(answers) == 1 and "separate route check" in answers[0]
+        assert "https://www.gov.uk/check-uk-visa" in answers[0]
+        assert "£135" not in answers[0]
+    else:
+        assert answers == [
+            "I don't currently have verified guidance to answer that point reliably. "
+            "That point needs a separate check before using it to assess whether your evidence meets the requirements."
+        ]
 
 
 @pytest.mark.parametrize("body", [

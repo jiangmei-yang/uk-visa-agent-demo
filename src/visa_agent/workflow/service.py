@@ -46,12 +46,17 @@ from visa_agent.workflow.advice_continuation import (
 )
 from visa_agent.workflow.advice_queue import merge_unsent_advice, queue_advice
 from visa_agent.workflow.adviser_guidance import APPLICATION_URL, preparation_guidance
+from visa_agent.workflow.consultant_overview import (
+    comprehensive_case_overview,
+    comprehensive_overview_requested,
+)
 from visa_agent.workflow.conversation import (
     clear_natural_confirmation,
     confirmation_has_caveat,
     consultation_only_requested,
     customer_requests_next_step,
     document_list_requested,
+    explicitly_requested_profile_question,
     latest_reply_text,
     next_fact_questions,
     quiet_preparation_resume,
@@ -59,7 +64,12 @@ from visa_agent.workflow.conversation import (
     update_deferred_questions,
     waiting_acknowledgement,
 )
-from visa_agent.workflow.customer_questions import grounded_customer_answer_plan
+from visa_agent.workflow.customer_questions import (
+    _active_clauses,
+    _next_step_targets_current_case,
+    capped_answer_plan,
+    grounded_customer_answer_plan,
+)
 from visa_agent.workflow.document_preparation import (
     SCHOOL_RECORD_TOPIC,
     school_record_followup,
@@ -68,7 +78,12 @@ from visa_agent.workflow.document_preparation import (
     school_record_unavailable,
     sent_school_record_context,
 )
+from visa_agent.workflow.explicit_answer_scope import explicit_personal_sponsor_replacement
 from visa_agent.workflow.next_step import select_next_step
+from visa_agent.workflow.pending_step_value import (
+    pending_question_reminder,
+    pending_question_support_action,
+)
 
 PROFILE_CONFIRMATION_LINES = {
     "profile confirmed",
@@ -76,6 +91,64 @@ PROFILE_CONFIRMATION_LINES = {
     "我确认上述个人资料",
     "我确认个人资料摘要",
 }
+
+
+def _without_repeated_source_lines(answer: str, existing: list[str]) -> str:
+    """Avoid repeating a source already present in this same customer reply."""
+    seen = {
+        url.rstrip(".,;:，。；：").split("#", 1)[0]
+        for url in re.findall(r"https?://\S+", "\n".join(existing))
+    }
+    return "\n".join(
+        line for line in answer.splitlines()
+        if not (
+            (match := re.fullmatch(r"\s*GOV\.UK:\s*(https?://\S+)\s*", line))
+            and match[1].rstrip(".,;:，。；：").split("#", 1)[0] in seen
+        )
+    ).strip()
+
+
+def _source_repeat_requested(body: str) -> bool:
+    """Keep links when the customer explicitly asks us to send them again."""
+    current = latest_reply_text(body)
+    return bool(re.search(
+        r"(?:链接|网址|官网|网页).{0,12}(?:再发|重发|再给|再来一次)|"
+        r"(?:再发|重发|再给).{0,12}(?:链接|网址|官网|网页)|"
+        r"\b(?:send|share|give).{0,24}(?:link|website|page).{0,12}\bagain\b|"
+        r"\b(?:send|share|give).{0,12}\bagain\b.{0,24}(?:link|website|page)",
+        current,
+        re.I,
+    ))
+
+
+def _without_previously_sent_source_lines(
+    answer: str,
+    prior_outbox: list[dict[str, Any]],
+    current_message: str,
+) -> str:
+    """Do not paste the same long source URL into every proactive email.
+
+    The reviewed guidance remains source-bound in code and its topic ledger. This
+    only removes a standalone display line after that exact source reached a SENT
+    reply. Direct requests to resend a source always win.
+    """
+    if _source_repeat_requested(current_message):
+        return answer
+    seen = {
+        match.rstrip(".,;:，。；：").split("#", 1)[0]
+        for row in prior_outbox
+        if row.get("status") == "SENT"
+        for match in re.findall(r"https?://\S+", str(row.get("payload", "")))
+    }
+    return "\n".join(
+        line for line in answer.splitlines()
+        if not (
+            (match := re.fullmatch(r"\s*GOV\.UK:\s*(https?://\S+)\s*", line))
+            and match[1].rstrip(".,;:，。；：").split("#", 1)[0] in seen
+        )
+    ).strip()
+
+
 FINAL_CONFIRMATION_LINES = {
     "i confirm the final summary",
     "final summary confirmed",
@@ -172,6 +245,20 @@ class WorkflowService:
         prior_pending = [field for field in previously_asked
                          if field not in case.deferred_fields and hasattr(case.profile, field)
                          and not profile_fact_complete(case, field)]
+        prior_last_requested = list(case.last_requested_fields)
+        latest_sent_payload = next(
+            (row["payload"] for row in reversed(prior_outbox) if row["status"] == "SENT"),
+            "",
+        )
+        pending_reminder_in_latest_reply = any(
+            marker in latest_sent_payload
+            for marker in (
+                "上一封邮件里的那项信息仍待补",
+                "item from my previous email is still open",
+                "我先不重复提问",
+                "I will not repeat the question here",
+            )
+        )
         case.question_plan = None
         case.pending_question_fields = []
         case.next_step_advice = None
@@ -186,7 +273,12 @@ class WorkflowService:
                          else latest_reply_text(event.body)),
                 "requested_fields": [field for field in prior_pending
                                      if field not in case.deferred_fields],
-                "known_profile": case.profile.model_dump(mode="json"),
+                "known_profile": {
+                    **case.profile.model_dump(mode="json"),
+                    # Conversation-control context only. It is not an applicant
+                    # fact and cannot be written back into the CaseProfile.
+                    "_preparation_paused": case.preparation_paused,
+                },
             }
         )
         case.latest_customer_message = customer_event.body
@@ -236,6 +328,18 @@ class WorkflowService:
         current_questions = [item for item in patch.customer_questions if not (
             continuation_requested and is_advice_continuation(item.source_excerpt)
         )]
+        if comprehensive_overview_requested(case, customer_event.body):
+            # The model may call an obvious in-thread request for the complete
+            # personal preparation list "unsupported" or "next_step".  Rescue
+            # only the matching, tightly bounded clause; other questions keep
+            # their original safety classification.
+            current_questions = [
+                item.model_copy(update={"topic": "document_checklist"})
+                if item.topic in {"unsupported", "next_step", "off_topic"}
+                and comprehensive_overview_requested(case, item.source_excerpt)
+                else item
+                for item in current_questions
+            ]
         school_followup = (sent_school_record_context(case, prior_outbox)
                            and school_record_followup(customer_event.body)
                            and not any(item.topic == "off_topic" for item in current_questions))
@@ -267,6 +371,32 @@ class WorkflowService:
         may_confirm = not was_paused and not case.preparation_paused and not decision.grant_business
         case.proactive_guidance_offered = False
         case.customer_question_topics = [item.topic for item in current_questions]
+        explicit_next_step_wording = bool(re.search(
+            r"下一步|接下来|还缺|还需要什么|先准备哪|"
+            r"\bnext step\b|\bwhat(?:'s| is) next\b|"
+            r"\b(?:what|which).{0,24}(?:prepare|work on|do).{0,18}(?:next|now|first)\b|"
+            r"\bwhat else (?:can|should) I (?:do|prepare)\b",
+            latest_reply_text(customer_event.body),
+            re.I,
+        ))
+        explicit_pending_resume = bool(re.search(
+            r"(?:我现在)?(?:可以|能)?继续(?:问|提问)|请继续问|"
+            r"\b(?:I(?:'m| am) )?ready to continue\b|\bcontinue asking\b|\bask me (?:the )?next\b",
+            latest_reply_text(customer_event.body),
+            re.I,
+        ))
+        resume_only = case.latest_preparation_action == "resume" and not explicit_next_step_wording
+        deterministic_next_step = any(
+            customer_requests_next_step(clause)
+            and _next_step_targets_current_case(customer_event.body, clause)
+            for clause in _active_clauses(customer_event.body, split_commas=False)
+        ) and not quiet_preparation_resume(case) and not resume_only
+        if deterministic_next_step and "next_step" not in case.customer_question_topics:
+            # This is a pacing/request signal only. It creates no fact, evidence,
+            # consent or route decision, but prevents a missed/narrow model excerpt
+            # from turning a natural "what can I do without that detail?" into an
+            # empty acknowledgement.
+            case.customer_question_topics.append("next_step")
         if school_followup and "next_step" not in case.customer_question_topics:
             case.customer_question_topics.append("next_step")
         case.customer_question_exclusions = [item.source_excerpt for item in current_questions
@@ -276,13 +406,9 @@ class WorkflowService:
             sent_application_guidance=case.guidance_events.get("application_overview_v1") in sent_events,
             semantic_questions=current_questions,
             include_unsupported=not patch.requires_human_review,
+            case=case,
         )
         case.customer_answers = list(answer_plan.answers)
-        remember_advice_plan(case, event.id, customer_event.body, current_questions,
-                             answer_plan, prior_outbox, self.today_provider())
-        queue_advice(case, event.id, customer_event.body, current_questions, answer_plan,
-                     application_guidance_event_id=(case.guidance_events.get("application_overview_v1")
-                         if case.guidance_events.get("application_overview_v1") in sent_events else None))
         if patch.requires_human_review:
             case.status = CaseStatus.HUMAN_REVIEW_REQUIRED
             advance_stage(case, WorkflowStage.HUMAN_REVIEW_REQUIRED)
@@ -333,6 +459,62 @@ class WorkflowService:
                 if deferral.field not in case.latest_deferred_fields:
                     case.latest_deferred_fields.append(deferral.field)
         self._ingest_attachments(case, event)
+        full_overview = (
+            case.status != CaseStatus.HUMAN_REVIEW_REQUIRED
+            and comprehensive_overview_requested(case, customer_event.body)
+        )
+        if full_overview:
+            # The current email may have supplied the profile facts that make a
+            # personal overview possible. Reclassify only the same bounded
+            # request after those validated facts have been applied.
+            current_questions = [
+                item.model_copy(update={"topic": "document_checklist"})
+                if item.topic in {"unsupported", "next_step", "off_topic"}
+                and comprehensive_overview_requested(case, item.source_excerpt)
+                else item
+                for item in current_questions
+            ]
+            case.customer_question_topics = [item.topic for item in current_questions]
+            case.customer_question_exclusions = [
+                item.source_excerpt for item in current_questions
+                if item.topic in {"off_topic", "unsupported", "next_step"}
+            ]
+        # Compile once more against the updated case. This is deterministic and
+        # ensures current-turn sponsor/location facts shape the actual answer.
+        answer_plan = grounded_customer_answer_plan(
+            customer_event.body, case.customer_language, self.today_provider(),
+            sent_application_guidance=case.guidance_events.get("application_overview_v1") in sent_events,
+            semantic_questions=current_questions,
+            include_unsupported=not patch.requires_human_review,
+            case=case,
+        )
+        case.customer_answers = list(answer_plan.answers)
+        if full_overview and "personal_overview" not in answer_plan.selected_topics:
+            # Compose after applying this event's validated facts, so a complete
+            # first enquiry can be useful without treating the model as the author.
+            overview = comprehensive_case_overview(
+                case,
+                self.today_provider(),
+                include_first_action=not (
+                    any(item.topic == "next_step" for item in current_questions)
+                    or bool(set(answer_plan.selected_topics).intersection({
+                        "application", "application_link", "route_orientation", "sponsor_support",
+                    }))
+                ),
+            )
+            answer_plan = capped_answer_plan(
+                [("personal_overview", overview), *(
+                    item for item in answer_plan.reviewed_answers
+                    if item[0] not in {"application", "application_link"}
+                )],
+                case.customer_language,
+            )
+            case.customer_answers = list(answer_plan.answers)
+        remember_advice_plan(case, event.id, customer_event.body, current_questions,
+                             answer_plan, prior_outbox, self.today_provider())
+        queue_advice(case, event.id, customer_event.body, current_questions, answer_plan,
+                     application_guidance_event_id=(case.guidance_events.get("application_overview_v1")
+                         if case.guidance_events.get("application_overview_v1") in sent_events else None))
         profile_changed = prior_profile != summary_fingerprint(case, include_documents=False)
         if profile_changed:
             case.profile_confirmed = False
@@ -424,13 +606,28 @@ class WorkflowService:
                 case, include_documents=case.confirmation_kind == "final"
             )
             case.confirmation_request_event_id = event.id
-        if "next_step" in case.customer_question_topics:
+        overview_already_has_action = any(
+            marker in answer
+            for answer in case.customer_answers
+            for marker in ("最先做的一步：", "Your first practical step:")
+        )
+        if "next_step" in case.customer_question_topics and not overview_already_has_action:
             # Advice sees this event's validated facts/documents and current gate.
             # Asking for a step is not resume, profile consent or final consent.
             case.next_step_advice = select_next_step(
                 case, self.policy, gate, today=self.today_provider(),
                 school_record_context=sent_school_record_context(case, prior_outbox),
             )
+            case.next_step_advice = case.next_step_advice.model_copy(update={
+                "message": _without_repeated_source_lines(
+                    _without_previously_sent_source_lines(
+                        case.next_step_advice.message,
+                        prior_outbox,
+                        customer_event.body,
+                    ),
+                    case.customer_answers,
+                ),
+            })
             case.customer_answers.append(case.next_step_advice.message)
         extras = [answer for answer in case.customer_answers if answer not in answer_plan.answers]
         case.customer_answers = merge_unsent_advice(
@@ -449,18 +646,52 @@ class WorkflowService:
         # guidance below. Supplying one fact alongside a FAQ does not ask us to
         # resume the rest of the intake form.
         has_information_answer = bool(case.customer_answers) or document_list_requested(case)
+        actionable_preparation_guidance = False
+        current_preparation_guidance: list[str] = []
         if plan == "blocked" and not case.preparation_paused and not waiting_acknowledgement(case):
             sent_topics = {topic for topic, source_event in case.guidance_events.items()
                            if source_event in sent_events}
-            guidance = preparation_guidance(case, self.today_provider(), sent_topics)
+            guidance = ([] if "personal_overview" in answer_plan.selected_topics else
+                        preparation_guidance(case, self.today_provider(), sent_topics))
             case.proactive_guidance_offered = bool(guidance)
+            sponsor_identity_guidance = any(
+                topic in {
+                    "personal_sponsor_preparation_v1",
+                    "family_personal_sponsor_preparation_v1",
+                }
+                for topic, _ in guidance
+            )
+            actionable_preparation_guidance = any(
+                topic not in {"application_overview_v1", "route_orientation_v1"}
+                for topic, _ in guidance
+            )
             if guidance and case.next_step_advice is not None and case.next_step_advice.kind == "question":
                 # The concrete preparation guidance supplies the useful answer;
                 # do not precede it with "first supply another missing detail".
                 case.customer_answers = [answer for answer in case.customer_answers
                                          if answer != case.next_step_advice.message]
+                if (
+                    case.next_step_advice.question_field in {"full_name", "date_of_birth"}
+                    or (
+                        case.next_step_advice.question_field == "current_address"
+                        and not case.profile.current_address
+                    )
+                ) and not explicitly_requested_profile_question(
+                    customer_event.body,
+                    case.next_step_advice.question_field,
+                ):
+                    # Administrative form fields still remain required, but a
+                    # customer asking what to prepare should first receive the
+                    # case-specific evidence action we have just selected.
+                    case.next_step_advice = None
             for topic, answer in guidance:
+                answer = _without_previously_sent_source_lines(
+                    answer,
+                    prior_outbox,
+                    customer_event.body,
+                )
                 case.customer_answers.append(answer)
+                current_preparation_guidance.append(answer)
                 case.guidance_events[topic] = event.id
             if any(APPLICATION_URL in answer for answer in case.customer_answers):
                 case.guidance_events["application_overview_v1"] = event.id
@@ -470,7 +701,14 @@ class WorkflowService:
                 if field in required_profile_facts(case) and field not in case.deferred_fields
                 and not profile_fact_complete(case, field)]
             answered_fields = set(case.latest_received_facts) | set(case.latest_changes)
-            if case.preparation_paused or waiting_acknowledgement(case):
+            if case.status == CaseStatus.HUMAN_REVIEW_REQUIRED:
+                # The handoff renderer asks no intake question. Do not record a
+                # hidden question against the SENT review reply or leave it as an
+                # active pending field. Historical actually-sent question events
+                # remain auditable in question_event_ids.
+                case.question_plan = []
+                case.pending_question_fields = []
+            elif case.preparation_paused or waiting_acknowledgement(case):
                 # This renderer emits only a receipt. Never record unseen candidate questions
                 # against that receipt's SENT event, even when an older draft was never sent.
                 case.question_plan = []
@@ -482,14 +720,80 @@ class WorkflowService:
                     case.customer_answers = [answer for answer in case.customer_answers
                                              if answer != case.next_step_advice.message]
                     case.next_step_advice = None
+            elif overview_already_has_action:
+                # A comprehensive personal overview already names a practical
+                # first action. Do not append a second, unrelated intake step.
+                case.question_plan = []
             elif case.next_step_advice is not None:
                 field = case.next_step_advice.question_field
-                # A travel-date range is one main question, with both asked
-                # fields retained in the SENT ledger. Do not split it into two
-                # emails merely because the next-step selector names arrival.
-                case.question_plan = (candidates if field == "planned_arrival_date"
-                    and candidates == ["planned_arrival_date", "planned_departure_date"]
-                    else [field] if field in candidates else [])
+                if (
+                    field in case.pending_question_fields
+                    and (field in prior_last_requested or pending_reminder_in_latest_reply)
+                    and not answered_fields.intersection(prior_pending)
+                    and not explicitly_requested_profile_question(customer_event.body, field)
+                    and not explicit_pending_resume
+                ):
+                    # Repeated "what next" messages do not create a fresh copy
+                    # of the question that was actually asked in the immediately
+                    # preceding reply or advance past it.  If an intervening FAQ
+                    # was answered without repeating the intake question,
+                    # last_requested_fields is empty and an explicit request to
+                    # proceed may recover the pending, contextual clarification.
+                    case.customer_answers = [answer for answer in case.customer_answers
+                                             if answer != case.next_step_advice.message]
+                    if current_preparation_guidance:
+                        case.customer_answers.append(pending_question_reminder(case))
+                    else:
+                        support_topic, support_answer = pending_question_support_action(
+                            case,
+                            field,
+                            self.policy,
+                            self.today_provider(),
+                            {topic for topic, source_event in case.guidance_events.items()
+                             if source_event in sent_events},
+                        )
+                        support_answer = _without_previously_sent_source_lines(
+                            support_answer,
+                            prior_outbox,
+                            customer_event.body,
+                        )
+                        case.customer_answers.append(support_answer)
+                        case.guidance_events[support_topic] = event.id
+                    case.next_step_advice = None
+                    case.question_plan = []
+                else:
+                    # A travel-date range is one main question, with both asked
+                    # fields retained in the SENT ledger. Do not split it into two
+                    # emails merely because the next-step selector names arrival.
+                    paired_question = candidates in (
+                        ["planned_arrival_date", "planned_departure_date"],
+                        ["sponsor_relationship", "sponsor_name"],
+                    )
+                    case.question_plan = (candidates if paired_question
+                        else [field] if field in candidates else [])
+            elif actionable_preparation_guidance and case.latest_preparation_action != "resume":
+                # Keep early route-shaping intake moving while still giving
+                # useful consultant advice. Administrative form fields wait
+                # behind the case-specific material action. Sponsor identity is
+                # part of that action rather than an unrelated form field: asking
+                # it here gives a natural short follow-up a real SENT-question
+                # context without inferring that a host or relative is a sponsor.
+                sponsor_identity_followup = (
+                    sponsor_identity_guidance
+                    and case.profile.funding_source == "personal_sponsor"
+                    and candidates == ["sponsor_relationship", "sponsor_name"]
+                )
+                case.question_plan = (
+                    candidates
+                    if candidates and (
+                        bool(answered_fields.intersection(prior_pending))
+                        or sponsor_identity_followup
+                        or candidates[0] in {
+                            "nationality_country", "application_country", "occupation_status", "funding_source",
+                        }
+                    )
+                    else []
+                )
             elif quiet_preparation_resume(case):
                 # A resume with "that's all for now" is a receipt, even when
                 # a newly enforced completeness check finds another missing fact.
@@ -590,6 +894,9 @@ class WorkflowService:
 
     def _apply_patch(self, case: Case, event: InboundEvent, updates: list[dict[str, Any]]) -> None:
         allowed = set(type(case.profile).model_fields)
+        update_fields = {str(update["field"]) for update in updates}
+        prior_sponsor_identity = (case.profile.sponsor_name, case.profile.sponsor_relationship)
+        prior_funding_source = case.profile.funding_source
         for update in updates:
             field = str(update["field"])
             if field not in allowed:
@@ -618,6 +925,49 @@ class WorkflowService:
                     ),
                 )
             )
+        sponsor_replaced_without_complete_identity = (
+            prior_funding_source == "personal_sponsor"
+            and case.profile.funding_source == "personal_sponsor"
+            and explicit_personal_sponsor_replacement(event.body)
+        )
+        if sponsor_replaced_without_complete_identity:
+            # "Someone else will sponsor me instead" proves that the old
+            # person is no longer the payer, but it does not prove the new
+            # person's name, relationship or location. Keep any newly grounded
+            # sponsor fields from this turn and retire only stale inherited ones.
+            for field in ("sponsor_name", "sponsor_relationship", "sponsor_is_in_uk"):
+                if field in update_fields:
+                    continue
+                setattr(case.profile, field, None)
+                for old in case.active_evidence(field):
+                    old.superseded = True
+        sponsor_identity_changed = prior_sponsor_identity != (
+            case.profile.sponsor_name,
+            case.profile.sponsor_relationship,
+        )
+        relationship_changed = prior_sponsor_identity[1] != case.profile.sponsor_relationship
+        if relationship_changed and "sponsor_name" not in update_fields:
+            # A mother→father (or equivalent) correction changes the entity.
+            # Do not silently bind the previous person's name to the new role.
+            case.profile.sponsor_name = None
+            for old in case.active_evidence("sponsor_name"):
+                old.superseded = True
+        if sponsor_identity_changed and "sponsor_is_in_uk" not in update_fields:
+            case.profile.sponsor_is_in_uk = None
+            for old in case.active_evidence("sponsor_is_in_uk"):
+                old.superseded = True
+        if sponsor_identity_changed or sponsor_replaced_without_complete_identity:
+            for item in [*case.unsent_advice, *case.pending_advice]:
+                if item.topic == "sponsor_support" and item.source_event_id != event.id:
+                    item.deferred_by_event_id = event.id
+        if case.profile.funding_source != "personal_sponsor" and "funding_source" in update_fields:
+            for field in ("sponsor_name", "sponsor_relationship", "sponsor_is_in_uk"):
+                setattr(case.profile, field, None)
+                for old in case.active_evidence(field):
+                    old.superseded = True
+            for item in [*case.unsent_advice, *case.pending_advice]:
+                if item.topic == "sponsor_support" and item.source_event_id != event.id:
+                    item.deferred_by_event_id = event.id
 
     def _ingest_attachments(
         self, case: Case, event: InboundEvent, *, reread_attempt_id: str | None = None,

@@ -10,8 +10,11 @@ from visa_agent.domain.models import InboundEvent
 from visa_agent.llm.guarded import validate_case_patch
 from visa_agent.llm.ports import CasePatch, CustomerQuestion, FactUpdate
 from visa_agent.workflow.customer_questions import (
+    ACADEMIC_SOURCE,
     APPLICATION_SOURCE,
+    MEDICAL_SOURCE,
     PROCESSING_SOURCE,
+    ROUTE_CHECK_SOURCE,
     SOURCE,
     grounded_customer_answers,
 )
@@ -40,7 +43,8 @@ def test_old_extraction_payload_defaults_to_no_customer_questions() -> None:
 
 
 @pytest.mark.parametrize("topic", [
-    "application", "timing", "translation", "booking", "fees", "bank_period",
+    "application", "eligibility_overview", "biometrics", "after_apply", "timing",
+    "translation", "booking", "fees", "bank_period",
     "document_checklist", "unsupported",
 ])
 def test_only_bounded_advice_topic_names_are_part_of_schema(topic: str) -> None:
@@ -210,6 +214,97 @@ def test_unknown_question_does_not_suppress_a_separate_supported_question() -> N
     assert "£135" in "\n".join(answers) and "另行核实" in "\n".join(answers)
 
 
+@pytest.mark.parametrize(("body", "excerpt", "language", "source", "terms"), [
+    (
+        "I need private medical treatment in the UK for 11 months. What is the visa fee?",
+        "What is the visa fee?",
+        "en",
+        MEDICAL_SOURCE,
+        ("£234", "up to 11 months", "doctor or consultant letter"),
+    ),
+    (
+        "我要去英国接受私人医疗治疗11个月。这种签证申请费是多少？",
+        "这种签证申请费是多少？",
+        "zh",
+        MEDICAL_SOURCE,
+        ("£234", "最长 11 个月", "医生或顾问信"),
+    ),
+    (
+        "I am a researcher planning a 12-month academic visit. What is the visa fee?",
+        "What is the visa fee?",
+        "en",
+        ACADEMIC_SOURCE,
+        ("£234", "up to 12 months", "additional eligibility"),
+    ),
+    (
+        "我是研究人员，计划进行12个月的学术访问。申请费是多少？",
+        "申请费是多少？",
+        "zh",
+        ACADEMIC_SOURCE,
+        ("£234", "最长 12 个月", "额外资格"),
+    ),
+])
+def test_special_duration_visitor_fee_uses_its_verified_row_and_official_page(
+    body: str,
+    excerpt: str,
+    language: str,
+    source: str,
+    terms: tuple[str, ...],
+) -> None:
+    answers = grounded_customer_answers(
+        body,
+        language,
+        date(2026, 9, 5),
+        semantic_questions=[question("fees", excerpt)],
+    )
+
+    assert len(answers) == 1
+    assert source in answers[0]
+    assert all(term in answers[0] for term in terms)
+    assert "£135" not in answers[0]
+    assert APPLICATION_SOURCE not in answers[0]
+
+
+@pytest.mark.parametrize(("body", "language"), [
+    (
+        "I will attend an academic conference for 12 months. What is the visitor visa fee?",
+        "en",
+    ),
+    ("我要去英国参加12个月的学术会议，访客签证费多少？", "zh"),
+    ("I need medical treatment in the UK for 12 months. What is the visa fee?", "en"),
+    ("我想停留11个月，访客签证费多少？", "zh"),
+])
+def test_unqualified_or_out_of_range_extended_stay_never_gets_a_six_month_fee(
+    body: str,
+    language: str,
+) -> None:
+    answers = grounded_customer_answers(
+        body,
+        language,
+        date(2026, 9, 5),
+        semantic_questions=[question("fees", body)],
+    )
+
+    assert len(answers) == 1
+    assert "£135" not in answers[0]
+    assert "£234" not in answers[0]
+    assert "6-month Standard Visitor visa" not in answers[0]
+
+
+def test_special_duration_fee_expires_with_the_shared_guidance_review_window() -> None:
+    body = "I need private medical treatment in the UK for 11 months. What is the visa fee?"
+    answers = grounded_customer_answers(
+        body,
+        "en",
+        date(2026, 10, 5),
+        semantic_questions=[question("fees", "What is the visa fee?")],
+    )
+
+    assert len(answers) == 1
+    assert "recheck the current GOV.UK guidance" in answers[0]
+    assert "£234" not in answers[0]
+
+
 @pytest.mark.parametrize("include_unsupported", [False, True])
 def test_suppressing_duplicate_unknown_notice_does_not_reenable_canned_answer(
     include_unsupported: bool,
@@ -250,6 +345,60 @@ def test_explicitly_negated_route_does_not_block_an_ordinary_visitor_answer(rout
     ])
     assert len(answers) == 1 and "£135" in answers[0]
     assert "需要先按对应路线核实" not in answers[0]
+
+
+@pytest.mark.parametrize(("body", "language"), [
+    ("Where can I get the official visitor visa application form?", "en"),
+    ("英国访问签证的官方申请表在哪里获取？", "zh"),
+])
+def test_official_visitor_form_wording_remains_on_the_supported_application_route(
+    body: str, language: str,
+) -> None:
+    answers = grounded_customer_answers(body, language, date(2026, 9, 4), semantic_questions=[
+        question("application", body),
+    ])
+
+    assert len(answers) == 1
+    assert APPLICATION_SOURCE in answers[0] and "Apply now" in answers[0]
+    assert ROUTE_CHECK_SOURCE not in answers[0]
+
+
+@pytest.mark.parametrize(("body", "excerpt", "expected_route_boundary"), [
+    (
+        "Where can I get the official student visa application form?",
+        "Where can I get the official student visa application form?",
+        True,
+    ),
+    (
+        "My friend asked me yesterday where to get the official visitor visa application form; "
+        "I did not answer him.",
+        "where to get the official visitor visa application form",
+        False,
+    ),
+    (
+        "The old email says “Where can I get the official visitor visa application form?” "
+        "I am only quoting it.",
+        "Where can I get the official visitor visa application form?",
+        False,
+    ),
+    (
+        "Do not send me the official visitor visa application form.",
+        "official visitor visa application form",
+        False,
+    ),
+])
+def test_official_modifier_does_not_expand_application_help_beyond_current_visitor_requests(
+    body: str, excerpt: str, expected_route_boundary: bool,
+) -> None:
+    answers = grounded_customer_answers(body, "en", date(2026, 9, 4), semantic_questions=[
+        question("application", excerpt),
+    ])
+
+    if expected_route_boundary:
+        assert len(answers) == 1 and ROUTE_CHECK_SOURCE in answers[0]
+        assert APPLICATION_SOURCE not in answers[0]
+    else:
+        assert answers == []
 
 
 @pytest.mark.parametrize("route", [
@@ -297,9 +446,8 @@ def test_decision_estimate_is_not_presented_as_passport_return_time(text: str, l
     answers = grounded_customer_answers(text, language, date(2026, 9, 4))
     assert len(answers) == 1
     assert APPLICATION_SOURCE in answers[0] and PROCESSING_SOURCE not in answers[0]
-    assert ("不是护照返还日期" in answers[0]) if language == "zh" else (
-        "not a passport-return date" in answers[0]
-    )
+    assert "护照返还时间也需另行预留" not in answers[0]
+    assert "allow separately for passport return" not in answers[0]
 
 
 @pytest.mark.parametrize(("text", "language"), [
@@ -360,3 +508,38 @@ def test_student_route_does_not_get_standard_visitor_passport_return_details() -
     ])
     assert len(answers) == 1 and "route" in answers[0]
     assert PROCESSING_SOURCE not in answers[0] and "appointment day" not in answers[0]
+
+
+@pytest.mark.parametrize(("body", "language"), [
+    (
+        "我住姐姐家。姐姐的邀请信要写什么？她不资助我，还要交她的银行流水吗？",
+        "zh",
+    ),
+    (
+        "I will stay with my sister. What should her invitation say? She is not paying for the trip; "
+        "does she need to provide bank statements?",
+        "en",
+    ),
+])
+@pytest.mark.parametrize("model_topic", ["unsupported", "sponsor_support"])
+def test_reviewed_host_only_answer_replaces_a_contradictory_generic_boundary(
+    body: str,
+    language: str,
+    model_topic: str,
+) -> None:
+    answers = grounded_customer_answers(
+        body,
+        language,
+        date(2026, 9, 5),
+        semantic_questions=[question(model_topic, body)],
+    )
+    text = "\n".join(answers)
+
+    assert len(answers) == 1
+    assert SOURCE in text
+    assert "没有核验过的依据" not in text
+    assert "don't currently have verified guidance" not in text
+    assert (
+        "不要把她写成经济资助人" in text
+        or "do not describe her as the financial sponsor" in text
+    )

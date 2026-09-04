@@ -168,7 +168,10 @@ def test_followup_next_step_retains_previously_reported_school_obstacle_after_re
     reported = _sent(dialogue, dialogue.turn(words["obstacle"], _patch()))
     _assert_case_boundaries(reported, original)
     result = _sent(dialogue, dialogue.turn(words["next"], _proposal(label, words["next"])))
-    _assert_practical_record_help(result, original)
+    # The obstacle was already received on the preceding turn, so this
+    # continuation keeps the practical help without repeating the same
+    # canonical GOV.UK supporting-documents source.
+    _assert_practical_record_help(result, original, links=False)
     assert result.event.id != reported.event.id and len(dialogue.gmail.calls) == 3
 
 
@@ -219,7 +222,7 @@ def test_school_obstacle_advice_while_paused_is_information_not_resume_or_docume
     else:
         body = words["obstacle"] + " " + words["question"] + " " + words["consult"]
     result = _sent(dialogue, dialogue.turn(body, _proposal("next_step", body)))
-    _assert_practical_record_help(result, original, paused=True)
+    _assert_practical_record_help(result, original, paused=True, links=not followup)
     assert result.case.preparation_control_epoch == pause.case.preparation_control_epoch
     assert result.case.latest_preparation_action != "resume"
     assert not re.search(r"请.{0,12}(?:上传|附上|发送).{0,12}(?:文件|证明|PDF)|"
@@ -251,7 +254,10 @@ def test_no_link_reply_still_authorizes_useful_cross_language_school_followup(tm
     second_language = "en" if first_language == "zh" else "zh"
     next_body = LANGUAGE[second_language]["next"]
     result = _sent(dialogue, dialogue.turn(next_body, _proposal("empty", next_body)))
-    _assert_practical_record_help(result, original)
+    # The first reply deliberately omitted URLs, but it still delivered this
+    # guidance; changing language does not turn the next reply into a source
+    # dump or override the earlier no-link preference.
+    _assert_practical_record_help(result, original, links=False)
     assert result.case.customer_language == second_language
     assert len(dialogue.gmail.calls) == 3
 
@@ -289,7 +295,7 @@ def test_negative_resolution_statement_keeps_school_obstacle_active(tmp_path, la
     _assert_case_boundaries(changed, original)
     body = LANGUAGE[language]["next"]
     result = _sent(dialogue, dialogue.turn(body, _proposal("next_step", body)))
-    _assert_practical_record_help(result, original)
+    _assert_practical_record_help(result, original, links=False)
     assert len(dialogue.gmail.calls) == 4
 
 
@@ -307,7 +313,7 @@ def test_new_funding_faq_does_not_repeat_or_forget_school_obstacle(tmp_path, lan
     assert result.case.question_plan == result.case.last_requested_fields == []
     followup = LANGUAGE[language]["next"]
     again = _sent(dialogue, dialogue.turn(followup, _proposal("next_step", followup)))
-    _assert_practical_record_help(again, original)
+    _assert_practical_record_help(again, original, links=False)
 
 
 @pytest.mark.parametrize("language", ["zh", "en"])

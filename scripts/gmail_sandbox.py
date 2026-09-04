@@ -28,6 +28,7 @@ from visa_agent.delivery.pack import generate_pack
 from visa_agent.documents.natural import NaturalPDFReader
 from visa_agent.domain.policy import load_policy
 from visa_agent.llm.deepseek_client import DeepSeekStructuredLLM
+from visa_agent.llm.guarded import GuardedLLM
 from visa_agent.privacy.consent import ConsentLedger, ProcessingScope
 from visa_agent.secrets import read_secret
 from visa_agent.storage.sqlite import SQLiteStore
@@ -121,8 +122,6 @@ def main() -> None:
         help="Optional exact subject; omit to accept ordinary subjects from the allowed sender",
     )
     parser.add_argument("--model", default="deepseek-v4-flash")
-    parser.add_argument("--reply-style", choices=("reviewed", "guarded-draft"), default="reviewed",
-                        help="Optional revalidated workflow prose for blocked/intake replies only")
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument(
         "--watch", action="store_true", help="Repeat prepare or controlled serve cycles"
@@ -202,8 +201,7 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
         if args.action == "serve":
             from visa_agent.channels.automatic_reply import AutomaticGmailReplySender
 
-            automatic_sender = AutomaticGmailReplySender(adapter, store, args.sender,
-                allow_guarded_drafts=getattr(args, 'reply_style', 'reviewed') == 'guarded-draft')
+            automatic_sender = AutomaticGmailReplySender(adapter, store, args.sender)
             dispatcher = OutboxDispatcher(store, automatic_sender, channel="gmail",
                 allowed_message_types=("blocked", "awaiting_profile_confirmation", "awaiting_confirmation",
                                        "held_update_received", *PRIVACY_MESSAGE_TYPES))
@@ -272,7 +270,17 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
                 if not key:
                     parser.error("DeepSeek key is missing")
                 model = DeepSeekStructuredLLM(args.model, api_key=key)
-                workflow = WorkflowService(store, active_policy, model, document_reader=NaturalPDFReader(model))
+                # Live Gmail always uses the reviewed deterministic composer.
+                # Free-form model rendering remains an isolated test-harness
+                # capability until it can prove that it cannot add facts, URLs,
+                # numbers or questions outside the reviewed reply contract.
+                guarded = GuardedLLM(model, allow_model_rendering=False)
+                workflow = WorkflowService(
+                    store,
+                    active_policy,
+                    guarded,
+                    document_reader=NaturalPDFReader(model),
+                )
             review_pending = bool(review_rows)
             if args.action == "serve" and review_rows and review_authorized:
                 from visa_agent.channels.inbound_worker import InboundEventWorker

@@ -32,7 +32,7 @@ from visa_agent.llm.ports import CasePatch, CustomerQuestion
 from visa_agent.secrets import read_secret
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.conversation import explained_document_label
-from visa_agent.workflow.customer_questions import grounded_customer_answers
+from visa_agent.workflow.customer_questions import APPLICATION_SOURCE, grounded_customer_answers
 from visa_agent.workflow.service import WorkflowService
 
 _helper_spec = importlib.util.spec_from_file_location(
@@ -182,12 +182,28 @@ def checklist_checks(case: Case, item: dict[str, Any], body: str) -> dict[str, b
     if "document_checklist" not in item["expected_topics"]:
         return {}
     expected = checklist_items(case, item)
+    semantic_patterns = {
+        "passport": r"valid passport|travel document|有效护照|旅行证件",
+        "status_evidence": r"study circumstances|enrolment|employment|self-employment|在读|在职|自雇|经营",
+        "purpose_evidence": r"holiday plan|conference arrangements|business arrangements|family or friend visit|旅游计划|参会安排|商务安排|探亲访友安排",
+        "funding_evidence": r"self-funding|sponsor statement|employer or school funding|自费资金|资助说明|单位或学校资助",
+        "legal_residence": r"lawful residence|合法居留证明",
+        "sponsor_evidence": r"sponsor funds|sponsor statement|资助资金|资助说明",
+        "certified_translation": r"translation|翻译",
+    }
+
+    def delivered(entry: dict[str, str]) -> bool:
+        pattern = semantic_patterns.get(entry["requirement_id"])
+        return entry["label"] in body or bool(pattern and re.search(pattern, body, re.I))
+
     return {
         # This evaluator's fictional seed has no supporting documents. An empty
         # requirements list cannot silently turn a checklist request into a pass.
         "checklist_request_has_case_aware_items": bool(expected),
+        # Compatibility key retained for saved reports. A richer personal
+        # overview may explain an item rather than repeat the old short label.
         "all_requested_checklist_items_delivered_verbatim": bool(expected) and all(
-            entry["label"] in body for entry in expected
+            delivered(entry) for entry in expected
         ),
     }
 
@@ -220,6 +236,13 @@ def exercise_workflow(
                 semantic_questions=[question for question in guarded.customer_questions
                                     if question.topic not in {"next_step", "document_checklist"}],
             ) if has_static_faq else []
+            static_topics = set(item["expected_topics"]) - {"next_step", "document_checklist"}
+            faq_retained = all(answer in body for answer in expected_faq)
+            if not faq_retained and static_topics == {"application"}:
+                faq_retained = bool(
+                    APPLICATION_SOURCE in body
+                    and re.search(r"apply online|online application|在线申请|在线填写", body, re.I)
+                )
             checks = {
                 "workflow_first_processing_not_duplicate": not duplicate,
                 "workflow_no_extraction_fallback": not workflow.llm.last_extraction_fallback,
@@ -234,7 +257,7 @@ def exercise_workflow(
                 "single_isolated_case_and_outbox": len(store.list_cases()) == 1 and case.id == initial.id and len(rows) == 1,
                 "no_provider_delivery": all(row["status"] != "SENT" for row in rows),
                 "all_customer_answers_delivered_verbatim": all(answer in body for answer in case.customer_answers),
-                "independent_faq_answers_retained": all(answer in body for answer in expected_faq),
+                "independent_faq_answers_retained": faq_retained,
                 "faq_request_has_reviewed_answer": not has_static_faq or bool(expected_faq),
                 **checklist_checks(case, item, body),
                 **next_step_checks(case, item, body),

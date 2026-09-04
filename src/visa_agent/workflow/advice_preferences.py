@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import re
 
+from visa_agent.workflow.intent_matching import normalize_intent_text
+
 _CONDITIONAL = (
     r"\b(?:if|unless|whether|assuming|suppose|hypothetical|provided that)\b|"
     r"\b(?:tomorrow|next week|next month)\b|"
@@ -28,10 +30,28 @@ _TOPICS = {
     "fees": r"\b(?:fees?|visa costs?|application costs?)\b|(?:申请|签证)?费用|申请费|签证费|收费",
     "application": r"\bapplication\s+(?:steps?|process|website|link)\b|"
                    r"\b(?:how to apply|where to apply|official (?:website|link))\b|申请(?:流程|步骤|入口|网站)|官网",
+    "eligibility_overview": (
+        r"\b(?:eligibility|eligible|qualif(?:y|ied|ication))\b|"
+        r"\b(?:Standard Visitor|visitor visa)\s+requirements?\b|"
+        r"一般资格|资格要求|申请条件|是否符合"
+    ),
+    "biometrics": (
+        r"\b(?:biometric(?:s| information)?|fingerprints?|visa application cent(?:re|er)|VAC)\b|"
+        r"生物信息|指纹|签证申请中心|签证中心"
+    ),
+    "after_apply": (
+        r"\b(?:application status|track(?:ing)?|after appl(?:y|ying)|after submission|"
+        r"decision notification|correct(?:ing)?|withdraw(?:al)?|cancel(?:ling|ation)?)\b|"
+        r"递交后|申请状态|查询进度|跟踪申请|决定通知|更正申请|撤回申请|取消申请"
+    ),
     "timing": r"\b(?:processing times?|timing|when to apply|how early)\b|审理(?:时间|多久)?|申请时间|多久出签|提前多久",
     "translation": r"\btranslat\w*\b|翻译|译文|译者",
     "booking": r"\b(?:bookings?|flights?|hotels?|tickets?)\b|预订|机票|酒店",
     "bank_period": r"\bbank statements?\b|\bfinancial evidence\b|银行流水|流水|银行对账单|资金证明",
+    "sponsor_support": (
+        r"\b(?:sponsor(?:ship)?|financial support|sponsor letter)\b|"
+        r"资助|担保|资助信|资助说明|资助材料|关系证明"
+    ),
 }
 
 
@@ -62,8 +82,10 @@ def _current_clauses(body: str) -> list[str]:
             continue
         for clause in _request_clauses(sentence, split_commas=False):
             parts = re.split(
-                r"[,，]\s*(?=(?:(?:请|现在|先)\s*)?(?:不需要|不要|不用|别)|"
-                r"(?:please\s+)?(?:do not|don't|no links?))", clause, flags=re.I,
+                r"[,，]\s*(?=(?:(?:但|不过)\s*)?(?:(?:请|现在|先)\s*)?"
+                r"(?:不需要|不要|不用|别)|(?:but\s+)?(?:please\s+)?(?:do not|don't|no links?))",
+                clause,
+                flags=re.I,
             )
             clauses.extend(part.strip(" 。.!！?？;；") for part in parts if part.strip())
     return clauses
@@ -96,16 +118,19 @@ def wants_no_links(body: str) -> bool:
     end = (r"(?:\s+in\s+this\s+(?:reply|response|email|message))?"
            r"(?:\s*[,，]?\s*(?:please|for now))?")
     patterns = (
-        rf"^(?:please\s+)?(?:no|without)\s+(?:any\s+)?{link}{end}$",
-        rf"^(?:please\s+)?(?:do not|don't|don’t)\s+(?:send|include|add|give me)\s+(?:any\s+)?{link}{end}$",
+        rf"^(?:but\s+)?(?:please\s+)?(?:no|without)\s+(?:any\s+)?{link}{end}$",
+        rf"^(?:but\s+)?(?:please\s+)?(?:do not|don't|don’t)\s+"
+        rf"(?:send|include|add|give me)\s+(?:any\s+)?{link}{end}$",
         rf"^I\s+(?:do not|don't|don’t)\s+(?:need|want)\s+(?:any\s+)?{link}{end}$",
         rf"^(?:please\s+)?(?:answer|explain)(?:\s+this)?\s+without\s+{link}{end}$",
-        r"^(?:这次|这个回复|这封邮件)?(?:请|麻烦)?(?:先)?(?:不要|不用|无需|不需要|别)(?:再)?(?:给我|发我)?"
-        r"(?:发|给|加|附上|附|提供)?(?:任何)?(?:链接|网址|网站|官网链接)(?:了|吧)?$",
+        r"^(?:但|不过|同时)?(?:这次|这个回复|这封(?:邮件|回复)?)?(?:请|麻烦)?(?:先)?"
+        r"(?:不要|不用|无需|不需要|别)(?:再)?(?:给我|发我)?"
+        r"(?:发|给|加|附上|附|提供)?(?:任何)?(?:链接|网址|网站|官网链接)(?:了|吧)?"
+        r"(?:[，,]\s*(?:只|仅)(?:讲|说|解释|告诉我).{1,60})?$",
     )
     # An independent own-case sentence may follow a link preference after a
     # comma. Conditions/reported scope have already been excluded as a whole.
-    clauses = [part for clause in _current_clauses(body)
+    clauses = [normalize_intent_text(part) for clause in _current_clauses(body)
                for part in re.split(r"[,，]\s*(?=我|I\b)", clause)]
     return any(re.search(pattern, clause, re.I)
                for clause in clauses for pattern in patterns)

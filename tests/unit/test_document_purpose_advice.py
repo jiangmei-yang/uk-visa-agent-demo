@@ -55,7 +55,11 @@ def test_itinerary_purpose_is_explained_without_inventing_a_required_format(body
 ])
 def test_purpose_help_does_not_claim_to_resolve_sufficiency_fabrication_or_other_routes(body, language):
     text = answer(body, language)
-    assert "没有核验过的依据" in text or "don't currently have verified guidance" in text
+    if "工作签证" in body or "work visa" in body:
+        assert "路线" in text or "route check" in text
+        assert "check-uk-visa" in text
+    else:
+        assert "没有核验过的依据" in text or "don't currently have verified guidance" in text
 
 
 @pytest.mark.parametrize(("body", "language"), [
@@ -116,7 +120,7 @@ def test_independent_document_and_uk_work_questions_are_both_answered():
 def test_off_topic_scope_still_wins_over_document_purpose():
     body = "What is the purpose of an employer letter for my mortgage application?"
     text = answer(body, "en", "off_topic")
-    assert "outside UK visa preparation" in text
+    assert "outside the visa-document work" in text and "has not changed your UK visa case" in text
     assert "company-headed" not in text and "http" not in text
 
 

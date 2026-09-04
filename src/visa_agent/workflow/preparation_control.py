@@ -208,7 +208,10 @@ def _current_controls(text: str) -> list[_Control]:
 
 
 def validated_preparation_intent(
-    body: str, proposed: PreparationIntent | None,
+    body: str,
+    proposed: PreparationIntent | None,
+    *,
+    allow_contextual_resume: bool = False,
 ) -> PreparationIntent | None:
     """Validate a typed proposal without inventing a missing one or changing state.
 
@@ -230,7 +233,37 @@ def validated_preparation_intent(
         return None
     controls = _current_controls(current)
     if not controls:
-        return None
+        # Once this exact case is already paused, people naturally write
+        # "现在恢复" or "Resume now" without repeating "visa preparation".
+        # Accept only that tiny, affirmative form and only when the model has
+        # proposed the same grounded action.  This is not a general implicit
+        # control parser: quotes, conditions, reports, negation and explanatory
+        # questions remain outside the boundary.
+        if not allow_contextual_resume or proposed.action != "resume":
+            return None
+        excerpt_key = proposed.source_excerpt.strip(" \t\r\n。.!?！？，,;；")
+        if not re.fullmatch(
+            r"(?:(?:我)?(?:现在|目前)?(?:请)?(?:恢复|重新开始)(?:吧|一下)?|"
+            r"(?:please\s+)?(?:resume|restart)(?:\s+(?:now|please))?)",
+            excerpt_key,
+            re.I,
+        ):
+            return None
+        containing = next((
+            sentence[0]
+            for sentence in re.finditer(r"[^。.!?？！；;\n]+", unquoted)
+            if sentence.start() <= supported_positions[0][0]
+            and supported_positions[0][1] <= sentence.end()
+        ), "")
+        if (
+            not containing
+            or _NONCURRENT.search(containing)
+            or _THIRD_PARTY_OR_HISTORY.search(containing)
+            or _INFORMATION_REQUEST.search(containing)
+            or _NEGATION.search(containing)
+        ):
+            return None
+        return proposed
     selected = controls[0]
     supported_controls = [selected]
     conflict = False

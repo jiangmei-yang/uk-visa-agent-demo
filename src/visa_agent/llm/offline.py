@@ -7,6 +7,27 @@ from visa_agent.llm.ports import CasePatch, FactUpdate
 
 BLOCK = re.compile(r"<!-- DEMO_FACTS\n(.*?)\n-->", re.DOTALL)
 
+FUNDING_EXCERPTS = {
+    "self": re.compile(
+        r"\bI\s+(?:will\s+)?(?:pay|cover|fund)\s+(?:for\s+)?(?:my|the)\b[^.!?\n]*|"
+        r"我(?:会|将)?(?:自费|自己|本人).{0,24}(?:承担|支付|负担)",
+        re.I,
+    ),
+    "employer_or_school": re.compile(
+        r"\b(?:my|our)\s+(?:university|school|employer|company)\s+"
+        r"(?:will\s+)?(?:pay|cover|fund)\b[^.!?\n]*|"
+        r"(?:我的)?(?:学校|大学|公司|雇主|单位).{0,24}(?:承担|支付|资助|负担)",
+        re.I,
+    ),
+    "personal_sponsor": re.compile(
+        r"\bmy\s+(?:mother|father|parent|sister|brother|spouse|partner|friend|relative)\b"
+        r"[^.!?\n]{0,48}\b(?:sponsor|fund|pay|cover)\b[^.!?\n]*|"
+        r"我的?(?:母亲|父亲|父母|姐姐|妹妹|哥哥|弟弟|配偶|朋友|亲属).{0,32}"
+        r"(?:资助|承担|支付|负担)",
+        re.I,
+    ),
+}
+
 
 class OfflineFixtureLLM:
     """Deterministic substitute used only for reproducible synthetic fixtures."""
@@ -20,6 +41,7 @@ class OfflineFixtureLLM:
         updates: list[FactUpdate] = []
         for line in match.group(1).splitlines():
             field, value = line.split("=", 1)
+            field = field.strip()
             text_value = value.strip()
             parsed: str | int | bool
             if text_value in {"true", "false"}:
@@ -28,11 +50,22 @@ class OfflineFixtureLLM:
                 parsed = int(text_value)
             else:
                 parsed = text_value
+            source_excerpt = line.strip()
+            if (
+                field == "funding_source"
+                and (pattern := FUNDING_EXCERPTS.get(text_value))
+                and (funding_match := pattern.search(event.body))
+            ):
+                # The hidden block selects a deterministic fixture value, but
+                # the production guard still requires visible payer evidence.
+                # Use an exact visible sentence fragment when the fixture has
+                # one; otherwise leave the metadata excerpt to be rejected.
+                source_excerpt = funding_match.group(0).strip(" ,。、")
             updates.append(
                 FactUpdate(
-                    field=field.strip(),
+                    field=field,
                     value=parsed,
-                    source_excerpt=line.strip(),
+                    source_excerpt=source_excerpt,
                     confidence=1.0,
                 )
             )

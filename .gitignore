@@ -9,6 +9,13 @@ build/
 demo_output/
 data/
 .env
+.env.*
+!.env.example
 .secrets/
 credentials.json
 token.json
+client_secret_*.json
+api_key.txt
+*_api_key.txt
+*.pem
+*.key

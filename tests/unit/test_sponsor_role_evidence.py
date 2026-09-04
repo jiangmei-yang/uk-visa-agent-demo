@@ -92,6 +92,68 @@ def test_funding_enum_is_not_role_proof_and_does_not_bind_another_relative():
     assert not any(item.field.startswith("sponsor_") for item in invented_role.updates)
 
 
+@pytest.mark.parametrize(("body", "proposed_value", "excerpt"), [
+    ("她不资助我。", "self", "她不资助我"),
+    ("My sister is not paying for my trip.", "self", "My sister is not paying for my trip"),
+    ("我住姐姐家，但她不承担费用。", "self", "她不承担费用"),
+    ("I will pay for the trip myself.", "personal_sponsor", "I will pay for the trip myself"),
+    ("我父亲会承担这次旅费。", "self", "我父亲会承担这次旅费"),
+])
+def test_funding_enum_must_match_an_affirmative_payer_statement(
+    body: str,
+    proposed_value: str,
+    excerpt: str,
+) -> None:
+    result = validate(body, [update("funding_source", proposed_value, excerpt)])
+
+    assert result.updates == []
+    assert not result.requires_human_review
+
+
+@pytest.mark.parametrize(("body", "value", "excerpt"), [
+    ("这次旅行费用由我自己承担。", "self", "由我自己承担"),
+    ("I will pay for the trip from my own savings.", "self", "pay for the trip from my own savings"),
+    (
+        "I am a student and will pay for the trip myself.",
+        "self",
+        "will pay for the trip myself",
+    ),
+    ("我父亲会承担这次旅费。", "personal_sponsor", "我父亲会承担这次旅费"),
+    ("My mother will pay for my trip.", "personal_sponsor", "My mother will pay for my trip"),
+    ("公司会承担我这次旅行的机票和住宿。", "employer_or_school", "公司会承担我这次旅行的机票和住宿"),
+    ("My university will cover my travel costs.", "employer_or_school", "My university will cover my travel costs"),
+    (
+        "My university will pay directly for flights and accommodation.",
+        "employer_or_school",
+        "My university will pay directly for flights and accommodation",
+    ),
+])
+def test_explicit_affirmative_funding_source_still_passes(
+    body: str,
+    value: str,
+    excerpt: str,
+) -> None:
+    result = validate(body, [update("funding_source", value, excerpt)])
+
+    assert [(item.field, item.value) for item in result.updates] == [("funding_source", value)]
+    assert not result.requires_human_review
+
+
+@pytest.mark.parametrize(("body", "value"), [
+    ("自费", "self"),
+    ("My employer", "employer_or_school"),
+    ("My father", "personal_sponsor"),
+])
+def test_short_funding_value_uses_only_the_sent_funding_question(body: str, value: str) -> None:
+    candidate = update("funding_source", value, body)
+
+    assert validate(body, [candidate], requested=["funding_source"]).updates == [candidate]
+    if body == "自费":
+        assert validate(body, [candidate]).updates == [candidate]
+    else:
+        assert validate(body, [candidate]).updates == []
+
+
 @pytest.mark.parametrize(("conditional", "location", "current"), [
     ("If my plans change, my sister will pay for my trip.", "My sister lives in the UK.",
      "My sister is now my sponsor."),
@@ -122,6 +184,83 @@ def test_sent_sponsor_question_with_known_funding_role_supports_a_short_answer(b
     assert result.updates == [candidate]
     assert validate(body, [candidate], known={"funding_source": "personal_sponsor"}).updates == []
     assert validate(body, [candidate], requested=[field]).updates == []
+
+
+@pytest.mark.parametrize(
+    ("body", "proposed", "accepted"),
+    [
+        ("Yes", True, True),
+        ("Yes", False, False),
+        ("No", False, True),
+        ("No", True, False),
+        ("在英国", True, True),
+        ("在英国", False, False),
+        ("不在英国", False, True),
+        ("不在英国", True, False),
+    ],
+)
+def test_sent_sponsor_location_short_answer_must_match_boolean_polarity(
+    body: str,
+    proposed: bool,
+    accepted: bool,
+) -> None:
+    candidate = update("sponsor_is_in_uk", proposed, body)
+    result = validate(
+        body,
+        [candidate],
+        known={"funding_source": "personal_sponsor"},
+        requested=["sponsor_is_in_uk"],
+    )
+
+    assert (result.updates == [candidate]) is accepted
+    assert not result.requires_human_review
+
+
+@pytest.mark.parametrize(
+    ("body", "proposed"),
+    [
+        ("My sponsor does not live in the UK.", True),
+        ("My sponsor lives in the UK.", False),
+        ("我的资助人不在英国。", True),
+        ("我的资助人住在英国。", False),
+    ],
+)
+def test_full_sponsor_location_statement_also_rejects_opposite_boolean(
+    body: str,
+    proposed: bool,
+) -> None:
+    candidate = update("sponsor_is_in_uk", proposed, body.rstrip("。"))
+    result = validate(body, [candidate])
+
+    assert result.updates == []
+    assert not result.requires_human_review
+
+
+@pytest.mark.parametrize(
+    ("body", "relationship", "name"),
+    [
+        ("My father Jian Chen refused to pay for my trip.", "father", "Jian Chen"),
+        ("My mother Mei Chen is unable to cover my travel costs.", "mother", "Mei Chen"),
+        ("我父亲陈建国拒绝支付这次旅行费用。", "father", "陈建国"),
+        ("我姐姐陈梅无法承担我的旅费。", "sister", "陈梅"),
+    ],
+)
+def test_refusal_or_inability_to_pay_cannot_create_personal_sponsor_facts(
+    body: str,
+    relationship: str,
+    name: str,
+) -> None:
+    result = validate(
+        body,
+        [
+            update("funding_source", "personal_sponsor", body.rstrip("。")),
+            update("sponsor_relationship", relationship, body.rstrip("。")),
+            update("sponsor_name", name, name),
+        ],
+    )
+
+    assert result.updates == []
+    assert not result.requires_human_review
 
 
 def test_old_self_funding_does_not_block_new_explicit_sponsor_correction():
@@ -215,6 +354,150 @@ def test_parents_short_answer_uses_only_a_sent_sponsor_question(body):
     assert result.updates == [candidate] and not result.requires_human_review
     assert validate(body, [candidate], known={"funding_source": "personal_sponsor"}).updates == []
     assert validate(body, [candidate], requested=["sponsor_relationship"]).updates == []
+
+
+def test_combined_parent_identity_answer_uses_the_sent_pair_and_retains_all_three_facts():
+    body = "是父母两位共同资助，父亲陈国强、母亲李美兰，他们都不住在英国。"
+    candidates = [
+        update("sponsor_relationship", "parents", "父母两位共同资助"),
+        update("sponsor_name", "陈国强、李美兰", "父亲陈国强、母亲李美兰"),
+        update("sponsor_is_in_uk", False, "他们都不住在英国"),
+    ]
+
+    result = validate(
+        body,
+        candidates,
+        known={"funding_source": "personal_sponsor"},
+        requested=["sponsor_relationship", "sponsor_name"],
+    )
+
+    assert [(item.field, item.value) for item in result.updates] == [
+        ("sponsor_relationship", "parents"),
+        ("sponsor_name", "陈国强、李美兰"),
+        ("sponsor_is_in_uk", False),
+    ]
+    assert not result.requires_human_review and result.ambiguities == []
+
+
+@pytest.mark.parametrize(
+    ("body", "relationship", "name", "relationship_excerpt", "location_excerpt"),
+    [
+        ("是我父亲陈建国资助，他不在英国。", "father", "陈建国", "我父亲", "他不在英国"),
+        (
+            "My father Jian Chen is sponsoring my trip and he doesn't live in the UK.",
+            "father", "Jian Chen", "My father", "he doesn't live in the UK",
+        ),
+    ],
+)
+def test_single_sponsor_identity_and_location_answer_uses_the_sent_combined_question(
+    body, relationship, name, relationship_excerpt, location_excerpt,
+):
+    result = validate(
+        body,
+        [
+            update("sponsor_relationship", relationship, relationship_excerpt),
+            update("sponsor_name", name, name),
+            update("sponsor_is_in_uk", False, location_excerpt),
+        ],
+        known={"funding_source": "personal_sponsor"},
+        requested=["sponsor_relationship", "sponsor_name"],
+    )
+
+    assert [(item.field, item.value) for item in result.updates] == [
+        ("sponsor_relationship", relationship),
+        ("sponsor_name", name),
+        ("sponsor_is_in_uk", False),
+    ]
+    assert not result.requires_human_review and result.ambiguities == []
+
+
+@pytest.mark.parametrize("body", [
+    "如果是我父亲陈建国资助，他不在英国。",
+    "我朋友说‘是我父亲陈建国资助，他不在英国’。",
+    "My friend said my father Jian Chen is sponsoring my trip and he doesn't live in the UK.",
+    "If my father Jian Chen sponsors my trip, he will not live in the UK.",
+])
+def test_single_sponsor_answer_does_not_borrow_conditional_quoted_or_reported_context(body):
+    result = validate(
+        body,
+        [
+            update("sponsor_relationship", "father", "我父亲" if "父亲" in body else "my father"),
+            update("sponsor_name", "陈建国" if "陈建国" in body else "Jian Chen",
+                   "陈建国" if "陈建国" in body else "Jian Chen"),
+        ],
+        known={"funding_source": "personal_sponsor"},
+        requested=["sponsor_relationship", "sponsor_name"],
+    )
+
+    assert result.updates == []
+    assert not result.requires_human_review
+
+
+@pytest.mark.parametrize(
+    ("body", "relationship_excerpt", "name_excerpt", "location_excerpt"),
+    [
+        (
+            "如果是父母两位共同资助，父亲陈国强、母亲李美兰，他们都不住在英国。",
+            "父母两位共同资助", "父亲陈国强、母亲李美兰", "他们都不住在英国",
+        ),
+        (
+            "我朋友说‘是父母两位共同资助，父亲陈国强、母亲李美兰，他们都不住在英国’。",
+            "父母两位共同资助", "父亲陈国强、母亲李美兰", "他们都不住在英国",
+        ),
+        (
+            "是我朋友的父母两位共同资助，父亲陈国强、母亲李美兰，他们都不住在英国。",
+            "父母两位共同资助", "父亲陈国强、母亲李美兰", "他们都不住在英国",
+        ),
+        (
+            "父母两位共同接待我，父亲陈国强、母亲李美兰，他们都不住在英国。",
+            "父母两位共同接待", "父亲陈国强、母亲李美兰", "他们都不住在英国",
+        ),
+    ],
+)
+def test_combined_parent_answer_does_not_borrow_hypothetical_quoted_other_or_host_context(
+    body, relationship_excerpt, name_excerpt, location_excerpt,
+):
+    result = validate(
+        body,
+        [
+            update("sponsor_relationship", "parents", relationship_excerpt),
+            update("sponsor_name", "陈国强、李美兰", name_excerpt),
+            update("sponsor_is_in_uk", False, location_excerpt),
+        ],
+        known={"funding_source": "personal_sponsor"},
+        requested=["sponsor_relationship", "sponsor_name"],
+    )
+
+    assert result.updates == []
+    assert not result.requires_human_review
+
+
+@pytest.mark.parametrize(
+    ("known", "requested"),
+    [
+        ({}, ["sponsor_relationship", "sponsor_name"]),
+        ({"funding_source": "self"}, ["sponsor_relationship", "sponsor_name"]),
+        ({"funding_source": "personal_sponsor"}, []),
+        ({"funding_source": "personal_sponsor"}, ["sponsor_relationship"]),
+    ],
+)
+def test_combined_parent_answer_requires_known_personal_funding_and_both_sent_fields(
+    known, requested,
+):
+    body = "是父母两位共同资助，父亲陈国强、母亲李美兰，他们都不住在英国。"
+    result = validate(
+        body,
+        [
+            update("sponsor_relationship", "parents", "父母两位共同资助"),
+            update("sponsor_name", "陈国强、李美兰", "父亲陈国强、母亲李美兰"),
+            update("sponsor_is_in_uk", False, "他们都不住在英国"),
+        ],
+        known=known,
+        requested=requested,
+    )
+
+    assert result.updates == []
+    assert not result.requires_human_review
 
 
 def test_parents_passive_funding_does_not_make_the_separate_host_a_sponsor():

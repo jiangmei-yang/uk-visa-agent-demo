@@ -29,8 +29,9 @@ class CustomerQuestion(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    topic: Literal["application", "timing", "translation", "booking", "fees", "bank_period",
-                   "document_checklist", "next_step", "unsupported", "off_topic"]
+    topic: Literal["application", "route_orientation", "eligibility_overview", "biometrics",
+                   "after_apply", "timing", "translation", "booking", "fees", "bank_period",
+                   "sponsor_support", "document_checklist", "next_step", "unsupported", "off_topic"]
     source_excerpt: str = Field(min_length=1, max_length=320)
     confidence: float = Field(ge=0, le=1)
 

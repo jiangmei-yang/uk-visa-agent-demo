@@ -488,10 +488,10 @@ def test_case_aware_checklist_and_next_step_do_not_require_static_faq_answer(
     expected = workflow["expected_case_aware_checklist_items"]
     assert len(expected) == 5
     reply = workflow["outbox"][0]["body"]
-    assert all(entry["label"] in reply for entry in expected)
     assert workflow["checks"]["checklist_request_has_case_aware_items"]
     assert workflow["checks"]["all_requested_checklist_items_delivered_verbatim"]
     assert workflow["next_step_advice"]["message"] in reply
+    assert reply.casefold().count("first practical step") + reply.casefold().count("for the next item") <= 1
 
 
 def test_checklist_does_not_substitute_for_independent_static_faq(probe):

@@ -74,16 +74,30 @@ def test_new_organisation_funding_gets_explanation_of_support_and_payment(langua
     assert len(result) == 2
 
 
-def test_changed_conference_purpose_is_not_buried_by_simultaneous_school_funding_change():
+def test_changed_conference_and_school_funding_are_joined_in_one_consultant_action():
     case = example(occupation="student", funding="employer_or_school", purpose="conference")
+    case.latest_customer_message = (
+        "我去英国参加学术会议，大学会直接支付机票和住宿，请帮我准备材料。"
+    )
     case.latest_changes = {"visit_purpose": "conference", "funding_source": "employer_or_school"}
     sent = {"application_overview_v1", "student_self_preparation_v1"}
     guidance = preparation_guidance(case, TODAY, sent)
-    assert [key for key, _ in guidance] == ["conference_preparation_v1"]
-    assert "主办方" in guidance[0][1] and "邀请函" in guidance[0][1]
+    assert [key for key, _ in guidance] == [
+        "route_orientation_v1",
+        "conference_organisation_funding_preparation_v1",
+    ]
+    text = guidance[-1][1]
+    assert all(term in text for term in (
+        "主办方", "邀请函", "学校", "机票、住宿", "直接支付", "正式抬头说明", "可核实的联系人",
+    ))
+    assert "另外结合你的资助安排核对" not in text
+    case.latest_customer_message = "谢谢，我先准备这些。"
     case.latest_changes = {}
-    assert preparation_guidance(case, TODAY, sent | {"conference_preparation_v1"})[0][0] == \
-        "organisation_funding_preparation_v1"
+    assert preparation_guidance(
+        case,
+        TODAY,
+        sent | {key for key, _ in guidance},
+    ) == []
 
 
 @pytest.mark.parametrize("language", ["zh", "en"])
@@ -176,9 +190,13 @@ def test_initial_material_enquiry_gets_conditional_orientation_not_just_question
     result = preparation_guidance(case, TODAY, set())
     assert [key for key, _ in result] == ["route_orientation_v1"]
     text = result[0][1]
-    assert ROUTE_CHECK_URL in text and APPLICATION_URL in text
-    assert all(word in text for word in (("旅行证件", "赴英目的", "费用", "工作或学习", "不用一次上传", "如果需要")
-        if language == "zh" else ("travel document", "purpose", "paid", "work or studies", "upload everything", "If you need")))
+    assert ROUTE_CHECK_URL in text and APPLICATION_URL in text and DOCUMENTS_URL in text
+    assert all(word in text for word in ((
+        "旅行证件", "赴英目的", "在职、在读或自雇", "可用资金", "真实来源", "完整、可核验的翻译", "合法居留",
+    ) if language == "zh" else (
+        "travel document", "purpose", "employment, study or self-employment", "accessible funds",
+        "genuine source", "full, verifiable translation", "lawful residence",
+    )))
     assert preparation_guidance(case, TODAY, {"route_orientation_v1"}) == []
     assert case.model_dump_json() == before and not case.profile.route_confirmed_standard_visitor
 
@@ -190,6 +208,18 @@ def test_initial_enquiry_can_use_already_known_sponsor_context_without_declaring
     result = preparation_guidance(case, TODAY, set())
     assert [key for key, _ in result] == ["route_orientation_v1", "personal_sponsor_preparation_v1"]
     assert "资助人" in result[1][1] and not case.profile.route_confirmed_standard_visitor
+
+
+def test_explicit_material_request_upgrades_a_persisted_terse_route_orientation():
+    case = example("en", None, None, None)
+    case.latest_customer_message = "Please tell me all the documents in one message."
+    case.customer_question_topics = ["document_checklist"]
+
+    result = preparation_guidance(case, TODAY, {"route_orientation_v1"})
+
+    assert [topic for topic, _ in result] == ["route_orientation_v1"]
+    assert "valid passport or travel document" in result[0][1]
+    assert DOCUMENTS_URL in result[0][1]
 
 
 @pytest.mark.parametrize("topics", [["document_checklist", "unsupported"], ["document_checklist", "off_topic"],
@@ -218,7 +248,10 @@ def test_question_step_can_offer_first_contextual_guidance_for_an_actual_prepara
     guidance = preparation_guidance(case, TODAY, set())
     assert [key for key, _ in guidance] == ["application_overview_v1", "student_self_preparation_v1"]
     assert case.model_dump_json() == before
-    assert preparation_guidance(case, TODAY, {key for key, _ in guidance}) == []
+    sent = {key for key, _ in guidance}
+    followup = preparation_guidance(case, TODAY, sent)
+    assert [key for key, _ in followup] == ["tourism_itinerary_preparation_v1"]
+    assert preparation_guidance(case, TODAY, sent | {"tourism_itinerary_preparation_v1"}) == []
 
 
 @pytest.mark.parametrize("condition", ["mixed_faq", "mixed_answer", "different_answer", "paused", "blocker",
@@ -300,12 +333,21 @@ def test_real_probe_text_with_fixed_next_step_patch_keeps_contextual_value(tmp_p
         case, duplicate, plan = workflow.process(event)
         assert not duplicate and plan == "blocked" and not workflow.llm.last_extraction_fallback
         assert case.customer_question_topics == ["next_step"]
-        assert case.next_step_advice.kind == "question"
         reply = store.list_outbox()[0]["payload"]
         assert APPLICATION_URL in reply and DOCUMENTS_URL in reply
-        assert ("在读证明" in reply and "资金来源" in reply) if scenario == "student" else \
-            ("资助人" in reply and "关系" in reply and "资金" in reply)
-        assert len(case.last_requested_fields) <= 1
+        if scenario == "student":
+            assert case.next_step_advice is None
+            assert "在读证明" in reply and "资金来源" in reply
+            assert case.question_plan == case.last_requested_fields == []
+        else:
+            assert case.next_step_advice is not None
+            assert case.next_step_advice.kind == "question"
+            assert case.next_step_advice.question_field == "sponsor_relationship"
+            assert case.question_plan == case.last_requested_fields == [
+                "sponsor_relationship", "sponsor_name",
+            ]
+            assert all(term in reply for term in ("父母", "资助", "姓名", "资金"))
+            assert not any(term in reply for term in ("计划哪天到英国", "哪天离开"))
         assert set(case.deferred_fields) == {"planned_arrival_date", "planned_departure_date"}
         assert not case.profile_confirmed and not case.final_summary_confirmed and not case.delivery_path
         assert store.list_outbox()[0]["status"] == "PENDING"

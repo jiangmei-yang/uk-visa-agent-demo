@@ -141,6 +141,7 @@ def _material_first_requested(case: Case) -> bool:
                 continue
             if re.search(
                 r"(?:先|接下来|下一步).{0,8}(?:准备|整理).{0,6}哪(?:一)?(?:份|项|个|种)?(?:材料|文件|证明)|"
+                r"(?:我)?(?:应该|该)?先(?:做|弄|处理|看)哪(?:一)?份(?:材料|文件|证明)?|"
                 r"哪(?:一)?(?:份|项|个|种)?(?:材料|文件|证明).{0,12}(?:先|接下来|下一步).{0,6}(?:准备|整理)|"
                 r"(?:帮我|带我|请).{0,8}(?:准备|整理)(?:下一份|下一项)(?:材料|文件|证明)|"
                 r"\b(?:which|what)\s+(?:supporting\s+)?(?:document|file|piece of evidence)\b"
@@ -174,7 +175,14 @@ def _material_first_step(case: Case, policy: Policy, gate: GateResult) -> NextSt
         "certified_translation": True,  # Applicability comes from the received document.
     }
     rules = {rule.id: rule for rule in policy.requirements}
-    for item in case.requirements:
+    requirements = list(case.requirements)
+    if profile.visit_purpose == "conference":
+        # The organiser invitation is the case-defining first action already
+        # given in the conference overview. Keep the next reply consistent with
+        # that advice instead of falling back to the policy file's generic
+        # passport-first order.
+        requirements.sort(key=lambda item: item.id != "purpose_evidence")
+    for item in requirements:
         if not (item.applicable and item.blocker and not item.satisfied):
             continue
         rule = rules.get(item.id)

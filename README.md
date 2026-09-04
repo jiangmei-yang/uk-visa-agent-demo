@@ -30,6 +30,37 @@ case-aware next step, instead of another full questionnaire. Its first new holdo
 the original failures and post-holdout local repairs are published. See [current acceptance
 gaps](VALIDATION.md), not just the automated-test count.
 
+### Consultant replies and official guidance
+
+The customer sees one continuous document-preparation adviser, not several bots handing the
+conversation back and forth. Internally, bounded roles remain separate: the model proposes typed
+facts and question topics; deterministic code validates case ownership and scope; reviewed content
+supplies official guidance; the workflow owns state; and only the delivery gate can release a pack.
+The project does not train its own foundation model, and a fluent model answer cannot override any
+of those controls.
+
+Official guidance used by the reviewed reply compiler was rechecked on **2026-09-05**. It covers
+the general Standard Visitor framework, application/biometrics steps, supporting documents,
+processing and decision notification, post-submission correction/cancellation, and route checking.
+Three commonly quoted facts have deliberately narrow scope:
+
+- **£135** is the checked application fee for a six-month Standard Visitor visa. It is not a
+  long-term-visa, other-route, VAC-service or priority-service price; check the live page before paying.
+- A Standard Visitor application may be made **up to three months before travel**. That does not
+  establish that a particular applicant has enough time.
+- An outside-UK Standard Visitor decision **usually takes about three weeks** after the online
+  application, identity step and supporting evidence have all been provided. It is not counted from
+  the start of preparation, is not a deadline or approval promise, and is not a passport-return estimate.
+
+Relevant GOV.UK links use descriptive labels and appear only when they answer the current question
+or support the next action. Duplicate links are removed. If the customer explicitly asks for no links,
+the substantive answer remains and URLs are omitted. When the review window expires, the workflow
+withholds old figures and links and asks for a source recheck. Other routes normally receive the route
+checker; an explicit Student application-page request can receive the official Student page without
+changing the current Standard Visitor case. See
+[consultant reply design](docs/CONSULTANT_REPLY_DESIGN.md) and
+[the bounded acceptance review](docs/CONSULTANT_ACCEPTANCE_REVIEW_2026-09-05.md).
+
 The [latest reliability work](GMAIL_RECOVERY.md) adds recoverable sent-evidence lookup, safer
 credential replacement and verified lab downloads. A real isolated token-refresh/rejection probe
 passed without sending mail or changing the saved credentials; it is not live revocation recovery.
@@ -111,8 +142,12 @@ model's recollection of the email thread.
 - Employed, student, and self-employed applicants.
 - Self, employer/school, or personal-sponsor funding.
 - English/Welsh evidence and non-English evidence with certified translations.
+- Reviewed answers for general eligibility criteria, biometrics/VAC steps, what happens after
+  submission, and bounded correction or cancellation questions. These explain public process;
+  they do not decide an individual's eligibility or predict approval.
 
-The workflow abstains or requires human review for route/ETA determination, minors, other visa
+The workflow can explain how to use the official route/ETA checker but does not make that decision.
+It abstains or requires human review for minors, other visa
 routes, medical/marriage/transit/paid-engagement/long-academic visits, serious immigration or
 criminal history, unreadable critical evidence, unresolved contradictions, and stale policy.
 
@@ -187,22 +222,25 @@ For local DeepSeek use, place the key in `.secrets/deepseek_api_key.txt` and set
   extraction, and does not send OpenAI-only request fields. Compatibility is not
   treated as equivalent behaviour: `deepseek-v4-flash` must pass the same repeated corpus and guard
   thresholds before it can be selected.
-- `GmailAdapter` accepts an OAuth-authenticated Gmail API service, polls a configured query, preserves
+- `GmailAdapter` is the primary live consultation boundary. It accepts an OAuth-authenticated Gmail API service, polls a configured query, preserves
   thread headers, downloads raw MIME/attachments, and can send replies/ZIP attachments through the
   transactional outbox. Follow [GMAIL_SANDBOX.md](GMAIL_SANDBOX.md) for the dedicated synthetic test
-  account. Never commit OAuth credentials or tokens.
+  account. The repository records bounded real-sandbox evidence for threading, reviewed replies,
+  attachments and a fictional final ZIP journey; that is not public intake or unattended production.
+  Never commit OAuth credentials or tokens.
 - `TwilioWhatsAppWebhook` and `TwilioWhatsAppSender` provide the optional WhatsApp Sandbox boundary.
   They reuse the same typed event, durable inbound queue, case workflow, and channel-isolated outbox.
-  Provider commands process one explicit batch at a time, so no external message is sent merely by
-  launching the credential-free Demo. Follow
-  [WHATSAPP_SANDBOX.md](WHATSAPP_SANDBOX.md); local contracts are not real-provider evidence.
+  The WhatsApp path currently has local webhook/queue/sender contracts, not a claimed real joined-device
+  exchange. Provider commands process one explicit batch at a time, so no external message is sent
+  merely by launching the credential-free Demo. The final ZIP remains an Email/review-console handoff,
+  not an unprotected WhatsApp attachment. Follow [WHATSAPP_SANDBOX.md](WHATSAPP_SANDBOX.md).
 
 `START_FREE_WEBHOOK_TUNNEL.command` starts a free TryCloudflare HTTPS URL backed by a separate
 provider-only app. It exposes `/health` and the Twilio webhook—not the review console, case API, or
 pack download. The webhook remains fail-closed until Twilio test credentials are supplied.
 
-Live mode is intentionally not part of the default assessment path. Email and WhatsApp sandbox
-claims remain withheld until their separate provider experiments pass.
+Live mode is intentionally not part of the default assessment path. Gmail evidence and WhatsApp
+local-contract evidence are reported separately; neither may be generalized into a production claim.
 
 The local review app binds to `127.0.0.1` in Docker. A case can be exported as JSON from the review
 page. Deletion requires a browser confirmation and an exact case-ID request header, then removes the
@@ -218,14 +256,24 @@ mailbox deletion or removal of independently retained uploads/backups. See `HUMA
 
 ## Policy sources
 
-The snapshot was checked on 2026-09-02 and reverified against the same live GOV.UK guidance on
-2026-09-03. It is versioned as 2026-02-25, matching GOV.UK's current update date. Rules contain
-source metadata and a review deadline. The
+The official pages used by the current consultant guidance were rechecked on **2026-09-05**. The
+versioned Standard Visitor supporting-document snapshot remains `2026-02-25`, matching that
+GOV.UK publication's update date. Rules contain source metadata and a review deadline. The
 synthetic replay freezes its evaluation clock at 2026-09-02 so the assessment remains reproducible;
-live/API readiness checks use the actual current date and block after the review deadline.
+live/API readiness checks use the actual current date and block after the review deadline. The
+policy snapshot expires on 2026-10-02 and the reviewed-answer window currently ends on 2026-10-04;
+operations must use the earlier **2026-10-02** cutoff and recheck sources before extending either date.
 
+- [Standard Visitor overview and general requirements](https://www.gov.uk/standard-visitor)
 - [Standard Visitor application information](https://www.gov.uk/standard-visitor/apply-standard-visitor-visa)
+- [Find a visa application centre](https://www.gov.uk/find-a-visa-application-centre)
+- [Processing times for applications outside the UK](https://www.gov.uk/guidance/visa-processing-times-applications-outside-the-uk)
+- [After applying and getting a decision](https://www.gov.uk/apply-to-come-to-the-uk/applying-online-and-getting-a-decision)
+- [Contact UKVI](https://www.gov.uk/contact-ukvi-inside-outside-uk)
+- [Cancel a visa application](https://www.gov.uk/cancel-visa)
 - [Official supporting-document guide](https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk)
+- [Check which UK visa route applies](https://www.gov.uk/check-uk-visa)
+- [Student visa official starting page](https://www.gov.uk/student-visa)
 - [Gmail API Python quickstart](https://developers.google.com/workspace/gmail/api/quickstart/python)
 - [Gmail attachment uploads](https://developers.google.com/workspace/gmail/api/guides/uploads)
 - [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)

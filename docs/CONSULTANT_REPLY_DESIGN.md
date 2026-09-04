@@ -1,6 +1,6 @@
 # Consultant replies: usefulness before intake
 
-2026-09-04. This is an exposed-defect repair, not a claim of human-level advice or
+2026-09-05. This is an exposed-defect repair, not a claim of human-level advice or
 universal accuracy. The customer's complaint was valid: ordinary enquiries could
 receive only questions, and employment, family visits and sponsor arrangements
 could receive the same generic introduction without a useful preparation action.
@@ -10,10 +10,19 @@ could receive the same generic introduction without a useful preparation action.
 The agent is not a model trained by this project. DeepSeek proposes structured
 facts and question topics. The workflow validates and persists those proposals;
 reviewed GOV.UK-based content supplies policy statements and official links.
-The default automatic Gmail sender uses reviewed composed wording, not the model's
-free-form draft. The optional guarded-draft mode still requires exact grounded
-content. This release does **not** claim to have removed that restriction or
-switched existing mailboxes into free-form generation.
+The automatic Gmail sandbox uses reviewed composed wording, not the model's
+free-form draft. The lower-level guarded-draft experiment remains available only
+to isolated test harnesses; the live Gmail command does not expose it because its
+current guard cannot yet prove that a draft added no facts, URLs, numbers or
+questions outside the reviewed reply contract.
+
+The customer should experience one continuous adviser voice across Gmail and, once
+configured, WhatsApp. Internally that voice is deliberately split into bounded
+roles: extraction proposes facts, question understanding proposes an allowed topic,
+the reviewed guidance compiler selects source-backed content, the workflow owns case
+state, and the delivery gate alone can release the final pack. These are controlled
+responsibilities inside one customer-facing adviser, not a group of autonomous
+agents debating with the customer.
 
 This protects facts and delivery authority, but it also makes the quality and
 coverage of the reviewed content critical. A low model-fallback count is not a
@@ -41,13 +50,68 @@ model. Better wording alone cannot repair a missing answer or missing case memor
 - Keep independent questions independent. Declining fees must not suppress a
   request for the application page. A separate student-route question must not
   replace the answer to a visitor-route question with student advice, or vice versa.
+- Answer the reviewed process questions that customers naturally ask: general
+  Standard Visitor eligibility criteria, biometrics/VAC steps, and what happens
+  after submission. The model may identify the topic, but an obvious current
+  own-case request also has deterministic recognition. Quoted questions, completed
+  actions, hypothetical future cases, third-party cases and other routes cannot be
+  rebound to the current Standard Visitor case by a model label.
+- Treat post-submission changes and cancellation as separate bounded actions. A
+  correction is directed to the UKVI contact route; cancellation is described only
+  while a decision is pending, with a stage-dependent refund and the warning that a
+  received withdrawal cannot be stopped. The adviser does not imply that an email
+  automatically changes an application.
 
-Official preparation sources were re-read on 2026-09-04: [application steps](https://www.gov.uk/standard-visitor/apply-standard-visitor-visa),
-[supporting evidence](https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk)
-and the [route checker](https://www.gov.uk/check-uk-visa).
+Official preparation and process sources were re-read on **2026-09-05**:
+[Standard Visitor overview](https://www.gov.uk/standard-visitor),
+[application and biometrics steps](https://www.gov.uk/standard-visitor/apply-standard-visitor-visa),
+[visa application centre finder](https://www.gov.uk/find-a-visa-application-centre),
+[outside-UK processing times](https://www.gov.uk/guidance/visa-processing-times-applications-outside-the-uk),
+[after applying and getting a decision](https://www.gov.uk/apply-to-come-to-the-uk/applying-online-and-getting-a-decision),
+[contact UKVI](https://www.gov.uk/contact-ukvi-inside-outside-uk),
+[cancel an application](https://www.gov.uk/cancel-visa),
+[supporting evidence](https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk),
+[route checker](https://www.gov.uk/check-uk-visa), and the
+[Student visa starting page](https://www.gov.uk/student-visa).
 Suggested evidence is framed as relevant preparation, not a universal mandatory
 checklist, fixed bank balance or guarantee. Existing dated-source expiry checks
 remain in force.
+
+## Dated facts and link policy
+
+The following numbers are narrow reviewed facts, not reusable defaults:
+
+- **£135** is the GOV.UK application fee for a six-month Standard Visitor visa at
+  the 2026-09-05 check. It excludes long-term visitor visas, other routes and optional
+  VAC/priority services. The live official page remains authoritative before payment.
+- A Standard Visitor application can be made **up to three months before travel**.
+  This is an earliest-application rule, not advice that the customer has enough time.
+- A Standard Visitor decision made outside the UK **usually takes about three weeks**
+  after the online application, identity step and supporting evidence have all been
+  provided. It is not counted from the first day of document preparation, is not a
+  deadline or approval promise, and is not a prediction of passport-return timing.
+
+Links are shown only when they answer the current question or give the next relevant
+action. Source labels describe the destination instead of exposing a bare URL list;
+duplicate URLs are removed within a reply. An explicit current “no links” preference
+keeps the substantive answer but removes URLs. Stale guidance returns a recheck notice
+without old prices, timings or links. Another route normally receives the route checker;
+an explicit Student application/official-page request may additionally receive the
+official Student page without changing the stored Standard Visitor case.
+
+## Gmail and WhatsApp boundary
+
+Gmail is the primary consultation and evaluation channel in this repository. It has
+bounded real sandbox evidence for OAuth, threading, attachments, reviewed replies and
+a fictional final ZIP journey; that evidence does not establish public intake or
+unattended production. The credential-free demo uses captured/local transports and
+sends no external message.
+
+WhatsApp reuses the same typed inbound event, case memory, reviewed-answer compiler and
+delivery gates through a Twilio adapter. Local contracts cover webhook validation,
+queueing and channel-isolated text replies, but no real joined-device exchange is
+claimed here. WhatsApp remains a later provider integration: the final pack stays an
+email or review-console handoff rather than an unprotected WhatsApp attachment.
 
 ## Reproduction and evidence boundaries
 
