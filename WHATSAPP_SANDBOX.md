@@ -83,3 +83,19 @@ The private review server exposes `GET /api/outbox/delivery-receipts`; the publi
 Raw form bodies and channel error text are not retained. Case deletion removes linked receipts.
 SDK-signed local request tests pass; actual provider callbacks, operator UI presentation and
 lost-SID automatic reconciliation remain unfinished acceptance work.
+
+## Final-notice archive verification (local evidence, 2026-09-04)
+
+An audit found that the dispatcher skipped archive verification for WhatsApp because that channel
+does not attach ZIPs. Three new regressions reproduced a ready notice being sent with altered
+archive bytes, a missing delivery registration, or a mismatched registered path. The dispatcher
+now verifies the registered path and SHA-256 for every ready message, including WhatsApp, while
+still attaching the archive only on the email path. The three failures now stop before the sender;
+a valid-archive control confirms that WhatsApp remains text-only. The complete local suite passes
+316 tests, with lint and typing passing. No Twilio account or device was exercised by these tests.
+
+The media-download contract was also checked against the official
+[Media resource documentation](https://www.twilio.com/docs/messaging/api/media-resource): authenticated
+API retrieval returns the media content. Redirects remain disabled; this source check is not a
+successful live PDF download. Secure applicant-facing final handoff and device receipt still need
+end-to-end evidence; a ready text notification alone does not establish delivery of the materials.

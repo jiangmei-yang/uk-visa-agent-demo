@@ -157,7 +157,7 @@ class OutboxDispatcher:
         if raw_deadline and now > datetime.fromisoformat(str(raw_deadline)):
             raise PermanentChannelError("The channel's free-form reply window has expired")
         attachment: tuple[str, bytes] | None = None
-        if str(row["message_type"]) == "ready" and str(row.get("channel")) != "whatsapp_twilio":
+        if str(row["message_type"]) == "ready":
             if not case.delivery_path:
                 raise PermanentChannelError("Ready reply has no generated pack")
             registered = self.store.connection.execute(
@@ -170,7 +170,8 @@ class OutboxDispatcher:
             if hashlib.sha256(pack_bytes).hexdigest() != registered["sha256"]:
                 raise PermanentChannelError("Final pack integrity check failed; review before sending")
             # Send these exact verified bytes, never reopen a mutable path after verification.
-            attachment = (pack_path.name, pack_bytes)
+            if str(row.get("channel")) != "whatsapp_twilio":
+                attachment = (pack_path.name, pack_bytes)
         return ReplyRequest(
             outbox_id=outbox_id,
             recipient=str(row["recipient"] or case.applicant_contact),

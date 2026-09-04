@@ -114,9 +114,12 @@ def test_unrelated_sender_cannot_block_a_confirmed_pack(tmp_path):
 
 
 @pytest.mark.parametrize("change", ["modified_bytes", "missing_registry", "different_path"])
-def test_unverified_final_archive_is_never_sent(tmp_path, change):
+@pytest.mark.parametrize("channel", ["gmail", "whatsapp_twilio"])
+def test_unverified_final_archive_is_never_sent(tmp_path, change, channel):
     store = _demo_store(tmp_path)
     case = store.list_cases()[0]
+    with store.connection:
+        store.connection.execute("UPDATE outbox SET channel=? WHERE message_type='ready'", (channel,))
     if change == "modified_bytes":
         Path(case.delivery_path).write_bytes(b"not the confirmed archive")
     elif change == "missing_registry":
@@ -129,6 +132,19 @@ def test_unverified_final_archive_is_never_sent(tmp_path, change):
     outcome = OutboxDispatcher(store, sender, allowed_message_types=("ready",)).dispatch_due(datetime.now(UTC))
     assert outcome[0].status == "FAILED" and sender.requests == []
     store.close()
+
+
+def test_verified_whatsapp_ready_notice_does_not_attach_archive(tmp_path):
+    store = _demo_store(tmp_path)
+    with store.connection:
+        store.connection.execute("UPDATE outbox SET channel='whatsapp_twilio' WHERE message_type='ready'")
+    sender = FakeSender(["accepted-notice"])
+    try:
+        outcomes = OutboxDispatcher(store, sender, allowed_message_types=("ready",)).dispatch_due(datetime.now(UTC))
+        assert outcomes[0].status == "SENT"
+        assert len(sender.requests) == 1 and sender.requests[0].attachment is None
+    finally:
+        store.close()
 
 
 def test_outbox_dispatches_each_reply_once_and_attaches_ready_pack(tmp_path: Path) -> None:
