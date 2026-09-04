@@ -519,6 +519,15 @@ class SQLiteStore:
                 (next_attempt_at.isoformat(), error, outbox_id),
             )
 
+    def mark_outbox_uncertain(self, outbox_id: str, error: str) -> None:
+        with self.connection:
+            self.connection.execute(
+                """UPDATE outbox SET attempt_count = attempt_count + 1,
+                   next_attempt_at = NULL, last_error = ?
+                   WHERE id = ? AND status = 'SENDING'""",
+                (error, outbox_id),
+            )
+
     def mark_outbox_failed(self, outbox_id: str, error: str) -> None:
         with self.connection:
             self.connection.execute(

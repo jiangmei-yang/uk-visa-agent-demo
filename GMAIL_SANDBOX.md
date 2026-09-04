@@ -93,7 +93,15 @@ uses a non-blocking state-directory lock. Complete inbox pagination is bounded t
 messages; an oversized result stops explicitly instead of silently dropping older mail.
 
 After an interrupted send, use the same scope and state directory with `reconcile`.
+A Gmail send timeout, server error, missing response ID or unclassified transport failure also
+stays `SENDING` and requires reconciliation; it must not enter the ordinary automatic retry queue.
 A missing or ambiguous provider match requires manual investigation; do not delete
 the database or make a fresh directory to resend. For an explicitly reviewed synthetic
 crash experiment only, `send-reviewed --crash-after-send` terminates immediately after
 provider acceptance (exit code 75). It must be followed by reconciliation, not a forced retry.
+
+A credential-free live negative check is available with
+`uv run python scripts/gmail_auth_negative_probe.py --report eval_output/gmail_auth_probe.json`.
+It makes one read-only request with an intentionally invalid token and expects HTTP 401.
+It does not touch saved authorization, revoke credentials or send mail; it is not a token-refresh
+or delivery-recovery test.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import json
 from dataclasses import dataclass
 from email.message import EmailMessage
 from typing import Any
@@ -9,6 +10,7 @@ from visa_agent.channels.outbound import (
     PermanentChannelError,
     ReplyRequest,
     TransientChannelError,
+    UncertainDeliveryError,
 )
 
 
@@ -186,10 +188,10 @@ class GmailReplySender:
                 attachment=request.attachment,
             )
         except Exception as error:
-            raise _map_gmail_error(error) from error
+            raise _map_gmail_error(error, sending=True) from error
         provider_message_id = result.get("id")
         if not provider_message_id:
-            raise PermanentChannelError("Gmail send response had no message ID")
+            raise UncertainDeliveryError("Gmail send response had no message ID")
         return str(provider_message_id)
 
     def find_sent_message(self, rfc_message_id: str) -> str | None:
@@ -199,16 +201,30 @@ class GmailReplySender:
             raise _map_gmail_error(error) from error
 
 
-def _map_gmail_error(error: Exception) -> Exception:
-    if isinstance(error, (TransientChannelError, PermanentChannelError)):
+def _map_gmail_error(error: Exception, *, sending: bool = False) -> Exception:
+    if isinstance(error, (TransientChannelError, PermanentChannelError, UncertainDeliveryError)):
         return error
     status = getattr(getattr(error, "resp", None), "status", None)
+    if sending and (status == 408 or (isinstance(status, int) and 500 <= status < 600)):
+        return UncertainDeliveryError(f"Gmail send outcome requires reconciliation (HTTP {status})")
+    if status == 403:
+        try:
+            payload = json.loads(getattr(error, "content", b"{}"))
+            reasons = {item.get("reason") for item in payload["error"]["errors"]}
+        except (ValueError, TypeError, KeyError, AttributeError):
+            reasons = set()
+        if reasons and reasons <= {"rateLimitExceeded", "userRateLimitExceeded"}:
+            return TransientChannelError("Gmail rate limit exceeded (HTTP 403)")
     if status in {408, 429} or (isinstance(status, int) and 500 <= status < 600):
         return TransientChannelError(f"Gmail temporarily unavailable (HTTP {status})")
     if status is not None:
         return PermanentChannelError(f"Gmail rejected the operation (HTTP {status})")
     if isinstance(error, (TimeoutError, ConnectionError)):
+        if sending:
+            return UncertainDeliveryError("Gmail send transport outcome requires reconciliation")
         return TransientChannelError(f"Gmail transport failure: {type(error).__name__}")
+    if sending:
+        return UncertainDeliveryError("Unclassified Gmail send outcome requires reconciliation")
     if isinstance(error, (ValueError, OSError)):
         return PermanentChannelError(
             f"Gmail request could not be completed: {type(error).__name__}"

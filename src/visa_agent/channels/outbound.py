@@ -16,6 +16,10 @@ class PermanentChannelError(RuntimeError):
     """A provider rejection that must not be retried automatically."""
 
 
+class UncertainDeliveryError(RuntimeError):
+    """The provider may have accepted the send; reconcile before any resend."""
+
+
 @dataclass(frozen=True)
 class ReplyRequest:
     outbox_id: str
@@ -76,6 +80,9 @@ class OutboxDispatcher:
             try:
                 request = self._request_for(row, now)
                 provider_message_id = self.sender.send(request)
+            except UncertainDeliveryError as error:
+                self.store.mark_outbox_uncertain(outbox_id, _safe_error(error))
+                outcomes.append(DispatchOutcome(outbox_id, "SENDING"))
             except TransientChannelError as error:
                 if attempt >= self.max_attempts:
                     self.store.mark_outbox_failed(outbox_id, _safe_error(error))

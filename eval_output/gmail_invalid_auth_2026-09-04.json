@@ -1,0 +1,14 @@
+{
+  "checked_at": "2026-09-04T07:57:54.310842+00:00",
+  "evidence_class": "live provider read-only negative request",
+  "endpoint": "GET /gmail/v1/users/me/profile",
+  "credentials": "deliberately invalid token; no saved credentials loaded",
+  "http_status": 401,
+  "classification": "PermanentChannelError",
+  "passed": true,
+  "limitations": [
+    "Not an OAuth revocation or refresh-token recovery test.",
+    "No message sent, no quota exhaustion and no live 429/5xx induced.",
+    "Does not validate dispatch or recipient delivery."
+  ]
+}

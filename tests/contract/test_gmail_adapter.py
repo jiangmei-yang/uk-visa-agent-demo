@@ -13,6 +13,7 @@ from visa_agent.channels.outbound import (
     PermanentChannelError,
     ReplyRequest,
     TransientChannelError,
+    UncertainDeliveryError,
 )
 
 
@@ -158,12 +159,12 @@ def test_gmail_reconciliation_searches_sent_mail_by_rfc_message_id() -> None:
     assert messages.list_arguments["maxResults"] == 2
 
 
-def test_gmail_send_without_provider_id_is_permanent_failure() -> None:
+def test_gmail_send_without_provider_id_requires_reconciliation() -> None:
     messages = Messages()
     messages.send_result = {"threadId": "gmail-thread-1"}
     sender = GmailReplySender(GmailAdapter(Service(messages)))
 
-    with pytest.raises(PermanentChannelError, match="no message ID"):
+    with pytest.raises(UncertainDeliveryError, match="no message ID"):
         sender.send(_reply_request())
 
 
@@ -189,7 +190,7 @@ def test_reconcile_rewritten_message_id(sent_label: bool, expected: str | None) 
 
 @pytest.mark.parametrize(
     ("status", "expected"),
-    [(503, TransientChannelError), (429, TransientChannelError), (403, PermanentChannelError)],
+    [(503, UncertainDeliveryError), (429, TransientChannelError), (403, PermanentChannelError)],
 )
 def test_gmail_http_failures_map_to_finite_channel_semantics(
     status: int,
@@ -203,3 +204,29 @@ def test_gmail_http_failures_map_to_finite_channel_semantics(
 
     with pytest.raises(expected, match=f"HTTP {status}"):
         sender.send(_reply_request())
+
+
+@pytest.mark.parametrize("error", [TimeoutError(), ConnectionError(), OSError(), RuntimeError(), ValueError()])
+def test_gmail_send_transport_uncertainty_does_not_allow_blind_retry(error: Exception) -> None:
+    messages = Messages()
+    messages.send_result = error
+    with pytest.raises(UncertainDeliveryError):
+        GmailReplySender(GmailAdapter(Service(messages))).send(_reply_request())
+
+
+@pytest.mark.parametrize("reason,expected", [
+    ("rateLimitExceeded", TransientChannelError),
+    ("userRateLimitExceeded", TransientChannelError),
+    ("domainPolicy", PermanentChannelError),
+    ("dailyLimitExceeded", PermanentChannelError),
+])
+def test_gmail_403_distinguishes_quota_from_permissions(reason: str, expected: type[Exception]) -> None:
+    import json
+
+    messages = Messages()
+    error = RuntimeError("sensitive provider detail")
+    error.resp = SimpleNamespace(status=403)  # type: ignore[attr-defined]
+    error.content = json.dumps({"error": {"errors": [{"reason": reason}]}})  # type: ignore[attr-defined]
+    messages.send_result = error
+    with pytest.raises(expected):
+        GmailReplySender(GmailAdapter(Service(messages))).send(_reply_request())

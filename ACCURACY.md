@@ -6,7 +6,7 @@ an unsafe workflow releases an incomplete pack. This repository reports both lay
 
 ## Latest measured result (2026-09-04, ordinary Gmail hardening)
 
-- Local suite: 183 tests; lint and strict typing pass. Deterministic stability: 20 identical
+- Local suite: 193 tests; lint and strict typing pass. Deterministic stability: 20 identical
   complete ZIP runs and 100 successful concurrent reads.
 - Ordinary four-PDF/OCR intake plus natural date correction: 3 repeated journeys,
   48/48 checks (`eval_output/natural_journey_2026-09-04-v4.json`). The same two-turn
@@ -40,6 +40,11 @@ an unsafe workflow releases an incomplete pack. This repository reports both lay
 
 All of these are internal synthetic evaluations. They are not an external usability study,
 an applicant outcome study, a legal accuracy guarantee or a universal “full marks” score.
+
+Separately, a real Gmail GET with deliberately invalid credentials returned 401
+(`eval_output/gmail_invalid_auth_2026-09-04.json`). This is a narrow external rejection check,
+not a revocation/recovery experiment. Local send fault injection now verifies timeout/5xx
+uncertainty is reconciled before any resend; these simulated failures are not live outages.
 
 ## Earlier baseline (2026-09-04; retained, not the current release score)
 

@@ -10,6 +10,7 @@ from visa_agent.channels.outbound import (
     PermanentChannelError,
     ReplyRequest,
     TransientChannelError,
+    UncertainDeliveryError,
 )
 from visa_agent.config import Settings
 from visa_agent.demo import run_demo
@@ -147,6 +148,29 @@ def test_claimed_sending_message_is_not_claimed_by_another_worker(tmp_path: Path
     finally:
         first_store.close()
         second_store.close()
+
+
+def test_accepted_send_with_lost_response_is_reconciled_without_resend(tmp_path: Path) -> None:
+    store = _demo_store(tmp_path)
+    sender = FakeSender(
+        [UncertainDeliveryError("Response lost after acceptance")], ["accepted-provider-id"]
+    )
+    dispatcher = OutboxDispatcher(store, sender)
+    now = datetime(2026, 9, 2, 9, tzinfo=UTC)
+    try:
+        outcome = dispatcher.dispatch_due(now, limit=1)[0]
+        assert outcome.status == "SENDING"
+        row = next(r for r in store.list_outbox() if r["id"] == outcome.outbox_id)
+        assert row["attempt_count"] == 1
+        assert row["next_attempt_at"] is None
+        for other in store.claim_pending_outbox(now, limit=20):
+            store.mark_outbox_sent(str(other["id"]), "already-sent", now)
+        assert dispatcher.dispatch_due(now + timedelta(days=1)) == []
+        assert dispatcher.reconcile_sending(sender, now)[0].status == "SENT"
+        assert len(sender.requests) == 1
+        assert dispatcher.dispatch_due(now + timedelta(days=2)) == []
+    finally:
+        store.close()
 
 
 def test_ambiguous_send_is_reconciled_or_requires_manual_retry(tmp_path: Path) -> None:

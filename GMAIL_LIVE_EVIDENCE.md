@@ -149,6 +149,27 @@ and raw messages are deliberately excluded from this report.
 
 ## Remaining acceptance work
 
+### Send uncertainty and provider-auth rejection follow-up
+
+- Found and corrected a duplicate-delivery risk: a Gmail send timeout or HTTP 5xx previously
+  became an automatic retry even though acceptance could have occurred. Those outcomes, missing
+  send response IDs and unclassified send transport failures now remain `SENDING` with a recorded
+  attempt and no scheduled resend. Reconciliation can recover a matching provider ID; a missing
+  match requires manual investigation, never an automatic retry.
+- Explicit HTTP 429 and rate-limit-specific HTTP 403 rejections retain bounded backoff. Permission,
+  domain-policy and daily-quota 403 responses stop automatic delivery. Error bodies are not logged.
+  Classification was checked against Google's official error guide:
+  https://developers.google.com/workspace/gmail/api/guides/handle-errors
+- Local fault injection verifies an accepted-send/lost-response outcome cannot be dispatched
+  again and can recover through reconciliation. These injected timeout/5xx/quota cases are **not**
+  real provider outages. Complete local suite at this increment: **193 passed**, lint and typing pass.
+- A real, read-only Gmail profile request with a deliberately invalid token returned HTTP 401,
+  mapped to permanent authorization rejection. See `eval_output/gmail_invalid_auth_2026-09-04.json`.
+  No saved credentials were loaded, no token was revoked, and no email was sent. This verifies
+  only invalid-credential rejection, not refresh failure, OAuth revocation recovery or send delivery.
+
+### Outstanding scope
+
 - Unstructured conversation requires broader multi-turn testing: deferring unknown dates,
   answering policy questions with current sources, difficult corrections and language switching.
 - Natural confirmation currently recognises a conservative set of clear expressions with
