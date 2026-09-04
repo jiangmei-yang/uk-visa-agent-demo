@@ -2,8 +2,8 @@
   "scope": "Ordinary financial-document provenance, branch matching and like-for-like consistency review",
   "baseline_commit": "ecd74e7c1c8e95fd1b924cd131a68d727ad35f71",
   "provider": "deepseek-v4-flash",
-  "new_paid_model_calls": 11,
-  "provider_reported_tokens": {"input": 18612, "output": 3422, "total": 22034},
+  "new_paid_model_calls": 19,
+  "provider_reported_tokens": {"input": 33022, "output": 5943, "total": 38965},
   "manual_live_mailbox_sends": 0,
   "real_documents_processed": 0,
   "not_a_naturalness_or_accuracy_score": true,
@@ -12,7 +12,9 @@
     {"report": "financial_document_deepseek_2026-09-05.json", "sha256": "d8f6c1c251276553b46b5a41a099818786e5b625198221aec1a2ead8a6bee3fd", "calls": 4, "passed": 1, "failed": 3, "tokens": 7689, "raw_capture_missing": true},
     {"report": "financial_document_deepseek_2026-09-05-v2.json", "sha256": "ef1319947ca4eb4a166243a27b93d4ff6d2b28967f1761d94cf7195772e8cb19", "calls": 3, "passed": 0, "failed": 3, "tokens": 5823, "diagnostic_only": true},
     {"report": "financial_document_deepseek_2026-09-05-v3.json", "sha256": "1ee995da2d54a04a5fa67e30f7f2d124f2fbab3c8c1632c98c29f953bb6ad7f9", "calls": 3, "passed": 3, "failed": 0, "tokens": 6414, "current_schema": true},
-    {"report": "financial_document_deepseek_2026-09-05-v4.json", "sha256": "d463cbef0bf94d0ad53948b1294bce64faab7cb4e8862feafc35ff6d7c5398f8", "calls": 1, "passed": 1, "failed": 0, "tokens": 2108, "current_schema": true}
+    {"report": "financial_document_deepseek_2026-09-05-v4.json", "sha256": "d463cbef0bf94d0ad53948b1294bce64faab7cb4e8862feafc35ff6d7c5398f8", "calls": 1, "passed": 1, "failed": 0, "tokens": 2108, "current_schema": true},
+    {"report": "financial_document_deepseek_2026-09-05-v5.json", "sha256": "74dd1e5532d4c7cdbd939f0d15b58058f92b659fe558202d421054570de3c08b", "calls": 4, "passed": 4, "failed": 0, "tokens": 8522, "evidence_contract": "v2-partial-source-set"},
+    {"report": "financial_document_deepseek_2026-09-05-v6.json", "sha256": "92a315c3e9bb87ca3cc26c4da669edd92ea82c4c87bd59abefe1eea4df13f9ad", "calls": 4, "passed": 4, "failed": 0, "tokens": 8409, "evidence_contract": "v2-complete-source-set", "bound_git_head": "454a3e8d2aedd142e15746c105172f998a179347", "implementation_manifest_entries": 73}
   ],
   "historical_report_corrections": [
     {
@@ -34,6 +36,11 @@
     "limitation": "These retained reports predate the v2 evidence contract and do not bind the source bundle, document schema, effective prompt, request configuration, git revision, run identity or provider response model. Current local PDF hashes can be checked during offline replay, but those checks cannot retroactively prove the exact code and prompt used for the historical calls.",
     "historical_reports_left_unchanged": true
   },
+  "v5_provider_report_provenance_limit": {
+    "report": "financial_document_deepseek_2026-09-05-v5.json",
+    "limitation": "The first v2-contract run bound six core implementation files but omitted the shared financial semantic module from that manifest. The result is retained, not upgraded; v6 repeats the four fixed examples with the probe plus all 72 source files bound.",
+    "report_left_unchanged": true
+  },
   "subsequent_probe_evidence_contract": {
     "version": "financial-document-probe-v2",
     "preflight": "Every selected PDF must match its frozen SHA-256 and embedded fictional-evaluation label before a provider client is constructed.",
@@ -46,10 +53,12 @@
       "git HEAD, UTC run timestamps and run ID",
       "provider response model and its SHA-256 per retained result"
     ],
+    "current_fully_bound_report": "financial_document_deepseek_2026-09-05-v6.json",
+    "current_fully_bound_implementation_manifest_entries": 73,
     "historical_results_not_upgraded_by_this_contract": true
   },
-  "full_suite": {"passed": 3985, "failed": 0, "warnings": 1, "seconds": 60.38},
-  "focused_financial_and_adapter_suites": {"passed": 156, "failed": 0, "seconds": 0.64},
+  "full_suite": {"passed": 3986, "failed": 0, "warnings": 1, "seconds": 60.95},
+  "focused_financial_and_adapter_suites": {"passed": 157, "failed": 0, "seconds": 0.70},
   "checks": {"ruff": "passed", "strict_mypy": "passed", "mypy_source_files": 72, "diff_check": "passed"},
   "pdf_visual_qa": {
     "documents": 4,
