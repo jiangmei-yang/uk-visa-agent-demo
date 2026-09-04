@@ -26,6 +26,36 @@ class GmailRawMessage:
     raw: bytes
 
 
+@dataclass(frozen=True)
+class GmailMessagePage:
+    message_ids: tuple[str, ...]
+    next_page_token: str | None
+
+
+@dataclass(frozen=True)
+class GmailHistoryPage:
+    added_message_ids: tuple[str, ...]
+    next_page_token: str | None
+    history_id: str
+
+
+class GmailHistoryExpiredError(Exception):
+    """A full resync is required; never advance the cursor past unavailable history."""
+
+
+def _page_token(response: dict[str, Any]) -> str | None:
+    token = response.get("nextPageToken")
+    if token is not None and (not isinstance(token, str) or not token):
+        raise ValueError("Gmail returned an invalid pagination token")
+    return token
+
+
+def _history_id(value: Any) -> str:
+    if not isinstance(value, str) or not value.isascii() or not value.isdecimal() or int(value) <= 0:
+        raise ValueError("Gmail history ID must be a positive decimal string")
+    return value
+
+
 class GmailAdapter:
     """Thin Gmail API boundary; OAuth service creation lives in deployment setup."""
 
@@ -50,6 +80,50 @@ class GmailAdapter:
             .execute()
         )
         return dict(result)
+
+    def current_history_id(self) -> str:
+        result = self.service.users().getProfile(userId=self.user_id).execute()
+        return _history_id(result.get("historyId"))
+
+    def list_message_page(self, query: str, page_token: str | None = None) -> GmailMessagePage:
+        """One scoped discovery page; callers must persist and follow the continuation."""
+        kwargs: dict[str, Any] = {"userId": self.user_id, "q": query, "maxResults": 100,
+                                  "includeSpamTrash": False}
+        if page_token:
+            kwargs["pageToken"] = page_token
+        response = self.service.users().messages().list(**kwargs).execute()
+        ids = tuple(dict.fromkeys(str(item["id"]) for item in response.get("messages", [])))
+        if any(not identifier for identifier in ids):
+            raise ValueError("Gmail returned an empty message ID")
+        return GmailMessagePage(ids, _page_token(response))
+
+    def list_added_history_page(
+        self, start_history_id: str, page_token: str | None = None
+    ) -> GmailHistoryPage:
+        """No body retrieval. Caller must scope each candidate before processing it.
+
+        History has no sender query. Do not checkpoint response.history_id until the final
+        page and its candidates have been durably recorded. IDs are opaque, not counters.
+        """
+        kwargs: dict[str, Any] = {"userId": self.user_id,
+            "startHistoryId": _history_id(start_history_id), "maxResults": 100,
+            "historyTypes": ["messageAdded"]}
+        if page_token:
+            kwargs["pageToken"] = page_token
+        try:
+            response = self.service.users().history().list(**kwargs).execute()
+        except Exception as error:
+            if getattr(getattr(error, "resp", None), "status", None) == 404:
+                raise GmailHistoryExpiredError("Gmail history unavailable; full sync required") from error
+            raise _map_gmail_error(error) from error
+        ids = tuple(dict.fromkeys(
+            str(item["message"]["id"])
+            for record in response.get("history", [])
+            for item in record.get("messagesAdded", [])
+        ))
+        if any(not identifier for identifier in ids):
+            raise ValueError("Gmail returned an empty added-message ID")
+        return GmailHistoryPage(ids, _page_token(response), _history_id(response.get("historyId")))
 
     def list_complete_message_ids(self, query: str, limit: int = 100) -> list[str]:
         """Fetch a bounded complete result, never silently discard older conversation mail."""

@@ -69,3 +69,5 @@ The activation-scoped inbox query currently has a 100-message complete-batch lim
 exceeded, intake stops explicitly rather than silently skipping old messages. Moving
 reconciliation earlier does not remove this limit. Durable incremental intake/backlog handling
 is still required for long-running use; increasing the cap alone is not a complete fix.
+The API boundary and real read-only probe for that replacement are documented in
+`GMAIL_INCREMENTAL_SYNC.md`; the replacement is not enabled in this worker yet.

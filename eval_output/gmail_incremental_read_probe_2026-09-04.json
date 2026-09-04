@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-04",
+  "scope": "Real Gmail read-only API probe; no durable sync or multi-page claim",
+  "authorized_mailbox_verified": true,
+  "scoped_page_count": 1,
+  "scoped_has_next_page": false,
+  "history_added_count": 0,
+  "history_has_next_page": false,
+  "history_cursor_returned": true,
+  "raw_bodies_read": 0,
+  "sends": 0,
+  "live_worker_switched_to_incremental_sync": false
+}
