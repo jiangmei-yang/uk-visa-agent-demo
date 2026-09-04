@@ -7,7 +7,7 @@ from typing import Any, cast
 
 from visa_agent.domain.models import Case, InboundEvent
 from visa_agent.llm.ports import CasePatch
-from visa_agent.workflow.conversation import change_acknowledgement, reply_items
+from visa_agent.workflow.conversation import change_acknowledgement, received_context, reply_items
 
 EXTRACTION_INSTRUCTIONS = (
     "Extract every explicitly stated applicant fact from the supplied email, checking each field "
@@ -139,6 +139,9 @@ def message_input(case: Case, plan: str) -> str:
         "open_issues": open_issues,
         "grounded_customer_answers": case.customer_answers,
         "change_acknowledgement": change_acknowledgement(case),
+        "received_context_acknowledgement": received_context(case),
+        "is_follow_up": bool(case.outbound_message_ids),
+        "deferred_questions": case.deferred_fields,
         "missing_facts": missing_facts,
         "missing_documents": missing_documents,
         "language": "Simplified Chinese" if case.customer_language == "zh" else "English",
@@ -154,6 +157,14 @@ def message_input(case: Case, plan: str) -> str:
         "If grounded_customer_answers is non-empty, include those answers and source URLs "
         "verbatim before the next actions. Do not replace an available answer with 'needs checking'. "
         "Include change_acknowledgement verbatim when present; never greet a correction as a first enquiry. "
+        "On a follow-up, do not restart with Hello, Thanks for getting in touch, or a generic "
+        "introduction. Start with the actual update or question; the received_context_acknowledgement "
+        "is a grounded optional opening, not a reason to repeat the entire profile. Ask the supplied "
+        "short questions as conversational prose, not a numbered form. Keep lists for documents "
+        "or discrepancies. Deferred questions must not be asked again. Missing facts in this brief "
+        "are only the selected next step, not every outstanding requirement: never say 'only these "
+        "details remain' or promise completion after them. A lack of final confirmation does not "
+        "prevent collecting information; do not say all work stops until confirmation. "
         "Do not reassure the customer that their dates are acceptable, that there is enough "
         "time, or that a particular plan poses no problem: those conclusions are not in the brief. "
         "avoid workflow jargon, raw field codes, hashes, canned corporate sign-offs and a wall "

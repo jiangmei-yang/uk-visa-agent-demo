@@ -265,3 +265,24 @@ but the model-backed workflow deferred both dates, answered the checklist reques
 later corrected exact dates. No actual Gmail API send or real applicant document was involved.
 This single bounded run does not prove arbitrary intent understanding; semantic misclassification
 can still affect pacing, although it cannot bypass release requirements.
+
+## Model prose versus the automatic sender
+
+`scripts/gmail_conversation_probe.py --semantic-intent --model-prose --output NEW_REPORT.json`
+now retains the raw model draft, guard result/fallback reason and captured final automatic body
+separately. It makes real DeepSeek rendering calls as well as extraction; no Gmail API is invoked.
+The single retained run is `eval_output/gmail_model_prose_comparison_2026-09-04.json`.
+
+All eight mechanical workflow checks passed, but that is not a prose acceptance result. Seven drafts
+passed the existing rendering guard; one English draft was rejected because question paraphrases
+did not preserve required literal strings. Manual reading found repeated introductions, form-like
+lists, a claim that all progress waits for confirmation even while requesting information, and
+wording suggesting that the selected next questions were all that remained. Automatically replacing
+every draft is not the sole cause of poor naturalness; simply enabling raw drafts is not justified.
+
+The brief now supplies follow-up state, grounded newly received context and deferred-question fields,
+with explicit instructions against restarting introductions or treating a selected step as complete
+requirements. One contract test covers this metadata; all 393 local tests, lint and typing pass.
+The provider report predates these brief changes and remains unchanged. These new prompt instructions
+have not yet had a second real-model run. Automatic Gmail sending remains deterministic, and no
+worker reload was needed for this offline comparison; this is not a live prose rollout.

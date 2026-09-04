@@ -42,6 +42,14 @@ class ExtractionModel(DeepSeekStructuredLLM):
     render_message = staticmethod(deterministic_fallback_message)
 
 
+class DraftProbeModel(DeepSeekStructuredLLM):
+    raw_reply: str | None = None
+
+    def render_message(self, case, plan):
+        self.raw_reply = super().render_message(case, plan)
+        return self.raw_reply
+
+
 class CaptureGmail(GmailAdapter):
     def __init__(self) -> None:
         self.bodies: list[str] = []
@@ -56,6 +64,8 @@ def main() -> None:
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--semantic-intent', action='store_true',
                         help='Use indirect undecided-travel expressions rather than keyword variants')
+    parser.add_argument('--model-prose', action='store_true',
+                        help='Capture real model prose before the guard and automatic Gmail replacement')
     args = parser.parse_args()
     if args.output.exists():
         parser.error('Choose a new report path; retained evidence must not be overwritten')
@@ -64,7 +74,8 @@ def main() -> None:
     if not key:
         parser.error('Missing DeepSeek key')
     report: dict[str, Any] = {'scope': 'real DeepSeek extraction; fictional text; captured Gmail sends',
-        'model': 'deepseek-v4-flash', 'semantic_intent': args.semantic_intent, 'completed': False, 'results': []}
+        'model': 'deepseek-v4-flash', 'semantic_intent': args.semantic_intent,
+        'model_prose': args.model_prose, 'completed': False, 'results': []}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open('x') as output:
         json.dump(report, output)
@@ -79,7 +90,7 @@ def main() -> None:
             )
         with tempfile.TemporaryDirectory(prefix='visa-gmail-probe-') as directory:
             store = SQLiteStore(Path(directory) / 'case.db')
-            model = ExtractionModel('deepseek-v4-flash', api_key=key)
+            model = (DraftProbeModel if args.model_prose else ExtractionModel)('deepseek-v4-flash', api_key=key)
             workflow = WorkflowService(store, load_policy(Path('knowledge/uk_standard_visitor_2026-02-25.yaml')),
                 model, today_provider=lambda: date(2026, 9, 4))
             capture = CaptureGmail()
@@ -88,12 +99,18 @@ def main() -> None:
                 allowed_message_types=('blocked', 'awaiting_profile_confirmation', 'awaiting_confirmation'))
             try:
                 for index, body in enumerate(messages):
+                    if isinstance(model, DraftProbeModel):
+                        model.raw_reply = None
+                    usage_start = len(model.usage_history)
                     now = datetime.now(UTC)
                     event = InboundEvent(id=f'{language}-{index}', external_thread_id=language,
                         sender='fictional@example.test', channel='gmail', subject='UK travel plans',
                         body=body, received_at=now)
                     case, _, plan = workflow.process(event)
                     extracted_without_fallback = not workflow.llm.last_extraction_fallback
+                    guarded_draft = next(row['payload'] for row in store.list_outbox() if row['event_id'] == event.id)
+                    render_fallback = workflow.llm.last_render_fallback
+                    render_error = workflow.llm.last_render_error
                     outcomes = dispatcher.dispatch_due(now)
                     reply = capture.bodies[-1] if len(capture.bodies) == index + 1 else ''
                     checks = {
@@ -127,7 +144,10 @@ def main() -> None:
                     report['results'].append({'language': language, 'turn': index + 1, 'input': body,
                         'profile': case.profile.model_dump(mode='json'), 'checks': checks, 'plan': plan,
                         'deferred_fields': case.deferred_fields,
-                        'provider_bound_body': reply, 'usage': model.usage_history[-1:]})
+                        'raw_model_draft': getattr(model, 'raw_reply', None),
+                        'guarded_model_draft': guarded_draft, 'render_fallback': render_fallback,
+                        'render_error': render_error,
+                        'provider_bound_body': reply, 'usage': model.usage_history[usage_start:]})
                     print(language, index + 1, 'PASS' if all(checks.values()) else 'FAIL', flush=True)
                     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
             finally:
