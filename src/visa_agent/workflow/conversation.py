@@ -264,6 +264,7 @@ QUESTION_TEXT_EN = {
     "date_of_birth": "What is your full date of birth?",
     "occupation_status": "Are you currently employed, studying or self-employed?",
     "funding_source": "Who will pay for the trip?",
+    "uk_accommodation": "Where are you planning to stay in the UK? It's fine if you haven't decided yet.",
 }
 
 
@@ -427,6 +428,17 @@ def blocked_customer_message(case: Case) -> str:
             context = context.removeprefix("了解了，").removeprefix("Thanks, ")
             context = context[0].upper() + context[1:]
         acknowledgements.append(context)
+    if (not acknowledgements and not case.customer_answers and not issues
+            and questions and re.search(
+                r"(?:还没|尚未|还没有).{0,8}(?:核对|检查|看过).{0,8}(?:摘要|信息)|"
+                r"(?:haven't|have not).{0,12}(?:checked|reviewed).{0,12}(?:summary|details)",
+                latest_reply_text(case.latest_customer_message), re.I,
+            )):
+        acknowledgements.append(
+            "先不用确认，我们把还缺的信息补上，再一起核对。"
+            if zh else "There's no need to confirm yet. Let's fill in the missing details first, "
+            "then you can review the summary."
+        )
     if acknowledgements:
         intro = ("" if zh else " ").join(acknowledgements)
     else:
@@ -436,7 +448,7 @@ def blocked_customer_message(case: Case) -> str:
             else "We can work through this together; you don't need to have every document ready at once."
         )
     # A concrete acknowledgement already opens the reply; do not restart the introduction.
-    contextual = bool(case.latest_changes or case.latest_document_names or received_context(case))
+    contextual = bool(acknowledgements)
     sections = [intro] if contextual else [greeting, intro]
     if case.latest_deferred_fields:
         sections.append(

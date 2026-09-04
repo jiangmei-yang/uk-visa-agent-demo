@@ -161,3 +161,29 @@ the case snapshot and/or existing pacing; the positive cases remain blocked by t
 All 357 local tests, lint and typing pass. This is local renderer evidence, not a live extraction or
 Gmail delivery result. The current sender-scoped live mailbox still had only two processed messages
 and two SENT replies when inspected before this change, with no new applicant turn to evaluate.
+
+## Real extraction through captured automatic Gmail dispatch
+
+`scripts/gmail_conversation_probe.py` ran two fictional four-turn conversations through real
+DeepSeek extraction, the workflow, durable outbox and `AutomaticGmailReplySender`. Gmail requests
+were captured locally: no mailbox, recipient, attachment or delivery API was exercised. Unused model
+prose generation was replaced by the existing deterministic renderer, matching the automatic sender's
+wording choice rather than spending on a draft that it overwrites. Reproduce with a configured key:
+
+```bash
+uv run python scripts/gmail_conversation_probe.py --output eval_output/gmail_conversation_probe_new.json
+```
+
+The retained `eval_output/gmail_conversation_probe_2026-09-04.json` has all eight turns mechanically
+passing: checklist request answered, undecided dates deferred, purpose/funding/date corrections applied,
+conditional assent not released, exact body persisted and duplicate replay not resent. This is a
+bounded single run, not an extraction accuracy estimate or proof of complete final delivery.
+
+Reading the body still found two conversational defects: an English accommodation question exposed
+the internal field wording, and an explicit "haven't checked the summary" caveat received a fresh
+generic introduction instead of an acknowledgement. The English question now asks where the person
+plans to stay. During blocked intake, a bounded unreviewed-summary phrase is acknowledged before
+retaining the missing questions; it does not alter confirmation or suppress corrections/documents.
+Three local regressions cover these adjustments. All 360 tests, lint and typing pass. The original
+provider report is retained unchanged and predates these wording fixes; no second provider run or
+independent naturalness pass is claimed.

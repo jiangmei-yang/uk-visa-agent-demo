@@ -197,6 +197,33 @@ def test_declined_or_quoted_checklist_request_does_not_expand_reply(body):
     assert reply_items(case)[2] == []
 
 
+@pytest.mark.parametrize("language,body", [
+    ("zh", "如果资料没问题就继续，但我还没有检查摘要。"),
+    ("en", "If the details are okay, proceed, but I haven't checked the summary yet."),
+])
+def test_unreviewed_summary_caveat_is_acknowledged_without_confirming(language, body):
+    case = example()
+    case.customer_language = language
+    case.latest_customer_message = body
+    before = case.model_dump_json()
+    text = deterministic_fallback_message(case, "blocked")
+    assert text.startswith("先不用确认" if language == "zh" else "There's no need to confirm yet")
+    assert all(question in text for question in reply_items(case)[1])
+    assert not clear_natural_confirmation(body)
+    assert case.model_dump_json() == before
+
+
+def test_english_accommodation_question_does_not_expose_field_name():
+    case = example()
+    case.customer_language = "en"
+    from visa_agent.domain.rules import required_profile_facts
+
+    case.deferred_fields = sorted(required_profile_facts(case) - {"uk_accommodation"})
+    text = deterministic_fallback_message(case, "blocked")
+    assert "Where are you planning to stay in the UK?" in text
+    assert "your uk accommodation" not in text
+
+
 @pytest.mark.parametrize("body", ["我还没核对其他资料，晚点回复。",
                                   "I haven't checked the other details yet. I'll reply later."])
 def test_pure_later_reply_is_acknowledged_without_reasking_or_changing_state(body: str) -> None:
