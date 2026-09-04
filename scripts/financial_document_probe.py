@@ -75,13 +75,13 @@ DOCUMENTS = {
     },
 }
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 IMPLEMENTATION_FILES = (
     "scripts/financial_document_probe.py",
-    "src/visa_agent/documents/natural.py",
-    "src/visa_agent/domain/financial_review.py",
-    "src/visa_agent/domain/rules.py",
-    "src/visa_agent/llm/deepseek_client.py",
-    "src/visa_agent/workflow/service.py",
+    *tuple(
+        str(path.relative_to(PROJECT_ROOT))
+        for path in sorted((PROJECT_ROOT / "src" / "visa_agent").rglob("*.py"))
+    ),
 )
 
 

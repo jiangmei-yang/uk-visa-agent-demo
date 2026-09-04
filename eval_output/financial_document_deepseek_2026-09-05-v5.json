@@ -1,0 +1,281 @@
+{
+  "evidence_contract_version": "financial-document-probe-v2",
+  "scope": "4 selected fictional financial PDFs; one DeepSeek extraction each",
+  "model": "deepseek-v4-flash",
+  "maximum_model_calls": 4,
+  "mailbox_calls": 0,
+  "real_documents": 0,
+  "completed": true,
+  "all_passed": true,
+  "results": [
+    {
+      "filename": "fictional_employment_letter.pdf",
+      "sha256": "64146476e2b61f5d5305e7436c81b6dfe976a213adacbdf6e6c69edee2e23e80",
+      "checks": {
+        "frozen_fictional_source": true,
+        "expected_kind": true,
+        "accepted_extraction": true,
+        "one_financial_observation": true,
+        "expected_financial_kind": true,
+        "expected_subject": true,
+        "expected_amount": true,
+        "expected_currency": true
+      },
+      "passed": true,
+      "read_result": {
+        "kind": "employment_letter",
+        "requires_review": false,
+        "review_reason": null,
+        "financial_observations": [
+          {
+            "kind": "salary",
+            "subject_name": "Kai Example",
+            "amount": "42000.00",
+            "currency": "GBP",
+            "period": "annual",
+            "basis": "gross",
+            "as_of": "2026-08-31",
+            "account_reference": null,
+            "subject_page": 1,
+            "subject_excerpt": "Employee: Kai Example",
+            "amount_page": 1,
+            "amount_excerpt": "Gross annual salary: GBP 42,000.00.",
+            "date_page": 1,
+            "date_excerpt": "Letter date: 2026-08-31",
+            "account_page": null,
+            "account_excerpt": null,
+            "confidence": 1.0
+          }
+        ]
+      },
+      "raw_model_response": "{\n  \"kind\": \"employment_letter\",\n  \"language\": \"en\",\n  \"classification_page\": 1,\n  \"classification_excerpt\": \"North Harbour Trading Ltd - Employment Letter\",\n  \"confidence\": 0.99,\n  \"facts\": [\n    {\n      \"field\": \"full_name\",\n      \"value\": \"Kai Example\",\n      \"page\": 1,\n      \"excerpt\": \"Employee: Kai Example\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"occupation_status\",\n      \"value\": \"employed\",\n      \"page\": 1,\n      \"excerpt\": \"Kai Example is employed as an analyst.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"financial_observations\": [\n    {\n      \"kind\": \"salary\",\n      \"subject_name\": \"Kai Example\",\n      \"amount\": \"42000.00\",\n      \"currency\": \"GBP\",\n      \"period\": \"annual\",\n      \"basis\": \"gross\",\n      \"as_of\": \"2026-08-31\",\n      \"account_reference\": null,\n      \"subject_page\": 1,\n      \"subject_excerpt\": \"Employee: Kai Example\",\n      \"amount_page\": 1,\n      \"amount_excerpt\": \"Gross annual salary: GBP 42,000.00.\",\n      \"date_page\": 1,\n      \"date_excerpt\": \"Letter date: 2026-08-31\",\n      \"account_page\": null,\n      \"account_excerpt\": null,\n      \"confidence\": 1.0\n    }\n  ],\n  \"requires_review\": false,\n  \"review_reason\": null\n}",
+      "usage": [
+        {
+          "operation": "extract_document",
+          "input_tokens": 1796,
+          "output_tokens": 354,
+          "total_tokens": 2150
+        }
+      ],
+      "provider_response_model": "deepseek-v4-flash",
+      "provider_response_model_sha256": "f61ff5cf8e1cc88da6944d6bcd3e2e7da5ff27dd3288a8781908018cb8240cd6"
+    },
+    {
+      "filename": "fictional_bank_statement_a.pdf",
+      "sha256": "70d27a0e37878bbba55a787ac705066ad27333a07222f29ecacb73302118e1f7",
+      "checks": {
+        "frozen_fictional_source": true,
+        "expected_kind": true,
+        "accepted_extraction": true,
+        "one_financial_observation": true,
+        "expected_financial_kind": true,
+        "expected_subject": true,
+        "expected_amount": true,
+        "expected_currency": true
+      },
+      "passed": true,
+      "read_result": {
+        "kind": "bank_statement",
+        "requires_review": false,
+        "review_reason": null,
+        "financial_observations": [
+          {
+            "kind": "closing_balance",
+            "subject_name": "Kai Example",
+            "amount": "12500.50",
+            "currency": "GBP",
+            "period": "closing",
+            "basis": "unspecified",
+            "as_of": "2026-08-31",
+            "account_reference": "1234",
+            "subject_page": 1,
+            "subject_excerpt": "Account holder: Kai Example.",
+            "amount_page": 1,
+            "amount_excerpt": "Closing balance GBP 12,500.50 as of 2026-08-31.",
+            "date_page": 1,
+            "date_excerpt": "Closing balance GBP 12,500.50 as of 2026-08-31.",
+            "account_page": 1,
+            "account_excerpt": "Account ending: 1234.",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "raw_model_response": "{\n  \"kind\": \"bank_statement\",\n  \"language\": \"en\",\n  \"classification_page\": 1,\n  \"classification_excerpt\": \"North Harbour Bank - Current Account Statement\",\n  \"confidence\": 1.0,\n  \"facts\": [\n    {\n      \"field\": \"full_name\",\n      \"value\": \"Kai Example\",\n      \"page\": 1,\n      \"excerpt\": \"Account holder: Kai Example.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"financial_observations\": [\n    {\n      \"kind\": \"closing_balance\",\n      \"subject_name\": \"Kai Example\",\n      \"amount\": \"12500.50\",\n      \"currency\": \"GBP\",\n      \"period\": \"closing\",\n      \"basis\": \"unspecified\",\n      \"as_of\": \"2026-08-31\",\n      \"account_reference\": \"1234\",\n      \"subject_page\": 1,\n      \"subject_excerpt\": \"Account holder: Kai Example.\",\n      \"amount_page\": 1,\n      \"amount_excerpt\": \"Closing balance GBP 12,500.50 as of 2026-08-31.\",\n      \"date_page\": 1,\n      \"date_excerpt\": \"Closing balance GBP 12,500.50 as of 2026-08-31.\",\n      \"account_page\": 1,\n      \"account_excerpt\": \"Account ending: 1234.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"requires_review\": false,\n  \"review_reason\": null\n}",
+      "usage": [
+        {
+          "operation": "extract_document",
+          "input_tokens": 1797,
+          "output_tokens": 333,
+          "total_tokens": 2130
+        }
+      ],
+      "provider_response_model": "deepseek-v4-flash",
+      "provider_response_model_sha256": "f61ff5cf8e1cc88da6944d6bcd3e2e7da5ff27dd3288a8781908018cb8240cd6"
+    },
+    {
+      "filename": "fictional_bank_statement_b.pdf",
+      "sha256": "adae3cdd2a6740f5fac82bac11f0c2e4801e2a25fa24c565356bc35688a77f63",
+      "checks": {
+        "frozen_fictional_source": true,
+        "expected_kind": true,
+        "accepted_extraction": true,
+        "one_financial_observation": true,
+        "expected_financial_kind": true,
+        "expected_subject": true,
+        "expected_amount": true,
+        "expected_currency": true
+      },
+      "passed": true,
+      "read_result": {
+        "kind": "bank_statement",
+        "requires_review": false,
+        "review_reason": null,
+        "financial_observations": [
+          {
+            "kind": "closing_balance",
+            "subject_name": "Kai Example",
+            "amount": "13000.00",
+            "currency": "GBP",
+            "period": "closing",
+            "basis": "unspecified",
+            "as_of": "2026-08-31",
+            "account_reference": "1234",
+            "subject_page": 1,
+            "subject_excerpt": "Account holder: Kai Example.",
+            "amount_page": 1,
+            "amount_excerpt": "Closing balance GBP 13,000.00 as of 2026-08-31.",
+            "date_page": 1,
+            "date_excerpt": "Closing balance GBP 13,000.00 as of 2026-08-31.",
+            "account_page": 1,
+            "account_excerpt": "Account ending: 1234.",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "raw_model_response": "{\n  \"kind\": \"bank_statement\",\n  \"language\": \"en\",\n  \"classification_page\": 1,\n  \"classification_excerpt\": \"North Harbour Bank - Corrected Current Account Statement\",\n  \"confidence\": 1.0,\n  \"facts\": [\n    {\n      \"field\": \"full_name\",\n      \"value\": \"Kai Example\",\n      \"page\": 1,\n      \"excerpt\": \"Account holder: Kai Example.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"financial_observations\": [\n    {\n      \"kind\": \"closing_balance\",\n      \"subject_name\": \"Kai Example\",\n      \"amount\": \"13000.00\",\n      \"currency\": \"GBP\",\n      \"period\": \"closing\",\n      \"basis\": \"unspecified\",\n      \"as_of\": \"2026-08-31\",\n      \"account_reference\": \"1234\",\n      \"subject_page\": 1,\n      \"subject_excerpt\": \"Account holder: Kai Example.\",\n      \"amount_page\": 1,\n      \"amount_excerpt\": \"Closing balance GBP 13,000.00 as of 2026-08-31.\",\n      \"date_page\": 1,\n      \"date_excerpt\": \"Closing balance GBP 13,000.00 as of 2026-08-31.\",\n      \"account_page\": 1,\n      \"account_excerpt\": \"Account ending: 1234.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"requires_review\": false,\n  \"review_reason\": null\n}",
+      "usage": [
+        {
+          "operation": "extract_document",
+          "input_tokens": 1799,
+          "output_tokens": 335,
+          "total_tokens": 2134
+        }
+      ],
+      "provider_response_model": "deepseek-v4-flash",
+      "provider_response_model_sha256": "f61ff5cf8e1cc88da6944d6bcd3e2e7da5ff27dd3288a8781908018cb8240cd6"
+    },
+    {
+      "filename": "fictional_sponsor_statement.pdf",
+      "sha256": "e255b307ec708735dfda4ce81f69c3425a61afd871b270d1c4dcc278325dddea",
+      "checks": {
+        "frozen_fictional_source": true,
+        "expected_kind": true,
+        "accepted_extraction": true,
+        "one_financial_observation": true,
+        "expected_financial_kind": true,
+        "expected_subject": true,
+        "expected_amount": true,
+        "expected_currency": true
+      },
+      "passed": true,
+      "read_result": {
+        "kind": "sponsor_funds",
+        "requires_review": false,
+        "review_reason": null,
+        "financial_observations": [
+          {
+            "kind": "closing_balance",
+            "subject_name": "Mina Example",
+            "amount": "88000.00",
+            "currency": "HKD",
+            "period": "closing",
+            "basis": "unspecified",
+            "as_of": "2026-08-31",
+            "account_reference": "9876",
+            "subject_page": 1,
+            "subject_excerpt": "Account holder: Mina Example. Account ending: 9876.",
+            "amount_page": 1,
+            "amount_excerpt": "Closing balance HKD 88,000.00 as of 2026-08-31.",
+            "date_page": 1,
+            "date_excerpt": "Closing balance HKD 88,000.00 as of 2026-08-31.",
+            "account_page": 1,
+            "account_excerpt": "Account ending: 9876.",
+            "confidence": 0.99
+          }
+        ]
+      },
+      "raw_model_response": "{\n  \"kind\": \"sponsor_funds\",\n  \"language\": \"en\",\n  \"classification_page\": 1,\n  \"classification_excerpt\": \"Harbour Test Bank - Sponsor Funds Statement\",\n  \"confidence\": 0.99,\n  \"facts\": [],\n  \"financial_observations\": [\n    {\n      \"kind\": \"closing_balance\",\n      \"subject_name\": \"Mina Example\",\n      \"amount\": \"88000.00\",\n      \"currency\": \"HKD\",\n      \"period\": \"closing\",\n      \"basis\": \"unspecified\",\n      \"as_of\": \"2026-08-31\",\n      \"account_reference\": \"9876\",\n      \"subject_page\": 1,\n      \"subject_excerpt\": \"Account holder: Mina Example. Account ending: 9876.\",\n      \"amount_page\": 1,\n      \"amount_excerpt\": \"Closing balance HKD 88,000.00 as of 2026-08-31.\",\n      \"date_page\": 1,\n      \"date_excerpt\": \"Closing balance HKD 88,000.00 as of 2026-08-31.\",\n      \"account_page\": 1,\n      \"account_excerpt\": \"Account ending: 9876.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"requires_review\": false,\n  \"review_reason\": null\n}",
+      "usage": [
+        {
+          "operation": "extract_document",
+          "input_tokens": 1813,
+          "output_tokens": 295,
+          "total_tokens": 2108
+        }
+      ],
+      "provider_response_model": "deepseek-v4-flash",
+      "provider_response_model_sha256": "f61ff5cf8e1cc88da6944d6bcd3e2e7da5ff27dd3288a8781908018cb8240cd6"
+    }
+  ],
+  "run_started_at": "2026-09-04T18:31:36.486170+00:00",
+  "git_head": "896340c62bbbc9679ec9e6894400b5b646b9f4d5",
+  "selected_documents": [
+    "fictional_employment_letter.pdf",
+    "fictional_bank_statement_a.pdf",
+    "fictional_bank_statement_b.pdf",
+    "fictional_sponsor_statement.pdf"
+  ],
+  "document_source_manifest": {
+    "fictional_employment_letter.pdf": {
+      "sha256": "64146476e2b61f5d5305e7436c81b6dfe976a213adacbdf6e6c69edee2e23e80",
+      "fictional_evaluation_document": true,
+      "fictional_label": "FICTIONAL SPECIMEN FOR SOFTWARE EVALUATION - NO REAL PERSON OR EMPLOYER",
+      "fictional_label_sha256": "bd54878abacbbdb42e91e01d4540fb170d9ddc287a2f39fa1df0ad477f70c069"
+    },
+    "fictional_bank_statement_a.pdf": {
+      "sha256": "70d27a0e37878bbba55a787ac705066ad27333a07222f29ecacb73302118e1f7",
+      "fictional_evaluation_document": true,
+      "fictional_label": "FICTIONAL SPECIMEN FOR SOFTWARE EVALUATION - NOT A REAL ACCOUNT",
+      "fictional_label_sha256": "1a5d841682f57a02b952ed54fc15b517ef260b725ed4b4e79d095c96bdf41b55"
+    },
+    "fictional_bank_statement_b.pdf": {
+      "sha256": "adae3cdd2a6740f5fac82bac11f0c2e4801e2a25fa24c565356bc35688a77f63",
+      "fictional_evaluation_document": true,
+      "fictional_label": "FICTIONAL SPECIMEN FOR SOFTWARE EVALUATION - NOT A REAL ACCOUNT",
+      "fictional_label_sha256": "1a5d841682f57a02b952ed54fc15b517ef260b725ed4b4e79d095c96bdf41b55"
+    },
+    "fictional_sponsor_statement.pdf": {
+      "sha256": "e255b307ec708735dfda4ce81f69c3425a61afd871b270d1c4dcc278325dddea",
+      "fictional_evaluation_document": true,
+      "fictional_label": "FICTIONAL SPECIMEN FOR SOFTWARE EVALUATION - NOT A REAL ACCOUNT",
+      "fictional_label_sha256": "1a5d841682f57a02b952ed54fc15b517ef260b725ed4b4e79d095c96bdf41b55"
+    }
+  },
+  "document_source_sha256": {
+    "fictional_employment_letter.pdf": "64146476e2b61f5d5305e7436c81b6dfe976a213adacbdf6e6c69edee2e23e80",
+    "fictional_bank_statement_a.pdf": "70d27a0e37878bbba55a787ac705066ad27333a07222f29ecacb73302118e1f7",
+    "fictional_bank_statement_b.pdf": "adae3cdd2a6740f5fac82bac11f0c2e4801e2a25fa24c565356bc35688a77f63",
+    "fictional_sponsor_statement.pdf": "e255b307ec708735dfda4ce81f69c3425a61afd871b270d1c4dcc278325dddea"
+  },
+  "document_source_bundle_sha256": "37112ac1fd02ff2d3349a357a4a9025e49890dadc5125558fd08177d0d1c430b",
+  "implementation_files_sha256": {
+    "scripts/financial_document_probe.py": "2591c0c363a755bad0ab31392b181d143b365c25519e96e19e1ad7db5de24944",
+    "src/visa_agent/documents/natural.py": "734f5a4637a6091b1f8cc2f36dbb48745a72661cf202307e22125d018f7e3af4",
+    "src/visa_agent/domain/financial_review.py": "19dbb5d2e73d95cd53f00de76364822dfac196217d526d08bf30a33e8cde3606",
+    "src/visa_agent/domain/rules.py": "1f1f86ace96612c6a583fbe1bbe9ed1ca7dff56364444316a14d1bfbfddbd2fb",
+    "src/visa_agent/llm/deepseek_client.py": "53e49b273dd2928a4741efc80c1272c040a8f53738756757cfdccaadef2d7aad",
+    "src/visa_agent/workflow/service.py": "08d1c9a9e0306d8e614879177f89c625f04d3b389245cc95190adc291a37cf55"
+  },
+  "implementation_bundle_sha256": "cfc47b71d64fafd13b99c2339059faedee71052d9ad71c2661ce125b381a753c",
+  "document_schema_sha256": "0c5ca049420783abc37485b61484a192325b45ec3e0cd5de495a2799c0f08efd",
+  "document_prompt_sha256": "0e95de0bd115efdd7667f5ba2db1922fcf8eefbf9442aecf095a28150283c6c1",
+  "request_config_sha256": "0fb6b7f5ff92f024fd56f548e1df617ec9011e020c8f95534638dae93d74c036",
+  "run_id": "09010114fcd33bd70990b276ebcdfe5604d1f808ee2a6d1d37b4837fbbc8d9de",
+  "provider_response_models": [
+    "deepseek-v4-flash"
+  ],
+  "provider_response_models_sha256": {
+    "deepseek-v4-flash": "f61ff5cf8e1cc88da6944d6bcd3e2e7da5ff27dd3288a8781908018cb8240cd6"
+  },
+  "run_completed_at": "2026-09-04T18:31:44.230453+00:00"
+}
