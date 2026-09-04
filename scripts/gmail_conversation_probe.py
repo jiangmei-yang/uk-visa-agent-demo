@@ -54,6 +54,8 @@ class CaptureGmail(GmailAdapter):
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--semantic-intent', action='store_true',
+                        help='Use indirect undecided-travel expressions rather than keyword variants')
     args = parser.parse_args()
     if args.output.exists():
         parser.error('Choose a new report path; retained evidence must not be overwritten')
@@ -62,11 +64,19 @@ def main() -> None:
     if not key:
         parser.error('Missing DeepSeek key')
     report: dict[str, Any] = {'scope': 'real DeepSeek extraction; fictional text; captured Gmail sends',
-        'model': 'deepseek-v4-flash', 'completed': False, 'results': []}
+        'model': 'deepseek-v4-flash', 'semantic_intent': args.semantic_intent, 'completed': False, 'results': []}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open('x') as output:
         json.dump(report, output)
     for language, messages in JOURNEYS.items():
+        messages = list(messages)
+        if args.semantic_intent:
+            messages[1] = (
+                '我在读大学，自己出钱。得等学校公布假期安排之后，才能告诉你哪天出发和回来。请先把需要的材料清单发给我。'
+                if language == 'zh' else "I'm a university student and paying for the trip myself. "
+                "My trip has to wait for the university to publish the holiday schedule; I can't give "
+                "arrival or departure days yet. Please send me the document checklist first."
+            )
         with tempfile.TemporaryDirectory(prefix='visa-gmail-probe-') as directory:
             store = SQLiteStore(Path(directory) / 'case.db')
             model = ExtractionModel('deepseek-v4-flash', api_key=key)
@@ -116,6 +126,7 @@ def main() -> None:
                     checks['replay_no_send'] = duplicate and len(store.list_outbox()) == count and dispatcher.dispatch_due(now) == []
                     report['results'].append({'language': language, 'turn': index + 1, 'input': body,
                         'profile': case.profile.model_dump(mode='json'), 'checks': checks, 'plan': plan,
+                        'deferred_fields': case.deferred_fields,
                         'provider_bound_body': reply, 'usage': model.usage_history[-1:]})
                     print(language, index + 1, 'PASS' if all(checks.values()) else 'FAIL', flush=True)
                     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')

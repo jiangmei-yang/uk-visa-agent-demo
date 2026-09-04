@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,12 +16,21 @@ class FactUpdate(BaseModel):
     confidence: float = Field(ge=0, le=1)
 
 
+class QuestionDeferral(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field: Literal["planned_arrival_date", "planned_departure_date"]
+    source_excerpt: str = Field(min_length=1, max_length=320)
+    confidence: float = Field(ge=0, le=1)
+
+
 class CasePatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     updates: list[FactUpdate]
     ambiguities: list[str]
     requires_human_review: bool = False
+    question_deferrals: list[QuestionDeferral] = Field(default_factory=list, max_length=2)
 
 
 class LLMClient(Protocol):

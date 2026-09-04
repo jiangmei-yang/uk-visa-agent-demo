@@ -12,6 +12,7 @@ from visa_agent.workflow.conversation import (
     blocked_customer_message,
     change_acknowledgement,
     confirmation_message,
+    latest_reply_text,
     reply_items,
     waiting_acknowledgement,
 )
@@ -176,6 +177,10 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
         updates=list(accepted.values()),
         ambiguities=list(dict.fromkeys(ambiguities)),
         requires_human_review=requires_review,
+        question_deferrals=[item for item in proposed.question_deferrals
+            if item.confidence >= MIN_ACCEPTED_CONFIDENCE
+            and item.source_excerpt.strip()
+            and _normalise_evidence(item.source_excerpt) in _normalise_evidence(latest_reply_text(event.body))],
     )
 
 

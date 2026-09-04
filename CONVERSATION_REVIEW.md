@@ -238,3 +238,30 @@ persisted next-question fields, provider-bound bodies and replay non-repetition.
 omitted required CasePatch fields and correctly fell into human review; the stub was corrected,
 not the guard. All 386 local tests, lint and typing pass. New live follow-up behavior still needs
 recipient observation; earlier SENT replies and the owner's failure evidence remain unchanged.
+
+## Model-understood question deferral, not model-controlled release
+
+CasePatch now has an optional bounded `question_deferrals` channel. DeepSeek is asked to infer
+temporary travel-date unavailability from meaning, with a verbatim excerpt and confidence. The guard
+discards low-confidence, ungrounded or quoted-history evidence. Only arrival/departure fields are
+allowed; the workflow applies the intent only to missing dates, persists deferral and never grants
+confirmation or changes a known date. Legacy replies without the optional field remain compatible.
+Gmail wording still uses the reviewed deterministic renderer; this is not free-form model sending.
+
+Six local regressions plus the updated schema contract cover restricted targets, evidence checks,
+known-date preservation and persistence. All 392 tests, lint and typing pass. The previous schema
+contract failed on the newly added field and was updated to assert the narrower intent schema,
+not to allow arbitrary workflow-state proposals.
+
+One real DeepSeek run is retained in `eval_output/gmail_semantic_intent_2026-09-04.json`:
+
+```bash
+uv run python scripts/gmail_conversation_probe.py --semantic-intent --output eval_output/semantic_intent_new.json
+```
+
+All eight bilingual turns passed their declared checks through captured Gmail dispatch. The two
+indirect university-holiday messages do not trigger the keyword recognizer when tested alone,
+but the model-backed workflow deferred both dates, answered the checklist request and retained
+later corrected exact dates. No actual Gmail API send or real applicant document was involved.
+This single bounded run does not prove arbitrary intent understanding; semantic misclassification
+can still affect pacing, although it cannot bypass release requirements.

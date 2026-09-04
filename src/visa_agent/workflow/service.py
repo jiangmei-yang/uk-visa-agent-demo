@@ -161,6 +161,13 @@ class WorkflowService:
         }
         self._apply_patch(case, customer_event, patch.model_dump()["updates"])
         update_deferred_questions(case, customer_event.body)
+        # Model intent may pause an unanswered question, never mutate a fact or release gate.
+        for deferral in patch.question_deferrals:
+            if getattr(case.profile, deferral.field) is None:
+                if deferral.field not in case.deferred_fields:
+                    case.deferred_fields.append(deferral.field)
+                if deferral.field not in case.latest_deferred_fields:
+                    case.latest_deferred_fields.append(deferral.field)
         self._ingest_attachments(case, event)
         profile_changed = prior_profile != summary_fingerprint(case, include_documents=False)
         if profile_changed:
