@@ -17,7 +17,8 @@ explicitly recorded here.
 
 Updated 2026-09-05. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **3,348 passing tests**; see the latest [mixed permission and consultation repair](docs/MIXED_PROCESSING_CONSENT.md),
+The local suite has **3,473 passing tests**; see the latest [separate-email consultation repair](docs/BATCHED_CONSULTATION.md),
+[mixed permission and consultation repair](docs/MIXED_PROCESSING_CONSENT.md),
 [consultation continuation and obstacle repair](docs/ADVICE_CONTINUATION.md),
 [independent usefulness review and repairs](docs/ADVISER_USEFULNESS_REVIEW_2026-09-04.md),
 [processing-permission boundary](docs/PROCESSING_CONSENT.md),
@@ -30,7 +31,25 @@ The local suite has **3,348 passing tests**; see the latest [mixed permission an
 and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
 
-Latest mixed-message repair: **3,348 passed in 50.54s**, Ruff and strict Mypy passed
+Latest separate-email consultation repair: **3,473 passed in 53.24s**, Ruff and
+strict Mypy passed (70 source files). The existing one test-client deprecation
+warning remains. Five focused suites passed **184 checks in 3.03s**.
+Actual unanswered applicant questions
+now survive superseded drafts and restarts, and can be combined into the newest
+reply without waiting for an earlier SENT omission notice. Actual complete SENT
+answers consume requests; uncertain sends do not authorize copying their answers.
+Overflow notices bind the correct reply event. Current no-link/topic preferences,
+cancellations, source expiry and original request qualifiers are retained; old
+bodies never re-enter fact extraction. See [behavior, failures and limits](docs/BATCHED_CONSULTATION.md).
+This was captured-transport evaluation, not new paid-model or live mailbox testing.
+The Gmail worker reloaded as PID 3444 and was observed idle at 2026-09-04
+16:55:43 UTC (2026-09-05 locally). Its configuration and business projection,
+including nine SENT messages, are unchanged; applicant processing consent remains
+unknown. Docker is healthy, all 70 deployed Python source hashes match locally,
+and both the persistent ZIP and network-disabled fixture ZIP remain unchanged.
+See [dated rollout observations](eval_output/batched_consultation_rollout_2026-09-05.json).
+
+Previous mixed-message repair: **3,348 passed in 50.54s**, Ruff and strict Mypy passed
 (68 source files); one existing FastAPI/Starlette deprecation warning remains.
 The three new suites also passed independently: **134 passed in 2.35s**.
 Independent questions, facts and attachments in a

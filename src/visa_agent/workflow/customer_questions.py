@@ -83,8 +83,8 @@ def _request_clauses(body: str, *, split_commas: bool = True) -> list[str]:
     but please send the link' and 'send the link and tell me whether ...'.
     """
     text = latest_reply_text(body)
-    text = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"', "", text)
-    text = re.sub(r"(?<!\w)'[^'\n]+'(?!\w)|`[^`\n]+`", "", text)
+    text = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"', "\n", text)
+    text = re.sub(r"(?<!\w)'[^'\n]+'(?!\w)|`[^`\n]+`", "\n", text)
     separators = r"[。！!；;\n，,]" if split_commas else r"[。！!；;\n]"
     clauses = re.split(separators + r"|(?<=[?？])\s*|\.(?:\s|$)", text)
     independent_request = (
@@ -141,7 +141,10 @@ def _active_clauses(body: str, *, split_commas: bool = True) -> list[str]:
         r"\b(?:not asking|did not ask|didn't ask|don't answer|do not answer)\b|"
         r"(?:忽略|跳过|绕过|修改|无视).{0,12}(?:规则|指令|提示|检查|审核)|"
         r"\b(?:ignore|bypass|override).{0,20}(?:instructions?|rules?|checks?|system|prompt)\b|"
-        r"(?:customer_questions|source_excerpt|requires_human_review|question_deferrals)"
+        r"(?:customer_questions|source_excerpt|requires_human_review|question_deferrals)|"
+        r"\b(?:my friend|he|she|the customer)\s+(?:asked|said|wrote)\b|"
+        r"(?:朋友|客户|他|她)(?:说|写道)|(?:朋友|客户)(?:问道|问过)|"
+        r"\b(?:I|we)\s+(?:might|may|will)\s+ask\b|(?:以后|将来|到时).{0,8}(?:再问|会问)"
     )
     return [clause for clause in _request_clauses(body, split_commas=split_commas)
             if not re.search(declined, clause, re.I)]

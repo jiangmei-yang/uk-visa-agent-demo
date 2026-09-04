@@ -89,6 +89,10 @@ condition was made deterministic rather than deleting the no-extra-send check.
 
 ## Remaining limitations
 
+Subsequent repair: [questions across separate emails](BATCHED_CONSULTATION.md)
+adds bounded original-question retention and captured-SENT batch coverage. The
+batch limitation observed during this earlier release is retained below as history.
+
 Out-of-order originals remain held; existing review APIs reject stale chronology.
 This repair does not change dates or pretend an unsupported chronology-review
 operation exists. Multiple separate emails discovered in one batch may supersede

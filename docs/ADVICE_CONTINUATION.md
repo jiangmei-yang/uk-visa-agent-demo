@@ -1,5 +1,11 @@
 # Unfinished consultation and preparation obstacles — 2026-09-05
 
+Subsequent [separate-email question repair](BATCHED_CONSULTATION.md) distinguishes
+an actual unanswered applicant request from a delivered omission promise. An
+unsent request can now be answered without pretending an earlier explanation was
+sent; ambiguous sends still require reconciliation. The evidence below describes
+the earlier, narrower continuation implementation.
+
 This is an implemented, captured-transport repair, not a live-model naturalness
 score or evidence that every ordinary conversation works. The original
 [seven-item usefulness failures](ADVISER_USEFULNESS_REVIEW_2026-09-04.md) remain

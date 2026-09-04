@@ -294,7 +294,7 @@ def test_sent_answer_is_consumed_on_next_event_and_repeated_continue_is_finite(t
         assert_no_intake_or_consent(result)
 
 
-@pytest.mark.parametrize("delivery", ["PENDING", "FAILED", "AMBIGUOUS"])
+@pytest.mark.parametrize("delivery", ["PENDING", "FAILED"])
 def test_unsent_continuation_is_not_consumed_and_only_current_draft_is_delivered(tmp_path, delivery):
     dialogue = Conversation(tmp_path)
     dialogue.opening()
@@ -315,6 +315,27 @@ def test_unsent_continuation_is_not_consumed_and_only_current_draft_is_delivered
     finished = dialogue.turn(CONTINUE_ZH)
     assert_fee_not_answered(finished)
     assert finished.case.pending_advice == []
+
+
+def test_ambiguous_continuation_is_retained_until_reconciliation_without_repeating_the_answer(tmp_path):
+    dialogue = Conversation(tmp_path)
+    dialogue.opening()
+    uncertain = dialogue.turn(CONTINUE_ZH, delivery="AMBIGUOUS")
+    assert_fee_answer(uncertain)
+    original_attempts = pending_fee(uncertain).answer_attempts
+    assert any(item.event_id == uncertain.event.id for item in original_attempts)
+    for _ in range(2):
+        waiting = dialogue.turn(CONTINUE_ZH)
+        assert_fee_not_answered(waiting)
+        assert_no_intake_or_consent(waiting)
+        assert "发送" in waiting.body
+        assert pending_fee(waiting).answer_attempts == original_attempts
+    store = SQLiteStore(dialogue.path)
+    try:
+        row = next(row for row in store.list_outbox() if row["event_id"] == uncertain.event.id)
+        assert row["status"] == "AMBIGUOUS" and not row["provider_message_id"]
+    finally:
+        store.close()
 
 
 def test_an_independent_new_question_takes_priority_without_losing_earlier_unanswered_advice(tmp_path):
@@ -489,12 +510,34 @@ def test_a_real_new_fact_does_not_promote_conditional_quoted_or_negative_advice_
     assert not result.case.final_summary_confirmed
 
 
-def test_sent_status_without_the_exact_offered_notice_does_not_authorize_continuation(tmp_path):
+def test_actual_original_request_remains_answerable_without_the_exact_sent_omission_notice(tmp_path):
     dialogue = Conversation(tmp_path)
     first = dialogue.opening()
     pending = pending_fee(first)
     store = SQLiteStore(dialogue.path)
     try:
+        with store.connection:
+            store.connection.execute("UPDATE outbox SET payload=? WHERE event_id=?",
+                                     (first.body.replace(pending.offered_notice, ""), first.event.id))
+    finally:
+        store.close()
+    result = dialogue.turn(CONTINUE_ZH)
+    # The original inbound question is now independent authority to answer, not
+    # proof that its missing omission invitation was ever delivered.
+    assert_fee_answer(result)
+    assert_no_intake_or_consent(result)
+    assert not re.search(r"上一封已发|之前已经发", result.body)
+
+
+def test_legacy_pending_without_original_unsent_state_still_requires_the_exact_sent_notice(tmp_path):
+    dialogue = Conversation(tmp_path)
+    first = dialogue.opening()
+    pending = pending_fee(first)
+    store = SQLiteStore(dialogue.path)
+    try:
+        legacy = store.get_case(first.case.id)
+        legacy.unsent_advice = []
+        store.save_case(legacy)
         with store.connection:
             store.connection.execute("UPDATE outbox SET payload=? WHERE event_id=?",
                                      (first.body.replace(pending.offered_notice, ""), first.event.id))

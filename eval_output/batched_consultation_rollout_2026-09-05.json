@@ -1,0 +1,56 @@
+{
+  "observed_at_utc": "2026-09-04T16:55:43.476909+00:00",
+  "local_date": "2026-09-05 Asia/Hong_Kong",
+  "evidence_class": "captured-transport simulation and local deployment; not a new live applicant journey",
+  "baseline_commit": "a5be3b1687d3a2d13fcfe8d5fd973f3cb48032d2",
+  "tests": {
+    "passed": 3473,
+    "warnings": 1,
+    "seconds": 53.24,
+    "focused_passed": 184,
+    "focused_seconds": 3.03,
+    "ruff": "passed",
+    "mypy": "passed",
+    "mypy_source_files": 70,
+    "earlier_full_runs": [
+      {"failed": 52, "passed": 3399, "seconds": 52.15},
+      {"failed": 0, "passed": 3466, "seconds": 51.66}
+    ],
+    "initial_gmail_batch_regression": {"failed": 4, "passed": 2},
+    "initial_direct_carry_regression": {"failed": 6, "passed": 0}
+  },
+  "deployment_source_check": {
+    "local_files": 70, "deployed_files": 70, "all_source_hashes_match": true
+  },
+  "gmail_worker": {
+    "pid": 3444, "phase": "idle", "liveness": "ps verified",
+    "configuration_sha256": "a82564de8ab818088e5afb363de951b1a7ad6a93459e21ae4a645aa487587d7e",
+    "configuration_unchanged": true,
+    "cases": 1, "outbox": {"SENT": 9}, "deliveries": 0,
+    "processing_consent": {"unknown": 1},
+    "consent_control_events": 0, "deferred_events": 0,
+    "business_projection_sha256": "939aac258e7e217b002f2eea3857727698bfbc24047c4fc016a68d718af5cac0",
+    "business_projection_unchanged": true, "no_manual_send_or_replay": true
+  },
+  "docker": {
+    "container": "63511e17035a3583e8bd997b769dfed31942cf1495c21e87f9483ab248e66155",
+    "image": "sha256:d4c724ba1fadcd53aebf4a1b557033855916b714077d0b55e9c99a9c70ea36d3",
+    "health": "healthy", "volume": "uk-visa-agent-demo_review-runtime",
+    "counts": {"cases": 1, "processed_events": 3, "outbox": 3, "deliveries": 1},
+    "existing_pack_sha256": "8bc0681a837437d30675da7650cd9c61e1ecc69532ea969c77ceb383c458f724",
+    "existing_pack_unchanged": true,
+    "offline_network_none": {
+      "cases": 1, "processed_events": 3, "outbox": 3, "deliveries": 1,
+      "zip_sha256": "7e27fe057a2643dd892bd41e94ed47245a225ff716bb99a7a4802bb0447b641f"
+    },
+    "build_warning": "Compose warned buildx was missing; classic build succeeded with frozen lockfile"
+  },
+  "limits": [
+    "No new paid model calls or real Gmail sends in this repair.",
+    "No applicant grant was fabricated; real processing permission remains unknown.",
+    "No independent uncoached recipient or WhatsApp device trial.",
+    "Unanswered and explicitly deferred original question context has no automatic TTL.",
+    "Preference and request recognition is bounded, not universal semantic understanding.",
+    "Broader ordinary-document cross-source evidence and real recipient final ZIP remain open."
+  ]
+}

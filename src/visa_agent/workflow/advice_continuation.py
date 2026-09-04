@@ -17,8 +17,8 @@ from visa_agent.domain.models import (
 from visa_agent.llm.ports import CustomerQuestion
 from visa_agent.workflow.conversation import latest_reply_text
 from visa_agent.workflow.customer_questions import (
+    APPLICATION_SOURCE,
     CHECKED_AT,
-    REVIEW_AFTER,
     ReviewedAnswerPlan,
     _active_clauses,
     capped_answer_plan,
@@ -80,13 +80,28 @@ def reconcile_answered_advice(case: Case, rows: list[dict[str, Any]]) -> None:
     case.pending_advice = [item for item in case.pending_advice if not any(
         _sent_text(rows, attempt.event_id, attempt.answer) for attempt in item.answer_attempts
     )]
+    case.unsent_advice = [item for item in case.unsent_advice if not any(
+        _sent_text(rows, attempt.event_id, attempt.answer)
+        for attempt in item.answer_attempts + item.omission_attempts
+    )]
 
 
-def _current_answer(item: PendingAdviceQuestion, language: str, today: date) -> str | None:
+def _current_answer(item: PendingAdviceQuestion, language: str, today: date,
+                    rows: list[dict[str, Any]] | None = None) -> str | None:
     # Validation is repeated by the compiler, against the full original body.
     questions = [CustomerQuestion.model_validate(question.model_dump()) for question in item.source_questions]
-    plan = grounded_customer_answer_plan(item.source_body, language, today, semantic_questions=questions)
-    return next((answer for topic, answer in plan.reviewed_answers if topic == item.topic), None)
+    sent_context = bool(item.source_application_guidance_event_id and any(
+        row["event_id"] == item.source_application_guidance_event_id and row["status"] == "SENT"
+        and APPLICATION_SOURCE in row["payload"] for row in rows or []
+    ))
+    plan = grounded_customer_answer_plan(item.source_body, language, today, semantic_questions=questions,
+                                         sent_application_guidance=sent_context)
+    matches = list(dict.fromkeys(answer for topic, answer in plan.reviewed_answers if topic == item.topic))
+    if len(matches) == 1:
+        return matches[0]
+    if item.source_answer:
+        return item.source_answer if item.source_answer in matches else None
+    return matches[0] if matches else None
 
 
 def remember_advice_plan(
@@ -96,9 +111,9 @@ def remember_advice_plan(
     # An explicit fresh question can also answer an older pending one, but only
     # when its actual reviewed answer covers the original, qualified request.
     for item in case.pending_advice:
-        if not _sent_text(rows, item.source_event_id, item.offered_notice):
+        if not _sent_text(rows, item.notice_event_id or item.source_event_id, item.offered_notice):
             continue
-        expected = _current_answer(item, case.customer_language, today)
+        expected = _current_answer(item, case.customer_language, today, rows)
         if expected and any(expected in answer for answer in plan.answers):
             item.answer_attempts.append(AdviceAnswerAttempt(event_id=event_id, answer=expected))
     for topic in dict.fromkeys(plan.omitted_topics):
@@ -112,33 +127,18 @@ def remember_advice_plan(
 
 def continue_advice(case: Case, event_id: str, rows: list[dict[str, Any]], today: date) -> list[str]:
     """Regenerate from current reviewed sources; only register a send attempt."""
-    active = [item for item in case.pending_advice
-              if _sent_text(rows, item.source_event_id, item.offered_notice)]
+    from visa_agent.workflow.advice_queue import merge_unsent_advice
+
+    answers = merge_unsent_advice(
+        case, event_id, case.latest_customer_message, capped_answer_plan([], case.customer_language),
+        rows, today, explicit=True,
+    )
+    if answers:
+        return answers
     zh = case.customer_language == "zh"
-    if not active:
-        return [
+    return [
             "我这里没有找到上一封已发回复中尚未展开的问题。你想接着了解哪一点？告诉我问题就好，不用重发个人资料。"
             if zh else
             "I can't find an outstanding question from the replies I've sent. Which point would you like to pick up? "
             "Just tell me the question; you don't need to resend your personal details."
-        ]
-    if not CHECKED_AT <= today <= REVIEW_AFTER:
-        return [
-            "刚才未展开的问题还记着。不过相关官方说明需要重新核验，我先不沿用旧的费用或要求；核实后再回答这一部分。"
-            if zh else
-            "I've kept the questions we haven't covered. The official guidance needs rechecking, so I won't reuse "
-            "older fees or requirements. Those questions remain open pending that check."
-        ]
-    candidates = [(item, _current_answer(item, case.customer_language, today)) for item in active]
-    plan = capped_answer_plan([(item.topic, answer) for item, answer in candidates if answer], case.customer_language)
-    for item, answer in candidates:
-        if answer and any(answer in text for text in plan.answers):
-            item.answer_attempts.append(AdviceAnswerAttempt(event_id=event_id, answer=answer))
-    if not plan.answers:
-        return [
-            "我还记着上次没有展开的问题，但目前的核验资料不足以继续回答，需要再查证；不用为此重新提供个人资料。"
-            if zh else
-            "I've kept the questions we haven't covered, but the reviewed information isn't enough to answer them yet. "
-            "They need another check; you don't need to resend personal details."
-        ]
-    return plan.answers
+    ]

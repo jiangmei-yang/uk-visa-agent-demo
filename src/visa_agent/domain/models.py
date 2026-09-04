@@ -194,6 +194,20 @@ class PendingAdviceQuestion(BaseModel):
     offered_notice: str
     source_checked_at: date
     answer_attempts: list[AdviceAnswerAttempt] = Field(default_factory=list)
+    notice_event_id: str | None = None
+    source_answer: str | None = None
+    deferred_by_event_id: str | None = None
+    source_application_guidance_event_id: str | None = None
+
+
+class UnsentAdviceQuestion(PendingAdviceQuestion):
+    """An actual applicant request whose answer has not been delivered.
+
+    Unlike a promised continuation, this needs no previously delivered notice.
+    Original rendered wording identifies variants; it is never replayed as advice.
+    """
+
+    omission_attempts: list[AdviceAnswerAttempt] = Field(default_factory=list)
 
 
 class Case(BaseModel):
@@ -220,6 +234,7 @@ class Case(BaseModel):
     customer_language: str = "en"
     customer_answers: list[str] = Field(default_factory=list)
     pending_advice: list[PendingAdviceQuestion] = Field(default_factory=list)
+    unsent_advice: list[UnsentAdviceQuestion] = Field(default_factory=list)
     # Topics from this turn only; not applicant facts or permission to progress.
     customer_question_topics: list[str] = Field(default_factory=list)
     customer_question_exclusions: list[str] = Field(default_factory=list)

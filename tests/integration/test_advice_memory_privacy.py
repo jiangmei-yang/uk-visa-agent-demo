@@ -106,9 +106,11 @@ def test_old_snapshot_without_advice_memory_field_reopens_with_empty_default(tmp
     try:
         case = store.get_case("legacy-case")
         assert case is not None and case.pending_advice == []
+        assert case.unsent_advice == []
         assert case.profile.full_name == "Maya Chen"
         exported = store.export_case_data(case.id)
         assert exported is not None and exported["case"]["pending_advice"] == []
+        assert exported["case"]["unsent_advice"] == []
     finally:
         store.close()
 
@@ -161,5 +163,33 @@ def test_case_deletion_removes_its_advice_context_and_history_but_not_neighbor(t
         assert "primary-private-context" not in active_snapshots
         assert "neighbor-private-context" in active_snapshots
         assert store.export_case_data(neighbor.id) == neighbor_before
+    finally:
+        store.close()
+
+
+def test_unsent_request_context_exports_and_deletes_without_fabricating_sent_history(tmp_path: Path) -> None:
+    path = tmp_path / "unsent-private.db"
+    store = SQLiteStore(path)
+    original = InboundEvent(id="unsent-original", external_thread_id="unsent-private-thread",
+        sender="fictional-unsent@example.test", channel="gmail", subject="Application questions",
+        body=QUESTIONS[0][1] + " Fictional private context: blue-cedar.",
+        received_at=datetime(2026, 9, 4, 12, tzinfo=UTC))
+    case, _, _ = WorkflowService(store, POLICY, FixedModel([QUESTIONS[0]]),
+                                 today_provider=lambda: TODAY).process(original)
+    assert store.event_processed(original.id)
+    assert all(row["status"] == "PENDING" and not row["provider_message_id"] for row in store.list_outbox())
+    store.close()
+    store = SQLiteStore(path)
+    try:
+        exported = store.export_case_data(case.id)
+        assert exported is not None
+        entries = exported["case"]["unsent_advice"]
+        assert len(entries) == 1 and entries[0]["source_event_id"] == original.id
+        assert entries[0]["source_body"] == original.body and entries[0]["source_questions"]
+        assert entries[0]["answer_attempts"] and entries[0]["omission_attempts"] == []
+        assert all(row["status"] == "PENDING" for row in exported["outbound_messages"])
+        store.delete_case(case.id)
+        assert store.export_case_data(case.id) is None and not store.event_processed(original.id)
+        assert "blue-cedar" not in " ".join(row[0] for row in store.connection.execute("SELECT snapshot_json FROM cases"))
     finally:
         store.close()

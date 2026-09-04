@@ -44,6 +44,7 @@ from visa_agent.workflow.advice_continuation import (
     reconcile_answered_advice,
     remember_advice_plan,
 )
+from visa_agent.workflow.advice_queue import merge_unsent_advice, queue_advice
 from visa_agent.workflow.adviser_guidance import APPLICATION_URL, preparation_guidance
 from visa_agent.workflow.conversation import (
     clear_natural_confirmation,
@@ -248,9 +249,12 @@ class WorkflowService:
             semantic_questions=current_questions,
             include_unsupported=not patch.requires_human_review,
         )
-        case.customer_answers = answer_plan.answers
+        case.customer_answers = list(answer_plan.answers)
         remember_advice_plan(case, event.id, customer_event.body, current_questions,
                              answer_plan, prior_outbox, self.today_provider())
+        queue_advice(case, event.id, customer_event.body, current_questions, answer_plan,
+                     application_guidance_event_id=(case.guidance_events.get("application_overview_v1")
+                         if case.guidance_events.get("application_overview_v1") in sent_events else None))
         if patch.requires_human_review:
             case.status = CaseStatus.HUMAN_REVIEW_REQUIRED
             advance_stage(case, WorkflowStage.HUMAN_REVIEW_REQUIRED)
@@ -397,6 +401,10 @@ class WorkflowService:
             # Asking for a step is not resume, profile consent or final consent.
             case.next_step_advice = select_next_step(case, self.policy, gate)
             case.customer_answers.append(case.next_step_advice.message)
+        extras = [answer for answer in case.customer_answers if answer not in answer_plan.answers]
+        case.customer_answers = merge_unsent_advice(
+            case, event.id, customer_event.body, answer_plan, prior_outbox, self.today_provider(),
+        ) + extras
         if (continuation_requested and not case.customer_answers and not case.customer_question_topics
                 and case.status == CaseStatus.DRAFT):
             # Mixed facts/files still pass normal validation above. A separate

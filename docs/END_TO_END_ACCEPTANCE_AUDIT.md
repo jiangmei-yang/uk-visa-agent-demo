@@ -37,9 +37,10 @@ for these outcomes.
    [Delivery-backed FAQ continuation and two preparation obstacles](ADVICE_CONTINUATION.md)
    now have bounded local/captured-sender repairs, including mixed facts/files.
    Broader paraphrases, other unavailable evidence and bounded consultation-context
-   retention still need work. Multiple independent emails in one batch can also
-   supersede earlier unsent FAQ replies; broader batch question retention remains
-   open. No new live model run or independent recipient trial is implied.
+   retention still need work. [Questions across separate emails](BATCHED_CONSULTATION.md)
+   now have original-request memory, combined captured-SENT reply checks and
+   current-preference boundaries. Broader paraphrases and independent recipient
+   evaluation remain open; no new live model run is implied.
 
 ## Bounded recovery added in this work
 
