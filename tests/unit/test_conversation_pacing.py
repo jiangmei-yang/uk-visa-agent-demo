@@ -1,6 +1,8 @@
 from datetime import UTC, date, datetime
 from pathlib import Path
 
+import pytest
+
 from visa_agent.domain.models import Case, CaseStatus, InboundEvent
 from visa_agent.domain.policy import load_policy
 from visa_agent.domain.rules import evaluate_gate
@@ -73,6 +75,41 @@ def test_escalation_and_delivery_keep_their_real_boundaries() -> None:
     case.status = CaseStatus.DRAFT
     reply = deterministic_fallback_message(case, "ready")
     assert "顾问复核" in reply and "还没有递交" in reply
+
+
+@pytest.mark.parametrize("language", ["zh", "en"])
+def test_attachment_reply_names_received_files_without_restarting(language: str) -> None:
+    case = example()
+    case.customer_language = language
+    case.latest_document_names = ["Invitation.pdf", "Funding.pdf"]
+    text = deterministic_fallback_message(case, "blocked")
+    assert "Invitation.pdf" in text and "Funding.pdf" in text
+    assert not text.startswith(("你好", "Hello"))
+    assert "已通过" not in text and "accepted" not in text
+
+
+def test_correction_translates_values_without_reintroducing_adviser() -> None:
+    case = example()
+    case.latest_changes = {"visit_purpose": "conference", "funding_source": "employer_or_school"}
+    text = deterministic_fallback_message(case, "blocked")
+    assert text.startswith("好的，已按你说的改为")
+    assert "参加会议" in text
+    assert "conference" not in text and "employer_or_school" not in text
+
+
+def test_one_remaining_question_is_prose_not_a_questionnaire() -> None:
+    case = example()
+    # Leave only the application location actionable; deferred dates remain unknown.
+    from visa_agent.domain.rules import required_profile_facts
+
+    remaining = required_profile_facts(case)
+    case.profile.application_country = None
+    case.deferred_fields = sorted(remaining - {"application_country"})
+    text = deterministic_fallback_message(case, "blocked")
+    assert next_fact_questions(case) == ["application_country"]
+    assert "你准备在哪个国家或地区递交申请？" in text
+    assert "\n- " not in text
+    assert "还想跟你确认一下" not in text
 
 
 def test_workflow_remembers_unknown_dates_and_duplicate_is_not_another_turn(tmp_path: Path) -> None:

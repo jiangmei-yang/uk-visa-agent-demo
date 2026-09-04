@@ -284,12 +284,15 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
 def change_acknowledgement(case: Case) -> str | None:
     if not case.latest_changes:
         return None
-    changes = "；".join(
-        f"{fact_label(case, key)}：{value}" for key, value in case.latest_changes.items()
+    zh = case.customer_language == "zh"
+    changes = ("；" if zh else "; ").join(
+        f"{fact_label(case, key)}{'：' if zh else ': '}"
+        f"{VALUE_LABELS_ZH.get(value, value) if zh else value.replace('_', ' ')}"
+        for key, value in case.latest_changes.items()
     )
-    if case.customer_language == "zh":
+    if zh:
         return f"好的，已按你说的改为：{changes}。"
-    return f"Thanks for the correction. I've updated: {changes}. The remaining points are below."
+    return f"Thanks for clarifying. I've updated {changes}."
 
 
 def blocked_customer_message(case: Case) -> str:
@@ -316,10 +319,11 @@ def blocked_customer_message(case: Case) -> str:
     if acknowledgement := change_acknowledgement(case):
         intro = acknowledgement
     elif case.latest_document_names:
+        names = "、".join(case.latest_document_names) if zh else ", ".join(case.latest_document_names)
         intro = (
-            f"收到你这次发来的 {len(case.latest_document_names)} 份材料了。"
+            f"收到你发来的 {names} 了。"
             if zh
-            else f"Thanks for the {len(case.latest_document_names)} documents you've sent."
+            else f"I've received {names}."
         )
     elif context := received_context(case):
         intro = context
@@ -329,7 +333,9 @@ def blocked_customer_message(case: Case) -> str:
             if zh
             else "We can work through this together; you don't need to have every document ready at once."
         )
-    sections = [greeting, intro]
+    # A concrete acknowledgement already opens the reply; do not restart the introduction.
+    contextual = bool(case.latest_changes or case.latest_document_names or received_context(case))
+    sections = [intro] if contextual else [greeting, intro]
     if case.latest_deferred_fields:
         sections.append(
             "日期先留空，等你确定后再补。我们先整理其他信息。"
@@ -346,7 +352,7 @@ def blocked_customer_message(case: Case) -> str:
             + "\n".join(f"- {item}" for item in issues)
         )
     if questions:
-        sections.append(
+        sections.append(questions[0] if len(questions) == 1 else
             ("还想跟你确认一下：\n" if zh else "Could you help me with these details first?\n")
             + "\n".join(f"- {item}" for item in questions)
         )

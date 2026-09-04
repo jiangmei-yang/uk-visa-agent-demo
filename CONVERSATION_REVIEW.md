@@ -44,6 +44,16 @@ include saved-state reload, duplicate-message handling and unchanged release bou
 
 ## Remaining work
 
+### Follow-up: contextual reply polish
+
+The deterministic wording used by automatic Gmail replies now names newly received attachment
+files instead of reporting only a count, omits a repeated greeting when acknowledging an attachment
+or correction, translates corrected Chinese enum values, and presents a single remaining question
+as prose. These changes do not declare attachments accepted or change confirmation/release rules.
+Four new regressions cover Chinese/English attachment acknowledgement, translated corrections,
+and a single outstanding question. The full local suite now passes 301 tests, with lint and typing
+passing. This is code-level evidence, not a new real-email or independent naturalness observation.
+
 The English wording has not received an equally comprehensive conversational review. Deferral
 recognizes a conservative set of explicit date-uncertainty phrases, not every paraphrase or every
 field. Unsupported/free-form policy questions still need broader sourced-answer coverage. Naturalness
