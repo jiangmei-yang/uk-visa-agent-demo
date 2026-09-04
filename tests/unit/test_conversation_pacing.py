@@ -58,6 +58,35 @@ def test_new_dates_clear_deferral_without_deleting_existing_dates() -> None:
     assert case.profile.planned_arrival_date == date(2026, 11, 10)
 
 
+@pytest.mark.parametrize('body', [
+    '计划今年下半年去英国吧，还没有具体的规划，去大概一周这样',
+    '明年上半年去英国，还没有具体安排。',
+])
+def test_coarse_travel_horizon_with_no_plan_defers_dates_without_inventing_them(body):
+    case = example()
+    update_deferred_questions(case, body)
+    assert set(case.deferred_fields) == {'planned_arrival_date', 'planned_departure_date'}
+    assert not set(next_fact_questions(case)) & set(case.deferred_fields)
+    assert case.profile.planned_arrival_date is None and case.profile.planned_departure_date is None
+    assert '日期先留空' in deterministic_fallback_message(case, 'blocked')
+
+
+def test_unplanned_budget_does_not_defer_travel_dates():
+    case = example()
+    update_deferred_questions(case, '今年下半年去英国，预算还没有具体规划。')
+    assert case.deferred_fields == []
+
+
+def test_coarse_horizon_does_not_erase_known_dates():
+    case = example()
+    case.profile.planned_arrival_date = date(2026, 11, 10)
+    case.profile.planned_departure_date = date(2026, 11, 17)
+    update_deferred_questions(case, '今年下半年去英国，还没有具体的规划。')
+    assert case.deferred_fields == []
+    assert case.profile.planned_arrival_date == date(2026, 11, 10)
+    assert case.profile.planned_departure_date == date(2026, 11, 17)
+
+
 def test_acknowledgement_uses_only_newly_received_facts() -> None:
     case = example()
     case.latest_received_facts = {"occupation_status": "student", "funding_source": "self"}

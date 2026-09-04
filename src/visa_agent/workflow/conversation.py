@@ -179,7 +179,11 @@ def next_fact_questions(case: Case) -> list[str]:
 def update_deferred_questions(case: Case, body: str) -> None:
     """Defer unanswered dates, not requirements or previously supplied facts."""
     case.latest_deferred_fields = []
-    if re.search(
+    broad_trip_without_plan = bool(
+        re.search(r"(?:今年|明年).{0,4}(?:上半年|下半年)", body)
+        and re.search(r"(?:^|[，,。])\s*(?:我)?(?:还没(?:有)?|尚未)(?:具体|详细)(?:的)?(?:规划|计划|安排|行程)", body)
+    )
+    if broad_trip_without_plan or re.search(
         r"(?:日期|时间|行程).{0,8}(?:还没|尚未|未|没有)(?:定|确定|决定)|"
         r"(?:haven't|have not).{0,15}(?:decided|fixed).{0,15}dates|"
         r"dates.{0,12}(?:not|aren't).{0,8}(?:set|fixed|decided)", body, re.I

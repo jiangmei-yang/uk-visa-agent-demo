@@ -202,3 +202,17 @@ that it is case-specific preparation, not a universal mandatory checklist. The u
 alternatives, requirement applicability and release gates are unchanged. Six bilingual regressions
 verify the tailored labels and unchanged case state; all 366 local tests, lint and typing pass.
 This is a source check plus local wording evidence, not a new provider or applicant validation.
+
+## Ordinary live Gmail follow-up: coarse trip plans
+
+A new registered-sender message was processed at 2026-09-04T09:46:31Z and a third SENT reply
+was recorded. It described a half-year travel horizon, roughly a week away, and no concrete plans.
+The response immediately asked for exact arrival/departure dates again. This is an observed live
+conversation defect, although provider SENT alone still does not establish recipient-side receipt.
+
+The deferral recognizer now handles a bounded Chinese half-year horizon together with a separate
+clause saying there is no concrete plan. Four regressions cover two variants, no date invention,
+budget uncertainty not being mistaken for date uncertainty, and preservation of existing exact dates.
+All 375 local tests, lint and typing pass. The existing live case/reply was not edited or replayed;
+this fix has not yet been observed in a subsequent live conversation. Broader paraphrase coverage
+and carrying newly recognized older uncertainty into an already-running case remain to be checked.
