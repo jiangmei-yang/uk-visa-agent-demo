@@ -35,6 +35,14 @@ class CustomerQuestion(BaseModel):
     confidence: float = Field(ge=0, le=1)
 
 
+class CustomerQuestionBatch(BaseModel):
+    """Question-only experiment output; no facts, answers or workflow authority."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    customer_questions: list[CustomerQuestion] = Field(max_length=4)
+
+
 class CasePatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

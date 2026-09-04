@@ -148,3 +148,23 @@ The first scope holdout was run once on 2026-09-04: eight of eight selected case
 Its messages are now exposed; do not reuse them as fresh holdout evidence. All three preceding
 real development runs are retained, including the final candidate's three question omissions
 (21/24). The holdout pass must not erase those failures or be reported as universal accuracy.
+
+## Combined input versus separate question pass
+
+`question_understanding_cases.json` contains 36 independently authored fictional inputs (24 development,
+12 holdout; equal Chinese/English), SHA-256
+`d479918a035b8f0bf0ee6d8c0040b9ae9afe9a182b67f0059190f7169c1d4c68`.
+All 12 holdout inputs are now exposed after their single 2026-09-04 run. Do not reuse them as unseen.
+See [experiment design and retained failures](../QUESTION_UNDERSTANDING_EXPERIMENT.md).
+
+```bash
+uv run python scripts/question_understanding_probe.py --corpus evals/question_understanding_cases.json \
+  --split development --output NEW_QUESTION_COMPARISON.json
+```
+
+This makes three real calls per input: explicit legacy baseline, neutral combined, and question-only.
+The default DeepSeek extractor now uses the measured neutral wrapper; the legacy method keeps the
+baseline distinct. The focused architecture needs both baseline facts and its question call, and
+its reported cost includes both. All captured sends remain local. The 180 calls across new
+development, exposed scope regression and first holdout used 410,568 tokens; raw failures and
+all original replies are retained. Full request-equivalence tests cover the default promotion.

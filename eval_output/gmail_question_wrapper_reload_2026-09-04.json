@@ -1,0 +1,53 @@
+{
+  "scope": "Local supervised Gmail worker reload only; no new mail was deliberately sent",
+  "date": "2026-09-04",
+  "service": "com.visa-agent.gmail-user",
+  "before": {
+    "pid": 64418,
+    "observed_worker_phase": "idle",
+    "last_cycle_at": "2026-09-04T12:05:35.374737+00:00",
+    "cases": 1,
+    "outbox_status_counts": {"SENT": 9},
+    "cases_and_outbox_sha256": "3c946da3a4593e89c4daff94d1eb2a087b48c523f5a17243bbd10c6a3acee51f"
+  },
+  "reload": {
+    "idle_rechecked_before_bootout": true,
+    "bootout_exit_code": 0,
+    "first_bootstrap_exit_code": 5,
+    "first_bootstrap_error": "Input/output error",
+    "checks_before_retry": ["old process absent", "service absent in launchctl", "unchanged plist lint passed"],
+    "second_bootstrap_exit_code": 0,
+    "root_or_elevated_execution_used": false,
+    "inferred_failure_cause": null
+  },
+  "after": {
+    "pid": 68387,
+    "process_liveness_checked_separately": true,
+    "launchctl_state": "running",
+    "observed_worker_phase": "idle",
+    "last_cycle_at": "2026-09-04T12:07:03.258438+00:00",
+    "cases": 1,
+    "outbox_status_counts": {"SENT": 9},
+    "cases_and_outbox_sha256": "3c946da3a4593e89c4daff94d1eb2a087b48c523f5a17243bbd10c6a3acee51f"
+  },
+  "state_hash_method": "SHA-256 of sqlite3 -readonly -json output for SELECT * FROM cases ORDER BY id; SELECT * FROM outbox ORDER BY id;",
+  "plist_sha256_before_and_after": "a82564de8ab818088e5afb363de951b1a7ad6a93459e21ae4a645aa487587d7e",
+  "source_files_on_disk_at_reload": {
+    "src/visa_agent/llm/deepseek_client.py": "ea4325f0f1b0e3f037c3a3448715d8a7570455103c3fea54be1ba1eafdb923bb",
+    "src/visa_agent/llm/question_understanding.py": "b5103635999dd7fa8ac935cb2c5de4865a9e726c77a5c1e3f06a55215e5dd8b1",
+    "src/visa_agent/workflow/customer_questions.py": "67abe7295b1fecd0945e2ffeb9ad563cc6bcc3997d239c43779f8301d3f1e6f0",
+    "src/visa_agent/workflow/conversation.py": "1be1b45d38328b032ffc5b8b93ffb24aea91369c520b3be66265ceb010fb25dc",
+    "src/visa_agent/workflow/adviser_guidance.py": "3d1efe10c360b03dea1133b3851db74ea1ca59d927d8b069a5f00e539ebb2d81"
+  },
+  "checks": {
+    "same_registered_sender_scope": true,
+    "same_reviewed_reply_mode": true,
+    "automatic_final_ready_send_still_excluded": true,
+    "same_case_snapshots_and_outbox_records": true,
+    "no_new_outbound_record": true,
+    "no_manual_email_sent": true,
+    "focused_second_model_pass_not_enabled": true,
+    "raw_model_response_capture_default_disabled": true
+  },
+  "not_proven": ["new ordinary-message behavior in the live mailbox after this reload", "recipient receipt or naturalness", "always-on hosting", "final pack delivery"]
+}

@@ -12,7 +12,12 @@ from visa_agent.llm.openai_client import (
     extraction_input,
     message_input,
 )
-from visa_agent.llm.ports import CasePatch
+from visa_agent.llm.ports import CasePatch, CustomerQuestionBatch
+from visa_agent.llm.question_understanding import (
+    QUESTION_UNDERSTANDING_INSTRUCTIONS,
+    neutral_intake_input,
+    question_understanding_input,
+)
 
 
 class DeepSeekStructuredLLM:
@@ -27,6 +32,7 @@ class DeepSeekStructuredLLM:
         api_key: str,
         base_url: str = "https://api.deepseek.com",
         timeout_seconds: float = 20.0,
+        capture_raw_responses: bool = False,
     ) -> None:
         if not api_key:
             raise ValueError("DeepSeek API key is required")
@@ -42,6 +48,10 @@ class DeepSeekStructuredLLM:
         self.version = model
         self.last_usage: dict[str, int] | None = None
         self.usage_history: list[dict[str, int | str]] = []
+        # Explicit diagnostic opt-in only; production must not retain raw model responses.
+        self.capture_raw_responses = capture_raw_responses
+        self.last_extraction_content: str | None = None
+        self.last_question_content: str | None = None
 
     def _record_usage(self, response: Any, operation: str) -> None:
         self.last_usage = _usage_dict(response)
@@ -49,6 +59,25 @@ class DeepSeekStructuredLLM:
             self.usage_history.append({"operation": operation, **self.last_usage})
 
     def extract_case_patch(self, event: InboundEvent) -> CasePatch:
+        """Production uses the evaluated neutral wrapper in one combined request."""
+        return self._extract_case_patch(event, neutral_input=True, operation="extract_case_patch")
+
+    def extract_case_patch_legacy_input(self, event: InboundEvent) -> CasePatch:
+        """Explicit pre-promotion wrapper for reproducible evaluation baselines."""
+        return self._extract_case_patch(
+            event, neutral_input=False, operation="extract_case_patch_legacy_input",
+        )
+
+    def extract_case_patch_neutral_input(self, event: InboundEvent) -> CasePatch:
+        """Named evaluation arm, request-equivalent to the production default."""
+        return self._extract_case_patch(
+            event, neutral_input=True, operation="extract_case_patch_neutral_input",
+        )
+
+    def _extract_case_patch(
+        self, event: InboundEvent, *, neutral_input: bool, operation: str,
+    ) -> CasePatch:
+        self.last_extraction_content = None
         schema = json.dumps(CasePatch.model_json_schema(), ensure_ascii=False, separators=(",", ":"))
         response = self.client.chat.completions.create(
             model=self.model,
@@ -60,18 +89,51 @@ class DeepSeekStructuredLLM:
                         f"Schema exactly: {schema}"
                     ),
                 },
-                {"role": "user", "content": extraction_input(event.body, event)},
+                {"role": "user", "content": (neutral_intake_input(event) if neutral_input
+                                             else extraction_input(event.body, event))},
             ],
             response_format={"type": "json_object"},
             temperature=0,
             max_tokens=1_200,
             extra_body={"thinking": {"type": "disabled"}},
         )
-        self._record_usage(response, "extract_case_patch")
+        self._record_usage(response, operation)
         output_text = cast(str | None, response.choices[0].message.content)
+        if getattr(self, "capture_raw_responses", False):
+            self.last_extraction_content = output_text
         if output_text is None or not output_text.strip():
             raise ValueError("DeepSeek returned no CasePatch content")
         return CasePatch.model_validate_json(output_text)
+
+    def extract_customer_questions(self, event: InboundEvent) -> CustomerQuestionBatch:
+        """Experimental independent question pass; callers must still validate sources.
+
+        Production extract_case_patch does not invoke this method. A successful schema
+        parse is not proof of meaning, nor permission to merge facts or advance a case.
+        """
+        self.last_question_content = None
+        schema = json.dumps(CustomerQuestionBatch.model_json_schema(), ensure_ascii=False,
+                            separators=(",", ":"))
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": (
+                    f"{QUESTION_UNDERSTANDING_INSTRUCTIONS} JSON Schema: {schema}"
+                )},
+                {"role": "user", "content": question_understanding_input(event)},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0,
+            max_tokens=1_200,
+            extra_body={"thinking": {"type": "disabled"}},
+        )
+        self._record_usage(response, "extract_customer_questions")
+        output_text = cast(str | None, response.choices[0].message.content)
+        if getattr(self, "capture_raw_responses", False):
+            self.last_question_content = output_text
+        if output_text is None or not output_text.strip():
+            raise ValueError("DeepSeek returned no customer-question content")
+        return CustomerQuestionBatch.model_validate_json(output_text)
 
     def render_message(self, case: Case, plan: str) -> str:
         response = self.client.chat.completions.create(

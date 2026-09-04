@@ -1,5 +1,15 @@
 # Controlled automatic Gmail service
 
+Latest reload (2026-09-04): the tested neutral single-call DeepSeek input and financial/quiet-correction
+reply changes are loaded by PID 68387. A completed idle cycle at 12:07:03 UTC and separate process
+liveness were observed. The one case, nine SENT outbox rows and full cases/outbox hash were unchanged;
+the LaunchAgent configuration hash also remained identical. No mail was manually sent or replayed.
+The immediate bootstrap after bootout returned error 5; after confirming the service and old process
+were absent and the plist valid, a second bootstrap succeeded without elevated execution. This is
+reload evidence, not a new recipient-side behavior test. See
+`eval_output/gmail_question_wrapper_reload_2026-09-04.json` and the
+[experiment](QUESTION_UNDERSTANDING_EXPERIMENT.md). Historical entries below retain their original PIDs.
+
 The earlier Gmail experiments were manually driven. `prepare --watch` does not send replies.
 The new `serve --watch` mode prepares and sends bounded, deterministic service replies for one
 explicitly registered sender, with ordinary subjects. It is not open public intake.

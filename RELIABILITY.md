@@ -145,3 +145,18 @@ classification grants that authority. Case excerpts reset each new event and are
 Real-provider failures and actual reply-level weaknesses are recorded in `CONVERSATION_REVIEW.md`.
 Exact excerpts, confidence and typed fields still cannot prove semantic correctness. This boundary
 reduces specific regressions without making the adviser a universal question-answering system.
+
+### Controlled question-extraction comparison
+
+The DeepSeek default now uses the measured neutral combined input wrapper. The explicit legacy
+method preserves historical request behaviour for the benchmark; the question-only pass remains
+experimental. Provider settings, fact schema, source/conflict guards and workflow/release authority
+are unchanged. Full request-equivalence contracts prevent a benchmark arm from silently drifting
+when the default changes. `capture_raw_responses` defaults to false; only the explicit fictional
+probe enables it, and its latest-response fields clear before each corresponding request.
+
+`adviser_reply_replay.py` rejects holdout, mismatched corpus/input/profile/expectations, incomplete
+sources and existing output paths before replay. Saved neutral errors remain unavailable rather
+than borrowing another arm's output. Replay uses no key or model, captures Gmail with network
+disabled, records original/current fingerprints and does not report fresh classifier accuracy.
+See [the experiment](QUESTION_UNDERSTANDING_EXPERIMENT.md) for retained failures and limitations.

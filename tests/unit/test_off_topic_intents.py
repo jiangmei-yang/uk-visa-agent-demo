@@ -288,11 +288,13 @@ def test_bank_acquisition_is_review_dated_preparation_not_acceptance_guarantee(
         if language == "zh":
             assert "网银或银行 App" in answer and "向银行索取" in answer
             assert "不代表任何下载文件都会被接受" in answer and "余额截图" in answer
-            assert "没有统一规定" in answer
+            assert "资金来源" in answer and "账户持有人" in answer
+            assert "没有统一规定" not in answer  # Acquisition is not a question about months.
         else:
             assert "online banking or bank app" in answer and "request statements from your bank" in answer
             assert "not a guarantee" in answer and "balance screenshot" in answer
-            assert "does not set one fixed number of months" in answer
+            assert "funds come from" in answer and "account holder" in answer
+            assert "does not set one fixed number of months" not in answer
     else:
         assert "http" not in answer and "App" not in answer and "online banking" not in answer
 

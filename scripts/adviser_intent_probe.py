@@ -215,7 +215,7 @@ def bank_acceptance_guaranteed(body: str) -> bool:
         r"\s*(?:an?\s+|any\s+)?$", re.I,
     )
     negative_governor = re.compile(
-        r"\b(?:not\s+(?:a|an|any)\s+|no\s+)(?:guarantee|promise)\s+that\b|"
+        r"\b(?:not\s+(?:(?:a|an|any)\s+)?|no\s+)(?:guarantee|promise|confirmation)\s+that\b|"
         r"\b(?:cannot|can['’]t|doesn['’]t|don['’]t|does not|do not|could not|never)\s+"
         r"(?:guarantee|promise|mean|imply|ensure|say)\s+that\b",
         re.I,
@@ -277,11 +277,24 @@ def content_checks(
                 and ("6 个月" in body if zh else "6-month" in body)
             )
         elif topic == "bank_period":
+            # The historical topic also includes access/collection questions. A
+            # monthly-period boilerplate is not required when no period was asked.
+            period_question = not incoming_body or bool(re.search(
+                r"个月|多久|多长|哪几|月份|追溯|跨度|\bmonths?\b|\byears?\b|"
+                r"\bperiod\b|how.{0,20}back",
+                "\n".join(current_evaluation_clauses(incoming_body)), re.I,
+            ))
             checks["bank_period_not_invented_fixed_rule"] = (
-                "没有统一规定" in body and "资金来源" in body
-                if zh else "does not set one fixed number of months" in body
-                and "funds come from" in body
+                ("资金来源" in body if zh else "funds come from" in body)
+                and (not period_question or (
+                    "没有统一规定" in body if zh else "does not set one fixed number of months" in body
+                ))
             )
+            if not period_question:
+                checks["funds_answer_does_not_impose_fixed_statement_period"] = not re.search(
+                    r"(?:必须|至少|需要).{0,8}[0-9一二三四六十]+.{0,3}(?:个月|月流水)|"
+                    r"\b(?:must|need|required|at least).{0,30}\b\d+.{0,5}months?\b", body, re.I,
+                )
             if not {"application", "timing"}.intersection(expected_set):
                 checks["bank_period_no_unrequested_visa_timing"] = not re.search(
                     r"(?:出发|旅行)前.{0,16}(?:个月|周|天)|"

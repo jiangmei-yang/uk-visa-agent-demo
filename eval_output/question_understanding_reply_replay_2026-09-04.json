@@ -1,0 +1,4009 @@
+{
+  "scope": "Exposed deterministic replay of saved neutral development patches through current guards and captured Gmail replies; not fresh classifier accuracy",
+  "exposed_deterministic_replay": true,
+  "split": "development",
+  "new_provider_result": false,
+  "new_classifier_result": false,
+  "new_model_calls": 0,
+  "not_proven": [
+    "fresh classifier accuracy",
+    "unseen holdout generalization",
+    "real customer acceptance",
+    "real Gmail delivery",
+    "universal legal accuracy"
+  ],
+  "source_report": "/Users/nu/Documents/ChatGPT/签证/eval_output/question_understanding_development_2026-09-04.json",
+  "source_report_sha256": "55f096819385c2454ae1b71cec9109d5eebc9a0f64c74a7574ec3f9862d5ecf3",
+  "original_source_sha256": {
+    "src/visa_agent/domain/models.py": "4102056763db53db0156e1440f8150b8139d86b34dc624c4deb7f270c8b957a5",
+    "src/visa_agent/llm/ports.py": "e430a76a22bcebf9447edeb9699eab4cad8963e531a66925d030252f0d5da725",
+    "src/visa_agent/llm/openai_client.py": "616d75f32c97b25e1afd93f9e3e6d28f56fc2163d925ffd3c8144d3eeb3c7ab3",
+    "src/visa_agent/llm/deepseek_client.py": "92b277925197eadcb12c9b5c01ffa31500691877624abffb523b9b2be10f0773",
+    "src/visa_agent/llm/guarded.py": "9a70cd97bd5a3d070e547ba9d295e5e6b362c631dc7fd1b1829b03d3ff7dd2b4",
+    "src/visa_agent/workflow/customer_questions.py": "0bfa2a81232683edd54359faef114b97f46239c7e65b1509580615ed232a94c8",
+    "src/visa_agent/workflow/adviser_guidance.py": "829223cad8b4b88d1009aec097820d6c43b941f4655f7dd4bc4cf30ce698448e",
+    "src/visa_agent/workflow/service.py": "7179d61afab6379c480b3652327212a48327d784dd347f4cac80b8b6cd6dd051",
+    "src/visa_agent/workflow/conversation.py": "713026619896a0d867154b8a63438a5c9b7ddd0947ff707208502968c6385f6c",
+    "src/visa_agent/channels/automatic_reply.py": "0107db8411f0a0444395d325f4617792602479fd540b502aa66b2f5dba3e6a74",
+    "scripts/adviser_intent_probe.py": "3f986dab28757f57e6c28e7f1a418d42d7743155ec289a1ff233ea063c1e04e8",
+    "scripts/question_understanding_probe.py": "32e59d260aa71020936a222c932d5e7e3225971c6dab032a6f788d981a3f40da",
+    "src/visa_agent/llm/question_understanding.py": "b5103635999dd7fa8ac935cb2c5de4865a9e726c77a5c1e3f06a55215e5dd8b1",
+    "knowledge/uk_standard_visitor_2026-02-25.yaml": "cf7991fe8dad5101910654ad6484f099c4637c7d14b0529c68e4d57818e51d84"
+  },
+  "current_source_sha256": {
+    "src/visa_agent/domain/models.py": "4102056763db53db0156e1440f8150b8139d86b34dc624c4deb7f270c8b957a5",
+    "src/visa_agent/llm/ports.py": "e430a76a22bcebf9447edeb9699eab4cad8963e531a66925d030252f0d5da725",
+    "src/visa_agent/llm/openai_client.py": "616d75f32c97b25e1afd93f9e3e6d28f56fc2163d925ffd3c8144d3eeb3c7ab3",
+    "src/visa_agent/llm/deepseek_client.py": "ea4325f0f1b0e3f037c3a3448715d8a7570455103c3fea54be1ba1eafdb923bb",
+    "src/visa_agent/llm/guarded.py": "9a70cd97bd5a3d070e547ba9d295e5e6b362c631dc7fd1b1829b03d3ff7dd2b4",
+    "src/visa_agent/workflow/customer_questions.py": "2d52e347acb2f3e41dc2c03237ab1d37a3ee6e81d7fbb3be8e1a103775cedac1",
+    "src/visa_agent/workflow/adviser_guidance.py": "3d1efe10c360b03dea1133b3851db74ea1ca59d927d8b069a5f00e539ebb2d81",
+    "src/visa_agent/workflow/service.py": "7179d61afab6379c480b3652327212a48327d784dd347f4cac80b8b6cd6dd051",
+    "src/visa_agent/workflow/conversation.py": "1be1b45d38328b032ffc5b8b93ffb24aea91369c520b3be66265ceb010fb25dc",
+    "src/visa_agent/channels/automatic_reply.py": "0107db8411f0a0444395d325f4617792602479fd540b502aa66b2f5dba3e6a74",
+    "scripts/adviser_intent_probe.py": "81d6245b807bef00a6c4ec92472a7615bc7e87664d948d44eb29b0877dfb39fe",
+    "scripts/adviser_reply_replay.py": "b64817fa2a96281c52a606b0c8abc97734fc90f81a7e446a390fcedae8633cd3",
+    "src/visa_agent/llm/question_understanding.py": "b5103635999dd7fa8ac935cb2c5de4865a9e726c77a5c1e3f06a55215e5dd8b1",
+    "knowledge/uk_standard_visitor_2026-02-25.yaml": "cf7991fe8dad5101910654ad6484f099c4637c7d14b0529c68e4d57818e51d84"
+  },
+  "original_model": "deepseek-v4-flash",
+  "original_started_at": "2026-09-04T11:52:03.130965+00:00",
+  "original_source_unchanged_during_run": true,
+  "corpus_id": "/Users/nu/Documents/ChatGPT/签证/evals/question_understanding_cases.json",
+  "corpus_sha256": "d479918a035b8f0bf0ee6d8c0040b9ae9afe9a182b67f0059190f7169c1d4c68",
+  "reviewed_guidance_as_of": "2026-09-04",
+  "development_content_checks": true,
+  "expected_case_count": 24,
+  "completed_case_count": 24,
+  "completed": true,
+  "results": [
+    {
+      "id": "qu_zh_dev_001",
+      "body": "你好，我准备在香港申请去英国旅游的访客签证。网上入口很多，有点分不清，麻烦给我正式申请表的入口，再说一下填完表之后怎么递交。谢谢。",
+      "language": "zh",
+      "expected_topics": [
+        "application"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2753,
+          "output_tokens": 85,
+          "total_tokens": 2838
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "application_official_source": true,
+        "application_actionable_entry": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "如果你需要申请 Standard Visitor，可以从下面的 GOV.UK 页面点 Apply now 开始。流程是出发前在线填写申请，再预约签证中心完成身份核验并提供材料；表格可以保存，之后继续填写。这是申请入口说明，不代表你的签证路线已经确认。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "application_official_source": true,
+        "application_actionable_entry": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "application",
+            "source_excerpt": "麻烦给我正式申请表的入口，再说一下填完表之后怎么递交。",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "application",
+            "source_excerpt": "麻烦给我正式申请表的入口，再说一下填完表之后怎么递交。",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "application"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "application"
+      ],
+      "customer_answers": [
+        "如果你需要申请 Standard Visitor，可以从下面的 GOV.UK 页面点 Apply now 开始。流程是出发前在线填写申请，再预约签证中心完成身份核验并提供材料；表格可以保存，之后继续填写。这是申请入口说明，不代表你的签证路线已经确认。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "如果你需要申请 Standard Visitor，可以从下面的 GOV.UK 页面点 Apply now 开始。流程是出发前在线填写申请，再预约签证中心完成身份核验并提供材料；表格可以保存，之后继续填写。这是申请入口说明，不代表你的签证路线已经确认。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.019654
+    },
+    {
+      "id": "qu_zh_dev_002",
+      "body": "我还没决定具体出发日，想先排一下英国旅游签证的时间。最早能提前多久递交？正常情况下，从申请到有结果一般要等多久？",
+      "language": "zh",
+      "expected_topics": [
+        "timing"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2747,
+          "output_tokens": 127,
+          "total_tokens": 2874
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "timing_official_source": true,
+        "timing_window_and_decision_distinct": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "如果你需要申请 Standard Visitor，最早可在出发前 3 个月申请。在线申请、身份核验和材料提交都完成后，通常在 3 周内收到决定；不是从开始准备材料那天起算，也不保证按时出结果或一定获批。这说的是签证决定时间，不是护照返还日期。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "timing_official_source": true,
+        "timing_window_and_decision_distinct": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [
+          {
+            "field": "planned_arrival_date",
+            "source_excerpt": "我还没决定具体出发日",
+            "confidence": 1.0
+          }
+        ],
+        "customer_questions": [
+          {
+            "topic": "timing",
+            "source_excerpt": "最早能提前多久递交？正常情况下，从申请到有结果一般要等多久？",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [
+          {
+            "field": "planned_arrival_date",
+            "source_excerpt": "我还没决定具体出发日",
+            "confidence": 1.0
+          }
+        ],
+        "customer_questions": [
+          {
+            "topic": "timing",
+            "source_excerpt": "最早能提前多久递交？正常情况下，从申请到有结果一般要等多久？",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "timing"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "timing"
+      ],
+      "customer_answers": [
+        "如果你需要申请 Standard Visitor，最早可在出发前 3 个月申请。在线申请、身份核验和材料提交都完成后，通常在 3 周内收到决定；不是从开始准备材料那天起算，也不保证按时出结果或一定获批。这说的是签证决定时间，不是护照返还日期。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "如果你需要申请 Standard Visitor，最早可在出发前 3 个月申请。在线申请、身份核验和材料提交都完成后，通常在 3 周内收到决定；不是从开始准备材料那天起算，也不保证按时出结果或一定获批。这说的是签证决定时间，不是护照返还日期。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": true,
+      "render_error": "UnsafeModelOutput: Model message contained a prohibited outcome claim",
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.014343
+    },
+    {
+      "id": "qu_zh_dev_003",
+      "body": "补问英国访客签证的材料：我的银行月结单全部是中文。交中文原件就行，还是要另外准备英文翻译？",
+      "language": "zh",
+      "expected_topics": [
+        "translation"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2741,
+          "output_tokens": 90,
+          "total_tokens": 2831
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "translation_official_source": true,
+        "translation_verification_details": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "提交的文件如果不是英语或威尔士语，需要附上可由 Home Office 独立核验的完整翻译。译文要包含译者的准确性声明、翻译日期、译者全名和签名，以及联系方式。只翻译摘要或没有这些信息的译文，不符合这份官方说明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "translation_official_source": true,
+        "translation_verification_details": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "translation",
+            "source_excerpt": "我的银行月结单全部是中文。交中文原件就行，还是要另外准备英文翻译？",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "translation",
+            "source_excerpt": "我的银行月结单全部是中文。交中文原件就行，还是要另外准备英文翻译？",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "translation"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "translation"
+      ],
+      "customer_answers": [
+        "提交的文件如果不是英语或威尔士语，需要附上可由 Home Office 独立核验的完整翻译。译文要包含译者的准确性声明、翻译日期、译者全名和签名，以及联系方式。只翻译摘要或没有这些信息的译文，不符合这份官方说明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "提交的文件如果不是英语或威尔士语，需要附上可由 Home Office 独立核验的完整翻译。译文要包含译者的准确性声明、翻译日期、译者全名和签名，以及联系方式。只翻译摘要或没有这些信息的译文，不符合这份官方说明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.013274
+    },
+    {
+      "id": "qu_zh_dev_004",
+      "body": "英国旅游的机票和酒店我都还没付款。递交访客签证之前，是不是必须把机票买好、酒店也付清？我主要怕签证没下来就先花了这些钱。",
+      "language": "zh",
+      "expected_topics": [
+        "booking"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2752,
+          "output_tokens": 87,
+          "total_tokens": 2839
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "booking_official_source": true,
+        "booking_not_required_as_evidence": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "关于机票和酒店：普通 Standard Visitor 申请不需要为了提供这些预订证明而先购买。官方材料指南把酒店预订和机票预订（过境除外）列为证明价值较低的材料。我们先整理真实的计划行程和住宿安排；不要把尚未确定的安排写成已经预订。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "booking_official_source": true,
+        "booking_not_required_as_evidence": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "booking",
+            "source_excerpt": "递交访客签证之前，是不是必须把机票买好、酒店也付清？",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "booking",
+            "source_excerpt": "递交访客签证之前，是不是必须把机票买好、酒店也付清？",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "booking"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "booking"
+      ],
+      "customer_answers": [
+        "关于机票和酒店：普通 Standard Visitor 申请不需要为了提供这些预订证明而先购买。官方材料指南把酒店预订和机票预订（过境除外）列为证明价值较低的材料。我们先整理真实的计划行程和住宿安排；不要把尚未确定的安排写成已经预订。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "关于机票和酒店：普通 Standard Visitor 申请不需要为了提供这些预订证明而先购买。官方材料指南把酒店预订和机票预订（过境除外）列为证明价值较低的材料。我们先整理真实的计划行程和住宿安排；不要把尚未确定的安排写成已经预订。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.01347
+    },
+    {
+      "id": "qu_zh_dev_005",
+      "body": "先更正一下，我这次旅行的总预算改成1800英镑，不是之前的1500英镑。另外，普通六个月英国访客签证本身的申请费是多少？不算机票酒店。",
+      "language": "zh",
+      "expected_topics": [
+        "fees"
+      ],
+      "expected_profile_updates": {
+        "estimated_trip_cost_gbp": 1800
+      },
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2751,
+          "output_tokens": 134,
+          "total_tokens": 2885
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "expected_profile_update:estimated_trip_cost_gbp": true,
+        "fees_official_source": true,
+        "fee_limited_to_six_month_route": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "好的，已按你说的改为：旅行预算（英镑）：1800。\n\n如果你申请的是 6 个月 Standard Visitor，GOV.UK 当前列出的签证申请费是 £135。额外购买的签证中心服务或加急服务不包含在这笔申请费内；付款时以官网显示为准。其他签证路线或有效期的费用不能直接套用这个数字。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "expected_profile_update:estimated_trip_cost_gbp": true,
+        "fees_official_source": true,
+        "fee_limited_to_six_month_route": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [
+          {
+            "field": "estimated_trip_cost_gbp",
+            "value": 1800,
+            "source_excerpt": "总预算改成1800英镑",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "fees",
+            "source_excerpt": "普通六个月英国访客签证本身的申请费是多少？不算机票酒店。",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [
+          {
+            "field": "estimated_trip_cost_gbp",
+            "value": 1800,
+            "source_excerpt": "总预算改成1800英镑",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "fees",
+            "source_excerpt": "普通六个月英国访客签证本身的申请费是多少？不算机票酒店。",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "fees"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1800,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [
+        "estimated_trip_cost_gbp"
+      ],
+      "workflow_topics": [
+        "fees"
+      ],
+      "customer_answers": [
+        "如果你申请的是 6 个月 Standard Visitor，GOV.UK 当前列出的签证申请费是 £135。额外购买的签证中心服务或加急服务不包含在这笔申请费内；付款时以官网显示为准。其他签证路线或有效期的费用不能直接套用这个数字。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "好的，已按你说的改为：旅行预算（英镑）：1800。\n\n如果你申请的是 6 个月 Standard Visitor，GOV.UK 当前列出的签证申请费是 £135。额外购买的签证中心服务或加急服务不包含在这笔申请费内；付款时以官网显示为准。其他签证路线或有效期的费用不能直接套用这个数字。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.013464
+    },
+    {
+      "id": "qu_zh_dev_006",
+      "body": "关于英国访客签证要用的银行流水，我不太清楚应该准备哪几个月的记录。银行手机应用里下载的对账单可以用吗，还是需要去柜台拿？",
+      "language": "zh",
+      "expected_topics": [
+        "bank_period"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2749,
+          "output_tokens": 97,
+          "total_tokens": 2846
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "bank_period_official_source": true,
+        "bank_period_not_invented_fixed_rule": true,
+        "bank_period_no_unrequested_visa_timing": true,
+        "bank_acquisition_practical_next_step": true,
+        "bank_acquisition_no_acceptance_guarantee": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "如果是普通 Standard Visitor 申请，这份官方材料指南没有统一规定银行流水必须提供几个月。重点是说明资金来源、你确实可以使用这些资金，并结合这次旅行的支出核对是否充足；我不能只凭流水覆盖的月份判断材料是否足够。\n获取方面，可以先在网银或银行 App 里找正式电子对账单；没有下载入口的话，向银行索取。这是收集材料的办法，不代表任何下载文件都会被接受。拿到后还要核对账户持有人、交易记录、资金来源和可用资金；不要只发一个余额截图来代替完整说明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "bank_period_official_source": true,
+        "bank_period_not_invented_fixed_rule": true,
+        "bank_period_no_unrequested_visa_timing": true,
+        "bank_acquisition_practical_next_step": true,
+        "bank_acquisition_no_acceptance_guarantee": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "bank_period",
+            "source_excerpt": "我不太清楚应该准备哪几个月的记录。银行手机应用里下载的对账单可以用吗，还是需要去柜台拿？",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "bank_period",
+            "source_excerpt": "我不太清楚应该准备哪几个月的记录。银行手机应用里下载的对账单可以用吗，还是需要去柜台拿？",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "bank_period"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "bank_period"
+      ],
+      "customer_answers": [
+        "普通 Standard Visitor 的这份官方材料指南没有统一规定银行流水必须提供几个月。不能只凭月份数量判断材料是否足够。可以先整理相关账户的正式对账单，让账户持有人、资金来源和资金进出记录看得清楚。还要说明你是否可以使用这些钱，结合旅行支出核对；余额本身不能说明全部情况。这些是整理材料的建议，还需要核对实际文件，不能据此确认材料已经充分或会被接受。\n获取方面，可以先在网银或银行 App 里找正式电子对账单；没有下载入口的话，向银行索取。这是收集材料的办法，不代表任何下载文件都会被接受。拿到后还要核对账户持有人、交易记录、资金来源和可用资金；不要只发一个余额截图来代替完整说明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "普通 Standard Visitor 的这份官方材料指南没有统一规定银行流水必须提供几个月。不能只凭月份数量判断材料是否足够。可以先整理相关账户的正式对账单，让账户持有人、资金来源和资金进出记录看得清楚。还要说明你是否可以使用这些钱，结合旅行支出核对；余额本身不能说明全部情况。这些是整理材料的建议，还需要核对实际文件，不能据此确认材料已经充分或会被接受。\n获取方面，可以先在网银或银行 App 里找正式电子对账单；没有下载入口的话，向银行索取。这是收集材料的办法，不代表任何下载文件都会被接受。拿到后还要核对账户持有人、交易记录、资金来源和可用资金；不要只发一个余额截图来代替完整说明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.01596
+    },
+    {
+      "id": "qu_zh_dev_007",
+      "body": "我打算开始整理英国旅游签证的资料了。请按我这个在香港递交、自己出钱的中国籍学生情况，列一份申请前要准备的材料清单，方便我逐项核对。",
+      "language": "zh",
+      "expected_topics": [
+        "document_checklist"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2752,
+          "output_tokens": 93,
+          "total_tokens": 2845
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "checklist_at_least_three_relevant_items": true,
+        "explicit_checklist_has_requirement_sources": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "接下来还需要这些材料；有哪份暂时拿不到，也可以直接告诉我：\n- 有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间\n- 在读证明 — 可向学校索取抬头纸证明，说明在读及准假情况，用来支持你的学习情况说明\n- 访问目的的证明材料 — 说明这次去做什么；旅游可以先整理真实的计划行程，不把未定安排写成已预订\n- 可用资金及来源证明，例如银行流水 — 说明谁承担费用、资金从哪里来，以及你是否能使用这些钱；预算金额本身不是证明\n- 在申请所在地合法居留的证明 — 说明你在递交申请的国家或地区的合法居留身份\n\n这是按你的情况列出的待补材料，不是所有申请人通用的强制清单。如果行程或资助情况有变化，我会再调整。\n\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "checklist_at_least_three_relevant_items": true,
+        "explicit_checklist_has_requirement_sources": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "document_checklist",
+            "source_excerpt": "请按我这个在香港递交、自己出钱的中国籍学生情况，列一份申请前要准备的材料清单",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "document_checklist",
+            "source_excerpt": "请按我这个在香港递交、自己出钱的中国籍学生情况，列一份申请前要准备的材料清单",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "document_checklist"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "document_checklist"
+      ],
+      "customer_answers": [],
+      "next_fact_questions": [],
+      "provider_bound_body": "接下来还需要这些材料；有哪份暂时拿不到，也可以直接告诉我：\n- 有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间\n- 在读证明 — 可向学校索取抬头纸证明，说明在读及准假情况，用来支持你的学习情况说明\n- 访问目的的证明材料 — 说明这次去做什么；旅游可以先整理真实的计划行程，不把未定安排写成已预订\n- 可用资金及来源证明，例如银行流水 — 说明谁承担费用、资金从哪里来，以及你是否能使用这些钱；预算金额本身不是证明\n- 在申请所在地合法居留的证明 — 说明你在递交申请的国家或地区的合法居留身份\n\n这是按你的情况列出的待补材料，不是所有申请人通用的强制清单。如果行程或资助情况有变化，我会再调整。\n\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": true,
+      "render_error": "UnsafeModelOutput: Model buried the next action in excessive prose",
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.014182
+    },
+    {
+      "id": "qu_zh_dev_008",
+      "body": "想确认一个英国签证问题：如果拿普通访客签证去旅游，旅途中可以在当地餐厅做两周有工资的兼职吗？",
+      "language": "zh",
+      "expected_topics": [
+        "unsupported"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2742,
+          "output_tokens": 92,
+          "total_tokens": 2834
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "unsupported_acknowledged_as_unverified": true,
+        "unsupported_not_answered_with_narrow_fee_or_timing": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "关于在英国工作：GOV.UK 说明，Standard Visitor 通常不能为英国公司做有偿或无偿工作，也不能自雇；获准的付费活动或活动参与等例外有特定条件。不能只凭兼职或短期就判断符合例外。请先对照官网允许活动的说明核对具体工作，我目前不能确认你的安排是否被允许。\nGOV.UK: https://www.gov.uk/standard-visitor",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "unsupported_acknowledged_as_unverified": true,
+        "unsupported_not_answered_with_narrow_fee_or_timing": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "unsupported",
+            "source_excerpt": "如果拿普通访客签证去旅游，旅途中可以在当地餐厅做两周有工资的兼职吗？",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "unsupported",
+            "source_excerpt": "如果拿普通访客签证去旅游，旅途中可以在当地餐厅做两周有工资的兼职吗？",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "unsupported"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "unsupported"
+      ],
+      "customer_answers": [
+        "关于在英国工作：GOV.UK 说明，Standard Visitor 通常不能为英国公司做有偿或无偿工作，也不能自雇；获准的付费活动或活动参与等例外有特定条件。不能只凭兼职或短期就判断符合例外。请先对照官网允许活动的说明核对具体工作，我目前不能确认你的安排是否被允许。\nGOV.UK: https://www.gov.uk/standard-visitor"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "关于在英国工作：GOV.UK 说明，Standard Visitor 通常不能为英国公司做有偿或无偿工作，也不能自雇；获准的付费活动或活动参与等例外有特定条件。不能只凭兼职或短期就判断符合例外。请先对照官网允许活动的说明核对具体工作，我目前不能确认你的安排是否被允许。\nGOV.UK: https://www.gov.uk/standard-visitor",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.013186
+    },
+    {
+      "id": "qu_zh_dev_009",
+      "body": "你好，周六想在家做清蒸鲈鱼给同学吃。能给我一个两人份的做法吗？厨房只有普通蒸锅。",
+      "language": "zh",
+      "expected_topics": [
+        "off_topic"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2742,
+          "output_tokens": 79,
+          "total_tokens": 2821
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "off_topic_scope_boundary": true,
+        "off_topic_scope_note_brief": true,
+        "only_off_topic_no_official_visa_url": true,
+        "only_off_topic_not_answered_with_fee_or_timing": true,
+        "only_off_topic_reply_brief": true,
+        "only_off_topic_no_manual_legal_review": true,
+        "off_topic_no_fact_change_no_default_document_requests": true,
+        "off_topic_no_fact_change_no_new_intake_questions": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "这个问题不属于英国签证准备，我这边没法给你可靠的答案或链接。如果你还有签证材料方面的问题，可以接着问。",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "off_topic_scope_boundary": true,
+        "off_topic_scope_note_brief": true,
+        "only_off_topic_no_official_visa_url": true,
+        "only_off_topic_not_answered_with_fee_or_timing": true,
+        "only_off_topic_reply_brief": true,
+        "only_off_topic_no_manual_legal_review": true,
+        "off_topic_no_fact_change_no_default_document_requests": true,
+        "off_topic_no_fact_change_no_new_intake_questions": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "off_topic",
+            "source_excerpt": "能给我一个两人份的做法吗？",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "off_topic",
+            "source_excerpt": "能给我一个两人份的做法吗？",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "off_topic"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "off_topic"
+      ],
+      "customer_answers": [
+        "这个问题不属于英国签证准备，我这边没法给你可靠的答案或链接。如果你还有签证材料方面的问题，可以接着问。"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "这个问题不属于英国签证准备，我这边没法给你可靠的答案或链接。如果你还有签证材料方面的问题，可以接着问。",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.05727
+    },
+    {
+      "id": "qu_zh_dev_010",
+      "body": "收到，谢谢。我周末会先下载银行对账单，整理好再联系你。英国行程还没定，目前先不继续申请。",
+      "language": "zh",
+      "expected_topics": [],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2743,
+          "output_tokens": 113,
+          "total_tokens": 2856
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "non_question_not_given_fee_or_timing": true,
+        "no_question_no_fact_change_no_proactive_intake_guidance": true,
+        "no_question_no_fact_change_no_default_document_requests": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "日期先留空，等你确定后再补。我们先整理其他信息。",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "non_question_not_given_fee_or_timing": true,
+        "no_question_no_fact_change_no_proactive_intake_guidance": true,
+        "no_question_no_fact_change_no_default_document_requests": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [
+          {
+            "field": "planned_arrival_date",
+            "source_excerpt": "英国行程还没定",
+            "confidence": 0.9
+          },
+          {
+            "field": "planned_departure_date",
+            "source_excerpt": "英国行程还没定",
+            "confidence": 0.9
+          }
+        ],
+        "customer_questions": []
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [
+          {
+            "field": "planned_arrival_date",
+            "source_excerpt": "英国行程还没定",
+            "confidence": 0.9
+          },
+          {
+            "field": "planned_departure_date",
+            "source_excerpt": "英国行程还没定",
+            "confidence": 0.9
+          }
+        ],
+        "customer_questions": []
+      },
+      "replayed_guarded_topics": [],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [],
+      "customer_answers": [],
+      "next_fact_questions": [],
+      "provider_bound_body": "日期先留空，等你确定后再补。",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.014231
+    },
+    {
+      "id": "qu_zh_dev_011",
+      "body": "你上一封问“要不要我再解释翻译要求和机票酒店材料？”这两项先不用了，我只是确认已收到你的邮件，谢谢。",
+      "language": "zh",
+      "expected_topics": [],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2742,
+          "output_tokens": 39,
+          "total_tokens": 2781
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "non_question_not_given_fee_or_timing": true,
+        "no_question_no_fact_change_no_proactive_intake_guidance": true,
+        "no_question_no_fact_change_no_default_document_requests": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "好的，已有资料会保留。有新安排或材料时，直接接着回复就好。",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "non_question_not_given_fee_or_timing": true,
+        "no_question_no_fact_change_no_proactive_intake_guidance": true,
+        "no_question_no_fact_change_no_default_document_requests": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": []
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": []
+      },
+      "replayed_guarded_topics": [],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [],
+      "customer_answers": [],
+      "next_fact_questions": [],
+      "provider_bound_body": "好的，已有资料会保留。有新安排或材料时，直接接着回复就好。",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.012372
+    },
+    {
+      "id": "qu_zh_dev_012",
+      "body": "刚发现生日记错了，请改成1998年5月21日，不是5月12日。另外，能把英国访客签证需要准备的完整材料清单发我吗？如果其中的银行对账单只有中文，翻译这部分要怎么处理？",
+      "language": "zh",
+      "expected_topics": [
+        "document_checklist",
+        "translation"
+      ],
+      "expected_profile_updates": {
+        "date_of_birth": "1998-05-21"
+      },
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2763,
+          "output_tokens": 186,
+          "total_tokens": 2949
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "expected_profile_update:date_of_birth": true,
+        "checklist_at_least_three_relevant_items": true,
+        "translation_official_source": true,
+        "translation_verification_details": true,
+        "explicit_checklist_has_requirement_sources": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "好的，已按你说的改为：出生日期：1998-05-21。\n\n提交的文件如果不是英语或威尔士语，需要附上可由 Home Office 独立核验的完整翻译。译文要包含译者的准确性声明、翻译日期、译者全名和签名，以及联系方式。只翻译摘要或没有这些信息的译文，不符合这份官方说明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk\n\n接下来还需要这些材料；有哪份暂时拿不到，也可以直接告诉我：\n- 有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间\n- 在读证明 — 可向学校索取抬头纸证明，说明在读及准假情况，用来支持你的学习情况说明\n- 访问目的的证明材料 — 说明这次去做什么；旅游可以先整理真实的计划行程，不把未定安排写成已预订\n- 可用资金及来源证明，例如银行流水 — 说明谁承担费用、资金从哪里来，以及你是否能使用这些钱；预算金额本身不是证明\n- 在申请所在地合法居留的证明 — 说明你在递交申请的国家或地区的合法居留身份\n\n这是按你的情况列出的待补材料，不是所有申请人通用的强制清单。如果行程或资助情况有变化，我会再调整。\n\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "expected_profile_update:date_of_birth": true,
+        "checklist_at_least_three_relevant_items": true,
+        "translation_official_source": true,
+        "translation_verification_details": true,
+        "explicit_checklist_has_requirement_sources": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [
+          {
+            "field": "date_of_birth",
+            "value": "1998-05-21",
+            "source_excerpt": "请改成1998年5月21日，不是5月12日",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "document_checklist",
+            "source_excerpt": "能把英国访客签证需要准备的完整材料清单发我吗？",
+            "confidence": 1.0
+          },
+          {
+            "topic": "translation",
+            "source_excerpt": "如果其中的银行对账单只有中文，翻译这部分要怎么处理？",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [
+          {
+            "field": "date_of_birth",
+            "value": "1998-05-21",
+            "source_excerpt": "请改成1998年5月21日，不是5月12日",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "document_checklist",
+            "source_excerpt": "能把英国访客签证需要准备的完整材料清单发我吗？",
+            "confidence": 1.0
+          },
+          {
+            "topic": "translation",
+            "source_excerpt": "如果其中的银行对账单只有中文，翻译这部分要怎么处理？",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "document_checklist",
+        "translation"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-21",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [
+        "date_of_birth"
+      ],
+      "workflow_topics": [
+        "document_checklist",
+        "translation"
+      ],
+      "customer_answers": [
+        "提交的文件如果不是英语或威尔士语，需要附上可由 Home Office 独立核验的完整翻译。译文要包含译者的准确性声明、翻译日期、译者全名和签名，以及联系方式。只翻译摘要或没有这些信息的译文，不符合这份官方说明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "好的，已按你说的改为：出生日期：1998-05-21。\n\n提交的文件如果不是英语或威尔士语，需要附上可由 Home Office 独立核验的完整翻译。译文要包含译者的准确性声明、翻译日期、译者全名和签名，以及联系方式。只翻译摘要或没有这些信息的译文，不符合这份官方说明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk\n\n接下来还需要这些材料；有哪份暂时拿不到，也可以直接告诉我：\n- 有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间\n- 在读证明 — 可向学校索取抬头纸证明，说明在读及准假情况，用来支持你的学习情况说明\n- 访问目的的证明材料 — 说明这次去做什么；旅游可以先整理真实的计划行程，不把未定安排写成已预订\n- 可用资金及来源证明，例如银行流水 — 说明谁承担费用、资金从哪里来，以及你是否能使用这些钱；预算金额本身不是证明\n- 在申请所在地合法居留的证明 — 说明你在递交申请的国家或地区的合法居留身份\n\n这是按你的情况列出的待补材料，不是所有申请人通用的强制清单。如果行程或资助情况有变化，我会再调整。\n\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": true,
+      "render_error": "UnsafeModelOutput: Model buried the next action in excessive prose",
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.013073
+    },
+    {
+      "id": "qu_en_dev_001",
+      "body": "Hi, I am applying for an ordinary UK visitor visa from Hong Kong. Please point me to the official online application form and explain what happens after I finish it, including how I submit the application. Thanks.",
+      "language": "en",
+      "expected_topics": [
+        "application"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2754,
+          "output_tokens": 93,
+          "total_tokens": 2847
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "application_official_source": true,
+        "application_actionable_entry": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "If you need a Standard Visitor visa, start with Apply now on the GOV.UK page below. Apply online before travelling, then attend a visa application centre appointment to prove your identity and provide your documents. You can save the form and finish it later; this does not yet confirm which visa route you need.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "application_official_source": true,
+        "application_actionable_entry": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "application",
+            "source_excerpt": "Please point me to the official online application form and explain what happens after I finish it, including how I submit the application.",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "application",
+            "source_excerpt": "Please point me to the official online application form and explain what happens after I finish it, including how I submit the application.",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "application"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "application"
+      ],
+      "customer_answers": [
+        "If you need a Standard Visitor visa, start with Apply now on the GOV.UK page below. Apply online before travelling, then attend a visa application centre appointment to prove your identity and provide your documents. You can save the form and finish it later; this does not yet confirm which visa route you need.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "If you need a Standard Visitor visa, start with Apply now on the GOV.UK page below. Apply online before travelling, then attend a visa application centre appointment to prove your identity and provide your documents. You can save the form and finish it later; this does not yet confirm which visa route you need.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.013109
+    },
+    {
+      "id": "qu_en_dev_002",
+      "body": "I'm trying to work out when to start my UK visitor visa application. How far before travel can I apply, and how long does a normal decision take? Also, must I already have paid for my flights and hotel when I apply? I haven't chosen dates yet.",
+      "language": "en",
+      "expected_topics": [
+        "timing",
+        "booking"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2767,
+          "output_tokens": 207,
+          "total_tokens": 2974
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "timing_official_source": true,
+        "timing_window_and_decision_distinct": true,
+        "booking_official_source": true,
+        "booking_not_required_as_evidence": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "For an ordinary Standard Visitor application, you do not need to buy flights or book a hotel just to supply booking evidence. The official guide describes hotel bookings and flight bookings (except transit) as less useful evidence. We can first record your intended arrangements without describing unbooked plans as confirmed bookings.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence\n\nIf you need a Standard Visitor visa, you can apply up to 3 months before travel. A decision usually takes up to 3 weeks after you have applied online, proved your identity and provided your documents—not from the day you start preparing. This is not a guaranteed deadline or a promise of approval. That is decision timing, not a passport-return date.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "timing_official_source": true,
+        "timing_window_and_decision_distinct": true,
+        "booking_official_source": true,
+        "booking_not_required_as_evidence": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [
+          {
+            "field": "planned_arrival_date",
+            "source_excerpt": "I haven't chosen dates yet.",
+            "confidence": 1.0
+          },
+          {
+            "field": "planned_departure_date",
+            "source_excerpt": "I haven't chosen dates yet.",
+            "confidence": 1.0
+          }
+        ],
+        "customer_questions": [
+          {
+            "topic": "timing",
+            "source_excerpt": "How far before travel can I apply, and how long does a normal decision take?",
+            "confidence": 1.0
+          },
+          {
+            "topic": "booking",
+            "source_excerpt": "must I already have paid for my flights and hotel when I apply?",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [
+          {
+            "field": "planned_arrival_date",
+            "source_excerpt": "I haven't chosen dates yet.",
+            "confidence": 1.0
+          },
+          {
+            "field": "planned_departure_date",
+            "source_excerpt": "I haven't chosen dates yet.",
+            "confidence": 1.0
+          }
+        ],
+        "customer_questions": [
+          {
+            "topic": "timing",
+            "source_excerpt": "How far before travel can I apply, and how long does a normal decision take?",
+            "confidence": 1.0
+          },
+          {
+            "topic": "booking",
+            "source_excerpt": "must I already have paid for my flights and hotel when I apply?",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "booking",
+        "timing"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "timing",
+        "booking"
+      ],
+      "customer_answers": [
+        "For an ordinary Standard Visitor application, you do not need to buy flights or book a hotel just to supply booking evidence. The official guide describes hotel bookings and flight bookings (except transit) as less useful evidence. We can first record your intended arrangements without describing unbooked plans as confirmed bookings.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence",
+        "If you need a Standard Visitor visa, you can apply up to 3 months before travel. A decision usually takes up to 3 weeks after you have applied online, proved your identity and provided your documents—not from the day you start preparing. This is not a guaranteed deadline or a promise of approval. That is decision timing, not a passport-return date.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "For an ordinary Standard Visitor application, you do not need to buy flights or book a hotel just to supply booking evidence. The official guide describes hotel bookings and flight bookings (except transit) as less useful evidence. We can first record your intended arrangements without describing unbooked plans as confirmed bookings.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence\n\nIf you need a Standard Visitor visa, you can apply up to 3 months before travel. A decision usually takes up to 3 weeks after you have applied online, proved your identity and provided your documents—not from the day you start preparing. This is not a guaranteed deadline or a promise of approval. That is decision timing, not a passport-return date.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.01304
+    },
+    {
+      "id": "qu_en_dev_003",
+      "body": "My university can give me a student letter, but it is written in Chinese. I'd appreciate guidance on the translation I should include with it for my UK visitor visa application.",
+      "language": "en",
+      "expected_topics": [
+        "translation"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2747,
+          "output_tokens": 88,
+          "total_tokens": 2835
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "translation_official_source": true,
+        "translation_verification_details": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "Documents you submit that are not in English or Welsh need a full translation that the Home Office can independently verify. Include the translator's accuracy statement, translation date, full name and signature, and contact details. A summary alone does not meet that requirement.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "translation_official_source": true,
+        "translation_verification_details": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "translation",
+            "source_excerpt": "I'd appreciate guidance on the translation I should include with it for my UK visitor visa application.",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "translation",
+            "source_excerpt": "I'd appreciate guidance on the translation I should include with it for my UK visitor visa application.",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "translation"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "translation"
+      ],
+      "customer_answers": [
+        "Documents you submit that are not in English or Welsh need a full translation that the Home Office can independently verify. Include the translator's accuracy statement, translation date, full name and signature, and contact details. A summary alone does not meet that requirement.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "Documents you submit that are not in English or Welsh need a full translation that the Home Office can independently verify. Include the translator's accuracy statement, translation date, full name and signature, and contact details. A summary alone does not meet that requirement.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.012999
+    },
+    {
+      "id": "qu_en_dev_004",
+      "body": "Following up on the flight evidence for the UK visitor visa: I haven't bought a ticket. Do I have to pay for one before sending the application, or can I apply without a purchased flight?",
+      "language": "en",
+      "expected_topics": [
+        "booking"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2752,
+          "output_tokens": 90,
+          "total_tokens": 2842
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "booking_official_source": true,
+        "booking_not_required_as_evidence": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "For an ordinary Standard Visitor application, you do not need to buy flights or book a hotel just to supply booking evidence. The official guide describes hotel bookings and flight bookings (except transit) as less useful evidence. We can first record your intended arrangements without describing unbooked plans as confirmed bookings.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "booking_official_source": true,
+        "booking_not_required_as_evidence": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "booking",
+            "source_excerpt": "Do I have to pay for one before sending the application, or can I apply without a purchased flight?",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "booking",
+            "source_excerpt": "Do I have to pay for one before sending the application, or can I apply without a purchased flight?",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "booking"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "booking"
+      ],
+      "customer_answers": [
+        "For an ordinary Standard Visitor application, you do not need to buy flights or book a hotel just to supply booking evidence. The official guide describes hotel bookings and flight bookings (except transit) as less useful evidence. We can first record your intended arrangements without describing unbooked plans as confirmed bookings.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "For an ordinary Standard Visitor application, you do not need to buy flights or book a hotel just to supply booking evidence. The official guide describes hotel bookings and flight bookings (except transit) as less useful evidence. We can first record your intended arrangements without describing unbooked plans as confirmed bookings.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.012813
+    },
+    {
+      "id": "qu_en_dev_005",
+      "body": "Could you tell me the official application charge for a normal six-month UK Standard Visitor visa? I mean the visa application fee itself, not optional services at the application centre.",
+      "language": "en",
+      "expected_topics": [
+        "fees"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2746,
+          "output_tokens": 103,
+          "total_tokens": 2849
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "fees_official_source": true,
+        "fee_limited_to_six_month_route": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "For a 6-month Standard Visitor visa, GOV.UK currently lists the application fee as £135. Optional visa application centre or priority services cost extra; check the official price when paying. Other visa routes or validity periods may have different fees.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "fees_official_source": true,
+        "fee_limited_to_six_month_route": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "fees",
+            "source_excerpt": "Could you tell me the official application charge for a normal six-month UK Standard Visitor visa? I mean the visa application fee itself, not optional services at the application centre.",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "fees",
+            "source_excerpt": "Could you tell me the official application charge for a normal six-month UK Standard Visitor visa? I mean the visa application fee itself, not optional services at the application centre.",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "fees"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "fees"
+      ],
+      "customer_answers": [
+        "For a 6-month Standard Visitor visa, GOV.UK currently lists the application fee as £135. Optional visa application centre or priority services cost extra; check the official price when paying. Other visa routes or validity periods may have different fees.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "For a 6-month Standard Visitor visa, GOV.UK currently lists the application fee as £135. Optional visa application centre or priority services cost extra; check the official price when paying. Other visa routes or validity periods may have different fees.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.012573
+    },
+    {
+      "id": "qu_en_dev_006",
+      "body": "For the financial evidence in my UK visitor application, my own savings are split between a current account and a savings account. What bank records should show that I can actually access the money for the trip? I'm only asking about evidence of access to those funds.",
+      "language": "en",
+      "expected_topics": [
+        "bank_period"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2764,
+          "output_tokens": 87,
+          "total_tokens": 2851
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "bank_period_official_source": true,
+        "bank_period_not_invented_fixed_rule": true,
+        "bank_period_no_unrequested_visa_timing": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "For an ordinary Standard Visitor application, this official document guide does not set one fixed number of months of bank statements for everyone. The focus is where the funds come from, whether you can access them and how they relate to the trip's costs. The number of months alone does not establish whether the evidence is sufficient.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "bank_period_official_source": true,
+        "bank_period_not_invented_fixed_rule": true,
+        "funds_answer_does_not_impose_fixed_statement_period": true,
+        "bank_period_no_unrequested_visa_timing": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "bank_period",
+            "source_excerpt": "What bank records should show that I can actually access the money for the trip?",
+            "confidence": 0.95
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "bank_period",
+            "source_excerpt": "What bank records should show that I can actually access the money for the trip?",
+            "confidence": 0.95
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "bank_period"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "bank_period"
+      ],
+      "customer_answers": [
+        "Start with official statements for the relevant accounts showing the account holder, where the funds come from and the transactions. They also need to explain whether you can access the money for the trip; a balance alone does not explain all of that. These are preparation suggestions, not confirmation that the evidence is sufficient or will be accepted.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "Start with official statements for the relevant accounts showing the account holder, where the funds come from and the transactions. They also need to explain whether you can access the money for the trip; a balance alone does not explain all of that. These are preparation suggestions, not confirmation that the evidence is sufficient or will be accepted.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.013164
+    },
+    {
+      "id": "qu_en_dev_007",
+      "body": "Before I start collecting things for the UK tourist visit, can you lay out the documents I need to prepare? I'm a Chinese student applying in Hong Kong and paying for the trip myself. A checklist would help.",
+      "language": "en",
+      "expected_topics": [
+        "document_checklist"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2755,
+          "output_tokens": 82,
+          "total_tokens": 2837
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "checklist_at_least_three_relevant_items": true,
+        "explicit_checklist_has_requirement_sources": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "We'll also need these documents. Let me know if any are difficult to obtain:\n- Valid passport or travel document — to check your identity and validity throughout the planned stay\n- Evidence of your student status — ask your school for a headed letter confirming enrolment and leave, to support your stated study circumstances\n- Evidence of the purpose of the visit — to explain what you will do; for a holiday, outline your real plans without presenting unbooked arrangements as bookings\n- Evidence of available funds and their source, such as bank statements — to show who pays, where the money comes from and access to it; a budget figure alone is not evidence\n- Evidence of legal residence when applying outside the country of nationality — to show your lawful residence where you are applying\n\nThis is a preparation list for your circumstances, not a universal mandatory checklist. I'll adjust it if your travel or funding arrangements change.\n\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "checklist_at_least_three_relevant_items": true,
+        "explicit_checklist_has_requirement_sources": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "document_checklist",
+            "source_excerpt": "can you lay out the documents I need to prepare?",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "document_checklist",
+            "source_excerpt": "can you lay out the documents I need to prepare?",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "document_checklist"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "document_checklist"
+      ],
+      "customer_answers": [],
+      "next_fact_questions": [],
+      "provider_bound_body": "We'll also need these documents. Let me know if any are difficult to obtain:\n- Valid passport or travel document — to check your identity and validity throughout the planned stay\n- Evidence of your student status — ask your school for a headed letter confirming enrolment and leave, to support your stated study circumstances\n- Evidence of the purpose of the visit — to explain what you will do; for a holiday, outline your real plans without presenting unbooked arrangements as bookings\n- Evidence of available funds and their source, such as bank statements — to show who pays, where the money comes from and access to it; a budget figure alone is not evidence\n- Evidence of legal residence when applying outside the country of nationality — to show your lawful residence where you are applying\n\nThis is a preparation list for your circumstances, not a universal mandatory checklist. I'll adjust it if your travel or funding arrangements change.\n\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": true,
+      "render_error": "UnsafeModelOutput: Model buried the next action in excessive prose",
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.01311
+    },
+    {
+      "id": "qu_en_dev_008",
+      "body": "One different UK visa question: what is the application fee for a Student visa? I am asking about that route, not the Standard Visitor fee.",
+      "language": "en",
+      "expected_topics": [
+        "unsupported"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2741,
+          "output_tokens": 80,
+          "total_tokens": 2821
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "unsupported_acknowledged_as_unverified": true,
+        "unsupported_not_answered_with_narrow_fee_or_timing": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "I don't currently have verified guidance to answer that point reliably. It needs a separate check before we rely on it in the application; we can still organise the details already established.",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "unsupported_acknowledged_as_unverified": true,
+        "unsupported_not_answered_with_narrow_fee_or_timing": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "unsupported",
+            "source_excerpt": "what is the application fee for a Student visa?",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "unsupported",
+            "source_excerpt": "what is the application fee for a Student visa?",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "unsupported"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "unsupported"
+      ],
+      "customer_answers": [
+        "I don't currently have verified guidance to answer that point reliably. It needs a separate check before we rely on it in the application; we can still organise the details already established."
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "I don't currently have verified guidance to answer that point reliably. It needs a separate check before we rely on it in the application; we can still organise the details already established.",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.013172
+    },
+    {
+      "id": "qu_en_dev_009",
+      "body": "Could you suggest a friendly email subject line for inviting my classmates to a study group? We will be revising together at the library next week.",
+      "language": "en",
+      "expected_topics": [
+        "off_topic"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2740,
+          "output_tokens": 88,
+          "total_tokens": 2828
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "off_topic_scope_boundary": true,
+        "off_topic_scope_note_brief": true,
+        "only_off_topic_no_official_visa_url": true,
+        "only_off_topic_not_answered_with_fee_or_timing": true,
+        "only_off_topic_reply_brief": true,
+        "only_off_topic_no_manual_legal_review": true,
+        "off_topic_no_fact_change_no_default_document_requests": true,
+        "off_topic_no_fact_change_no_new_intake_questions": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "That question is outside UK visa preparation, so I can't give you a reliable answer or link here. If you have another question about your visa documents, feel free to ask.",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "off_topic_scope_boundary": true,
+        "off_topic_scope_note_brief": true,
+        "only_off_topic_no_official_visa_url": true,
+        "only_off_topic_not_answered_with_fee_or_timing": true,
+        "only_off_topic_reply_brief": true,
+        "only_off_topic_no_manual_legal_review": true,
+        "off_topic_no_fact_change_no_default_document_requests": true,
+        "off_topic_no_fact_change_no_new_intake_questions": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "off_topic",
+            "source_excerpt": "Could you suggest a friendly email subject line for inviting my classmates to a study group?",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "off_topic",
+            "source_excerpt": "Could you suggest a friendly email subject line for inviting my classmates to a study group?",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "off_topic"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "off_topic"
+      ],
+      "customer_answers": [
+        "That question is outside UK visa preparation, so I can't give you a reliable answer or link here. If you have another question about your visa documents, feel free to ask."
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "That question is outside UK visa preparation, so I can't give you a reliable answer or link here. If you have another question about your visa documents, feel free to ask.",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.012536
+    },
+    {
+      "id": "qu_en_dev_010",
+      "body": "One correction to my details: my date of birth is 21 May 1998, not 12 May 1998. That is all for now; I am still leaving the travel dates undecided. Thank you.",
+      "language": "en",
+      "expected_topics": [],
+      "expected_profile_updates": {
+        "date_of_birth": "1998-05-21"
+      },
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2758,
+          "output_tokens": 189,
+          "total_tokens": 2947
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "expected_profile_update:date_of_birth": true,
+        "non_question_not_given_fee_or_timing": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "Thanks for clarifying. I've updated Date Of Birth: 1998-05-21.\n\nWe can leave the dates open for now and collect the other details first.\n\nHere is the official starting point: choose Apply now on the GOV.UK page. You can save an unfinished form. If you need a Standard Visitor visa, apply online, book a visa application centre appointment, and follow the identity and document steps. We help organise and check your preparation pack; you submit the application on the official site.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\n\nAs a self-funded student, you can start with a letter confirming your enrolment and bank statements showing accessible funds and their source. These help explain your circumstances and how you will pay for the trip; a budget figure is not funding evidence.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "expected_profile_update:date_of_birth": true,
+        "non_question_not_given_fee_or_timing": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [
+          {
+            "field": "date_of_birth",
+            "value": "1998-05-21",
+            "source_excerpt": "my date of birth is 21 May 1998, not 12 May 1998",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [
+          {
+            "field": "planned_arrival_date",
+            "source_excerpt": "I am still leaving the travel dates undecided",
+            "confidence": 1.0
+          },
+          {
+            "field": "planned_departure_date",
+            "source_excerpt": "I am still leaving the travel dates undecided",
+            "confidence": 1.0
+          }
+        ],
+        "customer_questions": []
+      },
+      "validated_patch": {
+        "updates": [
+          {
+            "field": "date_of_birth",
+            "value": "1998-05-21",
+            "source_excerpt": "my date of birth is 21 May 1998, not 12 May 1998",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [
+          {
+            "field": "planned_arrival_date",
+            "source_excerpt": "I am still leaving the travel dates undecided",
+            "confidence": 1.0
+          },
+          {
+            "field": "planned_departure_date",
+            "source_excerpt": "I am still leaving the travel dates undecided",
+            "confidence": 1.0
+          }
+        ],
+        "customer_questions": []
+      },
+      "replayed_guarded_topics": [],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-21",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [
+        "date_of_birth"
+      ],
+      "workflow_topics": [],
+      "customer_answers": [],
+      "next_fact_questions": [],
+      "provider_bound_body": "Thanks—I've corrected your date of birth to 21 May 1998.\n\nWe can leave the dates open for now; let me know when you've decided.",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.012866
+    },
+    {
+      "id": "qu_en_dev_011",
+      "body": "For context, a friend wrote to me: 'Where is the official UK visitor form, and how much is the application fee?' Those were her questions, not a request from me. Please leave them unanswered here. I'm only forwarding the background and will get back to you when I'm ready.",
+      "language": "en",
+      "expected_topics": [],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2772,
+          "output_tokens": 39,
+          "total_tokens": 2811
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "non_question_not_given_fee_or_timing": true,
+        "no_question_no_fact_change_no_proactive_intake_guidance": true,
+        "no_question_no_fact_change_no_default_document_requests": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "Your existing details will stay on file. Just reply when you have new plans or documents to add.",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "non_question_not_given_fee_or_timing": true,
+        "no_question_no_fact_change_no_proactive_intake_guidance": true,
+        "no_question_no_fact_change_no_default_document_requests": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": []
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": []
+      },
+      "replayed_guarded_topics": [],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [],
+      "customer_answers": [],
+      "next_fact_questions": [],
+      "provider_bound_body": "Your existing details will stay on file. Just reply when you have new plans or documents to add.",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": true,
+      "elapsed_seconds": 0.012885
+    },
+    {
+      "id": "qu_en_dev_012",
+      "body": "I'm still working through the bank-statement part of my UK visitor application. Please tell me which months the statements should cover and where I can obtain them. I don't need the rest of the document list again.",
+      "language": "en",
+      "expected_topics": [
+        "bank_period"
+      ],
+      "expected_profile_updates": {},
+      "new_model_calls": 0,
+      "new_provider_result": false,
+      "usage": [],
+      "reused_arm": "neutral_combined",
+      "available": true,
+      "completed": true,
+      "original_neutral_usage": [
+        {
+          "operation": "extract_case_patch_neutral_input",
+          "input_tokens": 2756,
+          "output_tokens": 65,
+          "total_tokens": 2821
+        }
+      ],
+      "original_neutral_checks": {
+        "extraction_available": true,
+        "raw_topics_exact": true,
+        "validated_topics_exact": true,
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "bank_period_official_source": true,
+        "bank_period_not_invented_fixed_rule": true,
+        "bank_period_no_unrequested_visa_timing": true,
+        "bank_acquisition_practical_next_step": false,
+        "bank_acquisition_no_acceptance_guarantee": true,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true,
+        "workflow_available": true
+      },
+      "original_provider_bound_body": "For an ordinary Standard Visitor application, this official document guide does not set one fixed number of months of bank statements for everyone. The focus is where the funds come from, whether you can access them and how they relate to the trip's costs. The number of months alone does not establish whether the evidence is sufficient.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances",
+      "checks": {
+        "workflow_first_processing_not_duplicate": true,
+        "workflow_extraction_did_not_fallback": true,
+        "workflow_topics_match_validated_patch": true,
+        "profile_matches_only_grounded_updates": true,
+        "untouched_profile_fields_preserved": true,
+        "no_profile_or_final_confirmation": true,
+        "no_confirmation_request": true,
+        "no_pack_or_release": true,
+        "single_case_isolated": true,
+        "one_captured_send": true,
+        "no_attachment_sent": true,
+        "exact_persisted_provider_body": true,
+        "simulation_network_disabled": true,
+        "bank_period_official_source": true,
+        "bank_period_not_invented_fixed_rule": true,
+        "bank_period_no_unrequested_visa_timing": true,
+        "bank_acquisition_practical_next_step": true,
+        "bank_acquisition_no_acceptance_guarantee": false,
+        "pure_faq_no_unrequested_document_requests": true,
+        "pure_faq_no_travel_date_reminder": true,
+        "replay_no_extra_outbox_or_send": true,
+        "replay_no_second_extraction": true
+      },
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "bank_period",
+            "source_excerpt": "Please tell me which months the statements should cover and where I can obtain them.",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "validated_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "bank_period",
+            "source_excerpt": "Please tell me which months the statements should cover and where I can obtain them.",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "replayed_guarded_topics": [
+        "bank_period"
+      ],
+      "plan": "blocked",
+      "case_status": "DRAFT",
+      "profile_before": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "profile_after": {
+        "full_name": "Example Applicant",
+        "date_of_birth": "1998-05-12",
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": "Planned stay in London; no booking made",
+        "estimated_trip_cost_gbp": 1500,
+        "current_address": "Fictional campus address, Hong Kong",
+        "occupation_status": "student",
+        "annual_income_gbp": 0,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": false,
+        "route_confirmed_standard_visitor": true
+      },
+      "accepted_update_fields": [],
+      "workflow_topics": [
+        "bank_period"
+      ],
+      "customer_answers": [
+        "For an ordinary Standard Visitor application, the official guide does not set one fixed number of months for everyone. The number of months alone does not establish whether the evidence is sufficient. Start with official statements for the relevant accounts showing the account holder, where the funds come from and the transactions. They also need to explain whether you can access the money for the trip; a balance alone does not explain all of that. These are preparation suggestions, not confirmation that the evidence is sufficient or will be accepted.\nTo obtain them, look for official electronic statements in your online banking or bank app; if downloads are unavailable, request statements from your bank. This is a collection step, not a guarantee that any downloaded file will be accepted. We still need to check the account holder, transaction history, source and availability of funds; a balance screenshot alone does not explain all of that.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances"
+      ],
+      "next_fact_questions": [],
+      "provider_bound_body": "For an ordinary Standard Visitor application, the official guide does not set one fixed number of months for everyone. The number of months alone does not establish whether the evidence is sufficient. Start with official statements for the relevant accounts showing the account holder, where the funds come from and the transactions. They also need to explain whether you can access the money for the trip; a balance alone does not explain all of that. These are preparation suggestions, not confirmation that the evidence is sufficient or will be accepted.\nTo obtain them, look for official electronic statements in your online banking or bank app; if downloads are unavailable, request statements from your bank. This is a collection step, not a guarantee that any downloaded file will be accepted. We still need to check the account holder, transaction history, source and availability of funds; a balance screenshot alone does not explain all of that.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances",
+      "send_render_mode": "reviewed",
+      "send_render_error": null,
+      "render_fallback": false,
+      "render_error": null,
+      "extraction_guard_error": null,
+      "captured_sends": 1,
+      "passed": false,
+      "elapsed_seconds": 0.013165
+    }
+  ],
+  "started_at": "2026-09-04T12:03:35.658906+00:00",
+  "checkpoint_at": "2026-09-04T12:03:36.062453+00:00",
+  "finished_at": "2026-09-04T12:03:36.064908+00:00",
+  "source_unchanged_during_replay": true,
+  "available_replay_cases": 24,
+  "unavailable_replay_cases": 0,
+  "deterministic_reply_checks_passed_cases": 23,
+  "all_passed": false
+}

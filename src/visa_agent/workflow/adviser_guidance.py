@@ -4,7 +4,11 @@ import re
 from datetime import date
 
 from visa_agent.domain.models import Case, CaseStatus
-from visa_agent.workflow.conversation import customer_requests_next_step, latest_reply_text
+from visa_agent.workflow.conversation import (
+    customer_requests_next_step,
+    latest_reply_text,
+    preparation_context_progress,
+)
 from visa_agent.workflow.customer_questions import _active_clauses
 
 APPLICATION_URL = "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
@@ -38,7 +42,7 @@ def preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> list
     # An unshared topic is not by itself a reason to send it now. Proactive advice
     # needs progress in intake or a current preparation request; existing profile
     # data must not turn unrelated chatter or control instructions into a brochure.
-    if not (case.latest_received_facts or case.latest_changes or customer_requests_next_step(current)
+    if not (preparation_context_progress(case) or customer_requests_next_step(current)
             or re.search(
                 r"(?:想|准备|打算|需要).{0,6}(?:申请|办理).{0,6}(?:英国|签证)|"
                 r"(?:准备|整理|收集|补充).{0,8}(?:材料|资料|文件)|"

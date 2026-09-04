@@ -17,7 +17,14 @@ explicitly recorded here.
 
 Updated 2026-09-04. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**. The current local suite has
-1,179 passing tests; this is not a naturalness score or a general accuracy/reliability percentage.
+1,339 passing tests; this is not a naturalness score or a general accuracy/reliability percentage.
+
+The latest [three-arm question-understanding experiment](QUESTION_UNDERSTANDING_EXPERIMENT.md)
+selects a corrected single-call input wrapper, not multi-agent orchestration. Its neutral arm
+matched 24/24 new development, 24/24 exposed regression and 12/12 first-holdout topic sets.
+Reply reading still found missing subanswers and unsolicited guidance. Post-measurement content
+fixes passed two 24-case deterministic development replays; the failed first replays are retained.
+These are separate evidence types, not an overall customer-satisfaction or accuracy percentage.
 
 Current owner-directed priority: improve the shared agent and use Gmail as the primary realistic
 test channel. Preserve the existing WhatsApp adapter contracts; defer further channel expansion

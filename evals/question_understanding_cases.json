@@ -1,0 +1,326 @@
+[
+  {
+    "id": "qu_zh_dev_001",
+    "language": "zh",
+    "body": "你好，我准备在香港申请去英国旅游的访客签证。网上入口很多，有点分不清，麻烦给我正式申请表的入口，再说一下填完表之后怎么递交。谢谢。",
+    "expected_topics": ["application"],
+    "rationale": "Requests the official ordinary visitor application entry point and submission process.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_dev_002",
+    "language": "zh",
+    "body": "我还没决定具体出发日，想先排一下英国旅游签证的时间。最早能提前多久递交？正常情况下，从申请到有结果一般要等多久？",
+    "expected_topics": ["timing"],
+    "rationale": "Asks both the earliest application window and usual decision time; travel dates remain unknown.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_dev_003",
+    "language": "zh",
+    "body": "补问英国访客签证的材料：我的银行月结单全部是中文。交中文原件就行，还是要另外准备英文翻译？",
+    "expected_topics": ["translation"],
+    "rationale": "Asks about translating a non-English document, not statement coverage or a full document checklist.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_dev_004",
+    "language": "zh",
+    "body": "英国旅游的机票和酒店我都还没付款。递交访客签证之前，是不是必须把机票买好、酒店也付清？我主要怕签证没下来就先花了这些钱。",
+    "expected_topics": ["booking"],
+    "rationale": "Asks whether flight and accommodation purchases are required before applying.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_dev_005",
+    "language": "zh",
+    "body": "先更正一下，我这次旅行的总预算改成1800英镑，不是之前的1500英镑。另外，普通六个月英国访客签证本身的申请费是多少？不算机票酒店。",
+    "expected_topics": ["fees"],
+    "rationale": "Requests the ordinary visitor application fee and explicitly corrects the trip budget.",
+    "holdout": false,
+    "expected_profile_updates": {"estimated_trip_cost_gbp": 1800}
+  },
+  {
+    "id": "qu_zh_dev_006",
+    "language": "zh",
+    "body": "关于英国访客签证要用的银行流水，我不太清楚应该准备哪几个月的记录。银行手机应用里下载的对账单可以用吗，还是需要去柜台拿？",
+    "expected_topics": ["bank_period"],
+    "rationale": "Requests statement coverage and acquisition guidance for one document, not a complete preparation checklist.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_dev_007",
+    "language": "zh",
+    "body": "我打算开始整理英国旅游签证的资料了。请按我这个在香港递交、自己出钱的中国籍学生情况，列一份申请前要准备的材料清单，方便我逐项核对。",
+    "expected_topics": ["document_checklist"],
+    "rationale": "An imperative request without a question mark asks for the full set of preparation documents.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_dev_008",
+    "language": "zh",
+    "body": "想确认一个英国签证问题：如果拿普通访客签证去旅游，旅途中可以在当地餐厅做两周有工资的兼职吗？",
+    "expected_topics": ["unsupported"],
+    "rationale": "A genuine UK visa question asks about permission to work, outside the covered process and document topics.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_dev_009",
+    "language": "zh",
+    "body": "你好，周六想在家做清蒸鲈鱼给同学吃。能给我一个两人份的做法吗？厨房只有普通蒸锅。",
+    "expected_topics": ["off_topic"],
+    "rationale": "The current request is cooking guidance rather than a UK visa question.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_dev_010",
+    "language": "zh",
+    "body": "收到，谢谢。我周末会先下载银行对账单，整理好再联系你。英国行程还没定，目前先不继续申请。",
+    "expected_topics": [],
+    "rationale": "Acknowledges prior advice and states future actions and deferred status without requesting an answer.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_dev_011",
+    "language": "zh",
+    "body": "你上一封问“要不要我再解释翻译要求和机票酒店材料？”这两项先不用了，我只是确认已收到你的邮件，谢谢。",
+    "expected_topics": [],
+    "rationale": "The quoted offer is explicitly declined; mentioning the subjects does not make them active questions.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_dev_012",
+    "language": "zh",
+    "body": "刚发现生日记错了，请改成1998年5月21日，不是5月12日。另外，能把英国访客签证需要准备的完整材料清单发我吗？如果其中的银行对账单只有中文，翻译这部分要怎么处理？",
+    "expected_topics": ["document_checklist", "translation"],
+    "rationale": "Requests both the full checklist and translation guidance, and explicitly corrects the date of birth.",
+    "holdout": false,
+    "expected_profile_updates": {"date_of_birth": "1998-05-21"}
+  },
+  {
+    "id": "qu_en_dev_001",
+    "language": "en",
+    "body": "Hi, I am applying for an ordinary UK visitor visa from Hong Kong. Please point me to the official online application form and explain what happens after I finish it, including how I submit the application. Thanks.",
+    "expected_topics": ["application"],
+    "rationale": "Requests the official application form and the ordinary application process.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_dev_002",
+    "language": "en",
+    "body": "I'm trying to work out when to start my UK visitor visa application. How far before travel can I apply, and how long does a normal decision take? Also, must I already have paid for my flights and hotel when I apply? I haven't chosen dates yet.",
+    "expected_topics": ["timing", "booking"],
+    "rationale": "Asks about application and decision timing as well as advance flight and hotel purchases; no travel dates are supplied.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_dev_003",
+    "language": "en",
+    "body": "My university can give me a student letter, but it is written in Chinese. I'd appreciate guidance on the translation I should include with it for my UK visitor visa application.",
+    "expected_topics": ["translation"],
+    "rationale": "An indirect request asks for translation requirements for a non-English supporting document.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_dev_004",
+    "language": "en",
+    "body": "Following up on the flight evidence for the UK visitor visa: I haven't bought a ticket. Do I have to pay for one before sending the application, or can I apply without a purchased flight?",
+    "expected_topics": ["booking"],
+    "rationale": "A short follow-up supplies sufficient context and asks whether buying a flight is necessary.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_dev_005",
+    "language": "en",
+    "body": "Could you tell me the official application charge for a normal six-month UK Standard Visitor visa? I mean the visa application fee itself, not optional services at the application centre.",
+    "expected_topics": ["fees"],
+    "rationale": "Asks specifically for the ordinary visitor application fee.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_dev_006",
+    "language": "en",
+    "body": "For the financial evidence in my UK visitor application, my own savings are split between a current account and a savings account. What bank records should show that I can actually access the money for the trip? I'm only asking about evidence of access to those funds.",
+    "expected_topics": ["bank_period"],
+    "rationale": "Requests evidence of access to personal funds, not an individual eligibility verdict or a full checklist.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_dev_007",
+    "language": "en",
+    "body": "Before I start collecting things for the UK tourist visit, can you lay out the documents I need to prepare? I'm a Chinese student applying in Hong Kong and paying for the trip myself. A checklist would help.",
+    "expected_topics": ["document_checklist"],
+    "rationale": "Requests the set of documents needed for the stated ordinary visitor application.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_dev_008",
+    "language": "en",
+    "body": "One different UK visa question: what is the application fee for a Student visa? I am asking about that route, not the Standard Visitor fee.",
+    "expected_topics": ["unsupported"],
+    "rationale": "A UK visa fee question concerns another route and is not covered by ordinary visitor fee information.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_dev_009",
+    "language": "en",
+    "body": "Could you suggest a friendly email subject line for inviting my classmates to a study group? We will be revising together at the library next week.",
+    "expected_topics": ["off_topic"],
+    "rationale": "The current request is help writing a study-group invitation, with no visa information sought.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_dev_010",
+    "language": "en",
+    "body": "One correction to my details: my date of birth is 21 May 1998, not 12 May 1998. That is all for now; I am still leaving the travel dates undecided. Thank you.",
+    "expected_topics": [],
+    "rationale": "An explicit profile correction is not itself a visa question; the travel dates remain undecided.",
+    "holdout": false,
+    "expected_profile_updates": {"date_of_birth": "1998-05-21"}
+  },
+  {
+    "id": "qu_en_dev_011",
+    "language": "en",
+    "body": "For context, a friend wrote to me: 'Where is the official UK visitor form, and how much is the application fee?' Those were her questions, not a request from me. Please leave them unanswered here. I'm only forwarding the background and will get back to you when I'm ready.",
+    "expected_topics": [],
+    "rationale": "Questions appear only in quoted background and the sender explicitly says not to answer them.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_dev_012",
+    "language": "en",
+    "body": "I'm still working through the bank-statement part of my UK visitor application. Please tell me which months the statements should cover and where I can obtain them. I don't need the rest of the document list again.",
+    "expected_topics": ["bank_period"],
+    "rationale": "A continuing request without a question mark asks about one document's coverage and acquisition while declining the broader checklist.",
+    "holdout": false,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_hold_001",
+    "language": "zh",
+    "body": "你好，英国旅游签证我想先了解一下再动手。方便把政府的申请入口和基本办理步骤发我吗？还想知道最早可以在出发前多久申请，这样我好安排准备时间，具体日期暂时没定。",
+    "expected_topics": ["application", "timing"],
+    "rationale": "Requests the official visitor application route and process plus the earliest application window, without setting travel dates.",
+    "holdout": true,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_hold_002",
+    "language": "zh",
+    "body": "上次说的旅行费用要改一下，现在我计划这趟最多花2100英镑，之前1500的记录请替换掉。英国普通六个月访客签证的官方申请费目前是多少呢？",
+    "expected_topics": ["fees"],
+    "rationale": "Asks for the ordinary visitor application fee and explicitly replaces the previous trip budget.",
+    "holdout": true,
+    "expected_profile_updates": {"estimated_trip_cost_gbp": 2100}
+  },
+  {
+    "id": "qu_zh_hold_003",
+    "language": "zh",
+    "body": "学校已经把中文在读证明给我了。用于英国访客签证的话，这一份文件需要怎么翻译？我现在只是卡在这一份的语言问题上，其他材料先不展开。",
+    "expected_topics": ["translation"],
+    "rationale": "Asks only how to translate one supporting document and does not request a full checklist.",
+    "holdout": true,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_hold_004",
+    "language": "zh",
+    "body": "我还是学生，没有固定工资，不过旅游会用我自己的存款。只凭这些情况，你能判断我这次一定符合英国访客签证的资格吗？",
+    "expected_topics": ["unsupported"],
+    "rationale": "Requests a definitive personal eligibility judgment rather than general financial-document preparation guidance.",
+    "holdout": true,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_hold_005",
+    "language": "zh",
+    "body": "明天下午我们小组要做一个环保主题的课堂展示。麻烦帮我写一个大约半分钟的中文开场白，语气自然一点，不要像演讲比赛。",
+    "expected_topics": ["off_topic"],
+    "rationale": "The live request is drafting a classroom presentation opening, not visa guidance.",
+    "holdout": true,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_zh_hold_006",
+    "language": "zh",
+    "body": "看到你写的“需要再讲一下银行流水要覆盖多久吗？”了，暂时不用补充。我这周先忙学校的事，签证还是晚点再弄，收到即可，谢谢。",
+    "expected_topics": [],
+    "rationale": "The quoted question is declined and the rest is an acknowledgement and continued deferral.",
+    "holdout": true,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_hold_001",
+    "language": "en",
+    "body": "I'm ready to gather the paperwork for my self-funded UK holiday application from Hong Kong. Please send me the complete preparation checklist. For the bank statements on that list, how much history should I collect?",
+    "expected_topics": ["document_checklist", "bank_period"],
+    "rationale": "Requests both the complete document set and a specific statement-coverage detail.",
+    "holdout": true,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_hold_002",
+    "language": "en",
+    "body": "Thanks for discussing hotel evidence for the UK visitor application. Before I spend anything, please clarify whether I need an accommodation reservation or a fully paid hotel booking to submit the application.",
+    "expected_topics": ["booking"],
+    "rationale": "A contextual continuation without a question mark requests clarification of accommodation booking evidence.",
+    "holdout": true,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_hold_003",
+    "language": "en",
+    "body": "I have two UK visitor visa questions. What is the ordinary six-month application fee, and would a previous overstay automatically make me ineligible for a new visitor visa?",
+    "expected_topics": ["fees", "unsupported"],
+    "rationale": "Combines a covered ordinary visitor fee question with an uncovered individual eligibility question about prior immigration history.",
+    "holdout": true,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_hold_004",
+    "language": "en",
+    "body": "Please correct the birth date in my details to 21 May 1998. The 12 May 1998 date I gave before was a typing error. I am not asking for any visa information today and have nothing else to add.",
+    "expected_topics": [],
+    "rationale": "Only an explicit date-of-birth correction is requested; visa information is expressly not requested.",
+    "holdout": true,
+    "expected_profile_updates": {"date_of_birth": "1998-05-21"}
+  },
+  {
+    "id": "qu_en_hold_005",
+    "language": "en",
+    "body": "Can you help me draft a polite message asking my landlord to fix a dripping kitchen tap? It has been leaking since yesterday, and I would like to arrange a repair this week.",
+    "expected_topics": ["off_topic"],
+    "rationale": "The genuine current request is a landlord repair message, unrelated to visa questions.",
+    "holdout": true,
+    "expected_profile_updates": {}
+  },
+  {
+    "id": "qu_en_hold_006",
+    "language": "en",
+    "body": "A friend sent me the question 'Do you have to buy the flights first?' but please set her question aside. What I need for my own UK visitor application is guidance on translating a bank letter that is written only in Chinese.",
+    "expected_topics": ["translation"],
+    "rationale": "The active request concerns document translation; the separately quoted flight question is explicitly excluded.",
+    "holdout": true,
+    "expected_profile_updates": {}
+  }
+]

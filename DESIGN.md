@@ -33,12 +33,14 @@ guidance. The installed default does not let an unconstrained model compose lega
 Neither can change eligibility or release a pack. Separate corrections and requests to continue in
 the same message must not be lost because one question is outside scope. See `RELIABILITY.md`.
 
-This design still misses genuine questions in real-provider probes and sometimes sounds formulaic.
-The next candidate should evaluate a separate, narrowly scoped question-understanding pass against
-the current combined call, measuring omissions, mixed-turn preservation, latency and cost before
-adoption. That is a proposed experiment, not an implemented multi-agent system or a promise that
-more model calls will improve quality. Rendering/content coverage needs its own evaluation; a correct
-topic or a passing delivery gate does not prove the customer received a helpful answer.
+The three-arm [question-understanding experiment](QUESTION_UNDERSTANDING_EXPERIMENT.md) compared
+the old facts-only input wrapper, a neutral combined wrapper, and a separate focused question pass.
+The neutral **single-call** request is now the DeepSeek default; the second pass did not improve
+observed coverage and introduced two distinct omissions/rejections across regression and holdout.
+It remains an evaluation candidate, not an installed multi-agent system. Legacy baseline requests
+remain explicit for reproducibility. Rendering/content coverage has its own evaluation: correct
+topics still produced unhelpful replies, so a passing delivery gate or classifier is not a customer
+quality score. Source-reviewed answers and workflow authority remain separate from model proposals.
 
 ## Intent
 

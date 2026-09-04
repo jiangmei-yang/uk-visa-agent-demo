@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from datetime import date
 
 from visa_agent.domain.models import Case, DocumentStatus, Requirement
 from visa_agent.domain.rules import required_profile_facts
@@ -202,6 +203,13 @@ def customer_requests_next_step(body: str) -> bool:
         ):
             return True
     return False
+
+
+def preparation_context_progress(case: Case) -> bool:
+    """A contact/identity correction alone is not a request for a fresh preparation guide."""
+    return bool(case.latest_received_facts or set(case.latest_changes) - {
+        "full_name", "date_of_birth", "current_address",
+    })
 
 
 def update_deferred_questions(case: Case, body: str) -> None:
@@ -495,7 +503,7 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
     requested_list = document_list_requested(case)
     paused = case.question_plan == [] and bool(case.pending_question_fields)
     quiet_turn = bool(case.latest_customer_message) and not (
-        case.latest_received_facts or case.latest_changes or case.latest_document_names
+        preparation_context_progress(case) or case.latest_document_names
         or customer_requests_next_step(case.latest_customer_message)
     )
     answering_question = bool(case.customer_question_topics or case.customer_answers)
@@ -525,6 +533,13 @@ def change_acknowledgement(case: Case) -> str | None:
     if not case.latest_changes:
         return None
     zh = case.customer_language == "zh"
+    if not zh and set(case.latest_changes) == {"date_of_birth"}:
+        try:
+            corrected = date.fromisoformat(case.latest_changes["date_of_birth"])
+        except ValueError:
+            pass  # Defensive formatting only; never repair or change a stored fact.
+        else:
+            return f"Thanks—I've corrected your date of birth to {corrected.day} {corrected:%B %Y}."
     if not zh and set(case.latest_changes) == {"occupation_status"}:
         occupation = {
             "employed": "you're employed", "student": "you're studying",
@@ -640,8 +655,8 @@ def blocked_customer_message(case: Case) -> str:
         not case.customer_answers or case.proactive_guidance_offered or case.latest_received_facts or case.latest_changes
     ):
         sections.append(
-            "日期先留空，等你确定后再补。我们先整理其他信息。"
-            if zh else "We can leave the dates open for now and collect the other details first."
+            "日期先留空，等你确定后再补。"
+            if zh else "We can leave the dates open for now; let me know when you've decided."
         )
     elif (case.deferred_fields and not questions and not issues and not documents and not case.customer_answers
           and not case.pending_question_fields

@@ -661,3 +661,43 @@ persisted body, recipient, thread, reply header and no attachments. A following 
 one outbox row for that event. See `eval_output/gmail_scope_live_reply_2026-09-04.json`.
 This proves one real ordinary-message reply, not recipient-side reading, approved naturalness,
 correction of the development omissions, or final-pack delivery. No manual message was sent.
+
+## Single-call input correction and reply-content gaps
+
+The combined system prompt requested questions as well as facts, but its old user wrapper said
+“Extract only facts.” An independently authored 36-case corpus and controlled three-arm experiment
+tested that conflict before adding more orchestration. Full design, hashes, usage and all failures
+are in [QUESTION_UNDERSTANDING_EXPERIMENT.md](QUESTION_UNDERSTANDING_EXPERIMENT.md). The neutral
+single-call wrapper matched 24/24 new development topics, 24/24 exposed scope-regression topics
+and 12/12 topics in a single fresh holdout. The baseline matched 22, 22 and 12 respectively; the
+focused two-call architecture matched 24, 23 and 11 after guards. All specified corrections remained
+intact. This selects the smaller request correction, not a generally superior model/agent claim.
+
+Manual reading found automatically passing but unhelpful replies: a funds-access question received
+months boilerplate; a birthday correction triggered an application tutorial; a date receipt continued
+preparation after the customer said not now. All three arms also missed the practical answer to
+“where I can obtain them.” Content changes now explain relevant bank records and acquisition,
+bind financial wording to financial question/context clauses, distinguish identity corrections
+from preparation progress, and remove the unsolicited continuation from date receipts. The
+English birthday receipt no longer exposes the title-cased internal field label.
+
+Independent synthetic tests caught additional mistakes during that change: negated multiple
+accounts were incorrectly stated as a fact, “cover the costs” was mistaken for record-date coverage,
+and an employment-letter question leaked into bank-acquisition guidance. Conditional wording and
+question-specific context fixed these without changing facts or release gates. All 28 content-gap
+tests pass, including normal-topic deduplication with a second explicit bank subquestion, declined
+and quoted requests, and identity correction plus an independent request to continue.
+
+The first zero-model-call replays are retained unchanged: new development 23/24 and old scope
+regression 22/24 selected checks. Those reports exposed two real bank subquestion omissions after
+ordinary-topic deduplication and an evaluator false positive: “not confirmation that ... will be
+accepted” was misread as a guarantee. The oracle now respects that explicit negative scope while
+still rejecting a separate later affirmative promise. It is not a reason to discard the first runs.
+The second replays passed 24/24 each. A third pair, after retaining relevant account context and
+removing repeated financial-check explanations, also passed 24/24 each. Every replay has zero new
+model calls and immutable source-report/current-code fingerprints; no holdout was replayed.
+
+The final local suite is 1,339 passing tests, ruff and mypy (57 files), with the existing single
+Starlette/httpx warning. A persistent pause/resume workflow, richer unsupported-route handoff,
+link deduplication, wider subquestion coverage and independent recipient naturalness remain open.
+The less pushy date receipt is not a claim that an application pause was persisted.

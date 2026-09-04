@@ -357,6 +357,20 @@ def bank_reply(probe, language="en"):
     return text + "\nGOV.UK: " + probe.DOCUMENTS_URL
 
 
+def test_access_question_is_not_required_to_receive_months_boilerplate(probe):
+    incoming = "What account records show that I can access my own money?"
+    answer = "Statements should show the account holder, where the funds come from and access to the money.\nGOV.UK: " + probe.DOCUMENTS_URL
+    checks = probe.content_checks(["bank_period"], scope_case(probe), answer, "en", incoming_body=incoming)
+    assert checks["bank_period_not_invented_fixed_rule"]
+    assert checks["funds_answer_does_not_impose_fixed_statement_period"]
+    fixed = probe.content_checks(["bank_period"], scope_case(probe), answer + " You must supply 6 months of statements.",
+                                 "en", incoming_body=incoming)
+    assert not fixed["funds_answer_does_not_impose_fixed_statement_period"]
+    months = probe.content_checks(["bank_period"], scope_case(probe), answer, "en",
+                                  incoming_body="How many months of bank statements should I supply?")
+    assert not months["bank_period_not_invented_fixed_rule"]
+
+
 @pytest.mark.parametrize(("language", "extra_timing"), [
     ("en", "You can apply up to 3 months before travel."),
     ("en", "A decision usually takes up to 3 weeks."),
@@ -413,6 +427,8 @@ def test_bank_acquisition_subquestion_needs_practical_answer_not_period_only(
     ("en", "Obtaining a copy does not mean that every statement exported from the bank portal will be accepted.", True),
     ("en", "I cannot guarantee that a document downloaded from your bank's mobile application will be accepted.", True),
     ("en", "Files are not automatically accepted.", True),
+    ("en", "These are preparation suggestions, not confirmation that the evidence is sufficient or will be accepted.", True),
+    ("en", "This is not confirmation that the dates are right, but downloaded records will be accepted.", False),
     ("en", "No paper copies are needed and downloaded copies will be accepted.", False),
     ("en", "The portal is not ready but the documents will be accepted.", False),
     ("en", "There is no guarantee of portal access; the copies will be accepted.", False),

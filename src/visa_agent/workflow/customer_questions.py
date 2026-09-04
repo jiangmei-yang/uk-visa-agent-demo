@@ -250,14 +250,39 @@ def _reviewed_answer(topic: str, language: str, *, body: str = "") -> str:
         source = APPLICATION_SOURCE
     elif topic == "bank_period":
         answer = (
-            "如果是普通 Standard Visitor 申请，这份官方材料指南没有统一规定银行流水必须提供几个月。"
-            "重点是说明资金来源、你确实可以使用这些资金，并结合这次旅行的支出核对是否充足；"
-            "我不能只凭流水覆盖的月份判断材料是否足够。"
+            "可以先整理相关账户的正式对账单，让账户持有人、资金来源和资金进出记录看得清楚。"
+            "还要说明你是否可以使用这些钱，结合旅行支出核对；余额本身不能说明全部情况。"
             if language == "zh"
-            else "For an ordinary Standard Visitor application, this official document guide does not "
-            "set one fixed number of months of bank statements for everyone. The focus is where the "
-            "funds come from, whether you can access them and how they relate to the trip's costs. "
-            "The number of months alone does not establish whether the evidence is sufficient."
+            else "Start with official statements for the relevant accounts showing the account holder, "
+            "where the funds come from and the transactions. They also need to explain whether you can "
+            "access the money for the trip; a balance alone does not explain all of that."
+        )
+        # The topic covers financial evidence, not only statement periods. Answer
+        # the period subquestion when present, rather than leading every funds reply with it.
+        if re.search(r"个月|哪几|月份|多久|多长|追溯|时段|跨度|多少.{0,4}(?:月|年)|"
+                     r"\b(?:months?|years?|period)\b|how.{0,15}(?:far|long).{0,10}back", body, re.I):
+            answer = (
+                "普通 Standard Visitor 的这份官方材料指南没有统一规定银行流水必须提供几个月。"
+                "不能只凭月份数量判断材料是否足够。"
+                if language == "zh" else
+                "For an ordinary Standard Visitor application, the official guide does not set one fixed number of months for everyone. "
+                "The number of months alone does not establish whether the evidence is sufficient. "
+            ) + answer
+        if re.search(r"(?:两个|多个|不同).{0,5}账户|活期.{0,12}(?:储蓄|定期)|"
+                     r"\b(?:two|both|several|different|multiple)\s+accounts?\b|"
+                     r"current account.{0,25}savings account|split.{0,35}accounts?", body, re.I):
+            answer += (
+                "涉及不同账户时，可以按账户分别整理对账单，说明账户之间的资金往来，避免把同一笔钱重复计算。"
+                "如果有定期或其他支取限制，再向银行核实何时可支取。"
+                if language == "zh" else
+                " If using money from different accounts, keep separate statements for each account and "
+                "explain transfers between them so the same money is not counted twice. If any savings "
+                "have withdrawal restrictions, check their availability with the bank."
+            )
+        answer += (
+            "这些是整理材料的建议，实际文件还需要核对。"
+            if language == "zh" else
+            " These are preparation suggestions; the actual records still need checking."
         )
         source = SOURCE + "#demonstrating-personal-circumstances"
     else:
@@ -297,18 +322,15 @@ def _reviewed_answer(topic: str, language: str, *, body: str = "") -> str:
     elif topic == "bank_period" and re.search(
         r"网银|银行\s*[Aa][Pp][Pp]|下载|电子(?:版|对账单|流水)|纸质|哪里.{0,8}(?:流水|对账单)|"
         r"(?:online|mobile) banking|download|paper(?:less| copies| statements)?|"
-        r"(?:where|how).{0,25}(?:get|obtain|request).{0,20}statements?", body, re.I,
+        r"(?:where|how).{0,25}(?:get|obtain|request)|哪里.{0,8}(?:拿|获取|索取)", body, re.I,
     ):
         answer += (
             "\n获取方面，可以先在网银或银行 App 里找正式电子对账单；没有下载入口的话，向银行索取。"
-            "这是收集材料的办法，不代表任何下载文件都会被接受。拿到后还要核对账户持有人、"
-            "交易记录、资金来源和可用资金；不要只发一个余额截图来代替完整说明。"
+            "不代表任何下载文件都会被接受，也不要用余额截图代替这些记录。"
             if language == "zh" else
             "\nTo obtain them, look for official electronic statements in your online banking or bank app; "
-            "if downloads are unavailable, request statements from your bank. This is a collection step, "
-            "not a guarantee that any downloaded file will be accepted. We still need to check the "
-            "account holder, transaction history, source and availability of funds; a balance screenshot "
-            "alone does not explain all of that."
+            "if downloads are unavailable, request statements from your bank. This is not a guarantee "
+            "that any downloaded file will be accepted, and a balance screenshot is not a substitute for those records."
         )
     return answer + "\nGOV.UK: " + source + ("\nGOV.UK: " + extra_source if extra_source else "")
 
@@ -457,6 +479,13 @@ def grounded_customer_answers(
     booking_text = "\n".join(clause for clause in _active_clauses(current) if not any(
         _overlapping_excerpt(excerpt, clause) for excerpt in unsupported_excerpts
     ))
+    # Do not borrow "where can I obtain..." from an independent question.
+    other_question_excerpts = [item.source_excerpt for item in semantic if item.topic != "bank_period"]
+    bank_text = "\n".join(clause for clause in _active_clauses(current)
+                          if clause not in unsupported_clauses
+                          and not any(_overlapping_excerpt(excerpt, clause) for excerpt in other_question_excerpts)
+                          and (any(_overlapping_excerpt(excerpt, clause) for excerpt in bank_excerpts)
+                               or re.search(r"银行|流水|对账单|网银|账户|存款|\bbank(?:ing)?\b|\b(?:statements?|accounts?|savings)\b", clause, re.I)))
     booking = _booking_answer(booking_text, language, today)
     if not booking and "booking" in semantic_topics:
         # The model chooses a topic, never supplies the legal answer or a URL.
@@ -476,7 +505,7 @@ def grounded_customer_answers(
             requested = [topic for topic in requested if topic == "translation"]
         answers.extend((topic, _reviewed_answer(
             "application_link" if topic == "application" and previous_link_requested else topic,
-            language, body=active_text,
+            language, body=bank_text if topic == "bank_period" else active_text,
         )) for topic in requested)
     if "unsupported" in semantic_topics and include_unsupported:
         boundaries = dict.fromkeys(_unsupported_answer(
