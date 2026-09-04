@@ -10,11 +10,38 @@ from visa_agent.domain.models import Case, DocumentStatus
 from visa_agent.domain.rules import required_profile_facts
 
 
+def _outlook_history_start(lines: list[str], index: int) -> bool:
+    """Recognise a complete quoted header, never a lone 'From:' in applicant prose."""
+    labels = []
+    for line in lines[index:index + 10]:
+        if not line.strip():
+            continue
+        match = re.match(
+            r"^(From|Date|Sent|To|Cc|Subject|发件人|寄件者|日期|发送时间|寄件日期|收件人|收件者|抄送|副本|主题|主旨)\s*[:：]\s*\S",
+            line.strip(), re.I,
+        )
+        if not match:
+            return False
+        labels.append(match[1].lower())
+        if labels[-1] in {"subject", "主题", "主旨"}:
+            return (
+                len(labels) in {4, 5}
+                and labels[0] in {"from", "发件人", "寄件者"}
+                and labels[1] in {"date", "sent", "日期", "发送时间", "寄件日期"}
+                and labels[2] in {"to", "收件人", "收件者"}
+                and (len(labels) == 4 or labels[3] in {"cc", "抄送", "副本"})
+            )
+    return False
+
+
 def latest_reply_text(body: str) -> str:
     """Exclude quoted history from extraction and confirmation, preserving the raw event elsewhere."""
     lines = []
-    for line in body.splitlines():
+    source_lines = body.splitlines()
+    for index, line in enumerate(source_lines):
         stripped = line.strip()
+        if _outlook_history_start(source_lines, index):
+            break
         if re.match(
             r"^(On .+wrote:|在.+写道[：:]|[- ]*Original Message[- ]*|[- ]*Forwarded message[- ]*)$",
             stripped,

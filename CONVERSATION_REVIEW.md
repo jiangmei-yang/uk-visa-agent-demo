@@ -58,3 +58,19 @@ The English wording has not received an equally comprehensive conversational rev
 recognizes a conservative set of explicit date-uncertainty phrases, not every paraphrase or every
 field. Unsupported/free-form policy questions still need broader sourced-answer coverage. Naturalness
 across all real multi-turn conversations is not proven; external user observation remains required.
+
+## Live follow-up: Outlook quoted history
+
+A registered sender's ordinary follow-up on 2026-09-04 retained Outlook's From/Date/To/Subject
+quoted reply in `latest_customer_message`. No false release was observed, but the old message
+was still exposed to extraction as current text. The reply-boundary parser now recognises complete
+English and simplified/traditional Chinese header blocks, with optional Cc. A lone From/To line
+is retained rather than silently discarding applicant prose. New tests verify that quoted assent
+cannot release a pack and that quoted fact changes never reach the workflow's extractor. This
+is a bounded header-pattern fix, not a claim to understand every email client's quoting format.
+The complete local regression suite passes 308 tests after this fix; lint and strict typing pass.
+
+The Gmail worker was restarted under the existing state lock to load the contextual wording
+changes. Its next completed poll retained two processed events, two SENT replies, and zero packs;
+no replay or replacement of old replies was performed. These counts are a dated observation,
+not expected permanent service totals. No mailbox addresses or message bodies are published here.

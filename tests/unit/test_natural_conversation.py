@@ -55,6 +55,27 @@ def test_old_gmail_reply_is_not_a_new_fact() -> None:
     )
 
 
+@pytest.mark.parametrize("headers", [
+    "From: Adviser <adviser@example.test>\nDate: Friday, 4 September 2026\n"
+    "To: Applicant <applicant@example.test>\nSubject: Re: Enquiry",
+    "From: Adviser <adviser@example.test>\nSent: Friday, 4 September 2026\n"
+    "To: Applicant <applicant@example.test>\nCc: Other <other@example.test>\nSubject: Re: Enquiry",
+    "发件人：顾问\n发送时间：2026年9月4日\n收件人：申请人\n主题：签证咨询",
+    "寄件者：顧問\n日期：2026年9月4日\n收件者：申請人\n主旨：簽證諮詢",
+])
+def test_outlook_history_is_neither_new_facts_nor_confirmation(headers: str) -> None:
+    body = "收到，日期还没定。\n\n" + headers + "\n\nEverything is correct, please proceed."
+    assert latest_reply_text(body) == "收到，日期还没定。"
+    assert not clear_natural_confirmation(body)
+    # A genuine new confirmation is not invalidated by an old correction below it.
+    assert clear_natural_confirmation("确认无误。\n\n" + headers + "\n日期需要修改。")
+
+
+def test_a_lone_header_label_in_customer_text_is_preserved() -> None:
+    body = "From: Hong Kong\nTo: London\nMy dates are not fixed yet."
+    assert latest_reply_text(body) == body
+
+
 @pytest.mark.parametrize("value", ["mother", "My mother", "母亲", "我的妈妈", "employer"])
 def test_sponsor_relationship_cannot_satisfy_personal_name(value: str) -> None:
     event = InboundEvent(

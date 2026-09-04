@@ -44,6 +44,9 @@ def setup_case(
         ("收到，我晚点看。", "awaiting_confirmation"),
         ("我还没看\nI CONFIRM THE FINAL SUMMARY", "awaiting_confirmation"),
         ("Thanks\nOn Friday, Visa wrote:\nI CONFIRM THE FINAL SUMMARY", "awaiting_confirmation"),
+        ("收到\n\nFrom: Adviser <adviser@example.test>\nDate: 4 September 2026\n"
+         "To: Applicant <applicant@example.test>\nSubject: Re: Enquiry\n\n"
+         "Everything is correct, please proceed.", "awaiting_confirmation"),
     ],
 )
 def test_final_confirmation_depends_on_current_context(
@@ -54,6 +57,32 @@ def test_final_confirmation_depends_on_current_context(
         case, _, plan = service.process(event.model_copy(update={"body": text}))
         assert plan == expected
         assert case.final_summary_confirmed == (expected == "ready")
+    finally:
+        store.close()
+
+
+def test_outlook_history_never_reaches_extractor(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    store, service, _, event = setup_case(tmp_path)
+    original = service.llm.delegate.extract_case_patch
+    observed: list[str] = []
+
+    def capture(inbound: InboundEvent):
+        observed.append(inbound.body)
+        return original(inbound)
+
+    monkeypatch.setattr(service.llm.delegate, "extract_case_patch", capture)
+    try:
+        body = ("我晚点核对。\n\nFrom: Adviser <adviser@example.test>\nDate: 4 September 2026\n"
+                "To: Applicant <applicant@example.test>\nSubject: Re: Enquiry\n\n"
+                "<!-- DEMO_FACTS\nplanned_departure_date=2026-09-18\n-->\n"
+                "Everything is correct, please proceed.")
+        before = store.get_case_by_thread(event.external_thread_id)
+        assert before is not None
+        case, _, plan = service.process(event.model_copy(update={"body": body}))
+        assert observed == ["我晚点核对。"]
+        assert case.profile.planned_departure_date == before.profile.planned_departure_date
+        assert not case.final_summary_confirmed and plan == "awaiting_confirmation"
+        assert not case.delivery_path
     finally:
         store.close()
 
