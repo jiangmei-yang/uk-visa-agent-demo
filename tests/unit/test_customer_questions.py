@@ -49,9 +49,10 @@ def test_application_question_links_to_official_entry_with_conditional_route(bod
     assert APPLICATION_SOURCE in answer
     assert "Apply now" in answer
     if language == "zh":
-        assert all(part in answer for part in ["如果", "在线", "签证中心", "保存", "不代表"])
+        assert all(part in answer for part in ["如果", "在线", "签证中心", "保存", "具体是否适用", "结合你的情况确认"])
     else:
-        assert all(part in answer for part in ["If you need", "online", "visa application centre", "save", "does not yet confirm"])
+        assert all(part in answer for part in ["If you need", "online", "visa application centre", "save",
+                                              "Which visa route you need", "depends on your circumstances"])
 
 
 @pytest.mark.parametrize(("body", "language"), [

@@ -47,7 +47,11 @@ for these outcomes.
    personal field. [School online-record obstacles and undecided-date next actions](SCHOOL_RECORD_GUIDANCE.md)
    now have bounded captured-SENT and restart coverage, including actual discussion
    memory, current resolution/access changes and source/authority boundaries.
-   Broader unavailable-evidence language, application-complaint paraphrases and
+   [Application-entry complaints and information-first requests](APPLICATION_INFORMATION_PRIORITY.md)
+   now have bounded actual-SENT, source/route/qualifier and mixed-fact coverage.
+   Three targeted fictional real-model calls passed through a captured sender;
+   they are development examples, not blind or recipient-side validation.
+   Broader unavailable-evidence language, uncoached application phrasing and
    independent ordinary-model/recipient evaluation remain open.
 
 ## Bounded recovery added in this work

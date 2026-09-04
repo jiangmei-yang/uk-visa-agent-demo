@@ -1,0 +1,311 @@
+{
+  "scope": "fictional text; real extraction; actual automatic sender with captured transport",
+  "suite": "application-entry",
+  "maximum_model_calls": 3,
+  "new_provider_result": true,
+  "model": "deepseek-v4-flash",
+  "mailbox_calls": 0,
+  "not_a_naturalness_score": true,
+  "completed": true,
+  "results": [
+    {
+      "id": "application-zh",
+      "input": "先别一直问我个人信息，告诉我英国旅游签证在哪个网页申请、怎么开始。",
+      "checks": {
+        "expected_profile": true,
+        "at_most_one_main_question": true,
+        "no_confirmation_or_release": true,
+        "official_entry_and_action": true,
+        "form_save_and_appointment_steps": true,
+        "no_unrequested_intake": true,
+        "no_invented_identity_or_dates": true,
+        "no_route_confirmation": true,
+        "not_paused_by_communication_preference": true,
+        "no_extraction_fallback": true,
+        "actual_sender_captured_once": true
+      },
+      "completed": true,
+      "plan": "blocked",
+      "reply": "如果你需要申请 Standard Visitor，可以先打开下方的 GOV.UK 官方页面，点 Apply now。\n\n出发前需要在线填写申请，再按官网安排预约签证中心，核验身份并提供材料。表格可以保存，之后继续填写，不用一次填完。\n\n你可以先看入口和填表步骤，具体是否适用这类签证，再结合你的情况确认。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "render_mode": "reviewed",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": null,
+        "nationality_country": null,
+        "application_country": null,
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": null,
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": null,
+        "annual_income_gbp": null,
+        "funding_source": null,
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "topics": [
+        "application"
+      ],
+      "deferred_fields": [],
+      "requested_fields": [],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3396,
+          "output_tokens": 89,
+          "total_tokens": 3485
+        }
+      ],
+      "extraction_attempts": 1,
+      "raw_model_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"application\",\n      \"source_excerpt\": \"告诉我英国旅游签证在哪个网页申请、怎么开始\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "proposed_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "application",
+            "source_excerpt": "告诉我英国旅游签证在哪个网页申请、怎么开始",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": null
+      },
+      "extraction_error_type": null
+    },
+    {
+      "id": "application-en",
+      "input": "Please stop asking me for personal details for now. Tell me which webpage to use to apply for a UK tourist visa and how to get started.",
+      "checks": {
+        "expected_profile": true,
+        "at_most_one_main_question": true,
+        "no_confirmation_or_release": true,
+        "official_entry_and_action": true,
+        "form_save_and_appointment_steps": true,
+        "no_unrequested_intake": true,
+        "no_invented_identity_or_dates": true,
+        "no_route_confirmation": true,
+        "not_paused_by_communication_preference": true,
+        "no_extraction_fallback": true,
+        "actual_sender_captured_once": true
+      },
+      "completed": true,
+      "plan": "blocked",
+      "reply": "If you need a Standard Visitor visa, start with Apply now on the GOV.UK page below.\n\nApply online before travelling, then follow the site's instructions to book a visa application centre appointment, prove your identity and provide your documents. You can save the form and finish it later; you do not have to complete it in one sitting.\n\nYou can look through the entry page and form steps first. Which visa route you need still depends on your circumstances.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "render_mode": "reviewed",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": null,
+        "nationality_country": null,
+        "application_country": null,
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": null,
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": null,
+        "annual_income_gbp": null,
+        "funding_source": null,
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "topics": [
+        "application"
+      ],
+      "deferred_fields": [],
+      "requested_fields": [],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3406,
+          "output_tokens": 158,
+          "total_tokens": 3564
+        }
+      ],
+      "extraction_attempts": 1,
+      "raw_model_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"application\",\n      \"source_excerpt\": \"Tell me which webpage to use to apply for a UK tourist visa\",\n      \"confidence\": 1.0\n    },\n    {\n      \"topic\": \"next_step\",\n      \"source_excerpt\": \"how to get started\",\n      \"confidence\": 0.9\n    }\n  ],\n  \"preparation_intent\": {\n    \"action\": \"pause\",\n    \"source_excerpt\": \"Please stop asking me for personal details for now.\",\n    \"confidence\": 0.95\n  }\n}",
+      "proposed_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "application",
+            "source_excerpt": "Tell me which webpage to use to apply for a UK tourist visa",
+            "confidence": 1.0
+          },
+          {
+            "topic": "next_step",
+            "source_excerpt": "how to get started",
+            "confidence": 0.9
+          }
+        ],
+        "preparation_intent": {
+          "action": "pause",
+          "source_excerpt": "Please stop asking me for personal details for now.",
+          "confidence": 0.95
+        }
+      },
+      "extraction_error_type": null
+    },
+    {
+      "id": "application-cold-en",
+      "input": "I want to apply for a UK tourist visa. Please explain which webpage to use and how to get started before asking for personal details.",
+      "checks": {
+        "expected_profile": true,
+        "at_most_one_main_question": true,
+        "no_confirmation_or_release": true,
+        "official_entry_and_action": true,
+        "form_save_and_appointment_steps": true,
+        "no_unrequested_intake": true,
+        "no_invented_identity_or_dates": true,
+        "no_route_confirmation": true,
+        "not_paused_by_communication_preference": true,
+        "no_extraction_fallback": true,
+        "actual_sender_captured_once": true
+      },
+      "completed": true,
+      "plan": "blocked",
+      "reply": "If you need a Standard Visitor visa, start with Apply now on the GOV.UK page below.\n\nApply online before travelling, then follow the site's instructions to book a visa application centre appointment, prove your identity and provide your documents. You can save the form and finish it later; you do not have to complete it in one sitting.\n\nYou can look through the entry page and form steps first. Which visa route you need still depends on your circumstances.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "render_mode": "reviewed",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": null,
+        "nationality_country": null,
+        "application_country": null,
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": null,
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": null,
+        "annual_income_gbp": null,
+        "funding_source": null,
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "topics": [
+        "application"
+      ],
+      "deferred_fields": [],
+      "requested_fields": [],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3404,
+          "output_tokens": 94,
+          "total_tokens": 3498
+        }
+      ],
+      "extraction_attempts": 1,
+      "raw_model_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"application\",\n      \"source_excerpt\": \"Please explain which webpage to use and how to get started before asking for personal details.\",\n      \"confidence\": 0.95\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "proposed_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "application",
+            "source_excerpt": "Please explain which webpage to use and how to get started before asking for personal details.",
+            "confidence": 0.95
+          }
+        ],
+        "preparation_intent": null
+      },
+      "extraction_error_type": null
+    }
+  ],
+  "source_sha256": {
+    "scripts/consultant_value_probe.py": "1eba25cf7926cbe5e4047e6e7a287fdb4a09627e6a8bb8ef59c47d044f669b6e",
+    "src/visa_agent/__init__.py": "a3350ee5bcd581ebdb734128829da5e6772eae8346faaa85e2bf608d27d95149",
+    "src/visa_agent/case_data.py": "06dcf00b0073b70b25468b7a0da891942a3ef45bcbd52e141194628b4823951c",
+    "src/visa_agent/channels/__init__.py": "4a9e7ea09deca6b1c25e049b68a2c34aadbd57475fc072d0e198086255ba173e",
+    "src/visa_agent/channels/automatic_reply.py": "cc01815b932bb60779569038a74fc37b97e63b2f6e54ab944832912cdd5898f0",
+    "src/visa_agent/channels/email_fixture.py": "ee68e7eb2aa4a312dc6846d159bd45574b4faf4e1ad623cb5d17133ff1b97877",
+    "src/visa_agent/channels/email_ingestion.py": "fbddd383aea363fbf97f1f82fbc711b99853b9e48ab584bd5249fe888b1cb12b",
+    "src/visa_agent/channels/gmail.py": "873de8bead906bfe4edf766440f274cf152a1d3a123c31c6c7b0e371397e0ab6",
+    "src/visa_agent/channels/gmail_auth.py": "ba7277ade4bf0f5485e36ef9ce7f7c46d7b36146fb601d0d9f9a808eb9d7e89c",
+    "src/visa_agent/channels/gmail_intake.py": "dcb0cb51699e86bad44ca9d37744bc92d53c757f6a65d5bab1973f4fd5a9f3d8",
+    "src/visa_agent/channels/gmail_pipeline.py": "3ec2aaf045a78046f59c98b1491ed806a4fc24c39007255c4c0ed02ea16f41c3",
+    "src/visa_agent/channels/gmail_sync.py": "00ecb0c5e22f56abcc411815199369fa2d6fa759bff38555cf9503bbda183342",
+    "src/visa_agent/channels/inbound_worker.py": "d57f44edfaae82ee31309bdb31ada06a3be4e25856e464277bdfa60d9bbc2370",
+    "src/visa_agent/channels/outbound.py": "d226e177668a05333a843fef97fd8d1b543b489e4699b29a5a7b10f789fd4af3",
+    "src/visa_agent/channels/outbound_fixture.py": "f83c59dfe9013d59d3fc336061931c8ac5b9d5dae6c87a84a3200bc2edfa2d82",
+    "src/visa_agent/channels/runtime_lock.py": "c03396b333e6627731f8a61b6b14438ff3d6c55370759fdd39af46a45bd26fb5",
+    "src/visa_agent/channels/twilio_receiver.py": "a4267a306c01d2757657d73d0dff1f1c9f06237e8df4e9fb1f028fc705b13600",
+    "src/visa_agent/channels/twilio_status.py": "f75351716055ba4a5c001d00e76c64187589eb462c05684f7c73dc96c4f80271",
+    "src/visa_agent/channels/twilio_whatsapp.py": "adf1233212ffd745242360085fbe087cc2846a42480f5bebbbe0d52e77b18575",
+    "src/visa_agent/channels/whatsapp_service.py": "abe8ffa7cb2ddc50cb95f8500c5f06a0dc375c4cbd7db17d644bba910b54933b",
+    "src/visa_agent/cli.py": "e44e9ddcc0c53a0c2217b95c5b2809b16dc5411cc4b5d41405e867ed9b7e506d",
+    "src/visa_agent/config.py": "a00bd6949e4c747ba19f9b00e28fdf3efdcca1eb237e6f0b1f0f05b92d094516",
+    "src/visa_agent/delivery/__init__.py": "c228e85c7a38888d18198814f142ac9a6262de6ee17ccc377066e308c1df9735",
+    "src/visa_agent/delivery/pack.py": "e1d6f1afaf2bd3c9b57f4b522d26a184a21bc79fd053f69d502579cb4a248cca",
+    "src/visa_agent/demo.py": "6b09553b1dc0a716833e6bf62753c865dc912fc6e45c5e8aa91f96b8022d6402",
+    "src/visa_agent/documents/__init__.py": "dae296ed7a7312a7792c2dc59d13be7b6905c5daf4b728d5ca37c80224fed7b1",
+    "src/visa_agent/documents/natural.py": "e172f18885518ed67df02c5d4a43a35414626d6e882b203b16c9b3b508598a51",
+    "src/visa_agent/documents/processor.py": "e5230265b42a9073f4264d2056e35ae8eca0bdecf55da2d99bebfcddce92efdc",
+    "src/visa_agent/documents/samples.py": "76e605d508fd6b51fbee95d4cd6ad23cad6e731fcc316ecbe5c14f018c885fba",
+    "src/visa_agent/domain/__init__.py": "d5cd2e4964d34671b4b71a2c0796c5985b105b0fc0a9b5c72082c90e3625cecd",
+    "src/visa_agent/domain/address_evidence.py": "f4989295eebd670c5925637098b67f3f7006b4ac016537543ea16681cee30792",
+    "src/visa_agent/domain/date_evidence.py": "efeae43509fc7985bf6127f855b2cd8c438f76c3759614bb15eef3269f9e9825",
+    "src/visa_agent/domain/locations.py": "2e831bd608afd399ac648b4bca05a7c5e009f7266666e22bdd9312bcf3651f00",
+    "src/visa_agent/domain/models.py": "e61d8010717e8275f0989fa3509be8b15fb4ca27568fe4251bb4b71448426509",
+    "src/visa_agent/domain/policy.py": "98103fa5d39e67df9e50a7364e43a11f96b98be1bc04e4ffc40e98422f331e5b",
+    "src/visa_agent/domain/rules.py": "91a7d2ed9c6aaf9b4f6f8e0509923955536592940de9d4a77422726cf68c4e26",
+    "src/visa_agent/domain/sponsor_evidence.py": "c8a906f7bb3b6fe94b7f432dd60004bf0787cc3e8d45cb327743f7a82b357949",
+    "src/visa_agent/lab.py": "6af7780373d780dfd95a26e65409f9aac20164218bf90eec733e4aea6eb14570",
+    "src/visa_agent/llm/__init__.py": "5607d3f7ccee9ab958fec329b1f27093830199ec9c38a45446c93e4537fa7c42",
+    "src/visa_agent/llm/deepseek_client.py": "ea4325f0f1b0e3f037c3a3448715d8a7570455103c3fea54be1ba1eafdb923bb",
+    "src/visa_agent/llm/evaluation.py": "6393a9f5bc43f43ae5c5bad4e8e813a5aafe87acd1ff0cd454de6f59972a9f26",
+    "src/visa_agent/llm/guarded.py": "10cc1a3ce5389de0d77f53676b491459f10f221755ffbb7720d8a3370dad8fab",
+    "src/visa_agent/llm/offline.py": "679238783757f0536a8da805ceff88242cee0174aa70e6f62113adaacf344c27",
+    "src/visa_agent/llm/openai_client.py": "511a05609683b2efdc84250afe204f8fa01bd1fe287adc9af00bdb405ac3900f",
+    "src/visa_agent/llm/ports.py": "d1e0f13952b0ab4a0bdaff6c519fbaad9b042b8e64e91cbfe843dfff4a848275",
+    "src/visa_agent/llm/question_understanding.py": "ff3e921e56ae7f3571e3b2fc10c8ac5733779ccf1bcc7c386d631ffc36264a88",
+    "src/visa_agent/privacy/__init__.py": "3b88bb325c56e34aa2e644b42039826fbdb20b1230b28c281b082cb6f48918c2",
+    "src/visa_agent/privacy/consent.py": "6744e9d7d684c244f076f03bd8a150bc3325139d2ad1897bf5090c6406696097",
+    "src/visa_agent/public_webhook.py": "c51893541eb5923847a057b4bfc896b20a7360c19b3462b6a130a0611ebc5c3d",
+    "src/visa_agent/review_ui.py": "9ef689b0ce0886610cb165d11b40341bc686c52aee9c2b9a60fcd38001d41c52",
+    "src/visa_agent/secrets.py": "5a7f15fb96b1a544209a6380c57a3e39f9ac5c8c93cbd54cf2f50ded7b4fbd36",
+    "src/visa_agent/startup.py": "c6e9d3a83701715286d23ed66241feb00db6375eda63efb5a7737fffc74f8846",
+    "src/visa_agent/storage/__init__.py": "7296f379f4b997d52f354cdd5e6ce5314187146e117f02f04b6fa86f39bf6cd6",
+    "src/visa_agent/storage/sqlite.py": "bdcbdc09b9a9b2ed55b50ce1ad542b2f78fecbace18a03002f433baf0b331045",
+    "src/visa_agent/web.py": "c3617a9145f4947ed02cbfa889e06c4e1cb4c1ff774fc080adb3cfaa51e7d181",
+    "src/visa_agent/workflow/__init__.py": "a273d6ddf1c05279ae2d32d46583ba5b9e94e145f4f5f816d131a723896dac7e",
+    "src/visa_agent/workflow/advice_continuation.py": "a2e1e6aaa4a47584f591c58f3d857ef12779d0b6c6c1de91c84f3260d158e52a",
+    "src/visa_agent/workflow/advice_preferences.py": "bb4603fee27a68fa82d5d8c4ad2fed4cde8717a05c5df834deef169afdbd74e4",
+    "src/visa_agent/workflow/advice_queue.py": "e403b6e803a498acedbe29110b104f02e3074919c41645417887f52567e58ccc",
+    "src/visa_agent/workflow/adviser_guidance.py": "7d686b3d090bd2f5976008ecfdd7c02f5eca17451039d11c4c11ecc23cafb65f",
+    "src/visa_agent/workflow/conversation.py": "7f7db0fee489f4a4065f00bb18f5a5279b5437e726e56be4a76cf9cbf5b42ff9",
+    "src/visa_agent/workflow/customer_questions.py": "72a89ddf4babf114aef0cbf2bbe298aebb74e4c498416c87b04bccdf9369f394",
+    "src/visa_agent/workflow/document_preparation.py": "50754a08e2389aa8b3bf5de9321629b8be027d86c48ae77e085f79409ddd7599",
+    "src/visa_agent/workflow/document_purpose.py": "4f349cd2804843492326e7d7c4f939362ba4cb22fd97a8fa2d30fe1e8e4e6add",
+    "src/visa_agent/workflow/document_review.py": "54a25b433514dfe4f972bdb795851e7ece2b65be5f91d6cb841531140517bafb",
+    "src/visa_agent/workflow/funding_wording.py": "f393622327a03fddf6f02e9c7633e9b90e5e415269f6c548a9d09438ad70c714",
+    "src/visa_agent/workflow/next_step.py": "b95d0c99ef317ed0c0ab0ae92ee321c154cf87ea77ccf801a58c3376f2d1c75c",
+    "src/visa_agent/workflow/preparation_control.py": "3e3dbf2e9a31a4451daff28e85ac88f2de5ff34c64dc713803d83c38ca836351",
+    "src/visa_agent/workflow/preparation_obstacles.py": "9712a39611557841b6b41bc6273cc48c8c9ac7ae2be3aa49fc0ffeec41cc9577",
+    "src/visa_agent/workflow/review.py": "dfec36adfd58c81dfabfc71afac4898ebfb6d90b82315fef3d58457f50ca72b6",
+    "src/visa_agent/workflow/service.py": "0a38cb95a455908576fdb09a0b45a6d0938007b691e110b7ee4087d01fb9b28d"
+  },
+  "all_passed": true
+}

@@ -222,21 +222,78 @@ def customer_requests_next_step(body: str) -> bool:
     return False
 
 
+def current_no_intake_clause(text: str) -> bool:
+    """One current preference clause, never a whole mixed request to discard.
+
+    Shared scope filtering excludes quotes, reports, conditions and future plans.
+    Full matching lets the answer compiler omit only the preference itself while
+    retaining an independent application question in the same customer message.
+    """
+    from visa_agent.workflow.advice_preferences import _current_clauses
+
+    clauses = _current_clauses(text)
+    if len(clauses) != 1:
+        return False
+    return bool(re.fullmatch(
+        r"(?:请|麻烦)?(?:这次|现在|目前|暂时)?(?:请|麻烦)?(?:先)?"
+        r"(?:别|不要|不用|不需要)(?:再|一直|反复|继续|总是)*"
+        r"(?:问|追问|询问|索取|收集)(?:我的?|本人的?)?(?:个人信息|个人资料|身份信息)(?:了|吧)?|"
+        r"(?:(?:for now|now)[,，]?\s+)?(?:please\s+)?"
+        r"(?:stop\s+(?:asking|requesting|collecting)|"
+        r"(?:do not|don't|don’t)\s+(?:(?:keep|continue)\s+)?(?:ask(?:ing)?|request(?:ing)?|collect(?:ing)?))\s+"
+        r"(?:me\s+(?:(?:for|about)\s+)?|my\s+)?(?:personal|identity)\s+(?:details|information|questions)"
+        r"(?:\s+(?:for now|now|yet|in this reply))?(?:[,，]?\s+please)?",
+        clauses[0], re.I,
+    ))
+
+
+def _current_intake_preference_clauses(body: str) -> list[str]:
+    from visa_agent.workflow.advice_preferences import _current_clauses
+
+    # "Undecided whether to apply" is a current uncertainty, not an if-clause.
+    # Remove only that connector before shared scope checks; quotes/reports and
+    # any actual conditional prefix remain intact. This creates no case facts.
+    scoped = re.sub(r"\b((?:haven['’]t|have not).{0,8}decided) whether(?= to apply\b)", r"\1", body, flags=re.I)
+    scoped = re.sub(r"((?:还没|尚未|没有).{0,4}(?:决定|确定).{0,6})(?:是否|要不要)(?=申请|办理)", r"\1", scoped)
+    # A future prefix owns the sentence even when a comma precedes "先别";
+    # shared preference splitting would otherwise separate it from that refusal.
+    scoped = re.sub(r"(^|[。！？!?]\s*|\.\s+)(?:以后|将来|稍后|待会|届时)[^。！？!?]*", r"\1", scoped)
+    return [part.strip() for clause in _current_clauses(scoped)
+            if not re.search(r"^(?:以后|将来|稍后|待会|届时|later\b|eventually\b|next time\b)", clause, re.I)
+            for part in re.split(r"[,，]", clause) if part.strip()]
+
+
 def consultation_only_requested(body: str) -> bool:
     """An information-first request is not an invitation to start a personal form.
 
     This only suppresses this reply's intake questions. It never pauses the case,
     waives missing facts, confirms a route or grants processing permission.
     """
-    text = _unquoted_reply_text(body)
-    return bool(re.search(
+    clauses = _current_intake_preference_clauses(body)
+    # Explicitly requesting a personal question is different from asking how to
+    # get started on the website. Only the former overrides information-first
+    # pacing; this boolean does not select that field or grant any permission.
+    if any(not re.search(r"以后|将来|稍后|待会|届时|\b(?:later|eventually|next time)\b", clause, re.I)
+        and re.search(
+        r"^(?:不过|但是|然后|现在|这次|目前|那|先|请|可以){0,5}(?:继续)?"
+        r"(?:问|询问)(?:我的|我)?(?:护照上的|护照)?(?:姓名|名字|出生日期|生日|个人信息|个人资料)|"
+        r"^(?:but\s+|then\s+)?(?:please\s+)?(?:ask|continue asking)\s+me\s+(?:(?:for|about)\s+)?"
+        r"(?:my\s+)?(?:passport name|name|date of birth|DOB|personal details|personal information)\b",
+        clause, re.I,
+    ) for clause in clauses):
+        return False
+    if any(current_no_intake_clause(clause) for clause in clauses):
+        return True
+    return any(not re.search(
+        r"不是|并非|不只是|不止|\b(?:not just|not only|do not only|don't only|don’t only)\b", clause, re.I,
+    ) and re.search(
         r"(?:先|只是|只想|仅想|暂时|目前).{0,8}(?:了解|咨询|问问|看看).{0,16}"
         r"(?:流程|过程|步骤|准备|怎么办|怎么申请|怎么做|材料|签证)|"
-        r"(?:还没|尚未|没有).{0,4}(?:决定|确定).{0,6}(?:是否|要不要)(?:申请|办理)|"
+        r"(?:还没|尚未|没有).{0,4}(?:决定|确定).{0,6}(?:申请|办理)|"
         r"\b(?:just|only|first|for now).{0,16}(?:understand|learn|find out|ask about|explore)"
         r".{0,35}(?:process|steps?|prepar\w*|documents?|visa|how to apply)\b|"
-        r"\b(?:haven['’]t|have not).{0,8}decided whether to apply\b", text, re.I,
-    ))
+        r"\b(?:haven['’]t|have not).{0,8}decided to apply\b", clause, re.I,
+    ) is not None for clause in clauses)
 
 
 def preparation_context_progress(case: Case) -> bool:

@@ -5,7 +5,11 @@ from dataclasses import dataclass
 from datetime import date
 
 from visa_agent.llm.ports import CustomerQuestion
-from visa_agent.workflow.conversation import latest_reply_text
+from visa_agent.workflow.conversation import (
+    _unquoted_reply_text,
+    current_no_intake_clause,
+    latest_reply_text,
+)
 from visa_agent.workflow.document_preparation import (
     SCHOOL_RECORD_TOPIC,
     reviewed_document_preparation,
@@ -387,6 +391,147 @@ def is_generic_uk_preparation_enquiry(body: str, excerpt: str | None = None) -> 
     return False
 
 
+_APPLICATION_QUALIFIERS = (
+    r"如果|假如|假设|除非|只要|是否符合|能不能获批|能获批|保证|包过|足够|够不够|拒签|犯罪|未成年|"
+    r"费用|收费|多少钱|加急|优先服务|多久|几周|几个月|退费|退款|取消|撤回|改签|"
+    r"绕过|伪造|编造|造假|忽略.{0,10}(?:规则|指令|检查)|"
+    r"\b(?:if|unless|assuming|suppose|provided|eligible|eligibility|qualify|qualifies|approved|approval|"
+    r"guarantee\w*|sufficient|enough|refusal|refused|conviction|minor|fees?|costs?|prices?|priority|"
+    r"expedite\w*|refund\w*|cancel\w*|withdraw\w*|fake|forg\w*|fabricat\w*|bypass|override)\b|"
+    r"\b(?:how long|how early|how far in advance|how many weeks|how much)\b|"
+    r"(?:customer_questions|source_excerpt|requires_human_review)"
+    r"|(?:朋友|同学|客户|哥哥|姐姐|他|她).{0,10}(?:问我|问过|说过|写道)|"
+    r"\b(?:friend|sister|brother|client|customer|he|she)\b.{0,25}\b(?:asked|said|wrote)\b"
+)
+_APPLICATION_VISITOR = (
+    r"英国(?:(?:普通|标准)?(?:访问|访客)|旅游)?签证|"
+    r"\b(?:UK|British)\s+(?:(?:standard\s+)?visitor\s+|tourist\s+)?visa\b|"
+    r"\bStandard Visitor\b"
+)
+_EXPLICIT_VISITOR = (
+    r"英国(?:(?:普通|标准)?(?:访问|访客)|旅游)签证|"
+    r"\b(?:UK|British)\s+(?:(?:standard\s+)?visitor|tourist)\s+visa\b|\bStandard Visitor\b"
+)
+_APPLICATION_ENTRY_REQUEST = (
+    r"(?:在哪|哪里|怎么|如何).{0,14}(?:申请|办理)|"
+    r"(?:申请|办理|签证).{0,18}(?:网页|网站|入口|官网|网址|链接|流程|步骤)|"
+    r"(?:网页|网站|入口|官网|网址|链接).{0,18}(?:申请|办理)|"
+    r"\b(?:which|what)\s+(?:web\s?page|website|site|page|link|URL)\b.{0,55}\bapply\b|"
+    r"\b(?:which|what)\s+(?:web\s?page|website|site|page|link|URL)\s+(?:to|should I|do I)\s+use\b|"
+    r"\bhow\s+(?:(?:do|can|should)\s+I\s+|to\s+)(?:get started|start|begin)\b|"
+    r"\b(?:where|how)\b.{0,35}\bapply\b|"
+    r"\b(?:apply|application|visa)\b.{0,30}\b(?:web\s?page|website|site|link|URL|steps?|process)\b|"
+    r"\b(?:send|give|show|tell)\b.{0,45}\b(?:web\s?page|website|link|URL|steps?|process)\b"
+)
+
+
+def reviewed_application_requests(body: str) -> list[str]:
+    """Find explicit ordinary application-entry questions, not eligibility advice.
+
+    This is shared by proposal normalization and the no-proposal fallback. Keep
+    conditions around dependent clauses before splitting independent requests;
+    never manufacture facts, selected routes or consent from an information query.
+    """
+    if not body or len(body) > 6000:
+        return []
+    result = []
+    visitor_context = False
+    explicit_visitor = False
+    # Keep comma/semicolon/newline conditions intact until a sentence ends.
+    for scope in re.split(r"[。！!]|(?<=[?？])\s*|\.(?:\s|$)", _unquoted_reply_text(body)):
+        if re.search(r"医疗|治疗|付费活动|\b(?:medical treatment|paid engagements?)\b", scope, re.I):
+            visitor_context = False
+            explicit_visitor = False
+            continue
+        if _mentions_current_route(scope, OTHER_ROUTE + "|" + TRANSIT_ROUTE +
+                r"|\b(?:graduate|spouse|family|child student) visa\b|配偶签证|毕业生签证|儿童学生签证"):
+            visitor_context = False
+            explicit_visitor = False
+            continue
+        if re.search(_APPLICATION_VISITOR, scope, re.I) and re.search(
+            r"不再(?:申请|办理)|不打算(?:申请|办理)|不申请|不办理|"
+            r"\b(?:no longer|not)\s+(?:applying|planning to apply)\b", scope, re.I,
+        ):
+            visitor_context = False
+            explicit_visitor = False
+            continue
+        if re.search(_APPLICATION_QUALIFIERS, scope, re.I):
+            continue
+        if (_mentions_current_route(scope, _APPLICATION_VISITOR)
+                and _next_step_targets_current_case(body, scope.strip())):
+            visitor_context = True
+            explicit_visitor = _mentions_current_route(scope, _EXPLICIT_VISITOR)
+        for clause in _active_clauses(scope):
+            if (not visitor_context
+                    or not re.search(_APPLICATION_ENTRY_REQUEST, clause, re.I)
+                    or _request_has_other_route(body, clause)
+                    or not _next_step_targets_current_case(body, clause)):
+                continue
+            if (not explicit_visitor and re.fullmatch(
+                r"(?:怎么|如何)(?:开始|着手)[?？]?|how\s+(?:(?:do|can|should)\s+I\s+|to\s+)"
+                r"(?:get started|start|begin)[?？]?", clause.strip(), re.I,
+            )):
+                # "UK visa; how do I start?" still needs general orientation.
+                # Do not replace it with a specific application-route tutorial.
+                continue
+            if re.search(
+                r"不是问|不用|不要|别(?:再)?发|无需|不需要|以后|将来|下次|"
+                r"\b(?:not asking|do not|don't|don’t|no need|later|tomorrow)\b",
+                clause, re.I,
+            ):
+                continue
+            result.append(clause)
+    return result
+
+
+def _general_application_proposal(body: str, excerpt: str) -> bool:
+    # An unsupported proposal may contain a narrow-looking substring and an
+    # important qualifier. Normalize only a fully supported request, preserving
+    # the raw excerpt/confidence and all unsupported-boundary precedence.
+    if re.search(_APPLICATION_QUALIFIERS, excerpt, re.I) or _request_has_other_route(body, excerpt):
+        return False
+    spans = reviewed_application_requests(body)
+    if not any(_overlapping_excerpt(excerpt, span) for span in spans):
+        return False
+    for clause in _question_clauses(excerpt):
+        if current_no_intake_clause(clause):
+            continue
+        if any(_overlapping_excerpt(clause, span) for span in spans):
+            continue
+        if re.fullmatch(r"(?:怎么|如何)(?:开始|着手)[?？]?|(?:tell me\s+)?how to get started"
+                        r"(?: before asking (?:me )?for personal details)?[?.]?",
+                        clause.strip(), re.I):
+            continue
+        return False
+    return True
+
+
+def _scoped_fee_context(body: str, fee_clauses: list[str]) -> str:
+    """Retain an own application's preceding validity, without replaying facts."""
+    validity = ""
+    contexts = []
+    for clause in _active_clauses(body, split_commas=False):
+        own = _next_step_targets_current_case(body, clause)
+        if (_request_has_other_route(body, clause) or not own
+                or _mentions_current_route(clause, r"\b(?:spouse|graduate|family) visa\b|配偶签证|毕业生签证")):
+            validity = ""
+        elif re.search(_APPLICATION_VISITOR, clause, re.I) or any(
+            _overlapping_excerpt(clause, item) for item in fee_clauses
+        ):
+            six_month = re.search(r"(?:六|6)\s*个月|\b(?:six|6)[ -]months?\b", clause, re.I)
+            long_term = re.search(
+                r"(?:两|二|五|十|2|5|10)\s*年|长期|\b(?:two|five|ten|2|5|10)[ -]years?\b|\blong[- ]term\b",
+                clause, re.I,
+            )
+            if long_term:
+                validity = long_term[0]
+            elif six_month:
+                validity = ""
+        if any(_overlapping_excerpt(clause, item) for item in fee_clauses):
+            contexts.append((validity + "\n" if validity else "") + clause)
+    return "\n".join(contexts) or "\n".join(fee_clauses)
+
+
 def validated_customer_questions(body: str, proposals: list[CustomerQuestion]) -> list[CustomerQuestion]:
     """Keep only source-grounded current intents, without treating topics as facts.
 
@@ -404,6 +549,9 @@ def validated_customer_questions(body: str, proposals: list[CustomerQuestion]) -
                 and (excerpt in _normalised_excerpt("\n".join(active)) or all(
                     any(fragment in _normalised_excerpt(clause) for clause in active) for fragment in fragments
                 ))):
+            if (proposal.topic in {"unsupported", "next_step", "document_checklist"}
+                    and _general_application_proposal(body, proposal.source_excerpt)):
+                proposal = proposal.model_copy(update={"topic": "application"})
             school_obstacle = (school_record_reported(body)
                 and bool(re.search(r"学校|在读|在学|怎么办|\b(?:university|school|enrol\w*)\b|what should I do",
                                    proposal.source_excerpt, re.I)))
@@ -497,14 +645,16 @@ def _reviewed_answer(topic: str, language: str, *, body: str = "") -> str:
         source = APPLICATION_SOURCE
     elif topic == "application":
         answer = (
-            "如果你需要申请 Standard Visitor，可以从下面的 GOV.UK 页面点 Apply now 开始。"
-            "流程是出发前在线填写申请，再预约签证中心完成身份核验并提供材料；"
-            "表格可以保存，之后继续填写。这是申请入口说明，不代表你的签证路线已经确认。"
+            "如果你需要申请 Standard Visitor，可以先打开下方的 GOV.UK 官方页面，点 Apply now。\n\n"
+            "出发前需要在线填写申请，再按官网安排预约签证中心，核验身份并提供材料。"
+            "表格可以保存，之后继续填写，不用一次填完。\n\n"
+            "你可以先看入口和填表步骤，具体是否适用这类签证，再结合你的情况确认。"
             if language == "zh"
-            else "If you need a Standard Visitor visa, start with Apply now on the GOV.UK page below. "
-            "Apply online before travelling, then attend a visa application centre appointment "
-            "to prove your identity and provide your documents. You can save the form and finish "
-            "it later; this does not yet confirm which visa route you need."
+            else "If you need a Standard Visitor visa, start with Apply now on the GOV.UK page below.\n\n"
+            "Apply online before travelling, then follow the site's instructions to book a visa application centre "
+            "appointment, prove your identity and provide your documents. You can save the form and finish it later; "
+            "you do not have to complete it in one sitting.\n\n"
+            "You can look through the entry page and form steps first. Which visa route you need still depends on your circumstances."
         )
         source = APPLICATION_SOURCE
     elif topic == "timing":
@@ -522,6 +672,19 @@ def _reviewed_answer(topic: str, language: str, *, body: str = "") -> str:
         )
         source = APPLICATION_SOURCE
     elif topic == "fees":
+        if re.search(
+            r"(?:两|二|五|十|2|5|10)\s*年|长期|\b(?:two|five|ten|2|5|10)[ -]years?\b|\blong[- ]term\b",
+            body, re.I,
+        ):
+            return (
+                "你问的是长期访问签证费用，不能套用六个月签证的金额。"
+                "请在下方 GOV.UK 页面的 Visa fees 表中核对对应有效期那一行；"
+                "签证有效期也不等于每次可以连续停留的时长。"
+                if language == "zh" else
+                "You asked about a long-term visitor visa, so the six-month visa fee is not the right figure. "
+                "Check the row for the requested validity in the Visa fees table on the GOV.UK page below. "
+                "Visa validity is not the same as the permitted length of each stay."
+            ) + "\nGOV.UK: " + APPLICATION_SOURCE
         answer = (
             "如果你申请的是 6 个月 Standard Visitor，GOV.UK 当前列出的签证申请费是 £135。"
             "额外购买的签证中心服务或加急服务不包含在这笔申请费内；付款时以官网显示为准。"
@@ -816,6 +979,9 @@ def grounded_customer_answer_plan(
     clauses = [clause for clause in clauses if not any(
         _overlapping_excerpt(excerpt, clause) for excerpt in unsupported_excerpts
     )]
+    general_application = [clause for clause in reviewed_application_requests(current) if not any(
+        _overlapping_excerpt(excerpt, clause) for excerpt in unsupported_excerpts
+    )]
     patterns = {
         "application": (
             r"(?:申请|办理|签证).{0,8}(?:官网|网站|网页|网址|链接|入口|流程|步骤)|"
@@ -862,7 +1028,7 @@ def grounded_customer_answer_plan(
             requested.append(item.topic)
     previous_link_requested = (not off_topic_excerpts and sent_application_guidance
                                and _requests_previous_application_link(current))
-    if previous_link_requested and "application" not in requested:
+    if (previous_link_requested or general_application) and "application" not in requested:
         requested.insert(0, "application")
     # Preserve booking's cross-clause context ("I have no tickets; must I buy them?").
     active_text = "\n".join(clause for clause in _active_clauses(current) if clause not in off_topic_clauses)
@@ -881,7 +1047,7 @@ def grounded_customer_answer_plan(
         if not any(_overlapping_excerpt(excerpt, clause) for excerpt in unsupported_excerpts + off_topic_excerpts)
         and (re.search(patterns["translation"], clause, re.I)
              or any(_overlapping_excerpt(excerpt, clause) for excerpt in translation_excerpts)))
-    application_excerpts = [item.source_excerpt for item in semantic if item.topic == "application"]
+    application_excerpts = [item.source_excerpt for item in semantic if item.topic == "application"] + general_application
     application_text = "\n".join(clause for clause in _active_clauses(current)
         if not any(_overlapping_excerpt(excerpt, clause) for excerpt in unsupported_excerpts + off_topic_excerpts)
         and (re.search(patterns["application"], clause, re.I)
@@ -917,6 +1083,8 @@ def grounded_customer_answer_plan(
     elif requested:
         for topic in requested:
             topic_excerpts = [item.source_excerpt for item in semantic if item.topic == topic]
+            if topic == "application":
+                topic_excerpts += general_application
             topic_clauses = list(dict.fromkeys(
                 [clause for clause in clauses if re.search(patterns.get(topic, r"(?!)"), clause, re.I)]
                 + [clause for clause in _active_clauses(current)
@@ -926,6 +1094,8 @@ def grounded_customer_answer_plan(
                 topic_clauses = _active_clauses(current)
             context = (bank_text if topic == "bank_period" else translation_text if topic == "translation"
                        else application_text if topic == "application" else "\n".join(topic_clauses))
+            if topic == "fees":
+                context = _scoped_fee_context(current, topic_clauses)
             if topic in {"application", "timing", "fees", "bank_period"}:
                 scopes = [_request_has_other_route(active_text, clause) for clause in topic_clauses]
                 if any(scopes):

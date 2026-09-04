@@ -45,7 +45,7 @@ def test_requesting_process_again_still_receives_explanation(body: str, language
     )
     assert len(answers) == 1
     assert APPLICATION_SOURCE in answers[0] and "Apply now" in answers[0]
-    assert ("流程是" in answers[0]) if language == "zh" else ("Apply online" in answers[0])
+    assert ("在线填写申请" in answers[0] and "预约签证中心" in answers[0]) if language == "zh" else ("Apply online" in answers[0])
 
 
 @pytest.mark.parametrize(("body", "language"), [

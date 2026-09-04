@@ -16,8 +16,11 @@ from visa_agent.llm.ports import CasePatch
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.service import WorkflowService
 
-REPORT = Path("eval_output/consultant_value_provider_2026-09-04-v3.json")
-ROWS = json.loads(REPORT.read_text())["results"]
+REPORTS = (
+    Path("eval_output/consultant_value_provider_2026-09-04-v3.json"),
+    Path("eval_output/application_information_deepseek_2026-09-05.json"),
+)
+ROWS = [row for report in REPORTS for row in json.loads(report.read_text())["results"]]
 SPEC = importlib.util.spec_from_file_location("consultant_probe_replay", "scripts/consultant_value_probe.py")
 assert SPEC and SPEC.loader
 probe = importlib.util.module_from_spec(SPEC)
@@ -58,7 +61,7 @@ def test_saved_proposals_through_current_guard_and_captured_sender(row, tmp_path
         assert model.calls == 1 and not workflow.llm.last_extraction_fallback
         assert len(outcomes) == len(capture.bodies) == 1 and outcomes[0].status == "SENT"
         assert capture.bodies[0] == actual["payload"]
-        expected = next(expected for kind, _, expected in probe.CASES if kind == row["id"])
+        expected = next(expected for kind, _, expected in [*probe.CASES, *probe.APPLICATION_CASES] if kind == row["id"])
         checks = probe.checks_for(row["id"], case, actual["payload"], expected)
         assert all(checks.values()), checks
         if row["id"] == "parents":

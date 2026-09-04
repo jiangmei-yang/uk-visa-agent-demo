@@ -50,7 +50,8 @@ def test_two_question_check_cannot_pass_with_missing_or_unsafe_second_answer(kin
     assert not all(checks.values())
 
 
-def test_every_failure_is_retained_and_guard_does_not_double_the_attempt_budget(monkeypatch, tmp_path):
+@pytest.mark.parametrize("suite,expected_calls", [("consultant", 7), ("application-entry", 3)])
+def test_every_failure_is_retained_and_guard_does_not_double_the_attempt_budget(monkeypatch, tmp_path, suite, expected_calls):
     instances = []
 
     class FailingModel:
@@ -77,16 +78,31 @@ def test_every_failure_is_retained_and_guard_does_not_double_the_attempt_budget(
     monkeypatch.setattr(probe, "ExtractionOnly", FailingModel)
     monkeypatch.setattr(probe, "read_secret", lambda *a, **k: "fictional-local-placeholder")
     output = tmp_path / "failures.json"
-    monkeypatch.setattr(sys, "argv", ["probe", "--allow-model-calls", "--output", str(output)])
+    monkeypatch.setattr(sys, "argv", ["probe", "--allow-model-calls", "--suite", suite, "--output", str(output)])
     with pytest.raises(SystemExit) as error:
         probe.main()
     assert error.value.code == 1
     report = json.loads(output.read_text())
     assert report["completed"] and not report["all_passed"]
-    assert len(report["results"]) == len(instances) == 7
-    assert sum(instance.extraction_attempts for instance in instances) == 7
+    assert len(report["results"]) == len(instances) == expected_calls == report["maximum_model_calls"]
+    assert sum(instance.extraction_attempts for instance in instances) == expected_calls
     assert all(not row["checks"]["no_extraction_fallback"] for row in report["results"])
     assert all(row["raw_model_content"] == "fictional malformed result" for row in report["results"])
     assert "SECRET-DO-NOT-LOG" not in output.read_text()
     assert report["mailbox_calls"] == 0
     assert not list(Path(tmp_path).glob("*.db"))
+
+
+@pytest.mark.parametrize("missing,key", [
+    (probe.APPLICATION_URL, "official_entry_and_action"),
+    ("Apply now", "official_entry_and_action"),
+    ("online", "form_save_and_appointment_steps"),
+    ("save", "form_save_and_appointment_steps"),
+    ("appointment", "form_save_and_appointment_steps"),
+])
+def test_application_probe_requires_the_link_and_each_operational_step(missing, key):
+    case = Case(id="app-probe-case", external_thread_id="app-probe-thread", policy_version="test",
+                applicant_contact="fictional@example.test", question_plan=[])
+    reply = (probe.APPLICATION_URL + " Apply now online save appointment").replace(missing, "")
+    checks = probe.checks_for("application-en", case, reply, {})
+    assert not checks[key] and not all(checks.values())

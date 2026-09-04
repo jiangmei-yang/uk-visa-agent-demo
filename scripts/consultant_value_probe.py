@@ -47,6 +47,13 @@ CASES = [
     ("mixed-request", "不用讲费用但请把访问签证申请官网发我。另外，我存两万元是不是一定能获批？", {}),
     ("separate-routes", "Where do I apply for my UK visitor visa? Separately, what is the fee for a student visa?", {}),
 ]
+APPLICATION_CASES = [
+    ("application-zh", "先别一直问我个人信息，告诉我英国旅游签证在哪个网页申请、怎么开始。", {}),
+    ("application-en", "Please stop asking me for personal details for now. Tell me which webpage to use to apply "
+     "for a UK tourist visa and how to get started.", {}),
+    ("application-cold-en", "I want to apply for a UK tourist visa. Please explain which webpage to use and how "
+     "to get started before asking for personal details.", {}),
+]
 CONTACT = "fictional-consultant-probe@example.test"
 
 
@@ -85,7 +92,21 @@ def checks_for(kind: str, case: Any, reply: str, expected: dict[str, str]) -> di
         "at_most_one_main_question": len(reply_items(case)[1]) <= 1,
         "no_confirmation_or_release": not (case.profile_confirmed or case.final_summary_confirmed or case.delivery_path),
     }
-    if kind == "first-enquiry":
+    if kind.startswith("application-"):
+        checks.update({
+            "official_entry_and_action": APPLICATION_URL in reply and "Apply now" in reply,
+            "form_save_and_appointment_steps": bool(re.search(r"在线|online", reply, re.I))
+                and bool(re.search(r"保存|save", reply, re.I))
+                and bool(re.search(r"预约|appointment", reply, re.I)),
+            "no_unrequested_intake": case.last_requested_fields == [],
+            "no_invented_identity_or_dates": all(getattr(case.profile, field) is None for field in (
+                "full_name", "date_of_birth", "nationality_country", "application_country",
+                "planned_arrival_date", "planned_departure_date",
+            )),
+            "no_route_confirmation": not case.profile.route_confirmed_standard_visitor,
+            "not_paused_by_communication_preference": not case.preparation_paused,
+        })
+    elif kind == "first-enquiry":
         checks["official_orientation"] = ROUTE_CHECK_URL in reply or APPLICATION_URL in reply
         checks["route_not_assumed"] = case.profile.visit_purpose is None and not case.profile.route_confirmed_standard_visitor
     elif kind in {"student", "employed", "parents", "family"}:
@@ -139,7 +160,8 @@ def checks_for(kind: str, case: Any, reply: str, expected: dict[str, str]) -> di
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--allow-model-calls", action="store_true", help="Authorize at most seven fictional DeepSeek extraction calls")
+    parser.add_argument("--allow-model-calls", action="store_true", help="Authorize one fictional extraction per case (seven default, three application-entry)")
+    parser.add_argument("--suite", choices=("consultant", "application-entry"), default="consultant")
     parser.add_argument("--model", default="deepseek-v4-flash")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
@@ -151,7 +173,9 @@ def main() -> None:
                       default_file=Path(".secrets/deepseek_api_key.txt"))
     if not key:
         parser.error("Missing DeepSeek key")
+    cases = APPLICATION_CASES if args.suite == "application-entry" else CASES
     report: dict[str, Any] = {"scope": "fictional text; real extraction; actual automatic sender with captured transport",
+        "suite": args.suite, "maximum_model_calls": len(cases),
         "new_provider_result": True, "model": args.model, "mailbox_calls": 0,
         "not_a_naturalness_score": True, "completed": False, "results": [],
         "source_sha256": {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in [
@@ -162,7 +186,7 @@ def main() -> None:
     with args.output.open("x") as output:
         json.dump(report, output)
     with tempfile.TemporaryDirectory(prefix="visa-consultant-probe-") as directory:
-        for index, (kind, text, expected) in enumerate(CASES):
+        for index, (kind, text, expected) in enumerate(cases):
             # Explicit diagnostic capture of these fictional texts only. The
             # production adapter's default remains raw-response capture off.
             model = ExtractionOnly(args.model, api_key=key, capture_raw_responses=True)

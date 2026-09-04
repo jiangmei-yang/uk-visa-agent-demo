@@ -17,7 +17,8 @@ explicitly recorded here.
 
 Updated 2026-09-05. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **3,703 passing tests**; see the latest [school-record and undecided-date repair](docs/SCHOOL_RECORD_GUIDANCE.md),
+The local suite has **3,854 passing tests**; see the latest [application-information priority repair](docs/APPLICATION_INFORMATION_PRIORITY.md),
+[school-record and undecided-date repair](docs/SCHOOL_RECORD_GUIDANCE.md),
 [contextual adviser reply repair](docs/CONSULTANT_CONTEXT_REPAIR_2026-09-05.md),
 [separate-email consultation repair](docs/BATCHED_CONSULTATION.md),
 [mixed permission and consultation repair](docs/MIXED_PROCESSING_CONSENT.md),
@@ -33,7 +34,25 @@ The local suite has **3,703 passing tests**; see the latest [school-record and u
 and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
 
-Latest school-record and undecided-date repair: **3,703 passed in 58.19s**, Ruff and
+Latest application-information priority repair: **3,854 passed in 60.73s**, Ruff
+and strict Mypy passed (70 source files); the existing test-client warning remains.
+Five focused suites passed **167 checks in 1.64s**. Current requests for a visitor
+application entry and steps receive the reviewed official link, Apply now,
+online/save/appointment guidance without unrequested personal questions. Mixed
+facts remain processable; quotes, conditions, other routes, long-validity fees,
+source expiry, pause and permission boundaries retain their independent checks.
+Three fictional **real DeepSeek calls**, one per case without retries, passed the
+bounded content/state checks through the actual reviewed sender with a captured
+transport; total provider-reported usage was **10,547 tokens**. This is not live
+Gmail, a blind holdout or a naturalness/accuracy score. The original failures and
+all raw synthetic observations are retained in the [repair note](docs/APPLICATION_INFORMATION_PRIORITY.md)
+and [provider report](eval_output/application_information_deepseek_2026-09-05.json).
+The worker reloaded as PID 9943 and was observed idle at 2026-09-04 17:51:10 UTC;
+configuration, existing case/SENT projection and unknown applicant permission are
+unchanged. Docker is healthy, all 70 source hashes match, the persistent volume is
+preserved and both ZIP hashes are unchanged. See [rollout evidence](eval_output/application_information_rollout_2026-09-05.json).
+
+Previous school-record and undecided-date repair: **3,703 passed in 58.19s**, Ruff and
 strict Mypy passed (70 source files). Three new suites passed **171 checks in 2.41s**.
 School record difficulties now get bounded existing-record checks, not the same
 unavailable-letter request or an identity question. Complete actual SENT discussion
@@ -48,8 +67,9 @@ The Gmail worker reloaded as PID 7822 and was observed idle at 2026-09-04
 17:32:24 UTC; configuration, existing case/SENT business projection and unknown
 applicant permission are unchanged. Docker is healthy with all 70 source hashes
 matching and both existing ZIP hashes unchanged. See [rollout evidence](eval_output/school_record_rollout_2026-09-05.json).
-A separate read-only application-complaint probe still has 5 failures out of 8
-synthetic intent combinations; these are explicitly not closed by this repair.
+A separate read-only application-complaint probe then had 5 failures out of 8
+synthetic intent combinations. These were not closed by that school-record repair;
+the subsequent bounded application-information repair above addresses them.
 
 Previous contextual adviser reply repair: **3,532 passed in 54.07s**, Ruff and strict
 Mypy passed (70 source files). The four new suites passed **59 checks in 1.15s**.
