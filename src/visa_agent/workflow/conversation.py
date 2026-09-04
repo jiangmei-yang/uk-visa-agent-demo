@@ -316,6 +316,12 @@ def received_context(case: Case) -> str:
         if received:
             return "Thanks, " + " and ".join(received[:2]) + "."
         recorded = []
+        if "full_name" in facts:
+            recorded.append("the name in your passport")
+        if "nationality_country" in facts:
+            recorded.append(f"your passport country ({facts['nationality_country']})")
+        if "application_country" in facts:
+            recorded.append(f"where you will apply ({facts['application_country']})")
         if "date_of_birth" in facts:
             recorded.append("your date of birth")
         if "uk_accommodation" in facts:
@@ -343,6 +349,26 @@ def received_context(case: Case) -> str:
     if parts:
         return "了解了，" + "，".join(parts[:2]) + "。"
     recorded = []
+    country_labels = {"China": "中国", "Hong Kong": "香港", "United Kingdom": "英国"}
+    if facts and set(facts) <= {"nationality_country", "application_country"}:
+        details = []
+        if "nationality_country" in facts:
+            country = facts["nationality_country"]
+            details.append(f"你持{country_labels.get(country, country)}护照")
+        if "application_country" in facts:
+            country = facts["application_country"]
+            details.append(f"{'会' if details else '你会'}在{country_labels.get(country, country)}递交申请")
+        return "明白，" + "，".join(details) + "。"
+    if set(facts) == {"full_name"}:
+        return "护照姓名记下了。"
+    if "full_name" in facts:
+        recorded.append("护照姓名")
+    if "nationality_country" in facts:
+        country = facts["nationality_country"]
+        recorded.append(f"护照签发国家（{country_labels.get(country, country)}）")
+    if "application_country" in facts:
+        country = facts["application_country"]
+        recorded.append(f"申请所在地（{country_labels.get(country, country)}）")
     if "date_of_birth" in facts:
         recorded.append("生日")
     if "uk_accommodation" in facts:
@@ -846,11 +872,15 @@ def blocked_customer_message(case: Case) -> str:
           and customer_requests_next_step(case.latest_customer_message)):
         intro = "可以，我们先补一项。" if zh else "Sure. Let's take one detail at a time."
     else:
+        missing_context = [label for field, label in (
+            ("visit_purpose", "出行目的"), ("application_country", "申请地点"),
+        ) if not getattr(case.profile, field)]
         intro = (
             ("好的，等你方便补充资料时，我们再接着准备。" if zh
              else "Of course. We can pick this up when you're ready to add the remaining details.")
             if case.question_plan == [] and case.pending_question_fields
-            else ("具体要准备哪些材料，要先看你的出行目的和申请地点。" if zh
+            else (("具体要准备哪些材料，还要结合你的" + "和".join(missing_context) + "来安排。"
+                   if missing_context else "我们接着把申请需要的信息整理好。") if zh
                   else "We can work through this together; you don't need to have every document ready at once.")
         )
     # A concrete acknowledgement already opens the reply; do not restart the introduction.

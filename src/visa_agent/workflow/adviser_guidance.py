@@ -4,6 +4,7 @@ import re
 from datetime import date
 
 from visa_agent.domain.models import Case, CaseStatus
+from visa_agent.workflow.advice_preferences import _current_clauses, wants_no_links
 from visa_agent.workflow.conversation import (
     customer_requests_next_step,
     document_list_requested,
@@ -108,12 +109,23 @@ def _question_step_allows_preparation_guidance(case: Case, active: str, *, initi
 
 
 def preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> list[tuple[str, str]]:
+    """A link preference changes presentation, not whether useful guidance exists."""
+    result = _preparation_guidance(case, today, sent_topics)
+    if wants_no_links(case.latest_customer_message):
+        return [(topic, "\n".join(line for line in answer.splitlines()
+                                 if not line.startswith("GOV.UK: ")))
+                for topic, answer in result]
+    return result
+
+
+def _preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> list[tuple[str, str]]:
     """Offer at most two useful next steps; explicit answers and problems take priority.
 
     Topic IDs are versioned. Only topics in actually sent replies count as already shared.
     These suggestions cannot change requirements, evidence acceptance, facts or consent.
     """
     current = latest_reply_text(case.latest_customer_message)
+    no_links = wants_no_links(current)
     active = "\n".join(_active_clauses(current, split_commas=False))
     initial_enquiry = _initial_material_enquiry(current)
     personal_checklist = _incomplete_personal_checklist(case, current)
@@ -126,11 +138,11 @@ def preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> list
             or case.open_blockers()
             or case.latest_document_names or case.status != CaseStatus.DRAFT):
         return []
-    unquoted = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"', "", current)
-    unquoted = re.sub(r"(?<!\w)'[^'\n]+'(?!\w)|`[^`\n]+`", "", unquoted)
     # Preserve comma-linked conditions and negations before selecting an affirmative
     # preparation request. A separate later-date statement does not veto that request.
-    text = "\n".join(clause for clause in _active_clauses(current, split_commas=False)
+    preparation_clauses = (_active_clauses("\n".join(_current_clauses(current))) if no_links
+                           else _active_clauses(current, split_commas=False))
+    text = "\n".join(clause for clause in preparation_clauses
                      if not re.search(
                          r"如果|假如|暂时|先不|不想|不需要|不能|尚未|还没|"
                          r"\b(?:if|not|later|tomorrow|maybe|cannot|never|stop)\b|"
@@ -153,9 +165,9 @@ def preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> list
                 r"(?:visa|visit|trip).{0,16}(?:UK|Britain)", text, re.I,
             ))):
         return []
-    if (re.search(r"(?:不用|不需要|不要|无需|不想).{0,18}(?:链接|官网|流程|材料|建议|说明)|"
-                  r"(?:don't|do not|no need|stop).{0,30}(?:link|website|guidance|explain|advice)|"
-                  r"\bno links?\b", unquoted, re.I)
+    if (any(re.search(r"(?:不用|不需要|不要|无需|不想)[^，,;；。\n]{0,18}(?:流程|材料|建议|说明)|"
+                      r"(?:don't|do not|no need|stop)[^,;\n]{0,30}(?:guidance|explain|advice)", clause, re.I)
+            for clause in _current_clauses(current))
             or re.fullmatch(r"(?:谢谢|好的|收到|了解|thanks|thank you|okay|ok)[。.!！\s]*", text, re.I)):
         return []
     profile = case.profile
@@ -170,8 +182,10 @@ def preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> list
             "how the trip will be paid for, and your work or studies. The supporting documents depend on "
             "your visit and funding arrangements; you do not need to upload everything now. "
             "Use the official checker to establish whether your passport and visit require a visa or ETA."
-        ) + "\nGOV.UK: " + ROUTE_CHECK_URL + ("\n如果需要 Standard Visitor 签证，下面是在线申请入口，可以保存后再继续填写。"
-            if zh else "\nIf you need a Standard Visitor visa, this is the online application page; you can save the form and return to it.")
+        ) + "\nGOV.UK: " + ROUTE_CHECK_URL + (("\n如果需要 Standard Visitor 签证，可以在 GOV.UK 在线填写申请，表格可以保存后继续。"
+            if zh else "\nIf you need a Standard Visitor visa, apply online through GOV.UK; you can save the form and return to it.")
+            if no_links else ("\n如果需要 Standard Visitor 签证，下面是在线申请入口，可以保存后再继续填写。"
+            if zh else "\nIf you need a Standard Visitor visa, this is the online application page; you can save the form and return to it."))
             + "\nGOV.UK: " + APPLICATION_URL))
     if not initial_checklist and profile.visit_purpose not in {
         "tourism", "family_or_friends", "business", "conference"
@@ -179,19 +193,19 @@ def preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> list
         if profile.visit_purpose is None and "route_orientation_v1" not in sent_topics:
             return [("route_orientation_v1", (
                 "先确认适合的申请类别，再准备材料。是否需要签证或 ETA，要结合护照和赴英目的判断；"
-                "可以先用下面的官方查询入口查看。我会根据你的情况梳理准备步骤，不用现在就把所有个人资料发来。"
+                "可以先在 GOV.UK 的 Check if you need a UK visa 页面查看，不用现在就把所有个人资料发来。"
                 if zh else "Let's establish the right application route before collecting documents. "
                 "Whether you need a visa or ETA depends on your passport and purpose; the official "
-                "checker below is a starting point. We can then work out your preparation steps "
+                "checker on GOV.UK is a starting point. We can then work out your preparation steps "
                 "without asking you to send every personal detail at once."
             ) + "\nGOV.UK: " + ROUTE_CHECK_URL)]
         return []
     if not initial_checklist and "application_overview_v1" not in sent_topics:
         result.append(("application_overview_v1", (
-            "先给你申请入口：GOV.UK 页面里的 Apply now 可以开始在线填表，未填完的表格可以保存。"
+            "申请从 GOV.UK 的 Apply now 开始在线填表，未填完的表格可以保存。"
             "如果需要 Standard Visitor 签证，流程是在线申请、预约签证申请中心，再按要求完成身份核验和交材料。"
             "我们这里帮你梳理信息、核对材料并整理材料包；正式递交由你在官网完成。"
-            if zh else "Here is the official starting point: choose Apply now on the GOV.UK page. "
+            if zh else "Start by choosing Apply now on GOV.UK. "
             "You can save an unfinished form. If you need a Standard Visitor visa, apply online, "
             "book a visa application centre appointment, and follow the identity and document steps. "
             "We help organise and check your preparation pack; you submit the application on the official site."
@@ -314,11 +328,27 @@ def preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> list
     # Funding just supplied or changed should not be buried behind an unrelated
     # occupational overview. Personal support/family context already lead above.
     changed_fields = set(case.latest_received_facts) | set(case.latest_changes)
+    location_changed = bool({"nationality_country", "application_country"} & changed_fields)
+    if (location_changed and "residence_preparation_v1" not in covered
+            and any(item.id == "legal_residence" and item.applicable and not item.satisfied
+                    for item in case.requirements)):
+        residence = (
+            "还有一项和申请地点有关：你可以先找出当地的居留文件，核对上面的姓名、身份类别和有效期。"
+            "我们要用它说明你在申请地的合法居留身份；具体放哪份进材料包，要看你实际持有的文件。"
+            if zh else "Given your passport country and where you will apply, check your evidence of lawful residence there. "
+            "Find the document recording your current residence status and check its name, status and validity. "
+            "It explains your residence where you apply; the location of your school or employer alone does not establish it. "
+            "The appropriate evidence depends on the document you hold."
+        )
+        candidates.append(("residence_preparation_v1", residence + "\nGOV.UK: " + DOCUMENTS_URL
+                           + "#demonstrating-personal-circumstances"))
     funding_changed = "funding_source" in changed_fields
     if "visit_purpose" in changed_fields and profile.visit_purpose == "conference":
         candidates.sort(key=lambda item: item[0] != "conference_preparation_v1")
     elif funding_changed and profile.funding_source == "employer_or_school":
         candidates.sort(key=lambda item: item[0] != "organisation_funding_preparation_v1")
+    elif location_changed and not {"visit_purpose", "occupation_status", "funding_source"} & changed_fields:
+        candidates.sort(key=lambda item: item[0] != "residence_preparation_v1")
     if candidates:
         result.append(candidates[0])
     return result[:2]

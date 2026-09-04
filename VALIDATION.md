@@ -17,7 +17,8 @@ explicitly recorded here.
 
 Updated 2026-09-05. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **3,473 passing tests**; see the latest [separate-email consultation repair](docs/BATCHED_CONSULTATION.md),
+The local suite has **3,532 passing tests**; see the latest [contextual adviser reply repair](docs/CONSULTANT_CONTEXT_REPAIR_2026-09-05.md),
+[separate-email consultation repair](docs/BATCHED_CONSULTATION.md),
 [mixed permission and consultation repair](docs/MIXED_PROCESSING_CONSENT.md),
 [consultation continuation and obstacle repair](docs/ADVICE_CONTINUATION.md),
 [independent usefulness review and repairs](docs/ADVISER_USEFULNESS_REVIEW_2026-09-04.md),
@@ -31,7 +32,23 @@ The local suite has **3,473 passing tests**; see the latest [separate-email cons
 and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
 
-Latest separate-email consultation repair: **3,473 passed in 53.24s**, Ruff and
+Latest contextual adviser reply repair: **3,532 passed in 54.07s**, Ruff and strict
+Mypy passed (70 source files). The four new suites passed **59 checks in 1.15s**.
+Supplied location/identity now receives a contextual acknowledgement; applicable
+residence evidence gets a bounded preparation action. A no-link preference does
+not remove useful guidance. An explicit next-document request selects an existing
+preparable requirement before an unrelated missing identity field. Source-link
+formatting, quoted/conditional preferences, actual SENT, pause/review and unchanged
+facts/evidence/confirmation boundaries are covered. This is captured-transport
+testing with synthetic extraction, not new live-model or recipient evidence.
+The Gmail worker reloaded as PID 5136 and was observed idle at 2026-09-04
+17:10:57 UTC. Its settings, business projection and nine SENT records remain
+unchanged; applicant permission remains unknown. Docker is healthy, all 70 Python
+source hashes match, and persistent and isolated fixture ZIPs are unchanged.
+See [failures and remaining observed gaps](docs/CONSULTANT_CONTEXT_REPAIR_2026-09-05.md)
+and [rollout evidence](eval_output/consultant_context_rollout_2026-09-05.json).
+
+Previous separate-email consultation repair: **3,473 passed in 53.24s**, Ruff and
 strict Mypy passed (70 source files). The existing one test-client deprecation
 warning remains. Five focused suites passed **184 checks in 3.03s**.
 Actual unanswered applicant questions

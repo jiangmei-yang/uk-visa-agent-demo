@@ -13,6 +13,7 @@ from visa_agent.domain.models import (
     Requirement,
 )
 from visa_agent.domain.policy import Policy
+from visa_agent.workflow.advice_preferences import wants_no_links
 from visa_agent.workflow.conversation import (
     explained_document_label,
     fact_label,
@@ -111,13 +112,91 @@ def _document_message(case: Case, item: Requirement, policy: Policy) -> str:
                     " Keep a clear, readable PDF so its contents can be checked.")
     rule = next((rule for rule in policy.requirements if rule.id == item.id), None)
     text = latest_reply_text(case.latest_customer_message)
-    no_links = re.search(
-        r"(?:不要|不用|无需|不需要|别).{0,12}(?:链接|网址|网站|官网)|"
-        r"(?:don't|do not|no need|without).{0,20}(?:links?|websites?|URLs?)|\bno links?\b", text, re.I,
-    )
+    no_links = wants_no_links(text)
     if rule is not None and not no_links:
         message += "\nGOV.UK: " + rule.source_url
     return message
+
+
+def _material_first_requested(case: Case) -> bool:
+    """Refine an accepted next-step topic, without inferring a request from gaps."""
+    from visa_agent.workflow.customer_questions import (
+        _active_clauses,
+        _next_step_targets_current_case,
+    )
+
+    if "next_step" not in case.customer_question_topics:
+        return False
+    current = latest_reply_text(case.latest_customer_message)
+    # Preserve comma/semicolon/newline conditions around a dependent request.
+    # Quoted text and reported/declined clauses still use the shared scope rules.
+    sentences = re.split(r"[。！!]|(?<=[?？])\s*|\.(?:\s|$)", current)
+    for sentence in sentences:
+        if re.search(r"如果|假如|假设|除非|只要|\b(?:if|unless|provided|assuming|suppose)\b", sentence, re.I):
+            continue
+        for clause in _active_clauses(sentence, split_commas=False):
+            if not _next_step_targets_current_case(current, clause):
+                continue
+            if re.search(
+                r"(?:先|接下来|下一步).{0,8}(?:准备|整理).{0,6}哪(?:一)?(?:份|项|个|种)?(?:材料|文件|证明)|"
+                r"哪(?:一)?(?:份|项|个|种)?(?:材料|文件|证明).{0,12}(?:先|接下来|下一步).{0,6}(?:准备|整理)|"
+                r"(?:帮我|带我|请).{0,8}(?:准备|整理)(?:下一份|下一项)(?:材料|文件|证明)|"
+                r"\b(?:which|what)\s+(?:supporting\s+)?(?:document|file|piece of evidence)\b"
+                r".{0,45}\b(?:prepare|gather|collect|work on)\b.{0,20}\b(?:first|next)\b|"
+                r"\b(?:help me|please)\s+(?:prepare|gather|collect)\s+the next\s+(?:document|file)\b",
+                clause, re.I,
+            ):
+                return True
+    return False
+
+
+def _material_first_step(case: Case, policy: Policy, gate: GateResult) -> NextStepAdvice | None:
+    """Select preparable evidence, not certify the route or invent its drivers."""
+    if case.preparation_paused or not _material_first_requested(case):
+        return None
+    zh = case.customer_language == "zh"
+    if any(evidence.fact_key == "route_confirmed_standard_visitor" and evidence.value is False
+           and not evidence.superseded for evidence in case.evidence):
+        return NextStepAdvice(message=(
+            "需要先核对适用路线，不能按你已明确不采用的访客路线安排材料。" if zh else
+            "The appropriate route needs checking before choosing material for a visitor route you have explicitly ruled out."
+        ), kind="review")
+    profile = case.profile
+    known_basis = {
+        "passport": True,
+        "status_evidence": profile.occupation_status in policy.scope["occupations"],
+        "purpose_evidence": profile.visit_purpose in policy.scope["purposes"],
+        "funding_evidence": profile.funding_source in policy.scope["funding"],
+        "sponsor_evidence": profile.funding_source == "personal_sponsor",
+        "legal_residence": bool(profile.nationality_country and profile.application_country),
+        "certified_translation": True,  # Applicability comes from the received document.
+    }
+    rules = {rule.id: rule for rule in policy.requirements}
+    for item in case.requirements:
+        if not (item.applicable and item.blocker and not item.satisfied):
+            continue
+        rule = rules.get(item.id)
+        if rule is None or item.rule_version != policy.version:
+            return NextStepAdvice(message=(
+                "需要先核对这项材料要求的依据，再确定该准备什么。" if zh else
+                "The basis for this material requirement needs checking before choosing a document."
+            ), kind="review")
+        if not known_basis.get(item.id, False):
+            continue
+        if any(document.kind in rule.acceptable_evidence
+               and document.status in {DocumentStatus.RECEIVED, DocumentStatus.PROCESSING}
+               for document in case.documents):
+            return NextStepAdvice(message=(
+                "这一项的文件已经收到，先核对现有文件，不用再发一份。" if zh else
+                "A file for this item has already been received. I'll check that file first; there is no need to send another copy."
+            ), kind="waiting", requirement_id=item.id)
+        message = _document_message(case, item, policy)
+        if gate.checks.get("route_in_scope") is not True:
+            message += ("\n\n这份资料可以先用于核对；适用路线和其余未齐信息仍需确认，暂不据此判断材料已齐。" if zh else
+                        "\n\nThis can be prepared for checking while the appropriate route and remaining details are established; "
+                        "it does not mean the evidence is complete.")
+        return NextStepAdvice(message=message, kind="document", requirement_id=item.id)
+    return None
 
 
 def select_next_step(case: Case, policy: Policy, gate: GateResult) -> NextStepAdvice:
@@ -158,6 +237,10 @@ def select_next_step(case: Case, policy: Policy, gate: GateResult) -> NextStepAd
     obstacle_step = reviewed_obstacle_next_step(case, policy, gate)
     if obstacle_step is not None:
         return obstacle_step
+
+    material_step = _material_first_step(case, policy, gate)
+    if material_step is not None:
+        return material_step
 
     # Ignore this turn's prior pacing selection while preserving every fact and
     # date deferral. This shallow copy is read-only; no nested data is modified.

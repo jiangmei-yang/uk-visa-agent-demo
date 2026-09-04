@@ -348,5 +348,12 @@ def test_personal_next_document_clause_does_not_reframe_separate_general_overvie
     case, reply = _synthetic(tmp_path, language, overview + "\n" + next_step,
         [("document_checklist", overview), ("next_step", next_step)])
     _assert_reference(reply, language)
-    assert case.next_step_advice and case.next_step_advice.kind == "question"
-    assert case.next_step_advice.question_field in case.last_requested_fields
+    # An explicit request for the next document is answered separately from the
+    # reference overview. Neither is an invitation to ask the next identity field.
+    assert case.next_step_advice and case.next_step_advice.kind == "document"
+    assert case.next_step_advice.requirement_id == "passport"
+    assert case.next_step_advice.question_field is None
+    assert case.last_requested_fields == case.question_plan == []
+    assert "PDF" in reply and case.next_step_advice.message in reply
+    assert not case.profile_confirmed and not case.final_summary_confirmed
+    assert case.delivery_path is None

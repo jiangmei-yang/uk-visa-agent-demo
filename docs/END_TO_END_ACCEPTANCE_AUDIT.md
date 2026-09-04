@@ -41,6 +41,11 @@ for these outcomes.
    now have original-request memory, combined captured-SENT reply checks and
    current-preference boundaries. Broader paraphrases and independent recipient
    evaluation remain open; no new live model run is implied.
+   [Contextual preparation replies](CONSULTANT_CONTEXT_REPAIR_2026-09-05.md)
+   now acknowledge supplied location/identity, keep useful advice when links are
+   declined and distinguish an explicit next-document request from a missing
+   personal field. School-document unavailability and some undecided-date or
+   application-complaint paraphrases still have observed gaps.
 
 ## Bounded recovery added in this work
 

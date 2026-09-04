@@ -103,8 +103,12 @@ def wants_no_links(body: str) -> bool:
         r"^(?:这次|这个回复|这封邮件)?(?:请|麻烦)?(?:先)?(?:不要|不用|无需|不需要|别)(?:再)?(?:给我|发我)?"
         r"(?:发|给|加|附上|附|提供)?(?:任何)?(?:链接|网址|网站|官网链接)(?:了|吧)?$",
     )
+    # An independent own-case sentence may follow a link preference after a
+    # comma. Conditions/reported scope have already been excluded as a whole.
+    clauses = [part for clause in _current_clauses(body)
+               for part in re.split(r"[,，]\s*(?=我|I\b)", clause)]
     return any(re.search(pattern, clause, re.I)
-               for clause in _current_clauses(body) for pattern in patterns)
+               for clause in clauses for pattern in patterns)
 
 
 def defer_previous_advice(body: str) -> bool:
