@@ -18,6 +18,28 @@ class CaptureAdapter(GmailAdapter):
         return {"id": "accepted"}
 
 
+def test_backlog_withholds_old_drafts_without_delaying_latest_or_touching_uncertain(tmp_path):
+    store = SQLiteStore(tmp_path / "db")
+    now = datetime.now(UTC)
+    case = Case(id="c", external_thread_id="t", applicant_contact="user@example.test", policy_version="v")
+    for n in range(152):
+        event = InboundEvent(id=f"e{n}", external_thread_id="t", sender=case.applicant_contact,
+            subject="UK visit", body="Hello", channel="gmail", received_at=now)
+        store.commit_event(case, event, "blocked", "draft")
+    with store.connection:
+        store.connection.execute("UPDATE outbox SET status='SENDING' WHERE event_id='e0'")
+    adapter = CaptureAdapter()
+    sender = AutomaticGmailReplySender(adapter, store, "user@example.test")
+    assert sender.withhold_obsolete_unsent() == 150
+    rows = store.list_outbox()
+    assert next(row for row in rows if row["event_id"] == "e0")["status"] == "SENDING"
+    assert all(row["attempt_count"] == 0 for row in rows)
+    dispatcher = OutboxDispatcher(store, sender, channel="gmail", allowed_message_types=("blocked",))
+    assert dispatcher.dispatch_due(now, limit=1)[0].status == "SENT"
+    assert len(adapter.calls) == 1 and sender.withhold_obsolete_unsent() == 0
+    store.close()
+
+
 def test_automatic_reply_replaces_model_wording_and_leaves_final_pack_pending(tmp_path: Path) -> None:
     store = SQLiteStore(tmp_path / "db")
     now = datetime.now(UTC)

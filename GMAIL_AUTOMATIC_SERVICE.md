@@ -65,9 +65,8 @@ Open onboarding from arbitrary senders, explicit privacy/processing consent, abu
 public-service deployment and automatic final-pack release are not implemented by this mode.
 Do not describe this registered-sender rollout as a fully public autonomous adviser.
 
-The activation-scoped inbox query currently has a 100-message complete-batch limit. Once
-exceeded, intake stops explicitly rather than silently skipping old messages. Moving
-reconciliation earlier does not remove this limit. Durable incremental intake/backlog handling
-is still required for long-running use; increasing the cap alone is not a complete fix.
-The API boundary and real read-only probe for that replacement are documented in
-`GMAIL_INCREMENTAL_SYNC.md`; the replacement is not enabled in this worker yet.
+Automatic `serve` now uses durable incremental discovery instead of the lifetime 100-message
+full-batch limit. It follows bounded pages per cycle, processes at most 100 bodies per cycle,
+and withholds dispatch until the backlog is drained. Manual `prepare` still has its bounded
+100-message trial scope. Implementation, migration evidence and remaining limitations are in
+`GMAIL_INCREMENTAL_SYNC.md`; live large-backlog/expired-history tests are still outstanding.

@@ -14,6 +14,8 @@ from pathlib import Path
 from visa_agent.channels.email_ingestion import EmailIngestionBoundary
 from visa_agent.channels.gmail import GmailAdapter, GmailReplySender
 from visa_agent.channels.gmail_auth import build_gmail_service
+from visa_agent.channels.gmail_intake import discover_messages, ordered_candidates, scope_rejection
+from visa_agent.channels.gmail_sync import GmailSyncJournal
 from visa_agent.channels.outbound import OutboxDispatcher, PermanentChannelError, ReplyRequest
 from visa_agent.channels.runtime_lock import exclusive_state
 from visa_agent.delivery.pack import generate_pack
@@ -103,6 +105,7 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
         parser.error("Authorized mailbox does not match the requested test mailbox")
     adapter = GmailAdapter(service)
     store = SQLiteStore(args.state_dir / "sandbox.db")
+    journal = None
     try:
         # Resolve previous uncertain sends even if intake/model processing fails this cycle.
         # This only observes provider state; dispatch still waits for successful intake.
@@ -134,22 +137,24 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
                 query += f" after:{args.after}"
             if args.subject:
                 query += f' subject:"{args.subject}"'
-            ids = adapter.list_complete_message_ids(query, limit=100)
-            messages = []
+            if args.action == "serve":
+                journal = GmailSyncJournal(args.state_dir / "sync.db", json.dumps(binding, sort_keys=True))
+                if not discover_messages(adapter, journal, query):
+                    print("Intake discovery continues next cycle; no dispatch")
+                    return
+                ids = ordered_candidates(adapter, journal, sender=args.sender, mailbox=args.mailbox,
+                                         after=args.after, subject=args.subject)[:100]
+            else:
+                ids = list(reversed(adapter.list_complete_message_ids(query, limit=100)))
+            # Metadata gives chronological order. Fetch/process one body at a time.
             for identifier in ids:
                 raw = adapter.get_raw_message(identifier)
                 mime = message_from_bytes(raw.raw, policy=policy.default)
-                if (str(mime.get("Auto-Submitted", "no")).casefold() != "no"
-                        or mime.get("List-Id") or str(mime.get("Precedence", "")).casefold() in {"bulk", "list", "junk"}):
+                rejection = scope_rejection(mime, args.sender, args.mailbox, args.subject)
+                if rejection:
+                    if journal is not None:
+                        journal.acknowledge(identifier, "ignored", rejection)
                     continue
-                subject = str(mime.get("Subject", ""))
-                if args.subject is not None and subject.removeprefix("Re: ") != args.subject:
-                    continue
-                if parseaddr(str(mime.get("From", "")))[1] != args.sender:
-                    continue
-                messages.append(raw)
-            # Gmail lists newest first; process oldest first for a conversation.
-            for raw in reversed(messages):
                 result = ingestion.ingest(
                     raw.raw,
                     provider_message_id=raw.provider_message_id,
@@ -158,6 +163,8 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
                 )
                 if result.event is None:
                     print("Ingestion rejected:", result.failure_code)
+                    if journal is not None:
+                        journal.acknowledge(identifier, "rejected", result.failure_code)
                     continue
                 case, duplicate, plan = workflow.process(result.event)
                 # Recover a crash after the workflow commit but before pack materialisation.
@@ -165,6 +172,8 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
                     generate_pack(
                         case, workflow.policy, store, args.state_dir / "packs", date.today()
                     )
+                if journal is not None:
+                    journal.acknowledge(identifier, "processed")
                 print(
                     json.dumps(
                         {
@@ -181,6 +190,10 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
                     )
                 )
         if args.action == "serve":
+            if journal is None or not journal.discovery_drained():
+                print("Intake backlog remains; no dispatch")
+                return
+            print("Obsolete unsent replies withheld:", automatic_sender.withhold_obsolete_unsent())
             print("Automatic dispatch:", [item.status for item in dispatcher.dispatch_due(datetime.now(UTC), limit=1)])
         elif args.action in {"send-reviewed", "reconcile"}:
 
@@ -212,6 +225,8 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
             )
         print("Counts:", store.counts())
     finally:
+        if journal is not None:
+            journal.close()
         store.close()
 
 

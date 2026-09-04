@@ -27,7 +27,10 @@ def test_uncertain_sends_reconcile_before_failed_intake(tmp_path, monkeypatch, f
         def __init__(self, service):
             pass
 
-        def list_complete_message_ids(self, query, limit):
+        def current_history_id(self):
+            return "111"
+
+        def list_message_page(self, query, token):
             calls.append("intake")
             raise failure
 

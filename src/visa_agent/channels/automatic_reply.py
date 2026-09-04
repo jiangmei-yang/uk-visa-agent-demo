@@ -15,6 +15,29 @@ class AutomaticGmailReplySender(GmailReplySender):
         self.store = store
         self.allowed_sender = allowed_sender
 
+    def withhold_obsolete_unsent(self) -> int:
+        """Retain stale drafts as failed/withheld without consuming a provider-send slot."""
+        count = 0
+        with self.store.connection:
+            rows = self.store.connection.execute("""
+                SELECT old.id, old.recipient FROM outbox old
+                WHERE old.channel='gmail' AND old.status='PENDING' AND old.attempt_count=0
+                  AND old.message_type IN ('blocked','awaiting_profile_confirmation','awaiting_confirmation')
+                  AND EXISTS (SELECT 1 FROM outbox newer
+                              WHERE newer.case_id=old.case_id AND newer.rowid>old.rowid)
+            """).fetchall()
+            for row in rows:
+                recipients = [address.casefold() for _, address in getaddresses([row["recipient"] or ""])]
+                if recipients != [self.allowed_sender.casefold()]:
+                    continue
+                result = self.store.connection.execute("""
+                    UPDATE outbox SET status='FAILED', last_error='Obsolete unsent reply withheld',
+                                      next_attempt_at=NULL
+                    WHERE id=? AND status='PENDING' AND attempt_count=0
+                """, (row["id"],))
+                count += result.rowcount
+        return count
+
     def send(self, request: ReplyRequest) -> str:
         row = self.store.connection.execute(
             "SELECT case_id, message_type FROM outbox WHERE id = ?", (request.outbox_id,)
