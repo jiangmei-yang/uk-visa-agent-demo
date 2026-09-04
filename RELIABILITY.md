@@ -95,3 +95,19 @@ Downloads now hold the ZIP bytes in memory; large-package resource testing remai
 The assessment event log is a set of ordered `.eml` fixtures. `make demo` processes it, records
 state/outbox/delivery counts, replays it in full, and fails if counts change. The audit directory
 contains evidence, policy evaluations, the gate matrix, and the final structured snapshot.
+## Reviewed delivery revisions
+
+A finalized-case update does not silently rewrite a delivered attachment. Local operator review
+checks the current snapshot and original archive integrity, preserves the old delivery and allocates
+one new revision. Multiple retained updates require explicit batch authorization. Normal processing
+is serialized in original receive order; an earlier failed/retrying update cannot be skipped.
+All case-level summary confirmations are cleared and must be obtained again. Read
+`HUMAN_REVIEW_RECOVERY.md` for commands, rollback behaviour and the still-missing reviewer UI/RBAC.
+
+Outbox rows and delivery registries bind to `case_revision`. A stale pending message cannot attach
+the latest pack merely because its case ID matches. Current-revision send attempts make that version
+immutable; older attempted deliveries do not prevent a separately authorized new revision. Holds
+block ready planning, generation, download and dispatch. Provider reconciliation remains read-only
+with respect to a new revision: finding an old accepted send does not resend it or release new work.
+Local tests cover these contracts, atomic batch rollback and exact-byte capture. They do not prove
+real recipient redelivery or cancellation of a provider request already in flight.

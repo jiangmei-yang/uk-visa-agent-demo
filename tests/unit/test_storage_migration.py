@@ -43,6 +43,7 @@ def test_existing_outbox_schema_gains_threading_and_delivery_columns(tmp_path: P
             "reply_subject",
             "in_reply_to",
             "references_header",
+            "case_revision",
         } <= columns
     finally:
         store.close()

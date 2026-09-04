@@ -46,6 +46,19 @@ suppresses that unsolicited topic on later turns. This records sending, not whet
 it. New explicit questions can request the information again. Facts, date deferrals, evidence and
 consent remain in the same SQLite case across worker restarts.
 
+Natural follow-up expressions are tested through this same sender, including an explicitly
+requested repeat link after earlier SENT guidance, document-list requests, the reviewed six-month
+visitor fee and financial-evidence questions. Answers come before intake questions and do not use
+a “waiting for your details” introduction when the customer is asking for advice. Fee/bank guidance
+was checked on 2026-09-04 and shares the 2026-10-04 review deadline; there is no live web retrieval
+or unconstrained immigration advice in this path.
+
+Post-pack corrections can now enter a separate operator-authorized revision workflow; see
+`HUMAN_REVIEW_RECOVERY.md`. It preserves prior ZIPs, requires new confirmation and binds each outbox
+message to its case revision. Multiple held corrections require explicit batch authorization and
+are reprocessed in order. Final `ready` sending remains excluded from automatic `serve`; this is
+not automatic final-pack release or a real-recipient redelivery acceptance claim.
+
 Sent question event references are also retained per case. An unrelated update does not automatically
 repeat unanswered questions; an explicit request to continue selects one missing field. Late answers
 still update the same case. Pending/failed drafts do not count as sent questions, and old snapshots

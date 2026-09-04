@@ -151,6 +151,8 @@ class OutboxDispatcher:
         case = self.store.get_case(str(row["case_id"]))
         if case is None:
             raise PermanentChannelError("Outbox case no longer exists")
+        if int(str(row.get("case_revision", 1))) != case.delivery_revision:
+            raise PermanentChannelError("Outbox reply belongs to a superseded delivery revision")
         if str(row["message_type"]) == "ready" and self.store.has_unreviewed_held_updates(case.id):
             raise PermanentChannelError("Final delivery withheld: newer or held applicant updates require review")
         raw_deadline = row.get("send_deadline")
@@ -161,9 +163,10 @@ class OutboxDispatcher:
             if not case.delivery_path:
                 raise PermanentChannelError("Ready reply has no generated pack")
             registered = self.store.connection.execute(
-                "SELECT path, sha256 FROM deliveries WHERE case_id=?", (case.id,),
+                "SELECT path, sha256, case_revision FROM deliveries WHERE case_id=?", (case.id,),
             ).fetchone()
-            if registered is None or registered["path"] != case.delivery_path:
+            if (registered is None or registered["path"] != case.delivery_path
+                    or registered["case_revision"] != case.delivery_revision):
                 raise PermanentChannelError("Final pack does not match the registered delivery")
             pack_path = Path(case.delivery_path)
             pack_bytes = pack_path.read_bytes()

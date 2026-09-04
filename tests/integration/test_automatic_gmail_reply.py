@@ -157,7 +157,8 @@ def test_other_recipient_is_never_automatically_contacted(tmp_path: Path) -> Non
 
 @pytest.mark.parametrize('language', ['zh', 'en'])
 @pytest.mark.parametrize('status', [CaseStatus.READY_FOR_HUMAN_REVIEW, CaseStatus.DELIVERED_AFTER_CONFIRMATION])
-def test_finalized_correction_gets_one_honest_receipt_without_reopening(tmp_path, language, status):
+@pytest.mark.parametrize('revision', [1, 2])
+def test_finalized_correction_gets_one_honest_receipt_without_reopening(tmp_path, language, status, revision):
     from visa_agent.domain.policy import load_policy
     from visa_agent.llm.offline import OfflineFixtureLLM
     from visa_agent.workflow.service import WorkflowService
@@ -165,7 +166,8 @@ def test_finalized_correction_gets_one_honest_receipt_without_reopening(tmp_path
     store = SQLiteStore(tmp_path / 'db')
     now = datetime.now(UTC)
     case = Case(id='c', external_thread_id='t', applicant_contact='user@example.test', policy_version='v',
-                customer_language=language, primary_channel='gmail', status=status, delivery_path='old.zip')
+                customer_language=language, primary_channel='gmail', status=status, delivery_path='old.zip',
+                delivery_revision=revision)
     store.save_case(case)
     before = case.model_dump_json()
     event = InboundEvent(id='correction', external_thread_id='t', sender=case.applicant_contact,
@@ -186,6 +188,7 @@ def test_finalized_correction_gets_one_honest_receipt_without_reopening(tmp_path
         assert store.get_case(case.id).model_dump_json() == before
         assert store.has_unreviewed_held_updates(case.id)
         assert store.list_outbox()[0]['in_reply_to'] == '<correction@example.test>'
+        assert store.list_outbox()[0]['case_revision'] == revision
         assert store.list_outbox()[0]['payload'] == body
         assert workflow.process(event)[1]
         assert sender.queue_finalized_update_receipts() == 0

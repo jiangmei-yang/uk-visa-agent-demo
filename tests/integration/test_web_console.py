@@ -52,6 +52,7 @@ def test_review_console_and_pack_download(tmp_path: Path) -> None:
     )
     result = run_demo(test_settings, reset=True)
     web.settings = test_settings
+
     with ThreadPoolExecutor(max_workers=1) as executor:
         page = executor.submit(web.index).result()
         download = executor.submit(web.get_pack, result.case.id).result()
@@ -164,7 +165,7 @@ def test_pack_download_is_withheld_after_a_new_held_update(tmp_path: Path) -> No
     assert 'data-download href=' not in web.index().body.decode()
 
 
-@pytest.mark.parametrize("change", ["modified_bytes", "missing_registry", "different_path"])
+@pytest.mark.parametrize("change", ["modified_bytes", "missing_registry", "different_path", "different_revision"])
 def test_pack_download_rejects_unverified_archive(tmp_path: Path, change: str) -> None:
     test_settings = Settings(database_path=tmp_path / "visa.db", output_dir=tmp_path / "output",
         policy_path=Path("knowledge/uk_standard_visitor_2026-02-25.yaml"))
@@ -176,6 +177,8 @@ def test_pack_download_rejects_unverified_archive(tmp_path: Path, change: str) -
         with store.connection:
             if change == "missing_registry":
                 store.connection.execute("DELETE FROM deliveries")
+            elif change == "different_revision":
+                store.connection.execute("UPDATE deliveries SET case_revision=2")
             else:
                 store.connection.execute("UPDATE deliveries SET path='unrelated.zip'")
     store.close()
@@ -195,6 +198,19 @@ def test_case_can_be_exported_and_exactly_confirmed_for_local_deletion(tmp_path:
     result = run_demo(test_settings, reset=True)
     web.settings = test_settings
 
+    # Retained revision paths belong to this exact case; unrelated artifacts stay.
+    previous = test_settings.output_dir / "previous-revision.zip"
+    previous.write_bytes(b"Previously registered fixture archive")
+    unrelated = test_settings.output_dir / "unrelated-case.zip"
+    unrelated.write_bytes(b"Unrelated fixture archive")
+    store = SQLiteStore(test_settings.database_path)
+    with store.connection:
+        store.connection.execute(
+            "INSERT INTO delivery_versions(case_id,path,sha256,case_revision) VALUES (?,?,?,?)",
+            (result.case.id, str(previous), "test-only-previous-digest", 1),
+        )
+    store.close()
+
     exported = _get(f"/api/cases/{result.case.id}/export")
     assert exported.status_code == 200
     assert exported.headers["content-disposition"].endswith('"synthetic-case-export.json"')
@@ -212,6 +228,7 @@ def test_case_can_be_exported_and_exactly_confirmed_for_local_deletion(tmp_path:
     )
     assert deleted.status_code == 204
     assert not result.package_path.exists()
+    assert not previous.exists() and unrelated.exists()
     assert not (test_settings.output_dir / result.case.id).exists()
     assert _get(f"/api/cases/{result.case.id}").status_code == 404
     assert _get(f"/api/cases/{result.case.id}/export").status_code == 404

@@ -198,6 +198,7 @@ class Case(BaseModel):
     issues: list[Issue] = Field(default_factory=list)
     outbound_message_ids: list[str] = Field(default_factory=list)
     delivery_path: str | None = None
+    delivery_revision: int = Field(default=1, ge=1)
     last_inbound_received_at: datetime | None = None
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)

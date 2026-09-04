@@ -159,7 +159,8 @@ class WorkflowService:
         elif len(re.findall(r"[A-Za-z]+", customer_event.body)) > 4:
             case.customer_language = "en"
         case.customer_answers = grounded_customer_answers(
-            customer_event.body, case.customer_language, self.today_provider()
+            customer_event.body, case.customer_language, self.today_provider(),
+            sent_application_guidance=case.guidance_events.get("application_overview_v1") in sent_events,
         )
         prior_profile = summary_fingerprint(case, include_documents=False)
         prior_confirmation = case.confirmation_fingerprint
@@ -238,6 +239,15 @@ class WorkflowService:
         case.last_inbound_received_at = event.received_at
         case.updated_at = datetime.now(UTC)
         gate = evaluate_gate(case, self.policy, self.today_provider())
+        if self.store.has_unreviewed_held_updates(case.id, completing_event_id=event.id):
+            gate.allowed = False
+            gate.checks["all_held_updates_reviewed"] = False
+            gate.reasons.append("Retained applicant updates still require review before finalization")
+            case.customer_answers.append(
+                "你之前补充的信息还有部分待复核，暂时不能定稿；已经收到的内容不用重新发送。"
+                if case.customer_language == "zh" else
+                "Some of your retained updates still need review before we can finalise the pack; you do not need to resend them."
+            )
         failed_checks = {key for key, passed in gate.checks.items() if not passed}
         if case.status != CaseStatus.HUMAN_REVIEW_REQUIRED:
             if gate.allowed:

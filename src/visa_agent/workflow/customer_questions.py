@@ -37,12 +37,12 @@ def _booking_answer(body: str, language: str, today: date) -> list[str]:
         ]
     answer = (
         "关于机票和酒店：普通 Standard Visitor 申请不需要为了提供这些预订证明而先购买。"
-        "官方材料指南把酒店预订和机票预订（过境除外）列为不应作为证据提交的材料。"
+        "官方材料指南把酒店预订和机票预订（过境除外）列为证明价值较低的材料。"
         "我们先整理真实的计划行程和住宿安排；不要把尚未确定的安排写成已经预订。"
         if language == "zh"
         else "For an ordinary Standard Visitor application, you do not need to buy flights or book "
-        "a hotel just to supply booking evidence. The official guide lists hotel bookings and "
-        "flight bookings (except transit) as documents not to use as evidence. We can first "
+        "a hotel just to supply booking evidence. The official guide describes hotel bookings and "
+        "flight bookings (except transit) as less useful evidence. We can first "
         "record your intended arrangements without describing unbooked plans as confirmed bookings."
     )
     return [answer + "\nGOV.UK: " + SOURCE + "#documents-you-should-not-use-as-evidence"]
@@ -66,7 +66,7 @@ def _active_clauses(body: str) -> list[str]:
 
 def _question_clauses(body: str) -> list[str]:
     question = (
-        r"[?？]|吗|么|如何|怎么|怎样|哪里|哪[个里]|多久|何时|什么时候|几周|最早|"
+        r"[?？]|吗|么|如何|怎么|怎样|哪里|哪[个里]|多久|多少|何时|什么时候|几周|几个月|最早|"
         r"(?:请|麻烦|能否|可以).{0,12}(?:告诉|解释|介绍|说|发|给)|发我|给我|"
         r"\b(?:what|where|when|how|can|could|would|do|must|should)\b|"
         r"\b(?:please|send me|give me|tell me|explain)\b"
@@ -75,7 +75,14 @@ def _question_clauses(body: str) -> list[str]:
 
 
 def _reviewed_answer(topic: str, language: str) -> str:
-    if topic == "application":
+    if topic == "application_link":
+        answer = (
+            "这是之前的 GOV.UK 申请入口，打开页面后选择 Apply now。"
+            if language == "zh"
+            else "Here's the GOV.UK application link again; select Apply now on the page."
+        )
+        source = APPLICATION_SOURCE
+    elif topic == "application":
         answer = (
             "如果你需要申请 Standard Visitor，可以从下面的 GOV.UK 页面点 Apply now 开始。"
             "流程是出发前在线填写申请，再预约签证中心完成身份核验并提供材料；"
@@ -99,6 +106,29 @@ def _reviewed_answer(topic: str, language: str) -> str:
             "This is not a guaranteed deadline or a promise of approval."
         )
         source = APPLICATION_SOURCE
+    elif topic == "fees":
+        answer = (
+            "如果你申请的是 6 个月 Standard Visitor，GOV.UK 当前列出的签证申请费是 £135。"
+            "额外购买的签证中心服务或加急服务不包含在这笔申请费内；付款时以官网显示为准。"
+            "其他签证路线或有效期的费用不能直接套用这个数字。"
+            if language == "zh"
+            else "For a 6-month Standard Visitor visa, GOV.UK currently lists the application fee "
+            "as £135. Optional visa application centre or priority services cost extra; check "
+            "the official price when paying. Other visa routes or validity periods may have different fees."
+        )
+        source = APPLICATION_SOURCE
+    elif topic == "bank_period":
+        answer = (
+            "如果是普通 Standard Visitor 申请，这份官方材料指南没有统一规定银行流水必须提供几个月。"
+            "重点是说明资金来源、你确实可以使用这些资金，并结合这次旅行的支出核对是否充足；"
+            "我不能只凭流水覆盖的月份判断材料是否足够。"
+            if language == "zh"
+            else "For an ordinary Standard Visitor application, this official document guide does not "
+            "set one fixed number of months of bank statements for everyone. The focus is where the "
+            "funds come from, whether you can access them and how they relate to the trip's costs. "
+            "The number of months alone does not establish whether the evidence is sufficient."
+        )
+        source = SOURCE + "#demonstrating-personal-circumstances"
     else:
         answer = (
             "提交的文件如果不是英语或威尔士语，需要附上可由 Home Office 独立核验的完整翻译。"
@@ -114,13 +144,37 @@ def _reviewed_answer(topic: str, language: str) -> str:
     return answer + "\nGOV.UK: " + source
 
 
-def grounded_customer_answers(body: str, language: str, today: date) -> list[str]:
+def _requests_previous_application_link(body: str) -> bool:
+    """Resolve only a standalone short reference, never another named website.
+
+    The caller must separately establish that the application link was actually sent.
+    Restricting the whole active turn prevents a school/hotel link request from borrowing
+    visa context just because it happens in an existing application conversation.
+    """
+    clauses = _active_clauses(body)
+    if len(clauses) != 1:
+        return False
+    text = clauses[0].strip()
+    return bool(re.fullmatch(
+        r"(?:(?:请|麻烦)(?:你)?)?(?:把)?(?:刚才的?|之前的?|那个|这个|上面的?)?"
+        r"(?:网址|链接|网页|入口)(?:再)?(?:发给|发|给)(?:我)(?:一下|一遍|一次)?[？?。.\s]*|"
+        r"(?:(?:请|麻烦)(?:你)?)?(?:再)?(?:发给|发|给)我(?:一下)?"
+        r"(?:刚才的?|之前的?|那个|这个|上面的?)?(?:网址|链接|网页|入口)[？?。.\s]*|"
+        r"(?:(?:please|could you|can you|would you)\s+)?(?:re)?send\s+me\s+"
+        r"(?:the|that|previous)\s+(?:link|website|page)(?:\s+again)?(?:\s+please)?[?.\s]*",
+        text, re.I,
+    ))
+
+
+def grounded_customer_answers(
+    body: str, language: str, today: date, *, sent_application_guidance: bool = False,
+) -> list[str]:
     """Reviewed facts only, capped at three relevant answers, never a case-state update."""
     current = latest_reply_text(body)
     clauses = _question_clauses(current)
     patterns = {
         "application": (
-            r"(?:申请|办理|签证).{0,8}(?:官网|网站|网址|链接|入口|流程|步骤)|"
+            r"(?:申请|办理|签证).{0,8}(?:官网|网站|网页|网址|链接|入口|流程|步骤)|"
             r"(?:官网|网址).{0,8}(?:申请|在哪|是什么)|"
             r"(?:怎么|如何|哪里|在哪).{0,6}(?:申请|办(?:理)?(?:英国)?签证)|"
             r"(?:application|apply|visa).{0,24}(?:website|link|process|steps)|"
@@ -136,9 +190,25 @@ def grounded_customer_answers(body: str, language: str, today: date) -> list[str
             r"\bprocessing time\b|\b(?:visa|decision).{0,16}(?:take|weeks)\b"
         ),
         "translation": r"翻译|译文|译者|中文(?:材料|文件)|translat|non-English|not in English|Chinese documents",
+        "fees": (
+            r"签证(?:申请)?费|申请费|(?:签证|申请).{0,8}(?:多少钱|费用|收费)|"
+            r"(?:多少钱|费用|收费).{0,8}(?:签证|申请)|"
+            r"\b(?:visa|application).{0,15}(?:fee|cost|price)|"
+            r"\b(?:fee|cost|price).{0,20}(?:visa|application)|"
+            r"\bhow much.{0,25}(?:visa|apply)\b"
+        ),
+        "bank_period": (
+            r"(?:流水|银行对账单).{0,18}(?:几个月|多久|多长|几月|[一二三四五六七八九十两\d]+个月)|"
+            r"(?:几个月|多久|多长|几月|[一二三四五六七八九十两\d]+个月).{0,12}(?:流水|银行对账单)|"
+            r"\bbank statements?.{0,25}(?:months?|how far|period)|"
+            r"\b(?:months?|how far back|what period).{0,25}bank statements?\b"
+        ),
     }
     requested = [topic for topic, pattern in patterns.items()
                  if any(re.search(pattern, clause, re.I) for clause in clauses)]
+    previous_link_requested = sent_application_guidance and _requests_previous_application_link(current)
+    if previous_link_requested and "application" not in requested:
+        requested.insert(0, "application")
     # Preserve booking's cross-clause context ("I have no tickets; must I buy them?").
     active_text = "\n".join(_active_clauses(current))
     booking = _booking_answer(active_text, language, today)
@@ -151,14 +221,17 @@ def grounded_customer_answers(body: str, language: str, today: date) -> list[str
         )
     elif requested:
         other_route = re.search(r"过境|学生签证|工作签证|结婚签证|\b(?:transit|student visa|work visa|marriage visa)\b", active_text, re.I)
-        if other_route and any(topic in {"application", "timing"} for topic in requested):
+        if other_route and any(topic in {"application", "timing", "fees", "bank_period"} for topic in requested):
             answers.append(
-                "你提到的路线可能不是普通 Standard Visitor，申请入口和办理时间需要先按对应路线核实，不能直接套用访问签证流程。"
+                "你提到的路线可能不是普通 Standard Visitor，申请安排、费用和材料要求需要先按对应路线核实，不能直接套用访问签证说明。"
                 if language == "zh"
-                else "The route you mentioned may not be an ordinary Standard Visitor visa; its application process and timing need a separate route check."
+                else "The route you mentioned may not be an ordinary Standard Visitor visa; its application arrangements, fees and evidence requirements need a separate route check."
             )
             requested = [topic for topic in requested if topic == "translation"]
-        answers.extend(_reviewed_answer(topic, language) for topic in requested)
+        answers.extend(_reviewed_answer(
+            "application_link" if topic == "application" and previous_link_requested else topic,
+            language,
+        ) for topic in requested)
     if re.search(
         r"(?:不要|不用|无需|不需要|别).{0,12}(?:链接|网址|网站|官网)|"
         r"\b(?:no links?|(?:don['’]t|do not) (?:send|need)|no need (?:for|to send)).{0,12}"

@@ -277,13 +277,22 @@ def generate_pack(
     output_root: Path,
     today: date,
 ) -> tuple[Path | None, list[str]]:
+    if store.has_unreviewed_held_updates(case.id):
+        return None, ["Retained applicant updates still require review before pack generation."]
     gate = evaluate_gate(case, policy, today)
     if not gate.allowed:
         return None, gate.reasons
     if case.delivery_path:
+        registered = store.connection.execute(
+            "SELECT path, case_revision FROM deliveries WHERE case_id=?", (case.id,),
+        ).fetchone()
+        if (registered is None or registered["path"] != case.delivery_path
+                or registered["case_revision"] != case.delivery_revision):
+            return None, ["Existing pack does not match the current delivery revision."]
         return Path(case.delivery_path), []
     if any(
         row["case_id"] == case.id
+        and int(row.get("case_revision", 1)) == case.delivery_revision
         and row["message_type"] == "ready"
         and (int(row["attempt_count"]) > 0 or row["status"] in {"SENDING", "SENT", "AMBIGUOUS"})
         for row in store.list_outbox()
@@ -293,6 +302,8 @@ def generate_pack(
         ]
 
     case_dir = output_root / case.id
+    if case.delivery_revision > 1:
+        case_dir = case_dir / f"revision-{case.delivery_revision}"
     pack_dir = case_dir / "pack"
     audit_dir = case_dir / "audit"
     support_dir = pack_dir / "supporting_documents"
@@ -304,8 +315,10 @@ def generate_pack(
         pack_dir / "00_READ_ME_FIRST.pdf",
         "Read me first",
         [
-            "This synthetic demo pack organises materials for human review. It is not legal advice, "
+            "This preparation pack organises materials for human review. It is not legal advice, "
             "does not determine eligibility, does not submit an application, and does not predict an outcome.",
+            f"Delivery revision: {case.delivery_revision}. This version is a preparation record, "
+            "not proof of an application submitted to UKVI.",
             policy.disclaimer,
             f"Policy snapshot: {policy.version}. Generated status: {label}.",
         ],
@@ -354,6 +367,9 @@ def generate_pack(
     )
     answers = {
         "case_id": case.id,
+        "delivery_revision": case.delivery_revision,
+        "purpose": "preparation_for_human_review",
+        "submits_application": False,
         "status": label,
         "policy_version": policy.version,
         "profile": case.profile.model_dump(mode="json"),
@@ -381,7 +397,7 @@ def generate_pack(
         f"{item.severity}: {item.title} - {item.detail}"
         for item in case.issues
         if item.status == IssueStatus.OPEN
-    ] or ["No open issues in the deterministic demo checks. Human review is still required."]
+    ] or ["No open issues in the recorded preparation checks. Human review is still required."]
     _pdf(pack_dir / "06_open_issues.pdf", "Open issues", open_issues, label)
     for document in case.documents:
         if document.status != DocumentStatus.ACCEPTED_FOR_REVIEW:
@@ -390,11 +406,13 @@ def generate_pack(
         if not destination.exists():
             shutil.copy2(document.path, destination)
 
-    zip_path = output_root / f"visa_application_pack_{case.id}.zip"
-    if case.status != CaseStatus.READY_FOR_HUMAN_REVIEW:
-        transition(case, CaseStatus.READY_FOR_HUMAN_REVIEW)
-    case.stage = WorkflowStage.READY_FOR_HUMAN_REVIEW
-    case.delivery_path = str(zip_path)
+    revision_suffix = f"_revision-{case.delivery_revision}" if case.delivery_revision > 1 else ""
+    zip_path = output_root / f"visa_application_pack_{case.id}{revision_suffix}.zip"
+    prepared_case = case.model_copy(deep=True)
+    if prepared_case.status != CaseStatus.READY_FOR_HUMAN_REVIEW:
+        transition(prepared_case, CaseStatus.READY_FOR_HUMAN_REVIEW)
+    prepared_case.stage = WorkflowStage.READY_FOR_HUMAN_REVIEW
+    prepared_case.delivery_path = str(zip_path)
 
     (audit_dir / "evidence_ledger.json").write_text(
         json.dumps(
@@ -408,7 +426,7 @@ def generate_pack(
         encoding="utf-8",
     )
     (audit_dir / "gate_result.json").write_text(gate.model_dump_json(indent=2), encoding="utf-8")
-    (audit_dir / "case_snapshot.json").write_text(case.model_dump_json(indent=2), encoding="utf-8")
+    (audit_dir / "case_snapshot.json").write_text(prepared_case.model_dump_json(indent=2), encoding="utf-8")
     (audit_dir / "rule_evaluations.json").write_text(
         json.dumps(
             [item.model_dump(mode="json") for item in case.requirements],
@@ -421,7 +439,10 @@ def generate_pack(
     )
 
     _write_zip(pack_dir, zip_path)
-    store.save_case(case)
     digest = hashlib.sha256(zip_path.read_bytes()).hexdigest()
-    store.save_delivery(case.id, str(zip_path), digest)
+    store.save_delivery(case.id, str(zip_path), digest, case_revision=case.delivery_revision)
+    case.status = prepared_case.status
+    case.stage = prepared_case.stage
+    case.delivery_path = prepared_case.delivery_path
+    store.save_case(case)
     return zip_path, []

@@ -423,3 +423,65 @@ confirmed live and completed an idle cycle at 2026-09-04T10:26:59Z. The same one
 state was preserved across this reload. No historic mail was replayed or manually resent, no sender
 scope was expanded, and the optional guarded-draft transport remains disabled. Recipient-side
 validation of the new pacing is still outstanding.
+
+## Natural questions must receive useful answers — 2026-09-04
+
+A new internal, two-turn CaptureGmail audit reproduced another real product defect: after official
+guidance had already been sent, natural follow-ups such as “申请网页在哪”, “网址发我一下”,
+“材料要准备些什么”, “流水要几个月” and “签证费多少钱” could fall through to a waiting receipt.
+Having guidance text in the code was not proof that customers could retrieve it. Another failure
+put “wait until you can provide details” before an otherwise correct answer or document list.
+
+The reviewed FAQ now recognizes natural application-link questions. A bare short “send that link
+again” requires the case's official application guidance to have actually been SENT; arbitrary
+school/hotel websites and quoted or declined requests do not count. Explicit document-list requests
+accept common Chinese word order after sufficient route/person context is known. Replies begin
+with the requested answer/list, not a contradictory waiting introduction, and do not reopen already
+answered birthday/date questions. The same case, question ledger and evidence guards are used.
+
+Two additional bounded topics give concrete value: the ordinary six-month Standard Visitor fee
+listed on GOV.UK (£135 as checked on 2026-09-04), and the financial-evidence guidance's focus on
+accessible funds and their source rather than a universal bank-statement month count. Non-visitor
+routes are separated; expired guidance withholds concrete facts pending recheck. Hotel/flight
+wording was softened to the official body's “less useful evidence”, not an absolute prohibition.
+The source URLs are the same official application and supporting-document pages above; this is
+dated reviewed content, not an always-current live retrieval service.
+
+58 new tests cover these requests, declined/quoted/off-topic variants, expiry, route boundaries,
+and the actual workflow/AutomaticGmailReplySender path with local captured sends and reopened
+SQLite. Together with existing FAQ/guidance checks, 105 focused tests passed. The first captured
+pipeline run found two document-list failures; both were fixed and the failing cases retained.
+These assertions do not constitute an independent naturalness score or Gmail recipient evidence.
+
+The extended provider probe is reproducible with:
+
+```bash
+uv run python scripts/gmail_conversation_probe.py --semantic-intent --question-frontier \
+  --adviser-followups --output NEW_REPORT.json
+```
+
+The single retained run `eval_output/gmail_adviser_followups_2026-09-04.json` passed 20 fictional
+turns (ten per language). It adds four follow-ups per language to the original six-turn sequence:
+application webpage, repeat link, fee/statement period, and a natural document-list request.
+All eight added turns preserved the complete profile from turn six, produced an answer before
+intake, avoided waiting introductions/repeated identity/date questions, persisted the exact
+captured body and replayed without another send. Real DeepSeek extraction used 39,362 input and
+1,312 output tokens; wording remained reviewed and Gmail transport was captured, not external.
+This is one model run, not a reliability distribution or a naturalness score. Manual reading still
+found overly long repeat-link replies; the subsequent short-link wording refinement is covered
+locally, not retroactively claimed as part of that provider run. Original report bytes are retained.
+
+That refinement now sends just one sentence plus the same official link for an already-SENT,
+unambiguous repeat-link request; asking how to apply still gets the process. Three further process
+variants and strengthened short-reply assertions bring the focused FAQ/guidance suite to 108 passes.
+The full current suite passes 719 tests, ruff and mypy (56 source files), retaining the existing
+Starlette/httpx deprecation warning. These counts include the separately documented reviewed-revision
+work and are not measurements of response quality.
+
+After these checks, the registered Gmail worker was reloaded under its existing state lock. PID
+57965 was separately confirmed live and completed an idle cycle at 2026-09-04T10:45:12Z. A fingerprint
+over the stored case snapshots and outbound IDs/bodies/statuses matched exactly before and after
+reload: one case, eight SENT replies. Schema migration assigned legacy rows revision 1. No old mail
+was replayed, no manual mail was sent, and no sender scope or guarded-draft setting was changed.
+This proves safe loading/polling, not recipient-side acceptance of the new replies. General open-
+ended advice, nontechnical reviewer usability and real ordinary-document redelivery remain open.

@@ -355,12 +355,14 @@ def document_list_requested(case: Case) -> bool:
                 case.profile.funding_source)):
         return False
     text = latest_reply_text(case.latest_customer_message)
+    text = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"', "", text)
     if re.search(r"(?:不用|不需要|不要).{0,20}(?:清单|材料|资料)|"
                  r"(?:don't|do not|no need).{0,30}(?:checklist|documents|list)", text, re.I):
         return False
     return bool(re.search(
         r"(?:请|麻烦|想要|需要).{0,25}(?:材料清单|资料清单)|"
-        r"(?:需要|准备|还缺)(?:什么|哪些)(?:材料|资料)|"
+        r"(?:需要|准备|提供|还缺)(?:什么|哪些)(?:材料|资料)|"
+        r"(?:材料|资料).{0,8}(?:准备|提供|交|要).{0,6}(?:什么|哪些|哪几)|"
         r"(?:send|share|show|give).{0,30}(?:document checklist|document list|list of documents)|"
         r"(?:what|which) documents.{0,20}(?:need|required|prepare)", text, re.I,
     ))
@@ -536,8 +538,9 @@ def blocked_customer_message(case: Case) -> str:
     # A concrete acknowledgement already opens the reply; do not restart the introduction.
     contextual = bool(acknowledgements) or bool(case.pending_question_fields and len(questions) == 1
         and customer_requests_next_step(case.latest_customer_message))
-    sections = ([intro] if contextual or (case.question_plan == [] and case.pending_question_fields)
-                else ([] if case.customer_answers else [greeting, intro]))
+    sections = ([intro] if contextual or (case.question_plan == [] and case.pending_question_fields
+                                        and not case.customer_answers and not documents)
+                else ([] if case.customer_answers or documents else [greeting, intro]))
     if case.latest_deferred_fields:
         sections.append(
             "日期先留空，等你确定后再补。我们先整理其他信息。"

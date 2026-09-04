@@ -177,7 +177,11 @@ def delete_case(case_id: str, request: Request) -> Response:
         case = request_store.get_case(case_id)
         if case is None:
             raise HTTPException(status_code=404, detail="Case not found")
-        delete_case_artifacts(case, settings.output_dir)
+        version_paths = tuple(str(row["path"]) for row in request_store.connection.execute(
+            "SELECT path FROM delivery_versions WHERE case_id=? UNION SELECT path FROM deliveries WHERE case_id=?",
+            (case_id, case_id),
+        ))
+        delete_case_artifacts(case, settings.output_dir, version_paths=version_paths)
         request_store.delete_case(case_id)
     finally:
         request_store.close()
@@ -191,7 +195,7 @@ def get_pack(case_id: str) -> Response:
         case = request_store.get_case(case_id)
         held_updates = request_store.has_unreviewed_held_updates(case_id)
         registered = request_store.connection.execute(
-            "SELECT path, sha256 FROM deliveries WHERE case_id=?", (case_id,),
+            "SELECT path, sha256, case_revision FROM deliveries WHERE case_id=?", (case_id,),
         ).fetchone()
     finally:
         request_store.close()
@@ -212,7 +216,8 @@ def get_pack(case_id: str) -> Response:
     allowed_root = settings.output_dir.resolve()
     if allowed_root not in path.parents or not path.is_file():
         raise HTTPException(status_code=404, detail="Review pack is not available")
-    if registered is None or registered["path"] != case.delivery_path:
+    if (registered is None or registered["path"] != case.delivery_path
+            or registered["case_revision"] != case.delivery_revision):
         raise HTTPException(status_code=409, detail="Review pack does not match its delivery record")
     try:
         content = path.read_bytes()

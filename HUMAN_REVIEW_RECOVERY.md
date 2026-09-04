@@ -1,4 +1,4 @@
-# Human-review recovery: controlled Gmail intake retry
+# Human-review recovery: controlled Gmail retry and versioned revision
 
 The previous rejection path marked a paused/finalized/out-of-order applicant message processed
 but retained only a reason. In the queue worker, completion also cleared the original queue body.
@@ -72,9 +72,9 @@ pre-send check protect updates already known locally; late corrections still nee
 
 ## Remaining human-review work
 
-Authenticated operator roles and a non-technical review UI remain unfinished. This command does
-not approve documents, resolve unsupported routes, retry older out-of-order updates or revise an
-already generated/delivered pack. Failed queued retries require investigation; do not erase
+Authenticated operator roles and a non-technical review UI remain unfinished. The retry action does
+not approve documents, resolve unsupported routes or retry older out-of-order updates. Finalized
+packs use the separate, explicitly authorized revision action below. Failed queued retries require investigation; do not erase
 their records or manipulate processed-event IDs to manufacture a successful recovery. A complete
 real-user human-review/resumption journey is still unverified.
 
@@ -91,5 +91,46 @@ and current case state, then persisted before sending; changed review state with
 
 Five local capture tests cover both languages, generated/delivered statuses, recipient scope,
 threading, replay and changed-state refusal. All 371 tests pass. There is no actual post-delivery
-applicant exchange in this evidence. The pending full revision/versioned-redelivery workflow is
-unchanged: this receipt closes the communication gap, not the revision acceptance requirement.
+applicant exchange in that evidence. The receipt alone does not resolve the revision; the local
+revision workflow added below is separate evidence and does not claim a real recipient exchange.
+
+## Versioned post-delivery revision — local implementation, 2026-09-04
+
+Inspect the current private case and every retained update before authorizing a revision:
+
+```bash
+uv run python scripts/review_held.py revise --state-dir data/registered-applicant --case CASE_ID \
+  --event EARLIEST_HELD_EVENT_ID --fingerprint FINGERPRINT_FROM_INSPECTION \
+  --actor "Reviewer name" --reason "What changed and why the retained updates should be revalidated"
+```
+
+If more than one update is retained, the command refuses without `--include-held-updates`. That
+flag explicitly authorizes the complete currently held batch, selecting its earliest event. Each
+member must belong to the same applicant/thread, be a finalized-case update, and not predate the
+last processed applicant turn. A bad member rejects the entire transaction. The first action is
+audited as `revision`, subsequent members as `revision_update`, with actor/reason, before/after
+snapshots and independently linked retry IDs. This is not permission to invent or approve facts.
+
+The action verifies the original ZIP's registry/path/hash, refuses uncertain SENDING or AMBIGUOUS
+sends, archives its metadata, increments `Case.delivery_revision`, clears all case-level summary
+confirmations and the current pack path, and withholds prior PENDING/RETRY replies. SENT messages
+and original bytes remain untouched. It queues normal validation; no external mail or pack is
+created by the command. The same worker lock guards this change; there is no authenticated RBAC.
+
+`gmail_review` consumes the earliest unresolved queued item only. A failed item or a not-yet-due
+retry prevents later updates from overtaking it. Pack generation, ready planning, download and
+delivery stay withheld while retained updates remain unprocessed. After fresh, actually sent
+summaries and applicant confirmations, the new pack uses `CASE_ID/revision-N/` and a distinct
+`_revision-N.zip` filename. README/answers identify the version and do not claim government
+submission. Registry replacement requires a processed, authorized revision action; changing the
+Case version alone cannot authorize it. A prior outbox row cannot attach the new ZIP. Old uncertain
+sends can still be reconciled without resend, although revision authorization itself requires them
+resolved first. A new revision cannot recall a ZIP already in somebody's inbox.
+
+The local regression includes a clearly synthetic two-correction sequence (budget 2200 → 2600 →
+2700), SQLite restart, atomic rollback, chronological retry blocking, fresh delivered-confirmation
+binding, independent new ZIP bytes, preserved original ZIP and exact-byte captured delivery.
+Separate tests cover versioned receipts, registry authorization and deletion of case-owned archived
+artifacts. Six generated PDFs were rendered and visually inspected; no clipping/overlap was found.
+These are local fictional/CaptureGmail tests, not ordinary-document accuracy or real redelivery
+evidence. Malformed/older chronology, reviewer UI/roles and a real participant journey remain open.

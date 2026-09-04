@@ -16,7 +16,7 @@ from visa_agent.llm.deepseek_client import DeepSeekStructuredLLM
 from visa_agent.llm.guarded import deterministic_fallback_message
 from visa_agent.secrets import read_secret
 from visa_agent.storage.sqlite import SQLiteStore
-from visa_agent.workflow.adviser_guidance import APPLICATION_URL
+from visa_agent.workflow.adviser_guidance import APPLICATION_URL, DOCUMENTS_URL
 from visa_agent.workflow.conversation import next_fact_questions, reply_items
 from visa_agent.workflow.service import WorkflowService
 
@@ -71,7 +71,11 @@ def main() -> None:
                         help='Capture the opt-in revalidated workflow-draft sending path')
     parser.add_argument('--question-frontier', action='store_true',
                         help='Test unanswered-question pause, explicit resumption and later identity facts')
+    parser.add_argument('--adviser-followups', action='store_true',
+                        help='After the question frontier, test natural website, fee, bank and checklist questions')
     args = parser.parse_args()
+    if args.adviser_followups and not args.question_frontier:
+        parser.error('--adviser-followups requires --question-frontier')
     if args.output.exists():
         parser.error('Choose a new report path; retained evidence must not be overwritten')
     key = read_secret('DEEPSEEK_API_KEY', file_environment_name='DEEPSEEK_API_KEY_FILE',
@@ -82,6 +86,7 @@ def main() -> None:
         'model': 'deepseek-v4-flash', 'semantic_intent': args.semantic_intent,
         'model_prose': args.model_prose, 'guarded_sending': args.guarded_sending,
         'question_frontier': args.question_frontier,
+        'adviser_followups': args.adviser_followups,
         'completed': False, 'results': []}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open('x') as output:
@@ -94,6 +99,17 @@ def main() -> None:
                 else "I'm ready to continue. What is the next step?",
                 '护照上的姓名是示例申请人，我的生日是1998.5.12。' if language == 'zh'
                 else 'My passport name is Example Applicant. My date of birth is 1998.5.12.',
+            ])
+        if args.adviser_followups:
+            messages.extend([
+                '申请网页在哪？' if language == 'zh'
+                else 'Where is the official visa application website?',
+                '网址发我一下' if language == 'zh'
+                else 'Could you send me that link again?',
+                '签证费是多少钱？银行流水要提供几个月的？' if language == 'zh'
+                else 'How much is the visa fee, and how many months of bank statements do I need?',
+                '材料要准备些什么？' if language == 'zh'
+                else 'Which documents should I prepare?',
             ])
         if args.semantic_intent:
             messages[1] = (
@@ -174,6 +190,44 @@ def main() -> None:
                             checks['later_identity_retained'] = (case.profile.date_of_birth == date(1998, 5, 12)
                                 and bool(case.profile.full_name)
                                 and not {'full_name', 'date_of_birth'} & set(next_fact_questions(case)))
+                    if args.adviser_followups and index >= 6:
+                        checks['known_identity_retained'] = (
+                            case.profile.date_of_birth == date(1998, 5, 12)
+                            and bool(case.profile.full_name))
+                        checks['followup_not_mistaken_for_waiting'] = (
+                            '等你方便补充资料' not in reply
+                            and "pick this up when you're ready" not in reply
+                            and 'remaining details' not in reply)
+                        checks['followup_does_not_reask_known_facts'] = (
+                            not {'full_name', 'date_of_birth', 'planned_arrival_date',
+                                 'planned_departure_date'} & set(next_fact_questions(case))
+                            and all(question not in reply for question in [
+                                '你的出生日期是什么', '计划哪天', 'What is your date of birth',
+                                'What dates are you planning to arrive',
+                            ]))
+                        checks['followup_does_not_restart_unanswered_intake'] = next_fact_questions(case) == []
+                        if index in {6, 7}:
+                            checks['explicit_application_question_answered'] = (
+                                APPLICATION_URL in reply and 'Apply now' in reply)
+                        if index == 8:
+                            checks['reviewed_visitor_fee_answered'] = (
+                                '£135' in reply and '6' in reply and 'Standard Visitor' in reply
+                                and APPLICATION_URL in reply)
+                            checks['bank_period_answered_without_fixed_month_rule'] = (
+                                '没有统一规定银行流水必须提供几个月' in reply
+                                and '资金来源' in reply and '不能只凭' in reply
+                                if language == 'zh' else 'does not set one fixed number of months' in reply
+                                and 'funds come from' in reply and 'months alone' in reply)
+                            checks['bank_guidance_has_official_source'] = DOCUMENTS_URL in reply
+                        if index == 9:
+                            documents = reply_items(case)[2]
+                            questions = reply_items(case)[1]
+                            checks['natural_checklist_question_answered'] = (
+                                len(documents) >= 4 and all(document in reply for document in documents))
+                            checks['checklist_before_any_followup_question'] = (
+                                bool(documents) and (not questions or (
+                                    documents[0] in reply and questions[0] in reply
+                                    and reply.index(documents[0]) < reply.index(questions[0]))))
                     stored = next(row for row in store.list_outbox() if row['event_id'] == event.id)
                     checks['exact_persisted_body'] = stored['payload'] == reply
                     count = len(store.list_outbox())

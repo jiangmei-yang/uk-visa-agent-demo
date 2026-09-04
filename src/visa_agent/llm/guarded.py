@@ -210,6 +210,17 @@ def deterministic_fallback_message(case: Case, plan: str) -> str:
     if plan == "blocked":
         return blocked_customer_message(case)
     if plan == "ready":
+        if case.delivery_revision > 1:
+            return (
+                f"已按你重新确认的信息整理成第 {case.delivery_revision} 版材料包，供顾问复核。"
+                "请以这一版为准，并检查说明和信息摘要；旧版可能仍保留在之前的邮件中，不能自动撤回。"
+                "这里完成的是材料修订，还没有递交或修改政府系统里的签证申请，也不代表获批。"
+                if case.customer_language == "zh" else
+                f"Revision {case.delivery_revision} of your preparation pack reflects your newly confirmed information "
+                "and is ready for adviser review. Please use this version; any copy already sent remains in your "
+                "previous email and cannot be recalled automatically. No government application has been "
+                "submitted or amended, and this is not an approval prediction."
+            )
         if case.customer_language == "zh":
             return "你的申请资料已整理好，供顾问复核。建议先看里面的说明和信息摘要，再逐项核对文件；如果有遗漏或需要修改的地方，直接回复告诉我。这里完成的是材料整理，还没有递交签证申请，也不代表签证获批。"
         return (

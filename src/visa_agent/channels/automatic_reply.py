@@ -56,11 +56,11 @@ class AutomaticGmailReplySender(GmailReplySender):
                 references = ' '.join(dict.fromkeys(f'{event.references or ""} {in_reply_to}'.split()))
                 result = self.store.connection.execute(
                     "INSERT OR IGNORE INTO outbox(id,case_id,event_id,message_type,payload,channel,recipient,"
-                    "external_thread_id,reply_subject,in_reply_to,references_header) VALUES (?,?,?,'held_update_received',"
-                    "'Receipt awaiting checked rendering','gmail',?,?,?,?,?)",
+                    "external_thread_id,reply_subject,in_reply_to,references_header,case_revision) VALUES (?,?,?,'held_update_received',"
+                    "'Receipt awaiting checked rendering','gmail',?,?,?,?,?,?)",
                     (f'out-{event.id}-held_update_received', case.id, event.id, event.sender,
                      event.external_thread_id, event.subject if event.subject.lower().startswith('re:')
-                     else f'Re: {event.subject}', in_reply_to, references),
+                     else f'Re: {event.subject}', in_reply_to, references, case.delivery_revision),
                 )
                 queued += result.rowcount
         return queued

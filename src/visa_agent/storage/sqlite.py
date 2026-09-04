@@ -113,6 +113,7 @@ class SQLiteStore:
         self.connection.row_factory = sqlite3.Row
         self.connection.executescript(SCHEMA)
         self._migrate_outbox()
+        self._migrate_revisions()
 
     def _migrate_outbox(self) -> None:
         existing = {
@@ -135,18 +136,31 @@ class SQLiteStore:
             "send_deadline": "TEXT",
             "reply_render_mode": "TEXT",
             "reply_render_error": "TEXT",
+            "case_revision": "INTEGER NOT NULL DEFAULT 1",
         }
         with self.connection:
             for column, declaration in additions.items():
                 if column not in existing:
                     self.connection.execute(f"ALTER TABLE outbox ADD COLUMN {column} {declaration}")
 
+    def _migrate_revisions(self) -> None:
+        with self.connection:
+            for table, column, declaration in (
+                ("deliveries", "case_revision", "INTEGER NOT NULL DEFAULT 1"),
+                ("delivery_versions", "case_revision", "INTEGER NOT NULL DEFAULT 1"),
+                ("review_actions", "action_kind", "TEXT NOT NULL DEFAULT 'retry'"),
+            ):
+                existing = {row["name"] for row in self.connection.execute(f"PRAGMA table_info({table})")}
+                if column not in existing:
+                    self.connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {declaration}")
+
     def close(self) -> None:
         self.connection.close()
 
     def reset(self) -> None:
         self.connection.executescript(
-            """DELETE FROM review_actions; DELETE FROM held_inbound_events; DELETE FROM inbound_queue; DELETE FROM deliveries; DELETE FROM outbox;
+            """DELETE FROM channel_delivery_receipts; DELETE FROM inbound_failures;
+               DELETE FROM delivery_versions; DELETE FROM review_actions; DELETE FROM held_inbound_events; DELETE FROM inbound_queue; DELETE FROM deliveries; DELETE FROM outbox;
                DELETE FROM processed_events; DELETE FROM cases;"""
         )
         self.connection.commit()
@@ -182,7 +196,7 @@ class SQLiteStore:
         outbox = self.connection.execute(
             """SELECT id, event_id, message_type, payload, channel, recipient,
                       external_thread_id, status, attempt_count, last_error, sent_at,
-                      provider_message_id, created_at, reply_render_mode, reply_render_error
+                      provider_message_id, created_at, reply_render_mode, reply_render_error, case_revision
                FROM outbox WHERE case_id = ? ORDER BY created_at, id""",
             (case_id,),
         ).fetchall()
@@ -192,7 +206,7 @@ class SQLiteStore:
             (case_id,),
         ).fetchall()
         deliveries = self.connection.execute(
-            """SELECT id, path, sha256, created_at
+            """SELECT id, path, sha256, created_at, case_revision
                FROM deliveries WHERE case_id = ? ORDER BY created_at, id""",
             (case_id,),
         ).fetchall()
@@ -204,6 +218,8 @@ class SQLiteStore:
             "review_actions": [dict(row) for row in self.connection.execute(
                 "SELECT * FROM review_actions WHERE case_id=? ORDER BY created_at, id", (case_id,))],
             "deliveries": [dict(row) for row in deliveries],
+            "delivery_versions": [dict(row) for row in self.connection.execute(
+                "SELECT * FROM delivery_versions WHERE case_id=? ORDER BY case_revision, created_at", (case_id,))],
             "data_note": (
                 "Raw processed inbound messages are not retained. The snapshot keeps only "
                 "bounded evidence excerpts and source identifiers needed for audit. "
@@ -236,6 +252,7 @@ class SQLiteStore:
             self.connection.execute("DELETE FROM held_inbound_events WHERE case_id = ?", (case_id,))
             self.connection.execute("DELETE FROM review_actions WHERE case_id = ?", (case_id,))
             self.connection.execute("DELETE FROM deliveries WHERE case_id = ?", (case_id,))
+            self.connection.execute("DELETE FROM delivery_versions WHERE case_id = ?", (case_id,))
             self.connection.execute(
                 "DELETE FROM channel_delivery_receipts WHERE outbox_id IN "
                 "(SELECT id FROM outbox WHERE case_id = ?)", (case_id,),
@@ -286,8 +303,8 @@ class SQLiteStore:
                 """INSERT OR IGNORE INTO outbox(
                        id, case_id, event_id, message_type, payload, channel, recipient,
                        external_thread_id, send_deadline, reply_subject, in_reply_to,
-                       references_header
-                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                       references_header, case_revision
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     f"out-{event.id}-{message_type}",
                     case.id,
@@ -301,6 +318,7 @@ class SQLiteStore:
                     reply_subject,
                     in_reply_to,
                     references,
+                    case.delivery_revision,
                 ),
             )
 
@@ -322,27 +340,50 @@ class SQLiteStore:
                 ),
             )
 
-    def save_delivery(self, case_id: str, path: str, sha256: str) -> None:
+    def save_delivery(self, case_id: str, path: str, sha256: str, *, case_revision: int | None = None) -> None:
         with self.connection:
+            case = self.get_case(case_id)
+            revision = case_revision if case_revision is not None else (case.delivery_revision if case else 1)
+            if revision < 1 or (case is not None and revision != case.delivery_revision):
+                raise ValueError("Delivery revision must match the current case")
             previous = self.connection.execute(
-                "SELECT path, sha256 FROM deliveries WHERE case_id = ?", (case_id,)
+                "SELECT path, sha256, case_revision FROM deliveries WHERE case_id = ?", (case_id,)
             ).fetchone()
+            if revision > 1 and (previous is None or previous["case_revision"] != revision):
+                if previous is None or previous["case_revision"] != revision - 1 or previous["path"] == path:
+                    raise ValueError("A revised delivery requires its preserved predecessor and a new path")
+                authorized = False
+                for row in self.connection.execute(
+                    "SELECT before_json, after_json FROM review_actions a JOIN processed_events p "
+                    "ON p.event_id=a.retry_event_id AND p.case_id=a.case_id "
+                    "WHERE a.case_id=? AND a.action_kind='revision'", (case_id,),
+                ):
+                    before = Case.model_validate_json(row["before_json"])
+                    after = Case.model_validate_json(row["after_json"])
+                    if before.delivery_revision == revision - 1 and after.delivery_revision == revision:
+                        authorized = True
+                        break
+                if case is None or not authorized:
+                    raise ValueError("A revised delivery requires processed operator-authorized review")
+            elif previous is not None and revision != previous["case_revision"]:
+                raise ValueError("Cannot register an older delivery revision")
             if previous and (previous["path"] != path or previous["sha256"] != sha256):
                 unsafe = self.connection.execute(
-                    "SELECT 1 FROM outbox WHERE case_id = ? AND message_type = 'ready' "
+                    "SELECT 1 FROM outbox WHERE case_id = ? AND case_revision = ? AND message_type = 'ready' "
                     "AND (attempt_count > 0 OR status IN ('SENDING', 'SENT', 'AMBIGUOUS'))",
-                    (case_id,),
+                    (case_id, revision),
                 ).fetchone()
                 if unsafe:
                     raise ValueError("Cannot replace a delivery after a send attempt")
                 self.connection.execute(
-                    "INSERT OR IGNORE INTO delivery_versions(case_id, path, sha256) VALUES (?, ?, ?)",
-                    (case_id, previous["path"], previous["sha256"]),
+                    "INSERT OR IGNORE INTO delivery_versions(case_id, path, sha256, case_revision) VALUES (?, ?, ?, ?)",
+                    (case_id, previous["path"], previous["sha256"], previous["case_revision"]),
                 )
             self.connection.execute(
-                "INSERT INTO deliveries(id, case_id, path, sha256) VALUES (?, ?, ?, ?) "
-                "ON CONFLICT(case_id) DO UPDATE SET path = excluded.path, sha256 = excluded.sha256",
-                (f"delivery-{case_id}", case_id, path, sha256),
+                "INSERT INTO deliveries(id, case_id, path, sha256, case_revision) VALUES (?, ?, ?, ?, ?) "
+                "ON CONFLICT(case_id) DO UPDATE SET path = excluded.path, sha256 = excluded.sha256, "
+                "case_revision = excluded.case_revision, created_at = CURRENT_TIMESTAMP",
+                (f"delivery-{case_id}", case_id, path, sha256, revision),
             )
 
     def record_rejected_event(
@@ -385,15 +426,17 @@ class SQLiteStore:
         ).fetchall()
         return [dict(row) for row in rows]
 
-    def has_unreviewed_held_updates(self, case_id: str) -> bool:
+    def has_unreviewed_held_updates(self, case_id: str, *, completing_event_id: str | None = None) -> bool:
         row = self.connection.execute("""
             SELECT 1 FROM held_inbound_events held WHERE held.case_id=?
             AND NOT EXISTS (
                 SELECT 1 FROM review_actions action
-                JOIN processed_events processed ON processed.event_id=action.retry_event_id
+                LEFT JOIN processed_events processed ON processed.event_id=action.retry_event_id
+                    AND processed.case_id=action.case_id
                 WHERE action.held_event_id=held.id AND action.case_id=held.case_id
+                AND (processed.event_id IS NOT NULL OR action.retry_event_id=?)
             ) LIMIT 1
-        """, (case_id,)).fetchone()
+        """, (case_id, completing_event_id)).fetchone()
         return row is not None
 
     def record_inbound_failure(
@@ -443,6 +486,10 @@ class SQLiteStore:
                 """WITH due AS (
                        SELECT id FROM inbound_queue
                        WHERE channel = ?
+                         AND (channel != 'gmail_review' OR id = (
+                            SELECT id FROM inbound_queue WHERE channel='gmail_review' AND status != 'PROCESSED'
+                            ORDER BY created_at, id LIMIT 1
+                         ))
                          AND (
                            (status IN ('PENDING', 'RETRY')
                             AND (available_at IS NULL OR available_at <= ?))
@@ -520,7 +567,7 @@ class SQLiteStore:
             """SELECT id, case_id, event_id, message_type, payload, channel, recipient,
                       external_thread_id, send_deadline, reply_subject, status, attempt_count,
                       next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
-                      references_header, created_at, reply_render_mode, reply_render_error
+                      references_header, created_at, reply_render_mode, reply_render_error, case_revision
                FROM outbox ORDER BY created_at, id"""
         ).fetchall()
         return [dict(row) for row in rows]
@@ -559,7 +606,7 @@ class SQLiteStore:
                    RETURNING id, case_id, event_id, message_type, payload, channel, recipient,
                              external_thread_id, send_deadline, reply_subject, status, attempt_count,
                              next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
-                             references_header, created_at""",
+                             references_header, created_at, case_revision""",
                 parameters,
             ).fetchall()
         return sorted((dict(row) for row in rows), key=lambda row: (row["created_at"], row["id"]))
@@ -666,7 +713,7 @@ class SQLiteStore:
             f"""SELECT id, case_id, event_id, message_type, payload, channel, recipient,
                       external_thread_id, send_deadline, reply_subject, status, attempt_count,
                       next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
-                      references_header, created_at
+                      references_header, created_at, case_revision
                FROM outbox WHERE status = 'SENDING' {channel_filter}
                ORDER BY created_at, id LIMIT ?""",
             parameters,
