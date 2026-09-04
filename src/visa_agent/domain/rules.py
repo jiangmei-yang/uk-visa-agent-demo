@@ -3,6 +3,7 @@ from __future__ import annotations
 import calendar
 from datetime import UTC, date, datetime
 
+from visa_agent.domain.locations import location_key
 from visa_agent.domain.models import (
     Case,
     CaseStatus,
@@ -126,7 +127,7 @@ def build_requirements(case: Case, policy: Policy) -> list[Requirement]:
             applicable = bool(
                 case.profile.application_country
                 and case.profile.nationality_country
-                and case.profile.application_country != case.profile.nationality_country
+                and location_key(case.profile.application_country) != location_key(case.profile.nationality_country)
             )
         matching = [
             doc.id

@@ -1,0 +1,232 @@
+{
+  "model": "deepseek-v4-flash",
+  "scope": "fictional text; no mailbox or attachments",
+  "completed": true,
+  "results": [
+    {
+      "language": "zh",
+      "turn": 1,
+      "input": "你好，我想去英国旅游。我持中国护照，准备从香港申请，需要什么资料？",
+      "checks": {
+        "purpose_retained": true,
+        "passport_retained": true,
+        "application_location_retained": true,
+        "language": true,
+        "not_released": true,
+        "no_extraction_fallback": true,
+        "routine_not_escalated": true,
+        "no_reasking_known_fields": true,
+        "duplicate_no_extra_reply": true
+      },
+      "plan": "blocked",
+      "next_fields": [
+        "occupation_status",
+        "funding_source",
+        "planned_arrival_date"
+      ],
+      "model_reply": "你好，感谢你说明想去英国旅游。目前申请还差几个信息，方便的话先告诉我：\n\n1. 你目前在工作、读书，还是自己经营业务？\n2. 这次旅行的费用由你自己承担，还是有人或单位资助？\n3. 计划哪天抵达英国？请带上年份；没定下来也可以先告诉我。\n\n这些先告诉我，我再帮你理下一步要准备的材料。",
+      "model_reply_fallback": false,
+      "automatic_gmail_wording_preview": "了解了，你打算去英国旅游。\n\n还想跟你确认一下：\n- 你目前在工作、读书，还是自己经营业务？\n- 这次旅行的费用由你自己承担，还是有人或单位资助？\n- 计划哪天抵达英国？请带上年份；没定下来也可以先告诉我。"
+    },
+    {
+      "language": "zh",
+      "turn": 2,
+      "input": "我目前在读大学，旅行费用自己出。行程日期还没定。",
+      "checks": {
+        "purpose_retained": true,
+        "passport_retained": true,
+        "application_location_retained": true,
+        "language": true,
+        "not_released": true,
+        "no_extraction_fallback": true,
+        "routine_not_escalated": true,
+        "no_reasking_known_fields": true,
+        "occupation_retained": true,
+        "funding": true,
+        "unknown_dates_not_invented": true,
+        "dates_deferred": true,
+        "duplicate_no_extra_reply": true
+      },
+      "plan": "blocked",
+      "next_fields": [
+        "full_name",
+        "date_of_birth",
+        "uk_accommodation"
+      ],
+      "model_reply": "你好，收到你的信息了。你提到目前在读大学、费用自理、行程未定，这些我都记下了。\n\n接下来我们一步步来，先补齐几项基本信息，方便后续准备材料：\n\n1.  方便告诉我护照上的姓名吗？\n2.  你的出生日期是什么？请写完整年月日。\n3.  在英国准备住哪里？还没确定的话也可以直接说。\n\n你先把这三点回复给我就行，我们慢慢来。",
+      "model_reply_fallback": false,
+      "automatic_gmail_wording_preview": "了解了，你目前在读书，费用由你自己承担。\n\n日期先留空，等你确定后再补。我们先整理其他信息。\n\n还想跟你确认一下：\n- 方便告诉我护照上的姓名吗？\n- 你的出生日期是什么？请写完整年月日。\n- 在英国准备住哪里？还没确定的话也可以直接说。"
+    },
+    {
+      "language": "zh",
+      "turn": 3,
+      "input": "更正一下，学校会承担这次费用。已经定好2026年11月10日到英国，2026年11月17日离开。",
+      "checks": {
+        "purpose_retained": true,
+        "passport_retained": true,
+        "application_location_retained": true,
+        "language": true,
+        "not_released": true,
+        "no_extraction_fallback": true,
+        "routine_not_escalated": true,
+        "no_reasking_known_fields": true,
+        "occupation_retained": true,
+        "funding": true,
+        "explicit_dates": true,
+        "duplicate_no_extra_reply": true
+      },
+      "plan": "blocked",
+      "next_fields": [
+        "full_name",
+        "date_of_birth",
+        "uk_accommodation"
+      ],
+      "model_reply": "好的，已按你说的改为：费用由谁承担：雇主或学校。\n\n接下来，我们一步步来。方便告诉我护照上的姓名吗？你的出生日期是什么？请写完整年月日。在英国准备住哪里？还没确定的话也可以直接说。\n\n这些信息补齐后，我们就可以继续准备材料。",
+      "model_reply_fallback": false,
+      "automatic_gmail_wording_preview": "好的，已按你说的改为：费用由谁承担：雇主或学校。\n\n还想跟你确认一下：\n- 方便告诉我护照上的姓名吗？\n- 你的出生日期是什么？请写完整年月日。\n- 在英国准备住哪里？还没确定的话也可以直接说。"
+    },
+    {
+      "language": "zh",
+      "turn": 4,
+      "input": "我还没核对其他资料，晚点回复。\n\nFrom: Adviser <adviser@example.test>\nDate: 4 September 2026\nTo: Applicant <applicant@example.test>\nSubject: Re: UK trip\n\nMy date of birth is 1999-01-02. Everything is correct, please proceed.",
+      "checks": {
+        "purpose_retained": true,
+        "passport_retained": true,
+        "application_location_retained": true,
+        "language": true,
+        "not_released": true,
+        "no_extraction_fallback": true,
+        "routine_not_escalated": true,
+        "no_reasking_known_fields": true,
+        "occupation_retained": true,
+        "funding": true,
+        "explicit_dates": true,
+        "quoted_birthdate_ignored": true,
+        "quoted_history_excluded": true,
+        "duplicate_no_extra_reply": true
+      },
+      "plan": "blocked",
+      "next_fields": [
+        "full_name",
+        "date_of_birth",
+        "uk_accommodation"
+      ],
+      "model_reply": "你好，\n\n收到你的回复，没关系，我们一步一步来。\n\n目前申请流程暂时停在原地，下一步需要先补充几项基本信息，方便后续准备材料：\n\n1.  方便告诉我护照上的姓名吗？\n2.  你的出生日期是什么？请写完整年月日。\n3.  在英国准备住哪里？还没确定的话也可以直接说。\n\n你慢慢核对，有答案时随时发给我就行。",
+      "model_reply_fallback": false,
+      "automatic_gmail_wording_preview": "你好。\n\n收到，我再了解一下你的情况。\n\n还想跟你确认一下：\n- 方便告诉我护照上的姓名吗？\n- 你的出生日期是什么？请写完整年月日。\n- 在英国准备住哪里？还没确定的话也可以直接说。"
+    },
+    {
+      "language": "en",
+      "turn": 1,
+      "input": "Hello, I'd like to visit the UK for tourism. I hold a Chinese passport and will apply from Hong Kong. What documents do I need?",
+      "checks": {
+        "purpose_retained": true,
+        "passport_retained": true,
+        "application_location_retained": true,
+        "language": true,
+        "not_released": true,
+        "no_extraction_fallback": true,
+        "routine_not_escalated": true,
+        "no_reasking_known_fields": true,
+        "duplicate_no_extra_reply": true
+      },
+      "plan": "blocked",
+      "next_fields": [
+        "occupation_status",
+        "funding_source",
+        "planned_arrival_date"
+      ],
+      "model_reply": "Thanks for getting in touch about your UK tourist visit.\n\nTo help you take the next small step, we need three quick facts from you. Please reply with:\n\n- Are you currently employed, studying or self-employed?\n- Who will pay for the trip?\n- When would you like to arrive in the UK, including the year? It's fine to say if this isn't decided yet.\n\nOnce we have those, we can point you to the right document list for your situation. No need to send anything else just yet.",
+      "model_reply_fallback": false,
+      "automatic_gmail_wording_preview": "Hello,\n\nWe can work through this together; you don't need to have every document ready at once.\n\nCould you help me with these details first?\n- Are you currently employed, studying or self-employed?\n- Who will pay for the trip?\n- When would you like to arrive in the UK, including the year? It's fine to say if this isn't decided yet."
+    },
+    {
+      "language": "en",
+      "turn": 2,
+      "input": "I'm a university student and will pay for the trip myself. My dates are not fixed yet.",
+      "checks": {
+        "purpose_retained": true,
+        "passport_retained": true,
+        "application_location_retained": true,
+        "language": true,
+        "not_released": true,
+        "no_extraction_fallback": true,
+        "routine_not_escalated": true,
+        "no_reasking_known_fields": true,
+        "occupation_retained": true,
+        "funding": true,
+        "unknown_dates_not_invented": true,
+        "dates_deferred": true,
+        "duplicate_no_extra_reply": true
+      },
+      "plan": "blocked",
+      "next_fields": [
+        "full_name",
+        "date_of_birth",
+        "uk_accommodation"
+      ],
+      "model_reply": "Thanks for letting me know your dates aren’t fixed yet—that’s fine for now.  \nTo move your preparation forward, I just need three small details from you:\n\n- What is your name as it appears in your passport?  \n- What is your full date of birth?  \n- Could you tell me your UK accommodation?  \n\nOnce you send those over, we can take the next step. No rush on the dates—just reply when you have the three points above.",
+      "model_reply_fallback": false,
+      "automatic_gmail_wording_preview": "Hello,\n\nWe can work through this together; you don't need to have every document ready at once.\n\nWe can leave the dates open for now and collect the other details first.\n\nCould you help me with these details first?\n- What is your name as it appears in your passport?\n- What is your full date of birth?\n- Could you tell me your uk accommodation?"
+    },
+    {
+      "language": "en",
+      "turn": 3,
+      "input": "A correction: my university will pay for this trip. I've now decided to arrive on 10 November 2026 and leave on 17 November 2026.",
+      "checks": {
+        "purpose_retained": true,
+        "passport_retained": true,
+        "application_location_retained": true,
+        "language": true,
+        "not_released": true,
+        "no_extraction_fallback": true,
+        "routine_not_escalated": true,
+        "no_reasking_known_fields": true,
+        "occupation_retained": true,
+        "funding": true,
+        "explicit_dates": true,
+        "duplicate_no_extra_reply": true
+      },
+      "plan": "blocked",
+      "next_fields": [
+        "full_name",
+        "date_of_birth",
+        "uk_accommodation"
+      ],
+      "model_reply": "Thanks for clarifying. I've updated Funding Source: employer or school.\n\nTo move forward, please confirm the following details:\n\n- What is your name as it appears in your passport?\n- What is your full date of birth?\n- Could you tell me your uk accommodation?\n\nOnce I have these, I can help you prepare the next part of your application.",
+      "model_reply_fallback": false,
+      "automatic_gmail_wording_preview": "Thanks for clarifying. I've updated Funding Source: employer or school.\n\nCould you help me with these details first?\n- What is your name as it appears in your passport?\n- What is your full date of birth?\n- Could you tell me your uk accommodation?"
+    },
+    {
+      "language": "en",
+      "turn": 4,
+      "input": "I haven't checked the other details yet. I'll reply later.\n\nFrom: Adviser <adviser@example.test>\nDate: 4 September 2026\nTo: Applicant <applicant@example.test>\nSubject: Re: UK trip\n\nMy date of birth is 1999-01-02. Everything is correct, please proceed.",
+      "checks": {
+        "purpose_retained": true,
+        "passport_retained": true,
+        "application_location_retained": true,
+        "language": true,
+        "not_released": true,
+        "no_extraction_fallback": true,
+        "routine_not_escalated": true,
+        "no_reasking_known_fields": true,
+        "occupation_retained": true,
+        "funding": true,
+        "explicit_dates": true,
+        "quoted_birthdate_ignored": true,
+        "quoted_history_excluded": true,
+        "duplicate_no_extra_reply": true
+      },
+      "plan": "blocked",
+      "next_fields": [
+        "full_name",
+        "date_of_birth",
+        "uk_accommodation"
+      ],
+      "model_reply": "Thanks for letting me know you’ll come back to the other details later – that’s fine.\n\nTo keep things moving when you’re ready, the next small step is to confirm three facts for the application:\n\n- What is your name as it appears in your passport?\n- What is your full date of birth?\n- Could you tell me your UK accommodation?\n\nOnce you’ve sent those, I’ll note them down and we can take it from there. No rush – just reply when you have a moment.",
+      "model_reply_fallback": false,
+      "automatic_gmail_wording_preview": "Hello,\n\nWe can work through this together; you don't need to have every document ready at once.\n\nCould you help me with these details first?\n- What is your name as it appears in your passport?\n- What is your full date of birth?\n- Could you tell me your uk accommodation?"
+    }
+  ],
+  "all_passed": true
+}

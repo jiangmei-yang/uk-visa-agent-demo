@@ -89,3 +89,19 @@ four language/stage cases check the captured provider-bound body, persisted outb
 non-repetition on a second dispatch. All 312 local tests, lint and typing pass after the fix.
 These use a capture adapter, not new recipient-side observations. Final-pack automatic dispatch
 remains disabled in registered-sender service mode, as documented in GMAIL_AUTOMATIC_SERVICE.md.
+
+## Bilingual multi-turn model probe
+
+Three eight-turn provider probes are retained at `eval_output/multiturn_context_2026-09-04*.json`.
+They use fictional text and temporary databases, not real mail or attachments. Manual reading of
+the first mechanically passing run found repeated questions after an explicit request to reply
+later. A narrow deterministic acknowledgement now handles pure later-reply messages in both the
+guarded and automatic wording paths. It cannot suppress new facts, corrections, attachments,
+grounded answers or blocking issues, and does not set consent or schedule reminders. Other wording
+still contains repetitive reassurance and form-like questions; naturalness is not fully accepted.
+
+Runs 2 and 3 failed exact country-name checks. Run 3's new profile snapshots show Chinese aliases
+of the expected locations; run 2 lacks enough data to resolve its values. The evaluator and domain
+location comparison now recognise a bounded alias set without changing original facts. All three
+reports and this oracle limitation are retained; see `evals/README.md`. Local regressions after
+these changes pass 329 tests, lint and typing. No new recipient-side naturalness evidence is claimed.

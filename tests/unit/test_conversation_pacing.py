@@ -6,13 +6,14 @@ import pytest
 from visa_agent.domain.models import Case, CaseStatus, InboundEvent
 from visa_agent.domain.policy import load_policy
 from visa_agent.domain.rules import evaluate_gate
-from visa_agent.llm.guarded import deterministic_fallback_message
+from visa_agent.llm.guarded import GuardedLLM, deterministic_fallback_message
 from visa_agent.llm.offline import OfflineFixtureLLM
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.conversation import (
     clear_natural_confirmation,
     next_fact_questions,
     update_deferred_questions,
+    waiting_acknowledgement,
 )
 from visa_agent.workflow.service import WorkflowService
 
@@ -110,6 +111,39 @@ def test_one_remaining_question_is_prose_not_a_questionnaire() -> None:
     assert "你准备在哪个国家或地区递交申请？" in text
     assert "\n- " not in text
     assert "还想跟你确认一下" not in text
+
+
+@pytest.mark.parametrize("body", ["我还没核对其他资料，晚点回复。",
+                                  "I haven't checked the other details yet. I'll reply later."])
+def test_pure_later_reply_is_acknowledged_without_reasking_or_changing_state(body: str) -> None:
+    case = example()
+    case.latest_customer_message = body
+    before = case.model_dump_json()
+    expected = waiting_acknowledgement(case)
+    assert expected
+    assert deterministic_fallback_message(case, "blocked") == expected
+    # The fixture renderer is deliberately different: the guard must choose this reply itself.
+    assert GuardedLLM(OfflineFixtureLLM()).render_message(case, "blocked") == expected
+    assert "?" not in expected and "？" not in expected
+    assert case.model_dump_json() == before
+
+
+@pytest.mark.parametrize("body", ["晚点回复。需要哪些资料？", "If everything is correct, I'll reply later.",
+                                  "我已经确认，晚点回复。"])
+def test_later_phrase_is_not_a_general_skip_instruction(body: str) -> None:
+    case = example()
+    case.latest_customer_message = body
+    assert waiting_acknowledgement(case) is None
+
+
+def test_new_information_cannot_be_hidden_by_later_acknowledgement() -> None:
+    case = example()
+    case.latest_customer_message = "晚点回复。"
+    case.latest_document_names = ["Invitation.pdf"]
+    assert waiting_acknowledgement(case) is None
+    case.latest_document_names = []
+    case.latest_changes = {"planned_departure_date": "2026-11-17"}
+    assert waiting_acknowledgement(case) is None
 
 
 def test_workflow_remembers_unknown_dates_and_duplicate_is_not_another_turn(tmp_path: Path) -> None:

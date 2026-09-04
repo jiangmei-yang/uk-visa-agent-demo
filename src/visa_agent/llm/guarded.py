@@ -13,6 +13,7 @@ from visa_agent.workflow.conversation import (
     change_acknowledgement,
     confirmation_message,
     reply_items,
+    waiting_acknowledgement,
 )
 
 MIN_ACCEPTED_CONFIDENCE = 0.8
@@ -249,6 +250,10 @@ class GuardedLLM:
             self.last_render_fallback = True
             self.last_render_error = "case_requires_human_review"
             return deterministic_fallback_message(case, plan)
+        if plan == "blocked" and (acknowledgement := waiting_acknowledgement(case)):
+            self.last_render_fallback = False
+            self.last_render_error = None
+            return acknowledgement
         if plan in {"awaiting_confirmation", "awaiting_profile_confirmation"}:
             self.last_render_fallback = False
             self.last_render_error = None

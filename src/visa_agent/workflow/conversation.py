@@ -322,7 +322,28 @@ def change_acknowledgement(case: Case) -> str | None:
     return f"Thanks for clarifying. I've updated {changes}."
 
 
+def waiting_acknowledgement(case: Case) -> str | None:
+    """A narrow receipt for a pure 'I'll reply later'; no case state or reminders change."""
+    if (case.latest_changes or case.latest_received_facts or case.latest_document_names
+            or case.customer_answers or case.open_blockers()):
+        return None
+    text = latest_reply_text(case.latest_customer_message).strip()
+    if re.fullmatch(
+        r"(?:(?:我)?(?:还没|尚未)核对(?:其他)?(?:资料|信息|材料)[，,。.\s]*)?"
+        r"(?:我)?(?:晚点|稍后)(?:再)?回复[。.!！\s]*", text,
+    ):
+        return "好的，等你方便时再回复，我们接着准备。"
+    if re.fullmatch(
+        r"(?:I (?:haven't|have not) checked (?:the )?(?:other )?(?:details|information|documents) yet[.,]\s*)?"
+        r"I(?:'ll| will) (?:reply|get back to you) later[.!\s]*", text, re.I,
+    ):
+        return "Of course. Reply when you're ready and we'll pick up from there."
+    return None
+
+
 def blocked_customer_message(case: Case) -> str:
+    if acknowledgement := waiting_acknowledgement(case):
+        return acknowledgement
     zh = case.customer_language == "zh"
     name = case.profile.full_name
     issues, questions, documents = reply_items(case)

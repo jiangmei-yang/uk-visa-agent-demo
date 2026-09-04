@@ -60,3 +60,29 @@ statement.
 - Contract/fault-injection tests are **automated simulation**.
 - Running `scripts/agent_eval.py` with a real API key is **provider evaluation**.
 - Neither result is evidence of legal correctness or applicant outcomes.
+
+## Multi-turn conversation probe
+
+Run `uv run python scripts/multiturn_conversation_eval.py --output eval_output/NEW_REPORT.json`
+with the configured DeepSeek secret. This makes paid model calls using eight fictional ordinary-text
+turns (four in each language) and temporary case stores, never a live mailbox. The output path must
+be new. Checkpoints are saved after every turn and incomplete reports have `completed: false`.
+Inspect the replies manually as well as the checks. The automatic-Gmail wording is a local preview,
+not proof of a sent email. `model_reply` is the guarded workflow output and may use deterministic
+wording. The probe does not exercise PDF processing, final delivery or independent usability.
+
+Keep every run. The initial 2026-09-04 run passed its structural checks but reading showed repeated
+questions after the applicant said they would reply later. Version 2 added a narrow acknowledgement
+and a no-repeated-question check, but failed the Chinese country/location exact-value checks. Those
+first reports lack observed profile values, so the failure cannot be adjudicated from their output
+alone. The runner now retains fictional profile snapshots for diagnosis; later passes cannot erase
+this missing evidence or establish repeat consistency by themselves.
+
+Version 3 retained profiles and reproduced the exact-match failures: the Chinese values were
+`中国` and `香港`, not different locations. All other checks, including the new pause check,
+passed in that run. This establishes a test-oracle representation issue for version 3; it does
+not reconstruct the missing version-2 values. The evaluator now uses bounded location-name
+equivalence. The domain requirement comparison uses the same explicit aliases to avoid treating
+`中国` and `China` as different locations. Original profile/evidence values are not rewritten;
+Hong Kong remains distinct from China in this application-location comparison. The corrected
+oracle has local tests, but no fourth provider run is claimed. Original reports remain unchanged.
