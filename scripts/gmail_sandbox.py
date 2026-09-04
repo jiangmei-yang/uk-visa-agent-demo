@@ -38,7 +38,7 @@ def main() -> None:
     parser.add_argument("--model", default="deepseek-v4-flash")
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument(
-        "--watch", action="store_true", help="Continuously prepare; never auto-send"
+        "--watch", action="store_true", help="Repeat prepare or controlled serve cycles"
     )
     parser.add_argument("--interval", type=int, default=60, help="Polling seconds (minimum 30)")
     parser.add_argument(
@@ -104,6 +104,15 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     adapter = GmailAdapter(service)
     store = SQLiteStore(args.state_dir / "sandbox.db")
     try:
+        # Resolve previous uncertain sends even if intake/model processing fails this cycle.
+        # This only observes provider state; dispatch still waits for successful intake.
+        if args.action == "serve":
+            from visa_agent.channels.automatic_reply import AutomaticGmailReplySender
+
+            automatic_sender = AutomaticGmailReplySender(adapter, store, args.sender)
+            dispatcher = OutboxDispatcher(store, automatic_sender, channel="gmail",
+                allowed_message_types=("blocked", "awaiting_profile_confirmation", "awaiting_confirmation"))
+            dispatcher.reconcile_sending(automatic_sender, datetime.now(UTC))
         if args.action in {"prepare", "serve"}:
             key = read_secret(
                 "DEEPSEEK_API_KEY",
@@ -172,12 +181,6 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
                     )
                 )
         if args.action == "serve":
-            from visa_agent.channels.automatic_reply import AutomaticGmailReplySender
-
-            automatic_sender = AutomaticGmailReplySender(adapter, store, args.sender)
-            dispatcher = OutboxDispatcher(store, automatic_sender, channel="gmail",
-                allowed_message_types=("blocked", "awaiting_profile_confirmation", "awaiting_confirmation"))
-            dispatcher.reconcile_sending(automatic_sender, datetime.now(UTC))
             print("Automatic dispatch:", [item.status for item in dispatcher.dispatch_due(datetime.now(UTC), limit=1)])
         elif args.action in {"send-reviewed", "reconcile"}:
 

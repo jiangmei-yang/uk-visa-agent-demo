@@ -26,6 +26,10 @@ do not switch scope by deleting its database. Use a separate state directory for
 - Only current blocked/intake and confirmation replies are eligible. Older queued replies are
   withheld. Final `ready` replies stay pending for explicit reviewed dispatch; no pack is auto-sent.
 - Existing uncertain-send reconciliation and deduplication remain in force.
+- Uncertain sends are reconciled before inbox listing or model processing. An intake failure
+  still prevents dispatch of queued replies, but no longer prevents observing previous sends.
+  Runner integration tests cover an oversized inbox and a listing timeout with simulated
+  providers; these are not claims about real Gmail outages.
 - `worker_status.json` records the process ID, last cycle timestamp and polling/idle/error state.
   It is observational evidence only: confirm process liveness separately. Iteration failures record
   only the error class, wait the normal interval and do not reset delivery history.
@@ -60,3 +64,8 @@ handling, not recipient-side observation of a new conversation using the revised
 Open onboarding from arbitrary senders, explicit privacy/processing consent, abuse limits,
 public-service deployment and automatic final-pack release are not implemented by this mode.
 Do not describe this registered-sender rollout as a fully public autonomous adviser.
+
+The activation-scoped inbox query currently has a 100-message complete-batch limit. Once
+exceeded, intake stops explicitly rather than silently skipping old messages. Moving
+reconciliation earlier does not remove this limit. Durable incremental intake/backlog handling
+is still required for long-running use; increasing the cap alone is not a complete fix.
