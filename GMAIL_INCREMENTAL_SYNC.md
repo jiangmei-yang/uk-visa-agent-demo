@@ -89,8 +89,9 @@ was no repeated workflow processing of that old message in the idle cycle.
 ## Remaining limitations
 
 Live multi-page/expired-history recovery has not been exercised against Gmail. Deleted/unavailable
-candidate metadata and invalid page tokens currently stop the cycle visibly rather than silently
-skip candidates; an operator recovery procedure remains necessary. Metadata sorting reads all
+candidate metadata and invalid page tokens stop the cycle visibly rather than silently
+skip candidates. An audited discovery rescan is now available below; unavailable candidate
+metadata still requires operator investigation and is never silently dropped. Metadata sorting reads all
 pending candidates, so a very large pending backlog still needs additional resource bounding.
 Equal receipt timestamps use message ID as a stable tie-breaker; that does not prove semantic
 order for simultaneous conflicting replies. The service remains registered-sender only, local
@@ -123,3 +124,38 @@ Checked 2026-09-04 against Google's official [synchronization guide](https://dev
 and [message listing reference](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/list).
 History may expire; a history 404 requires full synchronization. Pagination must finish before
 using the returned history cursor for the next incremental request.
+
+## Audited operator discovery rescan
+
+After updating/restarting the worker to a version that supports the `rescan` phase, inspect the
+existing scope without showing message bodies, credentials or provider pagination tokens:
+
+```bash
+uv run python scripts/gmail_sync_recover.py inspect --state-dir data/registered-applicant
+```
+
+If investigation identifies an unusable pagination checkpoint, request a fresh discovery pass
+using the revision printed by inspection (replace `REVISION` with that integer):
+
+```bash
+uv run python scripts/gmail_sync_recover.py rescan --state-dir data/registered-applicant \
+  --expected-revision REVISION --actor operator-name --reason "Provider rejected pagination token"
+```
+
+The command requires existing scope binding/journal files, takes the same worker lock, rejects
+stale revisions and atomically records the actor, reason and prior checkpoint with the request.
+The actor is a local audit label, not an authenticated adviser identity; do not put personal data
+or secrets in the reason. It neither authenticates to Gmail nor sends mail. On its next cycle the
+worker obtains a fresh history anchor and repeats the original scoped full scan. If that read
+fails, the rescan stays requested. Pending IDs and previously acknowledged outcomes remain intact;
+cases and outbox are not opened or changed by the operator command. Normal dispatch can resume
+only after discovery and intake drain, under the existing sender/confirmation checks.
+
+Do not delete `sync.db` or `sandbox.db` to recover. Rescanning cannot recreate a message deleted
+at Gmail and does not acknowledge an unavailable candidate. It also does not reconnect OAuth,
+approve documents, resolve held case revisions or grant final-pack sending permission.
+
+Local integration tests cover close/reopen, provider-read failure, preserved pending/processed
+IDs, overlap discovery, stale revisions, audit-write rollback, and the actual command leaving a
+case-database sentinel unchanged. They are simulated recovery evidence, not live expired-token
+recovery. No rescan was requested against the running mailbox as part of this implementation.

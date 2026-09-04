@@ -22,6 +22,9 @@ def discover_messages(adapter: GmailAdapter, journal: GmailSyncJournal, query: s
     state = journal.checkpoint()
     if state is None:
         state = journal.start_full(adapter.current_history_id(), None)
+    elif state.phase == "rescan":
+        # Fetch a fresh anchor before paging. A provider failure leaves the request pending.
+        state = journal.start_full(adapter.current_history_id(), state)
     for _ in range(max_pages):
         page: GmailMessagePage | GmailHistoryPage
         if state.phase == "full":

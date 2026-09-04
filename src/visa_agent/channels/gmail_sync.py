@@ -19,7 +19,7 @@ from visa_agent.channels.gmail import GmailHistoryPage, GmailMessagePage
 @dataclass(frozen=True)
 class SyncCheckpoint:
     revision: int
-    phase: Literal["full", "history", "ready"]
+    phase: Literal["full", "history", "ready", "rescan"]
     history_id: str
     page_token: str | None = None
     seen_tokens: tuple[str, ...] = ()
@@ -36,6 +36,9 @@ class GmailSyncJournal:
                                                   snapshot TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS candidates (id TEXT PRIMARY KEY,
                 status TEXT NOT NULL DEFAULT 'pending', reason TEXT);
+            CREATE TABLE IF NOT EXISTS recovery_actions (revision INTEGER PRIMARY KEY,
+                actor TEXT NOT NULL, reason TEXT NOT NULL, previous_checkpoint TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
         """)
         with self.connection:
             self.connection.execute("INSERT OR IGNORE INTO binding VALUES (1, ?)", (scope,))
@@ -73,6 +76,23 @@ class GmailSyncJournal:
         if self.checkpoint() != expected:
             raise ValueError("Stale Gmail sync response; reload the checkpoint")
 
+    def request_rescan(self, expected: SyncCheckpoint, *, actor: str, reason: str) -> SyncCheckpoint:
+        """Audited operator request, never an acknowledgement or permission to send."""
+        if not actor.strip() or not reason.strip():
+            raise ValueError("Rescan requires an actor and reason")
+        if expected.phase == "rescan":
+            raise ValueError("A rescan is already requested")
+        with self.connection:
+            self.connection.execute("BEGIN IMMEDIATE")
+            self._expect(expected)
+            state = SyncCheckpoint(expected.revision + 1, "rescan", expected.history_id)
+            self.connection.execute(
+                "INSERT INTO recovery_actions (revision, actor, reason, previous_checkpoint) VALUES (?, ?, ?, ?)",
+                (state.revision, actor.strip(), reason.strip(), json.dumps(asdict(expected))),
+            )
+            self._save(state)
+        return state
+
     @staticmethod
     def _validate_history(value: str) -> None:
         if not value.isascii() or not value.isdecimal() or int(value) <= 0:
@@ -87,7 +107,7 @@ class GmailSyncJournal:
             ids, history_id = page.message_ids, expected.history_id
             phase: Literal["full", "history", "ready"] = "full" if page.next_page_token else "history"
         else:
-            if expected.phase == "full":
+            if expected.phase not in {"history", "ready"}:
                 raise ValueError("History response does not match checkpoint phase")
             self._validate_history(page.history_id)
             if int(page.history_id) < int(expected.history_id):
