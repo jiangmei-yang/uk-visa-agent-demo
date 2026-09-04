@@ -274,6 +274,11 @@ class GuardedLLM:
             self.last_render_fallback = False
             self.last_render_error = None
             return acknowledgement
+        if plan == "blocked" and case.question_plan == [] and case.pending_question_fields:
+            # An unanswered question is not permission for the wording model to ask it again.
+            self.last_render_fallback = False
+            self.last_render_error = None
+            return deterministic_fallback_message(case, plan)
         if plan in {"awaiting_confirmation", "awaiting_profile_confirmation"}:
             self.last_render_fallback = False
             self.last_render_error = None

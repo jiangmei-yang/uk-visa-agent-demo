@@ -8,6 +8,7 @@ import re
 
 from visa_agent.domain.models import Case, DocumentStatus, Requirement
 from visa_agent.domain.rules import required_profile_facts
+from visa_agent.workflow.funding_wording import funding_label, funding_wording
 
 
 def _outlook_history_start(lines: list[str], index: int) -> bool:
@@ -173,8 +174,22 @@ def next_fact_questions(case: Case) -> list[str]:
         )
     ]
     actionable = [field for field in missing if field not in case.deferred_fields]
+    if case.question_plan is not None:
+        return [field for field in case.question_plan if field in actionable]
     question_budget = 2 if case.customer_answers else 3
     return actionable[: max(0, question_budget - len(case.open_blockers()))]
+
+
+def customer_requests_next_step(body: str) -> bool:
+    """Permission to resume questions only, never consent to a summary or delivery."""
+    text = latest_reply_text(body)
+    text = re.sub(r'“[^”]*”|‘[^’]*’|"[^"\n]*"', "", text)
+    if re.search(r"还没|尚未|暂时|先不|不要|不用|如果|\b(?:not|haven't|if|later)\b|don't", text, re.I):
+        return False
+    return bool(re.search(
+        r"下一步|接下来(?:需要|该|怎么)|还缺(?:什么|哪些)|(?:现在|已经).{0,5}(?:可以继续|准备好了)|继续问|"
+        r"\bwhat(?:'s| is) next\b|\bnext step\b|\bready to (?:continue|proceed)\b|"
+        r"\bwhat.{0,15}(?:still missing|else do you need)\b", text, re.I))
 
 
 def update_deferred_questions(case: Case, body: str) -> None:
@@ -221,6 +236,8 @@ def received_context(case: Case) -> str:
                 "personal_sponsor": "someone is helping fund your trip",
             },
         }
+        if facts.get("funding_source") == case.profile.funding_source and case.profile.funding_source:
+            phrases["funding_source"][case.profile.funding_source] = funding_wording(case, language="en")
         received = [values[facts[key]] for key, values in phrases.items()
                     if facts.get(key) in values]
         if received:
@@ -246,6 +263,8 @@ def received_context(case: Case) -> str:
         parts.append(occupations[facts["occupation_status"]])
     funding = {"self": "费用由你自己承担", "employer_or_school": "费用由雇主或学校承担",
                "personal_sponsor": "这次有个人资助"}
+    if facts.get("funding_source") == case.profile.funding_source and case.profile.funding_source:
+        funding[case.profile.funding_source] = funding_wording(case, language="zh")
     if facts.get("funding_source") in funding:
         parts.append(funding[facts["funding_source"]])
     if parts:
@@ -399,7 +418,8 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
     # An initial enquiry should not receive the entire form and document checklist at once.
     documents = []
     requested_list = document_list_requested(case)
-    if not questions or case.documents or requested_list:
+    paused = case.question_plan == [] and bool(case.pending_question_fields)
+    if (not questions and not paused) or case.documents or requested_list:
         documents = [
             document_label(case, item)
             for item in case.requirements
@@ -424,7 +444,7 @@ def change_acknowledgement(case: Case) -> str | None:
     zh = case.customer_language == "zh"
     changes = ("；" if zh else "; ").join(
         f"{fact_label(case, key)}{'：' if zh else ': '}"
-        f"{VALUE_LABELS_ZH.get(value, value) if zh else value.replace('_', ' ')}"
+        f"{funding_label(case, language=case.customer_language) if key == 'funding_source' and value == case.profile.funding_source else VALUE_LABELS_ZH.get(value, value) if zh else value.replace('_', ' ')}"
         for key, value in case.latest_changes.items()
     )
     if zh:
@@ -490,7 +510,7 @@ def blocked_customer_message(case: Case) -> str:
             context = context[0].upper() + context[1:]
         acknowledgements.append(context)
     if (not acknowledgements and not case.customer_answers and not issues
-            and questions and re.search(
+            and re.search(
                 r"(?:还没|尚未|还没有).{0,8}(?:核对|检查|看过).{0,8}(?:摘要|信息)|"
                 r"(?:haven't|have not).{0,12}(?:checked|reviewed).{0,12}(?:summary|details)",
                 latest_reply_text(case.latest_customer_message), re.I,
@@ -502,21 +522,29 @@ def blocked_customer_message(case: Case) -> str:
         )
     if acknowledgements:
         intro = ("" if zh else " ").join(acknowledgements)
+    elif (case.pending_question_fields and len(questions) == 1
+          and customer_requests_next_step(case.latest_customer_message)):
+        intro = "可以，我们先补一项。" if zh else "Sure. Let's take one detail at a time."
     else:
         intro = (
-            "收到，我再了解一下你的情况。"
-            if zh
-            else "We can work through this together; you don't need to have every document ready at once."
+            ("好的，等你方便补充资料时，我们再接着准备。" if zh
+             else "Of course. We can pick this up when you're ready to add the remaining details.")
+            if case.question_plan == [] and case.pending_question_fields
+            else ("收到，我再了解一下你的情况。" if zh
+                  else "We can work through this together; you don't need to have every document ready at once.")
         )
     # A concrete acknowledgement already opens the reply; do not restart the introduction.
-    contextual = bool(acknowledgements)
-    sections = [intro] if contextual else ([] if case.customer_answers else [greeting, intro])
+    contextual = bool(acknowledgements) or bool(case.pending_question_fields and len(questions) == 1
+        and customer_requests_next_step(case.latest_customer_message))
+    sections = ([intro] if contextual or (case.question_plan == [] and case.pending_question_fields)
+                else ([] if case.customer_answers else [greeting, intro]))
     if case.latest_deferred_fields:
         sections.append(
             "日期先留空，等你确定后再补。我们先整理其他信息。"
             if zh else "We can leave the dates open for now and collect the other details first."
         )
-    elif case.deferred_fields and not questions and not issues and not documents:
+    elif (case.deferred_fields and not questions and not issues and not documents
+          and not case.pending_question_fields):
         sections.append(
             "日期确定后再告诉我就好，已经提供的信息会保留。具体日期补齐前，还不能完成最终核对。"
             if zh else "Let me know when your dates are decided; the details you've already provided are retained. "
@@ -571,6 +599,8 @@ def confirmation_message(case: Case, *, profile_only: bool = False) -> str:
             display = str(value)
             if isinstance(value, bool):
                 display = ("是" if value else "否") if zh else ("Yes" if value else "No")
+            elif field == "funding_source":
+                display = funding_label(case, language=case.customer_language)
             elif zh:
                 display = VALUE_LABELS_ZH.get(display, display)
             elif field in {"funding_source", "occupation_status", "visit_purpose"}:

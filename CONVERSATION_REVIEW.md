@@ -365,3 +365,61 @@ The registered-sender Gmail worker was reloaded under its existing state-directo
 The existing one-case database and sent-message history were preserved. No historic messages were
 manually replayed or resent, and the optional guarded-draft flag remains off. This proves loading
 and polling; the new wording has not yet been observed in a new recipient-side Gmail exchange.
+
+## Sent-aware pending questions and specific payer wording, 2026-09-04
+
+The next experiment addresses two defects retained in the prior review, rather than calling the
+earlier eight mechanical passes complete. A case now distinguishes missing facts, unanswered
+questions actually sent to the customer, and the stable question plan for this reply. Correcting
+the trip or asking a different question does not automatically repeat the unanswered identity
+form. An explicit request to continue selects one missing field. Supplying those details later
+still updates the original case and allows the next preparation step. The wording model cannot
+reopen a paused intake question; requirements, evidence, confirmations and release gates are
+unchanged. Pausing is not marking facts complete, giving consent, or scheduling a reminder.
+
+The question ledger keeps a sent event reference and the latest candidate reference per field.
+An unsent/failed draft does not mean the customer was asked. Legacy snapshots can recover the last
+question set only from the matching sent workflow reply. A new migration regression exposed that
+the workflow message hash differs from the outbox row ID; matching now reconstructs the workflow
+hash from the event and plan. This regression failed before the correction, then passed. Existing
+cases are migrated only while processing a new eligible event, not by manually rewriting live data.
+
+`funding_wording.py` refines display labels from current accepted funding evidence, not from a
+student's occupation or arbitrary words elsewhere in the mail. Direct statements such as school
+payment can be displayed as school payment, without the combined internal enum. The helper rejects
+visible negation, quotation, previous arrangements, partial/mixed funding, low-confidence,
+superseded and conflicting evidence. It changes no fact or proof status. Its strict whole-excerpt
+matcher still falls back to the broad category for unsupported longer phrasing, and it cannot
+reconstruct context omitted by the upstream extractor. These remain explicit limitations.
+
+The six new conversation integration scenarios were also run against baseline `2e710f6` by loading
+its four relevant source modules in a temporary process without changing the worktree: three passed
+and three failed (correction re-asking, unreviewed-summary re-asking, and three-field resumption).
+The updated implementation passes all six plus the legacy-upgrade regression, reopening SQLite
+on every turn and checking exact captured body, persistence, no consent and replay/no-resend.
+
+`scripts/gmail_conversation_probe.py --semantic-intent --question-frontier --output NEW_REPORT.json`
+adds two turns to each language: explicit resumption and a later dotted birthday/name response.
+The single real DeepSeek run is retained in `eval_output/gmail_question_frontier_2026-09-04.json`.
+All 12 fictional turns passed, including specific school/university wording, no repeated pending
+questions on turns 3/4, one-field resumption, later identity retention and duplicate-event checks.
+Reading the actual captured replies confirmed the third reply also acknowledges the new dates.
+This uses real extraction, reviewed wording and captured Gmail transport, not real sending.
+
+Before release, an independent state-flow review found another combination missing from the
+12-turn report: an unsent question draft followed by a sent pure "I'll reply later" acknowledgement
+incorrectly associated candidate questions with the receipt. The service now selects an empty
+question plan for that receipt and records no new question references. The added regression checks
+the subsequent turn really asks those still-unseen questions. This was a pacing defect, not a release
+gate bypass; it was corrected before restarting the live worker.
+
+The local suite has 601 passing tests, with lint and typing checks passing (56 source files).
+Naturalness is still not fully accepted: acknowledgements can be terse and the next fresh question
+batch can still contain three fields. No independent customer usability score, Gmail recipient-side
+proof for this wording, broader live outage proof, or ordinary-material final ZIP is claimed.
+
+The registered-sender worker was reloaded under its state lock after these checks. PID 55039 was
+confirmed live and completed an idle cycle at 2026-09-04T10:26:59Z. The same one-case/eight-sent-reply
+state was preserved across this reload. No historic mail was replayed or manually resent, no sender
+scope was expanded, and the optional guarded-draft transport remains disabled. Recipient-side
+validation of the new pacing is still outstanding.

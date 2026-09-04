@@ -69,6 +69,8 @@ def main() -> None:
                         help='Capture real model prose before the guard and automatic Gmail replacement')
     parser.add_argument('--guarded-sending', action='store_true',
                         help='Capture the opt-in revalidated workflow-draft sending path')
+    parser.add_argument('--question-frontier', action='store_true',
+                        help='Test unanswered-question pause, explicit resumption and later identity facts')
     args = parser.parse_args()
     if args.output.exists():
         parser.error('Choose a new report path; retained evidence must not be overwritten')
@@ -79,12 +81,20 @@ def main() -> None:
     report: dict[str, Any] = {'scope': 'real DeepSeek extraction; fictional text; captured Gmail sends',
         'model': 'deepseek-v4-flash', 'semantic_intent': args.semantic_intent,
         'model_prose': args.model_prose, 'guarded_sending': args.guarded_sending,
+        'question_frontier': args.question_frontier,
         'completed': False, 'results': []}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open('x') as output:
         json.dump(report, output)
     for language, messages in JOURNEYS.items():
         messages = list(messages)
+        if args.question_frontier:
+            messages.extend([
+                '现在可以继续了，下一步需要什么？' if language == 'zh'
+                else "I'm ready to continue. What is the next step?",
+                '护照上的姓名是示例申请人，我的生日是1998.5.12。' if language == 'zh'
+                else 'My passport name is Example Applicant. My date of birth is 1998.5.12.',
+            ])
         if args.semantic_intent:
             messages[1] = (
                 '我在读大学，自己出钱。得等学校公布假期安排之后，才能告诉你哪天出发和回来。请先把需要的材料清单发给我。'
@@ -150,6 +160,20 @@ def main() -> None:
                     if index >= 2:
                         checks['corrected_dates'] = (case.profile.planned_arrival_date == date(2026, 11, 10)
                             and case.profile.planned_departure_date == date(2026, 11, 17))
+                    if args.question_frontier:
+                        if index == 2:
+                            checks['specific_payer_preserved'] = (
+                                '费用由谁承担：学校' in reply and '雇主或学校' not in reply
+                                if language == 'zh' else 'university' in reply and 'employer or school' not in reply)
+                        if index in {2, 3}:
+                            checks['unanswered_questions_not_reasked'] = (
+                                next_fact_questions(case) == [] and '?' not in reply and '？' not in reply)
+                        if index == 4:
+                            checks['explicit_resumption_one_field'] = len(next_fact_questions(case)) == 1
+                        if index == 5:
+                            checks['later_identity_retained'] = (case.profile.date_of_birth == date(1998, 5, 12)
+                                and bool(case.profile.full_name)
+                                and not {'full_name', 'date_of_birth'} & set(next_fact_questions(case)))
                     stored = next(row for row in store.list_outbox() if row['event_id'] == event.id)
                     checks['exact_persisted_body'] = stored['payload'] == reply
                     count = len(store.list_outbox())
@@ -158,6 +182,8 @@ def main() -> None:
                     report['results'].append({'language': language, 'turn': index + 1, 'input': body,
                         'profile': case.profile.model_dump(mode='json'), 'checks': checks, 'plan': plan,
                         'deferred_fields': case.deferred_fields,
+                        'pending_question_fields': case.pending_question_fields,
+                        'question_plan': case.question_plan,
                         'raw_model_draft': getattr(model, 'raw_reply', None),
                         'guarded_model_draft': guarded_draft, 'render_fallback': render_fallback,
                         'render_error': render_error,

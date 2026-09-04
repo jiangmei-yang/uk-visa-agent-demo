@@ -26,7 +26,12 @@ from visa_agent.domain.models import (
     WorkflowStage,
 )
 from visa_agent.domain.policy import Policy
-from visa_agent.domain.rules import advance_stage, evaluate_gate, run_consistency_checks
+from visa_agent.domain.rules import (
+    advance_stage,
+    evaluate_gate,
+    required_profile_facts,
+    run_consistency_checks,
+)
 from visa_agent.llm.guarded import ensure_guarded
 from visa_agent.llm.ports import LLMClient
 from visa_agent.storage.sqlite import SQLiteStore
@@ -34,6 +39,7 @@ from visa_agent.workflow.adviser_guidance import APPLICATION_URL, preparation_gu
 from visa_agent.workflow.conversation import (
     clear_natural_confirmation,
     confirmation_has_caveat,
+    customer_requests_next_step,
     latest_reply_text,
     next_fact_questions,
     summary_fingerprint,
@@ -115,6 +121,25 @@ class WorkflowService:
                 )
                 return case, False, plan
 
+        prior_outbox = [row for row in self.store.list_outbox() if row["case_id"] == case.id]
+        sent_events = {row["event_id"] for row in prior_outbox if row["status"] == "SENT"}
+        # Existing deployments have the last question set but no event ledger yet.
+        # Associate it only with the matching, actually sent last reply, not arbitrary history.
+        if not case.question_event_ids and case.outbound_message_ids:
+            last_reply = next((row for row in prior_outbox
+                               if stable_id("message", f"{row['event_id']}:{row['message_type']}")
+                               == case.outbound_message_ids[-1] and row["status"] == "SENT"), None)
+            if last_reply:
+                case.question_event_ids = {field: [last_reply["event_id"]] for field in case.last_requested_fields}
+        previously_asked = [field for field, event_ids in case.question_event_ids.items()
+                            if any(event_id in sent_events for event_id in event_ids)]
+        prior_pending = [field for field in previously_asked
+                         if field not in case.deferred_fields and hasattr(case.profile, field)
+                         and (getattr(case.profile, field) is None
+                              or (field == "route_confirmed_standard_visitor" and not getattr(case.profile, field)))]
+        case.question_plan = None
+        case.pending_question_fields = []
+
         # Quoted messages are history, never a new instruction or fresh consent.
         # Recover a previously missed deferral from the saved latest customer turn.
         # This supports existing cases after a parser fix without replaying an event or email.
@@ -122,7 +147,7 @@ class WorkflowService:
         customer_event = event.model_copy(
             update={
                 "body": latest_reply_text(event.body),
-                "requested_fields": [field for field in case.last_requested_fields
+                "requested_fields": [field for field in (case.last_requested_fields or prior_pending)
                                      if field not in case.deferred_fields],
                 "known_profile": case.profile.model_dump(mode="json"),
             }
@@ -248,8 +273,6 @@ class WorkflowService:
             )
             case.confirmation_request_event_id = event.id
         if plan == "blocked" and not waiting_acknowledgement(case):
-            sent_events = {row["event_id"] for row in self.store.list_outbox()
-                           if row["case_id"] == case.id and row["status"] == "SENT"}
             sent_topics = {topic for topic, source_event in case.guidance_events.items()
                            if source_event in sent_events}
             guidance = preparation_guidance(case, self.today_provider(), sent_topics)
@@ -258,7 +281,30 @@ class WorkflowService:
                 case.guidance_events[topic] = event.id
             if any(APPLICATION_URL in answer for answer in case.customer_answers):
                 case.guidance_events["application_overview_v1"] = event.id
-        case.last_requested_fields = next_fact_questions(case) if plan == "blocked" else []
+        if plan == "blocked":
+            candidates = next_fact_questions(case)
+            case.pending_question_fields = [field for field in prior_pending
+                if field in required_profile_facts(case) and field not in case.deferred_fields and (
+                    getattr(case.profile, field) is None
+                    or (field == "route_confirmed_standard_visitor" and not getattr(case.profile, field)))]
+            answered_fields = set(case.latest_received_facts) | set(case.latest_changes)
+            if waiting_acknowledgement(case):
+                # This renderer emits only a receipt. Never record unseen candidate questions
+                # against that receipt's SENT event, even when an older draft was never sent.
+                case.question_plan = []
+            elif case.pending_question_fields and customer_requests_next_step(customer_event.body):
+                case.question_plan = candidates[:1]
+            elif case.pending_question_fields and not answered_fields.intersection(prior_pending):
+                # Address a correction/question/later-reply instead of repeating the unanswered form.
+                case.question_plan = []
+            else:
+                case.question_plan = candidates
+            case.last_requested_fields = next_fact_questions(case)
+            for field in case.last_requested_fields:
+                delivered_ids = [value for value in case.question_event_ids.get(field, []) if value in sent_events]
+                case.question_event_ids[field] = list(dict.fromkeys(delivered_ids[-1:] + [event.id]))
+        else:
+            case.last_requested_fields = []
         message = self.llm.render_message(case, plan)
         message_id = stable_id("message", f"{event.id}:{plan}")
         if message_id not in case.outbound_message_ids:

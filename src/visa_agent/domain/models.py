@@ -182,6 +182,11 @@ class Case(BaseModel):
     latest_customer_message: str = ""
     latest_document_names: list[str] = Field(default_factory=list)
     last_requested_fields: list[str] = Field(default_factory=list)
+    # Pending questions are not missing facts that must be asked afresh each turn.
+    # Track delivery event IDs separately from the stable plan for this reply.
+    question_event_ids: dict[str, list[str]] = Field(default_factory=dict)
+    pending_question_fields: list[str] = Field(default_factory=list)
+    question_plan: list[str] | None = None
     confirmation_fingerprint: str | None = None
     confirmation_kind: str | None = None
     confirmation_request_event_id: str | None = None

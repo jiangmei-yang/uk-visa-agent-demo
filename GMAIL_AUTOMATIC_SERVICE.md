@@ -46,6 +46,12 @@ suppresses that unsolicited topic on later turns. This records sending, not whet
 it. New explicit questions can request the information again. Facts, date deferrals, evidence and
 consent remain in the same SQLite case across worker restarts.
 
+Sent question event references are also retained per case. An unrelated update does not automatically
+repeat unanswered questions; an explicit request to continue selects one missing field. Late answers
+still update the same case. Pending/failed drafts do not count as sent questions, and old snapshots
+recover only their matching last sent question set. This pacing has no authority to waive required
+facts, confirm a summary or release a pack.
+
 `--reply-style guarded-draft` is an opt-in candidate, not enabled in the installed LaunchAgent.
 Only blocked/intake drafts can pass through, and the sender revalidates them against current state.
 Confirmation summaries, held-update receipts and final-delivery restrictions remain controlled.
