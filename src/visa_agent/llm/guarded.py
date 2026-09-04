@@ -195,7 +195,7 @@ def deterministic_fallback_message(case: Case, plan: str) -> str:
             "Your review pack is ready for human review. This is not an approval prediction or a "
             "submitted visa application."
         )
-    return confirmation_message(case)
+    return confirmation_message(case, profile_only=plan == "awaiting_profile_confirmation")
 
 
 class GuardedLLM:

@@ -2,6 +2,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 from visa_agent.channels.automatic_reply import AutomaticGmailReplySender
 from visa_agent.channels.gmail import GmailAdapter
 from visa_agent.channels.outbound import OutboxDispatcher
@@ -16,6 +18,41 @@ class CaptureAdapter(GmailAdapter):
     def send_reply(self, **kwargs: Any) -> dict[str, Any]:
         self.calls.append(kwargs)
         return {"id": "accepted"}
+
+
+@pytest.mark.parametrize("language", ["zh", "en"])
+@pytest.mark.parametrize("plan", ["awaiting_profile_confirmation", "awaiting_confirmation"])
+def test_automatic_confirmation_preserves_what_customer_is_confirming(
+    tmp_path: Path, language: str, plan: str,
+) -> None:
+    store = SQLiteStore(tmp_path / "db")
+    now = datetime.now(UTC)
+    case = Case(id="c", external_thread_id="t", applicant_contact="user@example.test",
+                policy_version="v", customer_language=language)
+    case.profile.full_name = "Example Applicant"
+    event = InboundEvent(id="e", external_thread_id="t", sender=case.applicant_contact,
+                         subject="My application", body="Here are my details", channel="gmail",
+                         received_at=now)
+    store.commit_event(case, event, plan, "draft")
+    adapter = CaptureAdapter()
+    dispatcher = OutboxDispatcher(store, AutomaticGmailReplySender(adapter, store, "user@example.test"),
+                                  channel="gmail", allowed_message_types=(plan,))
+    try:
+        assert dispatcher.dispatch_due(now)[0].status == "SENT"
+        body = adapter.calls[0]["body"]
+        assert "Example Applicant" in body
+        assert store.list_outbox()[0]["payload"] == body
+        document_heading = "这次整理使用的材料" if language == "zh" else "CURRENT DOCUMENTS"
+        next_step = "继续准备所需材料" if language == "zh" else "continue with the supporting documents"
+        if plan == "awaiting_profile_confirmation":
+            assert next_step in body
+            assert document_heading not in body
+        else:
+            assert document_heading in body
+            assert next_step not in body
+        assert dispatcher.dispatch_due(now) == []
+    finally:
+        store.close()
 
 
 def test_backlog_withholds_old_drafts_without_delaying_latest_or_touching_uncertain(tmp_path):

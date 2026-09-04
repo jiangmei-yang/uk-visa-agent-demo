@@ -74,3 +74,18 @@ The Gmail worker was restarted under the existing state lock to load the context
 changes. Its next completed poll retained two processed events, two SENT replies, and zero packs;
 no replay or replacement of old replies was performed. These counts are a dated observation,
 not expected permanent service totals. No mailbox addresses or message bodies are published here.
+
+## Automatic confirmation scope regression
+
+The Gmail automatic sender regenerates deterministic wording before sending. An internal audit
+found that its fallback renderer treated `awaiting_profile_confirmation` as final confirmation,
+unlike the model guard's normal renderer. Consequently an information-only confirmation included
+the current-documents heading and said the next step was assembling the pack, even though the
+workflow still needed supporting documents. This was misleading wording, not observed gate bypass.
+
+Before the fix, the new sender-level regression failed for both Chinese and English profile
+confirmation; final confirmation passed. The renderer now preserves the profile-only flag. The
+four language/stage cases check the captured provider-bound body, persisted outbox wording and
+non-repetition on a second dispatch. All 312 local tests, lint and typing pass after the fix.
+These use a capture adapter, not new recipient-side observations. Final-pack automatic dispatch
+remains disabled in registered-sender service mode, as documented in GMAIL_AUTOMATIC_SERVICE.md.
