@@ -55,7 +55,22 @@ reprocessing, restart, original-event preservation, audit/export/deletion, inval
 finalized-case refusal, uncertain-send refusal and transaction rollback on queue-storage failure.
 No real applicant review action has been executed as part of these tests.
 
-## Still required
+## Final-delivery hold after new information
+
+A local regression reproduced a gap: an ordinary correction after pack generation was held,
+but the old ready outbox row could still be sent. Both Gmail and WhatsApp sender contracts
+returned SENT in the initial failing test (fake providers; no real outdated pack was sent).
+Final delivery now checks for unreviewed held applicant updates before provider invocation.
+The local pack-download endpoint also returns HTTP 409, retaining the historical ZIP on disk.
+Completed linked intake retries no longer count as unreviewed holds; queued/failed retries do.
+
+Additional local checks verify that an unrelated sender cannot block delivery and that a send
+already accepted by the provider still reconciles to SENT without retry or deleting the hold.
+This cannot recall an already sent attachment, and does not prove atomic cancellation of a
+provider request if new mail arrives during that request. The serialized Gmail worker and the
+pre-send check protect updates already known locally; late corrections still need reviewed revision.
+
+## Remaining human-review work
 
 Authenticated operator roles and a non-technical review UI remain unfinished. This command does
 not approve documents, resolve unsupported routes, retry older out-of-order updates or revise an

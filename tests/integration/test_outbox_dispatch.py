@@ -6,6 +6,8 @@ from pathlib import Path
 from threading import Barrier
 from types import SimpleNamespace
 
+import pytest
+
 from visa_agent.channels.outbound import (
     OutboxDispatcher,
     PermanentChannelError,
@@ -16,7 +18,11 @@ from visa_agent.channels.outbound import (
 from visa_agent.channels.twilio_whatsapp import TwilioWhatsAppSender
 from visa_agent.config import Settings
 from visa_agent.demo import run_demo
+from visa_agent.domain.models import InboundEvent
+from visa_agent.domain.policy import load_policy
+from visa_agent.llm.offline import OfflineFixtureLLM
 from visa_agent.storage.sqlite import SQLiteStore
+from visa_agent.workflow.service import WorkflowService
 
 
 class FakeSender:
@@ -52,6 +58,59 @@ def _demo_store(tmp_path: Path) -> SQLiteStore:
     )
     run_demo(settings, reset=True)
     return SQLiteStore(settings.database_path)
+
+
+@pytest.mark.parametrize("channel", ["gmail", "whatsapp_twilio"])
+def test_new_applicant_update_blocks_unsent_final_delivery(tmp_path, channel):
+    store = _demo_store(tmp_path)
+    case = store.list_cases()[0]
+    now = datetime(2026, 9, 4, 10, tzinfo=UTC)
+    with store.connection:
+        store.connection.execute("UPDATE outbox SET channel=?, send_deadline=? WHERE message_type='ready'",
+                                 (channel, (now + timedelta(hours=24)).isoformat()))
+    workflow = WorkflowService(store, load_policy(Path("knowledge/uk_standard_visitor_2026-02-25.yaml")), OfflineFixtureLLM())
+    event = InboundEvent(id="late-correction", external_thread_id=case.external_thread_id,
+        sender=case.applicant_contact, subject="日期有变", body="离开日期有变，请先不要发旧材料包。",
+        received_at=now)
+    assert workflow.process(event)[2] == "finalized_case_held"
+    sender = FakeSender(["must-not-be-sent"])
+    result = OutboxDispatcher(store, sender, allowed_message_types=("ready",)).dispatch_due(now)
+    assert result[0].status == "FAILED"
+    assert sender.requests == []
+    assert "review" in next(row for row in store.list_outbox() if row["message_type"] == "ready")["last_error"]
+    store.close()
+
+
+def test_late_hold_does_not_resend_or_erase_a_provider_accepted_delivery(tmp_path):
+    store = _demo_store(tmp_path)
+    case = store.list_cases()[0]
+    now = datetime(2026, 9, 4, 10, tzinfo=UTC)
+    with store.connection:
+        store.connection.execute("UPDATE outbox SET status='SENDING' WHERE message_type='ready'")
+    event = InboundEvent(id="after-send-update", external_thread_id=case.external_thread_id,
+        sender=case.applicant_contact, subject="Change", body="My dates changed", received_at=now)
+    workflow = WorkflowService(store, load_policy(Path("knowledge/uk_standard_visitor_2026-02-25.yaml")), OfflineFixtureLLM())
+    workflow.process(event)
+    sender = FakeSender([], find_outcomes=["already-accepted"])
+    dispatcher = OutboxDispatcher(store, sender, allowed_message_types=("ready",))
+    assert dispatcher.reconcile_sending(sender, now)[0].status == "SENT"
+    assert dispatcher.dispatch_due(now) == [] and sender.requests == []
+    assert len(store.list_held_inbound(case.id)) == 1
+    store.close()
+
+
+def test_unrelated_sender_cannot_block_a_confirmed_pack(tmp_path):
+    store = _demo_store(tmp_path)
+    case = store.list_cases()[0]
+    now = datetime(2026, 9, 4, 10, tzinfo=UTC)
+    event = InboundEvent(id="outsider", external_thread_id=case.external_thread_id,
+        sender="outsider@example.test", subject="Stop", body="Don't send this", received_at=now)
+    workflow = WorkflowService(store, load_policy(Path("knowledge/uk_standard_visitor_2026-02-25.yaml")), OfflineFixtureLLM())
+    assert workflow.process(event)[2] == "sender_mismatch_rejected"
+    sender = FakeSender(["confirmed-delivery"])
+    outcome = OutboxDispatcher(store, sender, allowed_message_types=("ready",)).dispatch_due(now)
+    assert outcome[0].status == "SENT" and len(sender.requests) == 1
+    store.close()
 
 
 def test_outbox_dispatches_each_reply_once_and_attaches_ready_pack(tmp_path: Path) -> None:

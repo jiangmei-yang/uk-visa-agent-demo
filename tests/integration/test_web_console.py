@@ -136,6 +136,29 @@ def test_pack_download_is_withheld_if_current_gate_fails(tmp_path: Path) -> None
     assert error.value.status_code == 409
 
 
+def test_pack_download_is_withheld_after_a_new_held_update(tmp_path: Path) -> None:
+    from datetime import UTC, datetime
+
+    from visa_agent.domain.models import InboundEvent
+
+    test_settings = Settings(database_path=tmp_path / "visa.db", output_dir=tmp_path / "output",
+        policy_path=Path("knowledge/uk_standard_visitor_2026-02-25.yaml"))
+    result = run_demo(test_settings, reset=True)
+    store = SQLiteStore(test_settings.database_path)
+    case = store.get_case(result.case.id)
+    event = InboundEvent(id="new-correction", external_thread_id=case.external_thread_id,
+        sender=case.applicant_contact, body="Please do not use the old dates.", subject="Correction",
+        received_at=datetime.now(UTC))
+    store.record_rejected_event(event_id=event.id, case_id=case.id, thread_id=case.external_thread_id,
+        reason_code="FINALIZED_CASE_NEW_EVENT", detail="Revision required", held_event=event)
+    store.close()
+    web.settings = test_settings
+    with pytest.raises(HTTPException) as error:
+        web.get_pack(case.id)
+    assert error.value.status_code == 409
+    assert Path(case.delivery_path).exists()  # Retain the historical artifact; do not destroy it.
+
+
 def test_case_can_be_exported_and_exactly_confirmed_for_local_deletion(tmp_path: Path) -> None:
     test_settings = Settings(
         database_path=tmp_path / "visa.db",

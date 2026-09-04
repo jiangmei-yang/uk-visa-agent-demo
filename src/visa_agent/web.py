@@ -180,9 +180,16 @@ def delete_case(case_id: str, request: Request) -> Response:
 
 @app.get("/api/cases/{case_id}/pack")
 def get_pack(case_id: str) -> FileResponse:
-    case = load_case(case_id)
+    request_store = SQLiteStore(settings.database_path)
+    try:
+        case = request_store.get_case(case_id)
+        held_updates = request_store.has_unreviewed_held_updates(case_id)
+    finally:
+        request_store.close()
     if case is None or case.delivery_path is None:
         raise HTTPException(status_code=404, detail="Review pack is not available")
+    if held_updates:
+        raise HTTPException(status_code=409, detail="Review pack is withheld pending review of applicant updates")
     gate = evaluate_gate(case, policy, date.today())
     if not gate.allowed:
         raise HTTPException(

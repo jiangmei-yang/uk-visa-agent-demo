@@ -383,6 +383,17 @@ class SQLiteStore:
         ).fetchall()
         return [dict(row) for row in rows]
 
+    def has_unreviewed_held_updates(self, case_id: str) -> bool:
+        row = self.connection.execute("""
+            SELECT 1 FROM held_inbound_events held WHERE held.case_id=?
+            AND NOT EXISTS (
+                SELECT 1 FROM review_actions action
+                JOIN processed_events processed ON processed.event_id=action.retry_event_id
+                WHERE action.held_event_id=held.id AND action.case_id=held.case_id
+            ) LIMIT 1
+        """, (case_id,)).fetchone()
+        return row is not None
+
     def record_inbound_failure(
         self,
         *,

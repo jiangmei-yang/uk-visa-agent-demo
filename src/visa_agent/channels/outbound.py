@@ -150,6 +150,8 @@ class OutboxDispatcher:
         case = self.store.get_case(str(row["case_id"]))
         if case is None:
             raise PermanentChannelError("Outbox case no longer exists")
+        if str(row["message_type"]) == "ready" and self.store.has_unreviewed_held_updates(case.id):
+            raise PermanentChannelError("Final delivery withheld: newer or held applicant updates require review")
         raw_deadline = row.get("send_deadline")
         if raw_deadline and now > datetime.fromisoformat(str(raw_deadline)):
             raise PermanentChannelError("The channel's free-form reply window has expired")
