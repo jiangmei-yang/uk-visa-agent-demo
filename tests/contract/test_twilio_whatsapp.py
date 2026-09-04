@@ -42,6 +42,7 @@ class Downloader:
 
 def _form(**overrides: str) -> dict[str, str]:
     result = {
+        "AccountSid": "AC-synthetic",
         "MessageSid": "SM-synthetic-1",
         "From": "whatsapp:+85255550123",
         "To": "whatsapp:+14155238886",
@@ -72,6 +73,8 @@ def test_signed_text_webhook_becomes_channel_neutral_event(tmp_path: Path) -> No
         "https://example.test/webhooks/twilio/whatsapp",
         tmp_path,
         signature_validator=validator,
+        account_sid="AC-synthetic",
+        service_address="whatsapp:+14155238886",
     )
     form = _form()
 
@@ -97,6 +100,8 @@ def test_invalid_webhook_signature_is_rejected_before_parsing(tmp_path: Path) ->
         "https://example.test/webhooks/twilio/whatsapp",
         tmp_path,
         signature_validator=SignatureValidator(valid=False),
+        account_sid="AC-synthetic",
+        service_address="whatsapp:+14155238886",
     )
 
     with pytest.raises(PermissionError, match="signature"):
@@ -111,6 +116,8 @@ def test_one_pdf_media_is_downloaded_from_allowlisted_twilio_host(tmp_path: Path
         tmp_path,
         media_downloader=downloader,
         signature_validator=SignatureValidator(),
+        account_sid="AC-synthetic",
+        service_address="whatsapp:+14155238886",
     )
     media_url = "https://api.twilio.com/2010-04-01/Accounts/AC/Messages/SM/Media/ME"
 
@@ -149,6 +156,8 @@ def test_unsupported_or_untrusted_media_fails_closed(
         tmp_path,
         media_downloader=Downloader(b"content"),
         signature_validator=SignatureValidator(),
+        account_sid="AC-synthetic",
+        service_address="whatsapp:+14155238886",
     )
 
     with pytest.raises(ValueError):

@@ -250,7 +250,8 @@ async def twilio_whatsapp_webhook(request: Request) -> Response:
     account_sid = os.getenv("TWILIO_ACCOUNT_SID", "")
     auth_token = os.getenv("TWILIO_AUTH_TOKEN", "")
     public_url = os.getenv("TWILIO_WEBHOOK_PUBLIC_URL", "")
-    if not account_sid or not auth_token or not public_url:
+    service_address = os.getenv("TWILIO_WHATSAPP_FROM", "")
+    if not account_sid or not auth_token or not public_url or not service_address:
         raise HTTPException(status_code=503, detail="WhatsApp sandbox is not configured")
     raw_body = await request.body()
     if len(raw_body) > MAX_WEBHOOK_BODY_BYTES:
@@ -270,10 +271,12 @@ async def twilio_whatsapp_webhook(request: Request) -> Response:
             public_url,
             settings.output_dir / "whatsapp_uploads",
             media_downloader=TwilioMediaDownloader(account_sid, auth_token),
+            account_sid=account_sid,
+            service_address=service_address,
         )
         TwilioWebhookReceiver(boundary, store).receive(form, signature)
     except PermissionError as error:
-        raise HTTPException(status_code=403, detail="Webhook signature is invalid") from error
+        raise HTTPException(status_code=403, detail="Webhook authentication or routing is invalid") from error
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     except OSError as error:

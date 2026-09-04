@@ -45,6 +45,10 @@ class GmailHistoryExpiredError(Exception):
     """A full resync is required; never advance the cursor past unavailable history."""
 
 
+class GmailMessageUnavailableError(Exception):
+    """Metadata returned 404; this is not proof of deletion or safe to ignore."""
+
+
 def _page_token(response: dict[str, Any]) -> str | None:
     token = response.get("nextPageToken")
     if token is not None and (not isinstance(token, str) or not token):
@@ -88,10 +92,15 @@ class GmailAdapter:
         return _history_id(result.get("historyId"))
 
     def get_intake_metadata(self, message_id: str) -> dict[str, Any]:
-        result = self.service.users().messages().get(
-            userId=self.user_id, id=message_id, format="metadata",
-            metadataHeaders=["From", "To", "Subject", "Auto-Submitted", "List-Id", "Precedence"],
-        ).execute()
+        try:
+            result = self.service.users().messages().get(
+                userId=self.user_id, id=message_id, format="metadata",
+                metadataHeaders=["From", "To", "Subject", "Auto-Submitted", "List-Id", "Precedence"],
+            ).execute()
+        except Exception as error:
+            if getattr(getattr(error, "resp", None), "status", None) == 404:
+                raise GmailMessageUnavailableError("Gmail candidate metadata is unavailable") from None
+            raise _map_gmail_error(error) from None
         return dict(result)
 
     def list_message_page(self, query: str, page_token: str | None = None) -> GmailMessagePage:

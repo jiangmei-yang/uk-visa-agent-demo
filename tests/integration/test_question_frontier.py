@@ -163,8 +163,9 @@ def assert_no_intake_questions(case: Case, body: str) -> None:
 def test_first_sent_turn_asks_identity_without_restarting_unknown_dates(tmp_path: Path) -> None:
     conversation = Conversation(tmp_path)
     case, body = conversation.turn(FIRST_BODY)
-    assert next_fact_questions(case) == ["full_name", "date_of_birth"]
-    assert all(QUESTION_TEXT_ZH[field] in body for field in IDENTITY_FIELDS)
+    assert next_fact_questions(case) == ["full_name"]
+    assert QUESTION_TEXT_ZH["full_name"] in body
+    assert QUESTION_TEXT_ZH["date_of_birth"] not in body
     assert len(conversation.gmail.calls) == 1
     assert case.profile.occupation_status == "student"
     assert case.profile.funding_source == "self"
@@ -234,11 +235,12 @@ def test_identity_volunteered_after_pause_is_saved_and_advances_without_reasking
 def test_unsent_draft_is_not_treated_as_a_question_the_customer_received(tmp_path: Path) -> None:
     conversation = Conversation(tmp_path)
     first, _ = conversation.turn(FIRST_BODY, send=False)
-    assert next_fact_questions(first) == ["full_name", "date_of_birth"]
+    assert next_fact_questions(first) == ["full_name"]
     assert conversation.gmail.calls == []
     case, body = conversation.turn(CORRECTION_BODY)
-    assert next_fact_questions(case) == ["full_name", "date_of_birth"]
-    assert all(QUESTION_TEXT_ZH[field] in body for field in IDENTITY_FIELDS)
+    assert next_fact_questions(case) == ["full_name"]
+    assert QUESTION_TEXT_ZH["full_name"] in body
+    assert QUESTION_TEXT_ZH["date_of_birth"] not in body
     assert len(conversation.gmail.calls) == 1
     store = SQLiteStore(conversation.db_path)
     try:
@@ -263,6 +265,7 @@ def test_legacy_case_recovers_only_the_matching_sent_question_set(tmp_path: Path
         restored.question_event_ids = {}
         restored.pending_question_fields = []
         restored.question_plan = None
+        restored.last_requested_fields = ["full_name", "date_of_birth"]
         store.save_case(restored)
     finally:
         store.close()
@@ -281,6 +284,7 @@ def test_pure_waiting_receipt_does_not_claim_unsent_questions_were_asked(tmp_pat
     assert next_fact_questions(waiting) == []
     assert all("frontier-inbound-2" not in ids for ids in waiting.question_event_ids.values())
     case, body = conversation.turn(CORRECTION_BODY)
-    assert next_fact_questions(case) == ["full_name", "date_of_birth"]
-    assert all(QUESTION_TEXT_ZH[field] in body for field in IDENTITY_FIELDS)
+    assert next_fact_questions(case) == ["full_name"]
+    assert QUESTION_TEXT_ZH["full_name"] in body
+    assert QUESTION_TEXT_ZH["date_of_birth"] not in body
     assert case.pending_question_fields == []

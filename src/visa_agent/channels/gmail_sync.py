@@ -39,6 +39,10 @@ class GmailSyncJournal:
             CREATE TABLE IF NOT EXISTS recovery_actions (revision INTEGER PRIMARY KEY,
                 actor TEXT NOT NULL, reason TEXT NOT NULL, previous_checkpoint TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+            CREATE TABLE IF NOT EXISTS candidate_metadata_errors (id TEXT PRIMARY KEY,
+                code TEXT NOT NULL, observations INTEGER NOT NULL DEFAULT 1,
+                first_seen TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_seen TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, resolved_at TEXT);
         """)
         with self.connection:
             self.connection.execute("INSERT OR IGNORE INTO binding VALUES (1, ?)", (scope,))
@@ -135,6 +139,26 @@ class GmailSyncJournal:
         """Discovery order is NOT message chronology; runner must sort provider timestamps."""
         return [row[0] for row in self.connection.execute(
             "SELECT id FROM candidates WHERE status='pending' ORDER BY rowid")]
+
+    def record_metadata_unavailable(self, identifier: str) -> None:
+        """Retain a redacted observation, not an acknowledgement or disposition."""
+        with self.connection:
+            if self.connection.execute("SELECT status FROM candidates WHERE id=?", (identifier,)).fetchone() != ("pending",):
+                raise ValueError("Metadata observation requires a pending Gmail candidate")
+            self.connection.execute("""INSERT INTO candidate_metadata_errors(id,code)
+                VALUES (?,'METADATA_NOT_FOUND') ON CONFLICT(id) DO UPDATE SET
+                observations=observations+1, last_seen=CURRENT_TIMESTAMP, resolved_at=NULL""", (identifier,))
+
+    def metadata_available(self, identifier: str) -> None:
+        """Successful metadata lookup resolves the observation, not the candidate."""
+        with self.connection:
+            self.connection.execute("""UPDATE candidate_metadata_errors SET resolved_at=CURRENT_TIMESTAMP
+                WHERE id=? AND resolved_at IS NULL""", (identifier,))
+
+    def unavailable_metadata(self) -> list[dict[str, str | int]]:
+        return [dict(zip(("id", "code", "observations", "first_seen", "last_seen"), row, strict=True))
+                for row in self.connection.execute("""SELECT id,code,observations,first_seen,last_seen
+                    FROM candidate_metadata_errors WHERE resolved_at IS NULL ORDER BY first_seen,id""")]
 
     def acknowledge(self, identifier: str, outcome: Literal["processed", "ignored", "rejected"],
                     reason: str | None = None) -> None:

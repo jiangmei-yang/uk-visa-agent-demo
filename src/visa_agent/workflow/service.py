@@ -270,6 +270,10 @@ class WorkflowService:
             (
                 has_explicit_confirmation_line(customer_event.body, PROFILE_CONFIRMATION_LINES)
                 and not confirmation_has_caveat(customer_event.body)
+                # Gmail exact wording has no more authority than a natural reply:
+                # it must refer to the current profile summary actually sent.
+                and (case.primary_channel != "gmail"
+                     or (contextual_confirmation and prior_kind == "profile"))
             )
             or (contextual_confirmation and prior_kind == "profile" and natural_confirmation)
         ) and may_confirm and case.status != CaseStatus.HUMAN_REVIEW_REQUIRED:
@@ -352,6 +356,11 @@ class WorkflowService:
                            if source_event in sent_events}
             guidance = preparation_guidance(case, self.today_provider(), sent_topics)
             case.proactive_guidance_offered = bool(guidance)
+            if guidance and case.next_step_advice is not None and case.next_step_advice.kind == "question":
+                # The concrete preparation guidance supplies the useful answer;
+                # do not precede it with "first supply another missing detail".
+                case.customer_answers = [answer for answer in case.customer_answers
+                                         if answer != case.next_step_advice.message]
             for topic, answer in guidance:
                 case.customer_answers.append(answer)
                 case.guidance_events[topic] = event.id
@@ -369,7 +378,12 @@ class WorkflowService:
                 case.question_plan = []
             elif case.next_step_advice is not None:
                 field = case.next_step_advice.question_field
-                case.question_plan = [field] if field in candidates else []
+                # A travel-date range is one main question, with both asked
+                # fields retained in the SENT ledger. Do not split it into two
+                # emails merely because the next-step selector names arrival.
+                case.question_plan = (candidates if field == "planned_arrival_date"
+                    and candidates == ["planned_arrival_date", "planned_departure_date"]
+                    else [field] if field in candidates else [])
             elif quiet_preparation_resume(case):
                 # A resume with "that's all for now" is a receipt, even when
                 # a newly enforced completeness check finds another missing fact.
@@ -484,7 +498,12 @@ class WorkflowService:
                 )
             )
 
-    def _ingest_attachments(self, case: Case, event: InboundEvent) -> None:
+    def _ingest_attachments(
+        self, case: Case, event: InboundEvent, *, reread_attempt_id: str | None = None,
+    ) -> None:
+        # Only the audited local document-review operation supplies an attempt ID.
+        # Ordinary inbound delivery always retains hash deduplication. A reread keeps
+        # the original customer source event, but records distinct extraction IDs.
         existing_hashes = {document.sha256 for document in case.documents}
         for raw_path in event.attachment_paths:
             path = Path(raw_path)
@@ -492,9 +511,9 @@ class WorkflowService:
                 digest = sha256_file(path)
             except OSError:
                 digest = hashlib.sha256(f"{event.id}:{path.name}:unavailable".encode()).hexdigest()
-            if digest in existing_hashes:
+            if digest in existing_hashes and reread_attempt_id is None:
                 continue
-            document_id = stable_id("doc", digest)
+            document_id = stable_id("doc", f"{digest}:{reread_attempt_id}" if reread_attempt_id else digest)
             try:
                 inspection = self.document_reader(path)
                 kind, language, page_count, facts = (
@@ -508,7 +527,8 @@ class WorkflowService:
                 existing_hashes.add(digest)
                 continue
             supersedes_document_id: str | None = None
-            if kind == "conference_invitation" and not inspection.requires_review:
+            if (kind == "conference_invitation" and not inspection.requires_review
+                    and reread_attempt_id is None):
                 for old in case.documents:
                     if old.kind == kind and old.status == DocumentStatus.ACCEPTED_FOR_REVIEW:
                         supersedes_document_id = old.id

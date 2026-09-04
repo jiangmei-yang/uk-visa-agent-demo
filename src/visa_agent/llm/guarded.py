@@ -17,6 +17,7 @@ from visa_agent.domain.date_evidence import (
     has_calendar_day,
 )
 from visa_agent.domain.models import Case, CaseProfile, CaseStatus, InboundEvent
+from visa_agent.domain.sponsor_evidence import SPONSOR_FIELDS, sponsor_role_is_grounded
 from visa_agent.llm.ports import CasePatch, FactUpdate, LLMClient
 from visa_agent.workflow.conversation import (
     blocked_customer_message,
@@ -229,6 +230,14 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
             rejected_fields.add(update.field)
             accepted.pop(update.field, None)
             requires_review = True
+            continue
+
+        if update.field in SPONSOR_FIELDS and not sponsor_role_is_grounded(
+            update.field, update.value, update.source_excerpt, latest_reply_text(event.body),
+            known_profile=event.known_profile, requested_fields=event.requested_fields,
+        ):
+            # A host/relative is not automatically this applicant's sponsor. Keep
+            # ordinary unknown roles missing, without freezing unrelated intake.
             continue
 
         prior = accepted.get(update.field)

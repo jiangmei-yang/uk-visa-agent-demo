@@ -31,7 +31,10 @@ def example() -> Case:
 
 
 def test_material_drivers_are_asked_before_identity_details() -> None:
-    assert next_fact_questions(example())[:2] == ["occupation_status", "funding_source"]
+    case = example()
+    assert next_fact_questions(case) == ["occupation_status"]
+    case.profile.occupation_status = "student"
+    assert next_fact_questions(case) == ["funding_source"]
 
 
 def test_unknown_dates_are_deferred_but_cannot_pass_delivery_gate() -> None:
@@ -186,7 +189,7 @@ def test_followup_questions_keep_content_without_form_heading(language: str) -> 
     before = case.model_dump_json()
     text = deterministic_fallback_message(case, "blocked")
     questions = reply_items(case)[1]
-    assert len(questions) > 1
+    assert len(questions) == 1
     assert all(question in text for question in questions)
     assert "\n- " not in text
     assert "Could you help me with these details first?" not in text
@@ -218,12 +221,12 @@ def test_date_pair_is_one_question_without_losing_either_required_field(language
     case.profile.occupation_status = "student"
     case.profile.funding_source = "self"
     fields = next_fact_questions(case)
-    assert fields == ["planned_arrival_date", "planned_departure_date", "full_name"]
+    assert fields == ["planned_arrival_date", "planned_departure_date"]
     questions = reply_items(case)[1]
-    assert len(questions) == 2
+    assert len(questions) == 1
     assert ("哪天到英国、哪天离开" if language == "zh" else "arrive in and leave the UK") in questions[0]
     assert ("年份" if language == "zh" else "year") in questions[0]
-    assert ("姓名" if language == "zh" else "name") in questions[1]
+    assert not any("姓名" in question or "name" in question for question in questions)
     assert case.profile.planned_arrival_date is None
     assert case.profile.planned_departure_date is None
     assert not case.final_summary_confirmed

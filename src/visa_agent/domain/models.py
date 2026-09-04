@@ -98,6 +98,9 @@ class Document(BaseModel):
     page_count: int = 0
     received_at: datetime = Field(default_factory=utc_now)
     supersedes_document_id: str | None = None
+    # A reviewed extraction attempt of the same retained bytes, not a new applicant
+    # submission and not evidence that the earlier result has been superseded.
+    retry_of_document_id: str | None = None
     translation_for_document_id: str | None = None
 
 

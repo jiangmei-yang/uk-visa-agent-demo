@@ -42,13 +42,20 @@ class TwilioWhatsAppWebhook:
         document_dir: Path,
         media_downloader: MediaDownloader | None = None,
         signature_validator: SignatureValidator | None = None,
+        *,
+        account_sid: str,
+        service_address: str,
     ) -> None:
         if not auth_token:
             raise ValueError("Twilio auth token is required")
         if not public_url.startswith("https://"):
             raise ValueError("Twilio webhook public URL must use HTTPS")
+        if not account_sid or not service_address.startswith("whatsapp:+"):
+            raise ValueError("Twilio inbound account and WhatsApp service address are required")
         self.auth_token = auth_token
         self.public_url = public_url
+        self.account_sid = account_sid
+        self.service_address = service_address
         self.document_dir = document_dir
         self.media_downloader = media_downloader
         self.signature_validator = signature_validator
@@ -66,6 +73,10 @@ class TwilioWhatsAppWebhook:
             validator = validator_type(self.auth_token)
         if not signature or not validator.validate(self.public_url, form, signature):
             raise PermissionError("Invalid Twilio webhook signature")
+        # A valid signature authenticates the request, not its routing to this
+        # configured service. Reject a misrouted account/number before media I/O.
+        if form.get("AccountSid") != self.account_sid or form.get("To") != self.service_address:
+            raise PermissionError("Webhook account or recipient mismatch")
 
         message_sid = form.get("MessageSid", "").strip()
         sender = form.get("From", "").strip()

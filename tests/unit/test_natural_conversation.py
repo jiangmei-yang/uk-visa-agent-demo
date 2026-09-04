@@ -93,6 +93,7 @@ def test_actual_sponsor_name_remains_accepted() -> None:
     event = InboundEvent(
         id="e", external_thread_id="t", sender="a@example.test", subject="Visa",
         body="My mother is Mei Chen.", received_at=datetime.now(UTC),
+        known_profile={"funding_source": "personal_sponsor"}, requested_fields=["sponsor_name"],
     )
     result = validate_case_patch(event, CasePatch(updates=[FactUpdate(
         field="sponsor_name", value="Mei Chen", source_excerpt="My mother is Mei Chen.",
@@ -101,7 +102,7 @@ def test_actual_sponsor_name_remains_accepted() -> None:
     assert result.updates[0].value == "Mei Chen"
 
 
-def test_chinese_first_turn_asks_only_next_three_questions_without_internal_codes() -> None:
+def test_chinese_first_turn_asks_one_main_question_without_internal_codes() -> None:
     case = Case(
         id="c",
         external_thread_id="t",
@@ -112,12 +113,12 @@ def test_chinese_first_turn_asks_only_next_three_questions_without_internal_code
     case.profile.visit_purpose = "tourism"
     case.profile.planned_arrival_date = date(2026, 11, 10)
     message = deterministic_fallback_message(case, "blocked")
-    assert len(next_fact_questions(case)) == 3
-    assert message.count("？") == 3
+    assert len(next_fact_questions(case)) == 1
+    assert message.count("？") == 1
     assert "你持哪个国家的护照？" in message
-    assert "你准备在哪个国家或地区递交申请？" in message
-    assert "你目前在工作、读书，还是自己经营业务？" in message
-    assert "收到，我再了解一下你的情况" in message
+    assert "你准备在哪个国家或地区递交申请？" not in message
+    assert "你目前在工作、读书，还是自己经营业务？" not in message
+    assert "收到，我再了解一下你的情况" not in message
     assert "planned_arrival_date" not in message
     assert "Date Of Birth" not in message
     assert "测试" not in message
@@ -130,8 +131,9 @@ def test_general_enquiry_reads_like_a_reply_not_an_internal_process_notice() -> 
     message = deterministic_fallback_message(case, "blocked")
     assert "具体要准备哪些材料" in message
     assert "出行目的和申请地点" in message
-    assert "护照" in message and "打算从哪里申请" in message
-    assert "有其他安排" in message  # do not assume the user wants a visitor route
+    assert "这次去英国主要是" in message
+    assert message.count("？") == 1
+    assert "已确认" not in message  # do not assume the user has confirmed a visitor route
     assert "\n- " not in message
     assert "材料包" not in message
     assert "可以先聊" not in message

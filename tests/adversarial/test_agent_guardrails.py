@@ -103,6 +103,8 @@ def test_any_model_reported_ambiguity_deterministically_requires_review() -> Non
 
 def test_sponsor_relationship_is_canonicalised_without_changing_evidence() -> None:
     event = _event("Our relationship is mother and child.")
+    event.known_profile = {"funding_source": "personal_sponsor"}
+    event.requested_fields = ["sponsor_relationship"]
     proposed = CasePatch(
         updates=[
             FactUpdate(

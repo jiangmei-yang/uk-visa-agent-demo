@@ -30,6 +30,7 @@ class FailingWorkflow:
 
 def _form() -> dict[str, str]:
     return {
+        "AccountSid": "AC-synthetic",
         "MessageSid": "SM-queued-1",
         "From": "whatsapp:+85255550123",
         "To": "whatsapp:+14155238886",
@@ -49,6 +50,8 @@ def _receiver(store: SQLiteStore, tmp_path: Path) -> TwilioWebhookReceiver:
             "https://example.test/webhooks/twilio/whatsapp",
             tmp_path / "documents",
             signature_validator=AcceptSignature(),
+            account_sid="AC-synthetic",
+            service_address="whatsapp:+14155238886",
         ),
         store,
     )

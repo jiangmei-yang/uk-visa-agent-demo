@@ -9,7 +9,7 @@ import json
 import os
 import subprocess
 import sys
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from email.message import EmailMessage
 from pathlib import Path
 from types import SimpleNamespace
@@ -48,16 +48,26 @@ def _seed_before_confirmation(directory: Path) -> str:
     generate_sample_documents(documents)
     store = SQLiteStore(directory / "sandbox.db")
     try:
+        class Capture:
+            def send(self, request):
+                assert request.attachment is None
+                return "captured-" + request.outbox_id
+
         workflow = WorkflowService(store, load_policy(POLICY), OfflineFixtureLLM(),
                                    today_provider=lambda: DEMO_EVALUATION_DATE)
         for filename in ("01_initial_submission.eml", "02_correction_and_translation.eml"):
             event = parse_eml(PROJECT / "samples/emails" / filename, documents)
             event.channel = "gmail"
-            case, _, _ = workflow.process(event)
-            # Prior sent summaries are an explicit simulated precondition, not real provider proof.
-            row = store.claim_pending_outbox(NOW, channel="gmail")[0]
-            store.mark_outbox_sent(str(row["id"]), "simulated-prior-acceptance", NOW)
-            assert next(item for item in store.list_outbox() if item["id"] == row["id"])["status"] == "SENT"
+            case, _, plan = workflow.process(event)
+            sent = OutboxDispatcher(store, Capture(), allowed_message_types=(plan,)).dispatch_due(NOW)
+            assert len(sent) == 1 and sent[0].status == "SENT"
+        assert case.confirmation_kind == "profile" and not case.profile_confirmed
+        case, _, plan = workflow.process(event.model_copy(update={
+            "id": "seed-profile-confirmation", "body": "I confirm the profile summary",
+            "attachment_paths": [], "received_at": event.received_at + timedelta(minutes=1),
+        }))
+        sent = OutboxDispatcher(store, Capture(), allowed_message_types=(plan,)).dispatch_due(NOW)
+        assert len(sent) == 1 and sent[0].status == "SENT"
         assert case.primary_channel == "gmail" and case.confirmation_kind == "final"
         assert not case.final_summary_confirmed and case.delivery_path is None
         assert store.counts()["deliveries"] == 0
@@ -224,10 +234,10 @@ def test_pack_failure_keeps_candidate_pending_and_recovery_does_not_repeat_workf
     assert before["case"].id == case_id and before["case"].final_summary_confirmed
     assert before["case"].delivery_path is None
     assert before["pending"] == [FINAL_ID] and not before["drained"]
-    assert before["counts"] == {"cases": 1, "processed_events": 3, "outbox": 3, "deliveries": 0}
+    assert before["counts"] == {"cases": 1, "processed_events": 4, "outbox": 4, "deliveries": 0}
     assert observations["workflows"] == [(False, "ready")]
     assert observations["dispatches"] == observations["sends"] == []
-    assert before["outbox"][-1]["status"] == "PENDING"
+    assert [row["status"] for row in before["outbox"] if row["message_type"] == "ready"] == ["PENDING"]
 
     recovered = _run(tmp_path)
     after = _state(tmp_path)
@@ -257,12 +267,12 @@ namespace["_run"](Path(sys.argv[2]), sys.argv[3])
                             str(tmp_path), window], cwd=PROJECT, capture_output=True, timeout=20)
     assert child.returncode == 75, child.stderr.decode(errors="replace")
     before = _state(tmp_path)
-    assert before["counts"]["processed_events"] == before["counts"]["outbox"] == 3
+    assert before["counts"]["processed_events"] == before["counts"]["outbox"] == 4
     assert before["counts"]["deliveries"] == (0 if window == "after_workflow_commit" else 1)
     old_bytes = Path(before["case"].delivery_path).read_bytes() if before["case"].delivery_path else None
     recovered = _run(tmp_path)
     after = _state(tmp_path)
-    assert after["counts"] == {"cases": 1, "processed_events": 3, "outbox": 3, "deliveries": 1}
+    assert after["counts"] == {"cases": 1, "processed_events": 4, "outbox": 4, "deliveries": 1}
     assert after["outbox"] == before["outbox"] and after["drained"]
     assert after["pending"] == [] and recovered["sends"] == []
     assert recovered["workflows"] == ([] if window == "after_journal_ack" else [(True, "duplicate_ignored")])
@@ -289,7 +299,7 @@ def test_pack_failure_does_not_trap_later_customer_update_behind_old_ready_event
     assert observations["workflows"][0] == (False, "ready")
     assert observations["workflows"][1][0] is False
     assert observations["pack_calls"] == [before["case"].id]
-    assert before["pending"] == [FINAL_ID] and before["counts"]["processed_events"] == 4
+    assert before["pending"] == [FINAL_ID] and before["counts"]["processed_events"] == 5
     assert not before["case"].final_summary_confirmed
     assert before["case"].delivery_path is None and before["counts"]["deliveries"] == 0
     assert observations["dispatches"] == observations["sends"] == []
@@ -318,7 +328,7 @@ def test_workflow_failure_is_not_swallowed_as_a_pack_failure(tmp_path):
     assert observations["raw_reads"] == [FINAL_ID]
     assert observations["pack_calls"] == observations["dispatches"] == observations["sends"] == []
     assert state["pending"] == [FINAL_ID, FOLLOWUP_ID]
-    assert state["counts"]["processed_events"] == 2
+    assert state["counts"]["processed_events"] == 3
 
 
 def test_damaged_registered_archive_is_not_rebuilt_but_later_correction_is_retained(tmp_path):
@@ -341,7 +351,7 @@ def test_damaged_registered_archive_is_not_rebuilt_but_later_correction_is_retai
     after = _state(tmp_path)
     assert archive.read_bytes() == b"synthetic corrupted archive; must not be regenerated"
     assert after["pending"] == [FINAL_ID]
-    assert after["counts"]["processed_events"] == 4 and after["counts"]["outbox"] == 3
+    assert after["counts"]["processed_events"] == 5 and after["counts"]["outbox"] == 4
     assert observations["raw_reads"] == [FOLLOWUP_ID, FINAL_ID]
     assert observations["dispatches"] == observations["sends"] == []
     store = SQLiteStore(tmp_path / "sandbox.db")

@@ -17,14 +17,39 @@ explicitly recorded here.
 
 Updated 2026-09-04. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **2,484 passing tests**; see the latest [adviser-pacing repair](docs/ADVISER_PACING.md),
+The local suite has **2,838 passing tests**; see the latest [consultant-usefulness repair](docs/CONSULTANT_REPLY_DESIGN.md),
+[remaining acceptance audit](docs/END_TO_END_ACCEPTANCE_AUDIT.md),
+[adviser-pacing repair](docs/ADVISER_PACING.md),
 [cold-start conversation work](docs/COLD_START_CONVERSATIONS.md),
 [pack/intake recovery work](PACK_RECOVERY.md),
 [credential recovery](GMAIL_RECOVERY.md)
 and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
 
-Latest exposed-defect repair: a current FAQ plus a supplied fact no longer appends an
+Latest consultant experiment: three seven-case fictional DeepSeek runs exercised the actual
+reviewed automatic Gmail sender with captured transport, not real mailbox sends. Original
+checks printed **4/7**, **6/7**, then **7/7**; independent reading within the implementation
+loop caught missing second answers and sponsor-role defects outside those checks. All three
+reports remain unchanged. Seven saved-proposal replays verify follow-up repairs without
+making a fourth provider run. These are exposed development cases, not blind holdouts.
+Replies now offer conditional official application links and context-specific preparation
+actions before one main intake question. SENT guidance memory, deferred dates and known
+self-funding are retained. Sponsor-role guards reject host-only inference while preserving
+explicit parents support; unknown roles remain incomplete rather than becoming evidence.
+
+The default sender still composes reviewed content: this does not make arbitrary model
+drafts safe or prove human-like naturalness. A Gmail exact profile-confirmation phrase now
+needs the current unchanged profile summary actually SENT; document rereading cannot
+restore confirmation by shortcut. Bounded local PDF recovery, retained Gmail metadata-404
+observations and signed WhatsApp account/recipient binding are tested, not new live-channel
+acceptance. Ordinary-document processing consent, broader cross-source evidence and
+independent usability remain open in the [audit](docs/END_TO_END_ACCEPTANCE_AUDIT.md).
+The supervised Gmail worker and persistent Docker UI loaded the changes with existing
+case/outbox/ZIP projections unchanged; see [the rollout record](eval_output/consultant_value_rollout_2026-09-04.json).
+Normal sync polling revisions advanced; candidate dispositions, scope and recovery actions
+were preserved. The new metadata-observation table is empty, not a live 404-recovery result.
+
+Earlier exposed-defect repair: a current FAQ plus a supplied fact no longer appends an
 intake questionnaire, while explicit next steps and plain fact replies still advance.
 Only actually SENT, unanswered questions provide short-answer context; quiet resumes
 cannot record hidden questions. Country/city-only residence remains background evidence
@@ -35,7 +60,7 @@ experiments. Original provider failures remain unchanged. Gmail and persistent D
 were reloaded with unchanged prior case/outbox/ZIP projections; one transient bootstrap
 error and its successful retry are retained in [the rollout record](eval_output/adviser_pacing_rollout_2026-09-04.json).
 
-Latest adviser experiment: new fictional six-email journeys begin with empty profiles and
+Earlier adviser experiment: new fictional six-email journeys begin with empty profiles and
 reconstruct the runtime/SQLite connections each turn. Real DeepSeek extraction feeds actual
 reviewed automatic reply capture, not an unused model draft. First development: **4/12 composite,
 7/12 captured-SENT flow**, with an English month-name birthday rejected by local normalization

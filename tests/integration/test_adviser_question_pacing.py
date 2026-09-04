@@ -234,15 +234,15 @@ def test_answer_then_consecutive_faqs_wait_but_explicit_next_step_and_plain_answ
 
 
 @pytest.mark.parametrize("language", ["en", "zh"])
-def test_partial_answer_with_faq_does_not_repeat_other_sent_question_or_add_income(tmp_path, language):
+def test_answer_with_faq_does_not_add_accommodation_or_income_questions(tmp_path, language):
     dialogue = Conversation(tmp_path, language)
     first, _ = dialogue.turn(*_initial(language, with_step=False))
-    assert "funding_source" in first.last_requested_fields and "uk_accommodation" in first.last_requested_fields
+    assert first.last_requested_fields == ["funding_source"]
     case, reply = dialogue.turn(*_funding_faq(language))
     assert case.profile.funding_source == "self" and case.profile.uk_accommodation is None
     _assert_no_intake(case, reply)
-    assert "uk_accommodation" in case.pending_question_fields
-    assert case.question_event_ids["uk_accommodation"] == ["pacing-inbound-1"]
+    assert case.pending_question_fields == []
+    assert "uk_accommodation" not in case.question_event_ids
     assert "annual_income_gbp" not in case.question_event_ids
     assert len(dialogue.gmail.calls) == 2
 
@@ -272,7 +272,10 @@ def test_unanswered_personal_checklist_label_alone_does_not_silently_stall_missi
     dialogue = Conversation(tmp_path, language)
     case, reply = dialogue.turn(*_initial(language, with_step=False, personal_checklist=True))
     assert case.customer_question_topics == ["document_checklist"]
-    assert case.customer_answers == [] and case.profile.funding_source is None
+    # An incomplete personal request now gets a conditional orientation, not
+    # silence until all material drivers have been collected.
+    assert case.customer_answers and "https://www.gov.uk/" in reply
+    assert case.profile.funding_source is None
     assert case.last_requested_fields and case.last_requested_fields[0] == "funding_source"
     assert (QUESTION_TEXT_ZH if language == "zh" else QUESTION_TEXT_EN)["funding_source"] in reply
 

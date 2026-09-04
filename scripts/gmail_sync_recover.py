@@ -34,6 +34,12 @@ def main() -> None:
                 "revision": checkpoint.revision if checkpoint else None,
                 "pending_candidates": len(journal.pending_ids()),
                 "recovery_actions": journal.connection.execute("SELECT COUNT(*) FROM recovery_actions").fetchone()[0]}))
+            unavailable = journal.unavailable_metadata()
+            if unavailable:
+                print(json.dumps({"unavailable_metadata_count": len(unavailable),
+                                  "unavailable_metadata_sample": unavailable[:20]}))
+                print("These candidates remain pending and block dispatch. A 404 is not proof of deletion; "
+                      "investigate the scoped message/access without clearing its history.")
             if args.action == "rescan":
                 print("Rescan requested. The next running worker cycle will fetch a new anchor and scan the same scope.")
                 print("No candidate cleared, case changed, mail read or message sent by this command.")

@@ -182,9 +182,19 @@ def next_fact_questions(case: Case) -> list[str]:
     ]
     actionable = [field for field in missing if field not in case.deferred_fields]
     if case.question_plan is not None:
-        return [field for field in case.question_plan if field in actionable]
-    question_budget = 2 if case.customer_answers else 3
-    return actionable[: max(0, question_budget - len(case.open_blockers()))]
+        # A stored plan may come from an older release that asked several fields
+        # at once. Keep its ordering, but do not reintroduce the questionnaire.
+        return _one_question_topic([field for field in case.question_plan if field in actionable])
+    # One main question per turn; the delivery gate still checks every required
+    # fact. A current document problem takes precedence over new intake.
+    return [] if case.open_blockers() else _one_question_topic(actionable)
+
+
+def _one_question_topic(fields: list[str]) -> list[str]:
+    # Arrival and departure are one travel-date question, not two separate email
+    # turns. Keep both in the SENT ledger because both are actually asked.
+    dates = ["planned_arrival_date", "planned_departure_date"]
+    return dates if fields[:2] == dates else fields[:1]
 
 
 def customer_requests_next_step(body: str) -> bool:
@@ -776,18 +786,6 @@ def blocked_customer_message(case: Case) -> str:
     zh = case.customer_language == "zh"
     name = case.profile.full_name
     issues, questions, documents = reply_items(case)
-    if (zh and not issues and not documents and not case.customer_answers
-            and not case.latest_document_names and not case.latest_changes
-            and set(next_fact_questions(case)) == {
-                "visit_purpose", "nationality_country", "application_country"
-            }):
-        return (
-            (f"{name}，你好，可以的。" if name else "你好，可以的。")
-            + "\n\n具体要准备哪些材料，得先看你的出行目的和申请地点。"
-            "你这次去英国是旅游、探亲，还是有其他安排？"
-            "另外，你持哪个国家的护照，打算从哪里申请？"
-            "\n\n了解这些后，我再按你的情况帮你梳理材料清单。"
-        )
     greeting = (
         (f"{name}，你好。" if name else "你好。")
         if zh
@@ -829,7 +827,7 @@ def blocked_customer_message(case: Case) -> str:
             ("好的，等你方便补充资料时，我们再接着准备。" if zh
              else "Of course. We can pick this up when you're ready to add the remaining details.")
             if case.question_plan == [] and case.pending_question_fields
-            else ("收到，我再了解一下你的情况。" if zh
+            else ("具体要准备哪些材料，要先看你的出行目的和申请地点。" if zh
                   else "We can work through this together; you don't need to have every document ready at once.")
         )
     # A concrete acknowledgement already opens the reply; do not restart the introduction.

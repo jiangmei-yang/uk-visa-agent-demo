@@ -1,0 +1,85 @@
+{
+  "observed_at": "2026-09-04T15:23:12Z",
+  "prior_commit": "f1da7ac391aaf14f7439a98dd20a676990846766",
+  "evidence_class": "fictional real-model extraction, captured automatic replies, local regressions and supervised rollout",
+  "tests_passed": 2838,
+  "tests_duration_seconds": 38.90,
+  "lint_passed": true,
+  "mypy_source_files_passed": 63,
+  "warnings": [
+    "Existing Starlette/httpx deprecation warning",
+    "Buildx plugin unavailable; classic Docker build succeeded"
+  ],
+  "provider_experiment": {
+    "provider": "DeepSeek",
+    "model": "deepseek-v4-flash",
+    "fictional_extraction_calls": 21,
+    "input_tokens": 70932,
+    "output_tokens": 6032,
+    "total_reported_tokens": 76964,
+    "gmail_test_sends": 0,
+    "ordinary_personal_documents": 0,
+    "printed_passes_by_run": ["4/7", "6/7", "7/7"],
+    "original_reports_retained": true,
+    "manual_review_caught_failures_outside_printed_checks": true,
+    "post_run_saved_proposal_replays_passed": 7,
+    "post_run_replay_provider_calls": 0,
+    "independent_holdout": false,
+    "naturalness_percentage": null
+  },
+  "stability": {
+    "clean_runs": 5,
+    "distinct_zip_hashes": 1,
+    "zip_sha256": "7e27fe057a2643dd892bd41e94ed47245a225ff716bb99a7a4802bb0447b641f",
+    "concurrent_reads_passed": "100/100",
+    "fresh_container_network_none_demo_passed": true,
+    "fresh_container_uses_existing_runtime_volume": false
+  },
+  "gmail": {
+    "service": "com.visa-agent.gmail-user",
+    "previous_pid": 85714,
+    "new_pid": 91885,
+    "restart_method": "kickstart existing registered service after observed idle",
+    "restart_exit_code": 0,
+    "new_idle_at": "2026-09-04T15:22:39.745100+00:00",
+    "configuration_changed": false,
+    "configuration_sha256_before_and_after": "a82564de8ab818088e5afb363de951b1a7ad6a93459e21ae4a645aa487587d7e",
+    "case_and_outbox_projection_sha256_before_and_after": "8b0981ef621c1b3216a51dfe25a849671b73c86b6bcc3d27c19cfa07b0670b55",
+    "sync_binding_candidates_recovery_actions_sha256_before_and_after": "b1aeb2b482ba43ccb5e065ea1df1061f1fc6aefd22cbade8b166a258db06aa1a",
+    "sync_checkpoint_excluding_normal_poll_revision_sha256_before_and_after": "44057d6033ddd57730e701f90e85a898efd89a11e6ea870d7c66ae7f81840235",
+    "metadata_observation_table_added": true,
+    "metadata_observations": 0,
+    "counts": {"cases": 1, "processed_events": 9, "outbox": 9, "deliveries": 0},
+    "candidate_counts": {"processed": 9, "ignored": 8, "pending": 0},
+    "historical_mail_replayed": false,
+    "registered_sender_scope_changed": false,
+    "automatic_final_pack_dispatch_enabled": false,
+    "default_reply_style": "reviewed"
+  },
+  "docker": {
+    "container": "d05ccb0b3dc19b833b90758dec7df871848326320b97993006353c5d3f09ca54",
+    "image": "sha256:db8a56cab0b0cf42e0b605ce3e8c8438d19238505cc93816fbe4bb6902bd6ed1",
+    "health": "healthy",
+    "volume": "uk-visa-agent-demo_review-runtime",
+    "volume_reset": false,
+    "projection_sha256_before_and_after": "b39a038ff629bbd348a046f0fd8cc513b770ef587c7cdf5685cbe0a4ead569ce",
+    "logical_database_sha256_before_and_after": "2accd9d4ba132434310c22a1b51369268956299684ffbd61fedfa327ac5b3c5f",
+    "existing_zip_and_download_sha256": "8bc0681a837437d30675da7650cd9c61e1ecc69532ea969c77ceb383c458f724",
+    "download_status": 200,
+    "download_cache_control": "no-store",
+    "download_bytes": 21999,
+    "verified_source_files_match_workspace": {
+      "src/visa_agent/domain/sponsor_evidence.py": "c8a906f7bb3b6fe94b7f432dd60004bf0787cc3e8d45cb327743f7a82b357949",
+      "src/visa_agent/workflow/service.py": "a7adafa6513cdeab3bf90036e23eedebd5f078cc402ccd4a995582c63a8c2699",
+      "src/visa_agent/workflow/adviser_guidance.py": "595a8bb0bc660ddc8590e2d83ea5756c1a62f14f7e1f1ac18a803b7aa64d6fcf"
+    }
+  },
+  "not_proven": [
+    "Universal naturalness, semantic coverage or accuracy",
+    "Independent unscripted user acceptance",
+    "New recipient-side Gmail or ordinary-document final ZIP delivery",
+    "Live WhatsApp account/device acceptance",
+    "Applicant processing-consent gate and complete cross-document financial checks",
+    "Permanent Gmail metadata-unavailability disposition"
+  ]
+}

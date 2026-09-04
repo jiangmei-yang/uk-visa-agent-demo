@@ -10,6 +10,7 @@ from visa_agent.channels.gmail import (
     GmailHistoryExpiredError,
     GmailHistoryPage,
     GmailMessagePage,
+    GmailMessageUnavailableError,
 )
 from visa_agent.channels.gmail_sync import GmailSyncJournal
 
@@ -65,9 +66,16 @@ def ordered_candidates(adapter: GmailAdapter, journal: GmailSyncJournal, *, send
         raise ValueError("Cannot process candidates before discovery finishes")
     candidates: list[tuple[int, str]] = []
     for identifier in journal.pending_ids():
-        metadata = adapter.get_intake_metadata(identifier)
+        try:
+            metadata = adapter.get_intake_metadata(identifier)
+        except GmailMessageUnavailableError:
+            # Retain the unknown message and global dispatch hold. Other scoped
+            # messages (including pauses/corrections) must not be starved by it.
+            journal.record_metadata_unavailable(identifier)
+            continue
         if metadata.get("id") != identifier:
             raise ValueError("Gmail metadata does not match requested message")
+        journal.metadata_available(identifier)
         headers = Message()
         for header in metadata.get("payload", {}).get("headers", []):
             headers[header["name"]] = header["value"]

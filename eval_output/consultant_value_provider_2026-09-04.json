@@ -1,0 +1,453 @@
+{
+  "scope": "fictional text; real extraction; actual automatic sender with captured transport",
+  "new_provider_result": true,
+  "model": "deepseek-v4-flash",
+  "mailbox_calls": 0,
+  "not_a_naturalness_score": true,
+  "completed": true,
+  "results": [
+    {
+      "id": "first-enquiry",
+      "input": "我想办英国签证，需要什么？",
+      "checks": {
+        "expected_profile": true,
+        "at_most_one_main_question": true,
+        "no_confirmation_or_release": true,
+        "official_orientation": true,
+        "route_not_assumed": true,
+        "no_extraction_fallback": true,
+        "actual_sender_captured_once": true
+      },
+      "completed": true,
+      "plan": "blocked",
+      "reply": "可以先按这几个方向整理：护照或旅行证件、赴英目的、旅行费用由谁承担，以及目前的工作或学习情况。具体需要哪些证明，要看你的访问和资助安排；现在不用一次上传所有材料。是否需要签证或 ETA，先结合护照和访问目的用官方入口查一下。\nGOV.UK: https://www.gov.uk/check-uk-visa\n如果需要 Standard Visitor 签证，下面是在线申请入口，可以保存后再继续填写。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\n\n这次去英国主要是旅游、探亲访友，还是参加商务活动或会议？",
+      "render_mode": "reviewed",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": null,
+        "nationality_country": null,
+        "application_country": null,
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": null,
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": null,
+        "annual_income_gbp": null,
+        "funding_source": null,
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "topics": [],
+      "requested_fields": [
+        "visit_purpose"
+      ],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3305,
+          "output_tokens": 11,
+          "total_tokens": 3316
+        }
+      ],
+      "extraction_attempts": 1
+    },
+    {
+      "id": "student",
+      "input": "我拿中国护照，在香港读大学，也在香港申请。想去英国旅游，费用自己出，要等学校放假安排才能定哪天出发回来。请帮我准备申请。",
+      "checks": {
+        "expected_profile": true,
+        "at_most_one_main_question": true,
+        "no_confirmation_or_release": true,
+        "undecided_dates_retained": true,
+        "no_date_fabrication_or_request": true,
+        "official_source": false,
+        "contextual_action": false,
+        "no_wrong_student_template": true,
+        "no_extraction_fallback": true,
+        "actual_sender_captured_once": true
+      },
+      "completed": true,
+      "plan": "blocked",
+      "reply": "了解了，你打算去英国旅游，你目前在读书。\n\n日期先留空，等你确定后再补。\n\n下一步先补一项还缺的信息，便于按你的实际情况准备。\n\n方便告诉我护照上的姓名吗？",
+      "render_mode": "reviewed",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "student",
+        "annual_income_gbp": null,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "topics": [
+        "next_step"
+      ],
+      "requested_fields": [
+        "full_name"
+      ],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3334,
+          "output_tokens": 445,
+          "total_tokens": 3779
+        }
+      ],
+      "extraction_attempts": 1
+    },
+    {
+      "id": "employed",
+      "input": "我持中国护照，会在香港申请，去英国旅游。我在公司上班，自己承担费用，旅行日期还没定，先帮我准备起来吧。",
+      "checks": {
+        "expected_profile": true,
+        "at_most_one_main_question": true,
+        "no_confirmation_or_release": true,
+        "undecided_dates_retained": true,
+        "no_date_fabrication_or_request": true,
+        "official_source": true,
+        "contextual_action": true,
+        "no_wrong_student_template": true,
+        "no_extraction_fallback": true,
+        "actual_sender_captured_once": true
+      },
+      "completed": true,
+      "plan": "blocked",
+      "reply": "了解了，你打算去英国旅游，你目前在工作。\n\n日期先留空，等你确定后再补。\n\n先给你申请入口：GOV.UK 页面里的 Apply now 可以开始在线填表，未填完的表格可以保存。如果需要 Standard Visitor 签证，流程是在线申请、预约签证申请中心，再按要求完成身份核验和交材料。我们这里帮你梳理信息、核对材料并整理材料包；正式递交由你在官网完成。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\n\n你现在在职，可以先向公司人事索取一封用公司抬头纸出具的在职证明，写明职位、薪资和入职时间。它能说明目前的工作和收入情况；准备时顺便核对这些信息是否与申请表一致。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances\n\n方便告诉我护照上的姓名吗？",
+      "render_mode": "reviewed",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "employed",
+        "annual_income_gbp": null,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "topics": [],
+      "requested_fields": [
+        "full_name"
+      ],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3329,
+          "output_tokens": 399,
+          "total_tokens": 3728
+        }
+      ],
+      "extraction_attempts": 1
+    },
+    {
+      "id": "parents",
+      "input": "中国护照，在香港申请，去英国旅游。我现在工作了，但这次费用由父母资助。旅行日期没定，想先准备材料。",
+      "checks": {
+        "expected_profile": true,
+        "at_most_one_main_question": true,
+        "no_confirmation_or_release": true,
+        "undecided_dates_retained": true,
+        "no_date_fabrication_or_request": true,
+        "official_source": false,
+        "contextual_action": false,
+        "no_wrong_student_template": true,
+        "no_extraction_fallback": true,
+        "actual_sender_captured_once": true
+      },
+      "completed": true,
+      "plan": "blocked",
+      "reply": "了解了，你打算去英国旅游，你目前在工作。\n\n日期先留空，等你确定后再补。\n\n下一步先补一项还缺的信息，便于按你的实际情况准备。\n\n方便告诉我护照上的姓名吗？",
+      "render_mode": "reviewed",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": null,
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "employed",
+        "annual_income_gbp": null,
+        "funding_source": "personal_sponsor",
+        "sponsor_name": null,
+        "sponsor_relationship": "parents",
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "topics": [
+        "next_step"
+      ],
+      "requested_fields": [
+        "full_name"
+      ],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3327,
+          "output_tokens": 404,
+          "total_tokens": 3731
+        }
+      ],
+      "extraction_attempts": 1
+    },
+    {
+      "id": "family",
+      "input": "我持中国护照，在香港上班，准备在香港申请签证去英国探望姐姐，住她家。旅行费用自己付，旅行日期还没有确定。先帮我准备吧。",
+      "checks": {
+        "expected_profile": false,
+        "at_most_one_main_question": true,
+        "no_confirmation_or_release": true,
+        "undecided_dates_retained": true,
+        "no_date_fabrication_or_request": true,
+        "official_source": true,
+        "contextual_action": true,
+        "no_wrong_student_template": true,
+        "no_extraction_fallback": true,
+        "actual_sender_captured_once": true
+      },
+      "completed": true,
+      "plan": "blocked",
+      "reply": "了解了，你打算去英国探亲访友，费用由你自己承担。\n\n日期先留空，等你确定后再补。\n\n先给你申请入口：GOV.UK 页面里的 Apply now 可以开始在线填表，未填完的表格可以保存。如果需要 Standard Visitor 签证，流程是在线申请、预约签证申请中心，再按要求完成身份核验和交材料。我们这里帮你梳理信息、核对材料并整理材料包；正式递交由你在官网完成。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\n\n探亲访友可以先和对方核对你们的关系、访问安排，以及准备住在哪里。也可以请对方用一封简短的邀请说明把这些安排写清楚，帮助解释访问目的。对方是否提供住宿或承担费用要单独确认，不能仅凭是亲友就当作资助人。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances\n\n你目前在工作、读书，还是自己经营业务？",
+      "render_mode": "reviewed",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": null,
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "family_or_friends",
+        "uk_accommodation": "住她家",
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": null,
+        "annual_income_gbp": null,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "topics": [],
+      "requested_fields": [
+        "occupation_status"
+      ],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3333,
+          "output_tokens": 365,
+          "total_tokens": 3698
+        }
+      ],
+      "extraction_attempts": 1
+    },
+    {
+      "id": "mixed-request",
+      "input": "不用讲费用但请把访问签证申请官网发我。另外，我存两万元是不是一定能获批？",
+      "checks": {
+        "expected_profile": true,
+        "at_most_one_main_question": true,
+        "no_confirmation_or_release": true,
+        "independent_visitor_link_answered": true,
+        "no_visitor_fee_for_other_question": true,
+        "no_unrequested_intake": true,
+        "no_extraction_fallback": true,
+        "actual_sender_captured_once": true
+      },
+      "completed": true,
+      "plan": "blocked",
+      "reply": "如果你需要申请 Standard Visitor，可以从下面的 GOV.UK 页面点 Apply now 开始。流程是出发前在线填写申请，再预约签证中心完成身份核验并提供材料；表格可以保存，之后继续填写。这是申请入口说明，不代表你的签证路线已经确认。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\n\n你问的这点，我目前没有核验过的依据，不能直接给你确定答复。这项需要另行核实，暂时不能据此判断材料是否符合要求。",
+      "render_mode": "reviewed",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": null,
+        "nationality_country": null,
+        "application_country": null,
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": null,
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": null,
+        "annual_income_gbp": null,
+        "funding_source": null,
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "topics": [
+        "application",
+        "unsupported"
+      ],
+      "requested_fields": [],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3320,
+          "output_tokens": 123,
+          "total_tokens": 3443
+        }
+      ],
+      "extraction_attempts": 1
+    },
+    {
+      "id": "separate-routes",
+      "input": "Where do I apply for my UK visitor visa? Separately, what is the fee for a student visa?",
+      "checks": {
+        "expected_profile": true,
+        "at_most_one_main_question": true,
+        "no_confirmation_or_release": true,
+        "independent_visitor_link_answered": true,
+        "no_visitor_fee_for_other_question": true,
+        "no_unrequested_intake": true,
+        "no_extraction_fallback": true,
+        "actual_sender_captured_once": true
+      },
+      "completed": true,
+      "plan": "blocked",
+      "reply": "If you need a Standard Visitor visa, start with Apply now on the GOV.UK page below. Apply online before travelling, then attend a visa application centre appointment to prove your identity and provide your documents. You can save the form and finish it later; this does not yet confirm which visa route you need.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\n\nI don't currently have verified guidance to answer that point reliably. That point needs a separate check before using it to assess whether your evidence meets the requirements.",
+      "render_mode": "reviewed",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": null,
+        "nationality_country": null,
+        "application_country": null,
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": null,
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": null,
+        "annual_income_gbp": null,
+        "funding_source": null,
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "topics": [
+        "application",
+        "unsupported"
+      ],
+      "requested_fields": [],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3318,
+          "output_tokens": 126,
+          "total_tokens": 3444
+        }
+      ],
+      "extraction_attempts": 1
+    }
+  ],
+  "source_sha256": {
+    "scripts/consultant_value_probe.py": "2c061a7188ed288c434c5c05299d0d64c144cf0e335d0ad25dd530af699fb840",
+    "src/visa_agent/__init__.py": "a3350ee5bcd581ebdb734128829da5e6772eae8346faaa85e2bf608d27d95149",
+    "src/visa_agent/case_data.py": "06dcf00b0073b70b25468b7a0da891942a3ef45bcbd52e141194628b4823951c",
+    "src/visa_agent/channels/__init__.py": "4a9e7ea09deca6b1c25e049b68a2c34aadbd57475fc072d0e198086255ba173e",
+    "src/visa_agent/channels/automatic_reply.py": "11955299404cb1dcbf327bbe6cca152b851c22f2279f1759fed4fa0ac8a05322",
+    "src/visa_agent/channels/email_fixture.py": "8e821355c373927d6ac9e27e5d0d59b0f01d061c98503a22a7d5ff3d1413a618",
+    "src/visa_agent/channels/email_ingestion.py": "43987616a31738554a2cc39ccaecd56e5dabe9bb7db111c0523e15c2b0a80e61",
+    "src/visa_agent/channels/gmail.py": "873de8bead906bfe4edf766440f274cf152a1d3a123c31c6c7b0e371397e0ab6",
+    "src/visa_agent/channels/gmail_auth.py": "ba7277ade4bf0f5485e36ef9ce7f7c46d7b36146fb601d0d9f9a808eb9d7e89c",
+    "src/visa_agent/channels/gmail_intake.py": "d3e9a060f224cec13213c4b09b3c2e41b6b38a81acfee775f951a7e03bd37a57",
+    "src/visa_agent/channels/gmail_pipeline.py": "3ec2aaf045a78046f59c98b1491ed806a4fc24c39007255c4c0ed02ea16f41c3",
+    "src/visa_agent/channels/gmail_sync.py": "89b76ea33756976d8c11dda31204723b7d9421b6bd2cb2e68e7fefd1674c26a4",
+    "src/visa_agent/channels/inbound_worker.py": "395097242533a1c810a485778e220587b5393be78e7d853cba51a77b35565b06",
+    "src/visa_agent/channels/outbound.py": "9aef42ab22463873f3f4d056e425cd707003f99a0d663ac655022cc7cc1da46d",
+    "src/visa_agent/channels/outbound_fixture.py": "f83c59dfe9013d59d3fc336061931c8ac5b9d5dae6c87a84a3200bc2edfa2d82",
+    "src/visa_agent/channels/runtime_lock.py": "c03396b333e6627731f8a61b6b14438ff3d6c55370759fdd39af46a45bd26fb5",
+    "src/visa_agent/channels/twilio_receiver.py": "a4267a306c01d2757657d73d0dff1f1c9f06237e8df4e9fb1f028fc705b13600",
+    "src/visa_agent/channels/twilio_status.py": "f75351716055ba4a5c001d00e76c64187589eb462c05684f7c73dc96c4f80271",
+    "src/visa_agent/channels/twilio_whatsapp.py": "adf1233212ffd745242360085fbe087cc2846a42480f5bebbbe0d52e77b18575",
+    "src/visa_agent/channels/whatsapp_service.py": "abe8ffa7cb2ddc50cb95f8500c5f06a0dc375c4cbd7db17d644bba910b54933b",
+    "src/visa_agent/cli.py": "96cfb81c7ea74678bce2698accb538d224d0eaf1b3c2d19792911fbf9bbbba24",
+    "src/visa_agent/config.py": "a00bd6949e4c747ba19f9b00e28fdf3efdcca1eb237e6f0b1f0f05b92d094516",
+    "src/visa_agent/delivery/__init__.py": "c228e85c7a38888d18198814f142ac9a6262de6ee17ccc377066e308c1df9735",
+    "src/visa_agent/delivery/pack.py": "8ef13ba60c35871028245e9f8f0d6c0ed3d78c29d81b1fd00fa2a0bbf5424516",
+    "src/visa_agent/demo.py": "6b09553b1dc0a716833e6bf62753c865dc912fc6e45c5e8aa91f96b8022d6402",
+    "src/visa_agent/documents/__init__.py": "dae296ed7a7312a7792c2dc59d13be7b6905c5daf4b728d5ca37c80224fed7b1",
+    "src/visa_agent/documents/natural.py": "e172f18885518ed67df02c5d4a43a35414626d6e882b203b16c9b3b508598a51",
+    "src/visa_agent/documents/processor.py": "e5230265b42a9073f4264d2056e35ae8eca0bdecf55da2d99bebfcddce92efdc",
+    "src/visa_agent/documents/samples.py": "76e605d508fd6b51fbee95d4cd6ad23cad6e731fcc316ecbe5c14f018c885fba",
+    "src/visa_agent/domain/__init__.py": "d5cd2e4964d34671b4b71a2c0796c5985b105b0fc0a9b5c72082c90e3625cecd",
+    "src/visa_agent/domain/address_evidence.py": "f4989295eebd670c5925637098b67f3f7006b4ac016537543ea16681cee30792",
+    "src/visa_agent/domain/date_evidence.py": "efeae43509fc7985bf6127f855b2cd8c438f76c3759614bb15eef3269f9e9825",
+    "src/visa_agent/domain/locations.py": "2e831bd608afd399ac648b4bca05a7c5e009f7266666e22bdd9312bcf3651f00",
+    "src/visa_agent/domain/models.py": "1abc66ca4bf13aa868a7332c7d2acb0ec906eba18c1294a91ac77d3222ac77ba",
+    "src/visa_agent/domain/policy.py": "98103fa5d39e67df9e50a7364e43a11f96b98be1bc04e4ffc40e98422f331e5b",
+    "src/visa_agent/domain/rules.py": "91a7d2ed9c6aaf9b4f6f8e0509923955536592940de9d4a77422726cf68c4e26",
+    "src/visa_agent/lab.py": "6af7780373d780dfd95a26e65409f9aac20164218bf90eec733e4aea6eb14570",
+    "src/visa_agent/llm/__init__.py": "5607d3f7ccee9ab958fec329b1f27093830199ec9c38a45446c93e4537fa7c42",
+    "src/visa_agent/llm/deepseek_client.py": "ea4325f0f1b0e3f037c3a3448715d8a7570455103c3fea54be1ba1eafdb923bb",
+    "src/visa_agent/llm/evaluation.py": "6393a9f5bc43f43ae5c5bad4e8e813a5aafe87acd1ff0cd454de6f59972a9f26",
+    "src/visa_agent/llm/guarded.py": "71d63ab6201133a6252e273a2b72c6bda711c3cf893511b9b00f9fcab1cd1d17",
+    "src/visa_agent/llm/offline.py": "679238783757f0536a8da805ceff88242cee0174aa70e6f62113adaacf344c27",
+    "src/visa_agent/llm/openai_client.py": "950c01549d5feb44fb5a7be720c89318d6c112c2e2837ba152883e41ece13ecf",
+    "src/visa_agent/llm/ports.py": "d1e0f13952b0ab4a0bdaff6c519fbaad9b042b8e64e91cbfe843dfff4a848275",
+    "src/visa_agent/llm/question_understanding.py": "ff3e921e56ae7f3571e3b2fc10c8ac5733779ccf1bcc7c386d631ffc36264a88",
+    "src/visa_agent/public_webhook.py": "c51893541eb5923847a057b4bfc896b20a7360c19b3462b6a130a0611ebc5c3d",
+    "src/visa_agent/review_ui.py": "9ef689b0ce0886610cb165d11b40341bc686c52aee9c2b9a60fcd38001d41c52",
+    "src/visa_agent/secrets.py": "5a7f15fb96b1a544209a6380c57a3e39f9ac5c8c93cbd54cf2f50ded7b4fbd36",
+    "src/visa_agent/startup.py": "c6e9d3a83701715286d23ed66241feb00db6375eda63efb5a7737fffc74f8846",
+    "src/visa_agent/storage/__init__.py": "7296f379f4b997d52f354cdd5e6ce5314187146e117f02f04b6fa86f39bf6cd6",
+    "src/visa_agent/storage/sqlite.py": "1daed02fb1f1507f159f13b59f05828c58f9bfbddf2452082a37a29c7fe504bf",
+    "src/visa_agent/web.py": "0a68646d7a45d0e0c71010efa9df37e9c7150ea3c745e817436acb281e581b3d",
+    "src/visa_agent/workflow/__init__.py": "a273d6ddf1c05279ae2d32d46583ba5b9e94e145f4f5f816d131a723896dac7e",
+    "src/visa_agent/workflow/adviser_guidance.py": "51c0215c96acac2d8db7ae4272f810e229a55271ac3af7aea269484b2b3bc99a",
+    "src/visa_agent/workflow/conversation.py": "d8d63f3d1365f7bfad2f603931600e97c05ae350cf6bf693e50a5150fd7ae605",
+    "src/visa_agent/workflow/customer_questions.py": "9f13e6067010e638e93c5f795b10a18f0c2bb85dfe0624cbe9f5883744799d67",
+    "src/visa_agent/workflow/document_purpose.py": "4f349cd2804843492326e7d7c4f939362ba4cb22fd97a8fa2d30fe1e8e4e6add",
+    "src/visa_agent/workflow/document_review.py": "c2bab81da8e68389de022fd7edb1d79886b3d82391cf23c9f8d832684247b2d0",
+    "src/visa_agent/workflow/funding_wording.py": "f393622327a03fddf6f02e9c7633e9b90e5e415269f6c548a9d09438ad70c714",
+    "src/visa_agent/workflow/next_step.py": "3eb3eb682c4e6d47be6247571df4ad5cc6430047fe287ed033beac44ec07c355",
+    "src/visa_agent/workflow/preparation_control.py": "3e3dbf2e9a31a4451daff28e85ac88f2de5ff34c64dc713803d83c38ca836351",
+    "src/visa_agent/workflow/review.py": "bce98b1a3e7f14bd0cc03ec01207db453ed90464881473ab9e027443bb0aa797",
+    "src/visa_agent/workflow/service.py": "c4bbb134fe928ed8e2225a06e81c66dd511712a1b1c5db2749e695689e3e3830"
+  },
+  "all_passed": false
+}

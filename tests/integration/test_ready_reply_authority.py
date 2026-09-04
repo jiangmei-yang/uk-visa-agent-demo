@@ -57,6 +57,15 @@ def seed(directory):
         if index < 2:
             sent = OutboxDispatcher(store, Capture(), allowed_message_types=(plan,)).dispatch_due(NOW)
             assert len(sent) == 1 and sent[0].status == "SENT"
+        if index == 1:
+            assert plan == "awaiting_profile_confirmation" and not case.profile_confirmed
+            case, _, plan = workflow.process(event.model_copy(update={
+                "id": "seed-profile-confirmation", "body": "I confirm the profile summary",
+                "attachment_paths": [], "received_at": event.received_at + timedelta(minutes=1),
+            }))
+            assert plan == "awaiting_confirmation" and case.profile_confirmed
+            sent = OutboxDispatcher(store, Capture(), allowed_message_types=(plan,)).dispatch_due(NOW)
+            assert len(sent) == 1 and sent[0].status == "SENT"
     assert plan == "ready" and case.final_summary_confirmed and case.delivery_path is None
     return store, workflow, case, event
 

@@ -259,6 +259,7 @@ def test_configured_whatsapp_webhook_queues_event_and_returns_immediately(
     web.settings = test_settings
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "AC-synthetic")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "synthetic-token")
+    monkeypatch.setenv("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886")
     monkeypatch.setenv(
         "TWILIO_WEBHOOK_PUBLIC_URL",
         "https://example.test/webhooks/twilio/whatsapp",
@@ -315,6 +316,7 @@ def test_whatsapp_webhook_rejects_duplicate_form_keys_before_signature_validatio
 ) -> None:
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "AC-synthetic")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "synthetic-token")
+    monkeypatch.setenv("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886")
     monkeypatch.setenv(
         "TWILIO_WEBHOOK_PUBLIC_URL",
         "https://example.test/webhooks/twilio/whatsapp",

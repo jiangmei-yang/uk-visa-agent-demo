@@ -165,7 +165,7 @@ make web         # local case-review console
 make webhook     # provider-only local webhook gateway on port 8001
 make start       # build and start the complete Docker demo
 make stop        # stop the Docker demo
-make clean       # delete disposable local demo data
+make clean       # delete test/lint/type-check caches (keeps case and demo data)
 ```
 
 A weekly GitHub Actions check runs `make policy-check`. After the policy review boundary it fails

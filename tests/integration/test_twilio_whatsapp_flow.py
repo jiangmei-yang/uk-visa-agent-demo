@@ -29,6 +29,7 @@ class CaptureSender:
 
 def _form(message_sid: str = "SM-inbound-1") -> dict[str, str]:
     return {
+        "AccountSid": "AC-synthetic",
         "MessageSid": message_sid,
         "From": "whatsapp:+85255550123",
         "To": "whatsapp:+14155238886",
@@ -53,6 +54,8 @@ def test_whatsapp_event_reuses_workflow_outbox_and_idempotency(tmp_path: Path) -
         "https://example.test/webhooks/twilio/whatsapp",
         tmp_path / "documents",
         signature_validator=AcceptSignature(),
+        account_sid="AC-synthetic",
+        service_address="whatsapp:+14155238886",
     )
     service = WorkflowService(
         store,
@@ -89,6 +92,8 @@ def test_whatsapp_worker_sends_within_window_and_stops_after_expiry(tmp_path: Pa
         "https://example.test/webhooks/twilio/whatsapp",
         tmp_path / "documents",
         signature_validator=AcceptSignature(),
+        account_sid="AC-synthetic",
+        service_address="whatsapp:+14155238886",
     )
     service = WorkflowService(
         store,

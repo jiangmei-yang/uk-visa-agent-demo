@@ -1,10 +1,11 @@
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pytest
 from reportlab.pdfgen import canvas
 
 from visa_agent.channels.email_fixture import parse_eml
+from visa_agent.channels.outbound import OutboxDispatcher
 from visa_agent.documents.samples import generate_sample_documents
 from visa_agent.domain.models import Case, InboundEvent
 from visa_agent.domain.policy import load_policy
@@ -14,7 +15,7 @@ from visa_agent.workflow.service import WorkflowService
 
 
 def setup_case(
-    tmp_path: Path, channel: str = "email_fixture"
+    tmp_path: Path, channel: str = "email_fixture", *, stop_at_profile: bool = False,
 ) -> tuple[SQLiteStore, WorkflowService, Case, InboundEvent]:
     documents = tmp_path / "documents"
     generate_sample_documents(documents)
@@ -31,8 +32,82 @@ def setup_case(
     ]
     service.process(events[0])
     case, _, plan = service.process(events[1])
+    if channel == "gmail":
+        assert plan == "awaiting_profile_confirmation"
+        if stop_at_profile:
+            return store, service, case, events[2]
+        send_profile_summary(store)
+        case, _, plan = service.process(events[2].model_copy(update={
+            "id": "setup-profile-confirmation", "body": "I confirm the profile summary",
+            "received_at": events[1].received_at + timedelta(minutes=1),
+        }))
     assert plan == "awaiting_confirmation"
     return store, service, case, events[2]
+
+
+def send_profile_summary(store: SQLiteStore) -> None:
+    class Capture:
+        def send(self, request):
+            return "captured-" + request.outbox_id
+
+    results = OutboxDispatcher(store, Capture(), allowed_message_types=("awaiting_profile_confirmation",)).dispatch_due(datetime.now(UTC))
+    assert any(result.status == "SENT" for result in results)
+
+
+@pytest.mark.parametrize("text", ["profile confirmed", "I confirm the profile summary",
+                                 "我确认上述个人资料", "我确认个人资料摘要"])
+def test_gmail_exact_profile_confirmation_without_a_previous_summary_has_no_authority(tmp_path, text):
+    store = SQLiteStore(tmp_path / "case.db")
+    service = WorkflowService(store, load_policy(Path("knowledge/uk_standard_visitor_2026-02-25.yaml")),
+                              OfflineFixtureLLM(), today_provider=lambda: date(2026, 9, 4))
+    try:
+        inbound = InboundEvent(id="unrequested-confirmation", channel="gmail", external_thread_id="fictional-thread",
+            sender="fictional@example.test", subject="Fictional confirmation", body=text,
+            received_at=datetime(2026, 9, 4, tzinfo=UTC))
+        case, _, plan = service.process(inbound)
+        assert plan == "blocked" and not case.profile_confirmed and not case.final_summary_confirmed
+        assert not case.delivery_path and not any(item.confirmed for item in case.evidence)
+    finally:
+        store.close()
+
+
+@pytest.mark.parametrize("text", ["I confirm the profile summary", "我确认个人资料摘要",
+                                 "Everything is correct, please proceed."])
+def test_gmail_profile_confirmation_needs_sent_summary_and_survives_reopen(tmp_path, text):
+    store, service, case, inbound = setup_case(tmp_path, "gmail", stop_at_profile=True)
+    assert not case.profile_confirmed
+    assert all(row["status"] != "SENT" for row in store.list_outbox())
+    case, _, plan = service.process(inbound.model_copy(update={"body": text}))
+    assert plan == "awaiting_profile_confirmation" and not case.profile_confirmed
+    request_event_id = case.confirmation_request_event_id
+    send_profile_summary(store)
+    assert any(row["event_id"] == request_event_id and row["status"] == "SENT" for row in store.list_outbox())
+    store.close()
+    reopened = SQLiteStore(tmp_path / "case.db")
+    try:
+        fresh_service = WorkflowService(reopened, service.policy, OfflineFixtureLLM(),
+                                       today_provider=lambda: date(2026, 9, 4))
+        confirmed, _, plan = fresh_service.process(inbound.model_copy(update={
+            "id": "after-actual-sent", "body": text, "received_at": inbound.received_at + timedelta(hours=1),
+        }))
+        assert confirmed.id == case.id and confirmed.profile_confirmed
+        assert not confirmed.final_summary_confirmed and plan == "awaiting_confirmation"
+        assert confirmed.delivery_path is None
+    finally:
+        reopened.close()
+
+
+@pytest.mark.parametrize("text", ["I confirm the profile summary", "我确认个人资料摘要"])
+def test_gmail_exact_confirmation_cannot_confirm_a_changed_profile(tmp_path, text):
+    store, service, _, inbound = setup_case(tmp_path, "gmail", stop_at_profile=True)
+    try:
+        send_profile_summary(store)
+        body = text + "\n<!-- DEMO_FACTS\nestimated_trip_cost_gbp=2345\n-->"
+        case, _, _ = service.process(inbound.model_copy(update={"body": body}))
+        assert case.profile.estimated_trip_cost_gbp == 2345
+        assert not case.profile_confirmed and not case.final_summary_confirmed
+    finally:
+        store.close()
 
 
 @pytest.mark.parametrize(
