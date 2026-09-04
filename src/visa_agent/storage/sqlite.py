@@ -72,6 +72,17 @@ CREATE TABLE IF NOT EXISTS held_inbound_events (
     payload_json TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS review_actions (
+    id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    held_event_id TEXT NOT NULL UNIQUE,
+    actor TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    before_json TEXT NOT NULL,
+    after_json TEXT NOT NULL,
+    retry_event_id TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE IF NOT EXISTS delivery_versions (
     case_id TEXT NOT NULL,
     path TEXT NOT NULL,
@@ -133,7 +144,7 @@ class SQLiteStore:
 
     def reset(self) -> None:
         self.connection.executescript(
-            """DELETE FROM held_inbound_events; DELETE FROM inbound_queue; DELETE FROM deliveries; DELETE FROM outbox;
+            """DELETE FROM review_actions; DELETE FROM held_inbound_events; DELETE FROM inbound_queue; DELETE FROM deliveries; DELETE FROM outbox;
                DELETE FROM processed_events; DELETE FROM cases;"""
         )
         self.connection.commit()
@@ -188,6 +199,8 @@ class SQLiteStore:
             "outbound_messages": [dict(row) for row in outbox],
             "inbound_failures": [dict(row) for row in failures],
             "held_inbound_events": self.list_held_inbound(case_id),
+            "review_actions": [dict(row) for row in self.connection.execute(
+                "SELECT * FROM review_actions WHERE case_id=? ORDER BY created_at, id", (case_id,))],
             "deliveries": [dict(row) for row in deliveries],
             "data_note": (
                 "Raw processed inbound messages are not retained. The snapshot keeps only "
@@ -219,6 +232,7 @@ class SQLiteStore:
                 )
             self.connection.execute("DELETE FROM inbound_failures WHERE case_id = ?", (case_id,))
             self.connection.execute("DELETE FROM held_inbound_events WHERE case_id = ?", (case_id,))
+            self.connection.execute("DELETE FROM review_actions WHERE case_id = ?", (case_id,))
             self.connection.execute("DELETE FROM deliveries WHERE case_id = ?", (case_id,))
             self.connection.execute(
                 "DELETE FROM channel_delivery_receipts WHERE outbox_id IN "

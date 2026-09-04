@@ -132,6 +132,17 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
                 document_reader=NaturalPDFReader(model),
             )
             ingestion = EmailIngestionBoundary(store, args.state_dir / "attachments")
+            if args.action == "serve":
+                from visa_agent.channels.inbound_worker import InboundEventWorker
+
+                review_outcomes = InboundEventWorker(store, workflow, channel="gmail_review").process_due(
+                    datetime.now(UTC), limit=10)
+                if review_outcomes:
+                    print("Reviewed retries:", [item.status for item in review_outcomes])
+                if any(row["channel"] == "gmail_review" and row["status"] != "PROCESSED"
+                       for row in store.list_inbound_queue()):
+                    print("Reviewed retry pending or failed; no new intake or dispatch")
+                    return
             query = f"from:{args.sender} to:{args.mailbox}"
             if args.after is not None:
                 query += f" after:{args.after}"

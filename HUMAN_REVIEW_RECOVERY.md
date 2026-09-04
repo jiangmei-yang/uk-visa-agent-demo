@@ -1,4 +1,4 @@
-# Human-review recovery: partial implementation
+# Human-review recovery: controlled Gmail intake retry
 
 The previous rejection path marked a paused/finalized/out-of-order applicant message processed
 but retained only a reason. In the queue worker, completion also cleared the original queue body.
@@ -20,14 +20,45 @@ restart/replay, queue-payload cleanup, case export/deletion, sender mismatch and
 failure. Failed payload persistence cannot mark an event processed. This is preservation evidence,
 not an end-to-end human-review resolution test.
 
+## Local operator workflow
+
+Use the installed project's Python environment, an existing registered Gmail state directory and
+the exact case ID from the private console. Inspection prints private message content; do not
+paste it into public issues or commit the output.
+
+```bash
+uv run python scripts/review_held.py inspect --state-dir data/registered-applicant --case CASE_ID
+uv run python scripts/review_held.py retry --state-dir data/registered-applicant --case CASE_ID \
+  --event HELD_EVENT_ID --fingerprint FINGERPRINT_FROM_INSPECTION \
+  --actor "Reviewer name" --reason "What was reviewed and why normal extraction should be retried"
+```
+
+Do not execute the second command until the original review reason and selected update have
+actually been examined. This is **permission to retry normal validation**, not a conclusion that
+the documents are valid or the application is suitable. The operator identity is locally asserted;
+this CLI relies on filesystem access and is not authenticated reviewer-role management.
+
+The action acquires the same state lock as the Gmail worker. It rejects changed case snapshots,
+non-Gmail cases, finalized/delivered cases, older held updates, missing reasons, repeated retries
+of the same update and unresolved SENDING records. One transaction records actor/reason and
+before/after snapshots, invalidates all prior confirmation fields, and queues a new linked retry
+event. Original held and processed-event records remain intact. Facts, documents and risk flags
+are not edited. No email or pack is sent by the CLI.
+
+The next `serve` cycle consumes the private `gmail_review` queue through the existing workflow
+and natural document reader before new intake. Pending/retrying/failed review work prevents new
+intake and dispatch until resolved. Successful processing can still return to human review if
+the underlying uncertainty remains. Subsequent summaries require fresh customer confirmation.
+
+Nine local retry integration cases cover old-consent invalidation, retained risk facts, normal
+reprocessing, restart, original-event preservation, audit/export/deletion, invalid operator inputs,
+finalized-case refusal, uncertain-send refusal and transaction rollback on queue-storage failure.
+No real applicant review action has been executed as part of these tests.
+
 ## Still required
 
-- A reviewed operator action to inspect these held updates and resolve the original reason.
-- An actor, reason and before/after audit trail for any permitted resumption or revision.
-- Controlled reprocessing without deleting the original event history or implicitly accepting
-  unsupported routes, invalid documents or facts lacking sources.
-- A fresh, context-bound applicant confirmation whenever reviewed facts/documents change.
-
-There is deliberately no automatic “clear review” operation. Preserving the update fixes data
-loss, but does not yet make the manual-review workflow complete. Operators must not directly
-edit case status or erase processed-event IDs to simulate a successful recovery.
+Authenticated operator roles and a non-technical review UI remain unfinished. This command does
+not approve documents, resolve unsupported routes, retry older out-of-order updates or revise an
+already generated/delivered pack. Failed queued retries require investigation; do not erase
+their records or manipulate processed-event IDs to manufacture a successful recovery. A complete
+real-user human-review/resumption journey is still unverified.
