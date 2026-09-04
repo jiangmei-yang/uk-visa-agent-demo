@@ -392,17 +392,23 @@ def blocked_customer_message(case: Case) -> str:
         if zh
         else (f"Hello {name}," if name else "Hello,")
     )
+    acknowledgements = []
     if acknowledgement := change_acknowledgement(case):
-        intro = acknowledgement
-    elif case.latest_document_names:
+        acknowledgements.append(acknowledgement)
+    if case.latest_document_names:
         names = "、".join(case.latest_document_names) if zh else ", ".join(case.latest_document_names)
-        intro = (
+        acknowledgements.append(
             f"收到你发来的 {names} 了。"
             if zh
             else f"I've received {names}."
         )
-    elif context := received_context(case):
-        intro = context
+    if context := received_context(case):
+        if acknowledgements:
+            context = context.removeprefix("了解了，").removeprefix("Thanks, ")
+            context = context[0].upper() + context[1:]
+        acknowledgements.append(context)
+    if acknowledgements:
+        intro = ("" if zh else " ").join(acknowledgements)
     else:
         intro = (
             "收到，我再了解一下你的情况。"

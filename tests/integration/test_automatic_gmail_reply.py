@@ -21,6 +21,44 @@ class CaptureAdapter(GmailAdapter):
 
 
 @pytest.mark.parametrize("language", ["zh", "en"])
+def test_mixed_correction_attachment_and_new_fact_all_reach_gmail(tmp_path, language):
+    store = SQLiteStore(tmp_path / "db")
+    now = datetime.now(UTC)
+    case = Case(id="mixed", external_thread_id="t", applicant_contact="user@example.test",
+                policy_version="v", customer_language=language)
+    case.profile.visit_purpose = "conference"
+    case.profile.nationality_country = "China"
+    case.profile.application_country = "Hong Kong"
+    case.profile.occupation_status = "student"
+    case.profile.funding_source = "self"
+    case.latest_changes = {"visit_purpose": "conference"}
+    case.latest_received_facts = {"occupation_status": "student", "funding_source": "self"}
+    case.latest_document_names = ["Invitation.pdf", "Enrollment.pdf"]
+    event = InboundEvent(id="mixed", external_thread_id="t", sender=case.applicant_contact,
+        subject="Updated plans", body="It's a conference, not a holiday. I'm a student and paying "
+        "myself. I've attached the invitation and my enrollment letter.", channel="gmail", received_at=now)
+    store.commit_event(case, event, "blocked", "model draft")
+    before = store.get_case(case.id).model_dump_json()
+    adapter = CaptureAdapter()
+    dispatcher = OutboxDispatcher(store, AutomaticGmailReplySender(adapter, store, case.applicant_contact),
+                                  channel="gmail", allowed_message_types=("blocked",))
+    try:
+        assert dispatcher.dispatch_due(now)[0].status == "SENT"
+        body = adapter.calls[0]["body"]
+        assert "Invitation.pdf" in body and "Enrollment.pdf" in body
+        assert ("参加会议" if language == "zh" else "conference") in body
+        assert ("你目前在读书" if language == "zh" else "you're studying") in body.casefold()
+        assert ("费用由你自己承担" if language == "zh" else "paying for the trip yourself") in body
+        assert not body.startswith(("Hello", "你好"))
+        assert "Who will pay for the trip?" not in body
+        assert store.get_case(case.id).model_dump_json() == before
+        assert store.list_outbox()[0]["payload"] == body
+        assert dispatcher.dispatch_due(now) == [] and len(adapter.calls) == 1
+    finally:
+        store.close()
+
+
+@pytest.mark.parametrize("language", ["zh", "en"])
 @pytest.mark.parametrize("plan", ["awaiting_profile_confirmation", "awaiting_confirmation"])
 def test_automatic_confirmation_preserves_what_customer_is_confirming(
     tmp_path: Path, language: str, plan: str,

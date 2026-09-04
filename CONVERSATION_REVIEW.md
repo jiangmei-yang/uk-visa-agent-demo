@@ -129,3 +129,19 @@ not independent naturalness acceptance or a new live recipient observation.
 The existing registered-sender Gmail LaunchAgent was reloaded under its state lock, and its new
 process completed an idle poll at 2026-09-04T09:32:05Z. No old replies were manually resent; this
 runtime observation establishes loading/polling only, not how a new recipient judges the wording.
+
+## Mixed-intent Gmail reply acknowledgement
+
+Two provider-bound capture tests (Chinese/English) reproduced a missing acknowledgement: an
+`if/elif` opening selected a correction and skipped files and new work/funding information in the
+same turn. The deterministic blocked reply now composes all three applicable acknowledgements,
+without restarting the greeting or repeating a second generic "Thanks". It continues to report
+receipt, not document acceptance. The cases contain fictional extracted state and filenames;
+these tests do not exercise extraction or upload actual attachments.
+
+The tests verify the exact automatic Gmail sender body, persisted outbox wording, unchanged case
+snapshot, no repeated funding question and no second send on redispatch. The initial tests failed
+on missing filenames; after the fix an English assertion needed case-insensitive matching because
+the new sentence correctly starts "You're". All 352 local tests pass. This is simulated sender
+evidence, not a live-mail or independent naturalness pass. Further WhatsApp expansion is deferred
+per the owner's Gmail-first priority; no download-grant prototype was retained or deployed.
