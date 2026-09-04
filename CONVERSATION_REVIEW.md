@@ -145,3 +145,19 @@ on missing filenames; after the fix an English assertion needed case-insensitive
 the new sentence correctly starts "You're". All 352 local tests pass. This is simulated sender
 evidence, not a live-mail or independent naturalness pass. Further WhatsApp expansion is deferred
 per the owner's Gmail-first priority; no download-grant prototype was retained or deployed.
+
+## Requested checklist before completed intake
+
+An internal review found that missing profile fields consumed the entire three-item reply budget,
+so an explicit request for a document checklist could receive only more questions. Two bilingual
+regressions reproduced an empty document list despite known purpose, passport/application location,
+occupation and funding. A bounded explicit-list request now shows the currently applicable outstanding
+requirements before the remaining questions, with a note that changed arrangements may change the
+list. Requirements still come from the existing policy engine; the renderer neither creates new
+requirements nor marks them complete. First enquiries without that context retain paced intake.
+
+Three negative controls cover declined lists and quoted old requests. All five new tests preserve
+the case snapshot and/or existing pacing; the positive cases remain blocked by the delivery gate.
+All 357 local tests, lint and typing pass. This is local renderer evidence, not a live extraction or
+Gmail delivery result. The current sender-scoped live mailbox still had only two processed messages
+and two SENT replies when inspected before this change, with no new applicant turn to evaluate.

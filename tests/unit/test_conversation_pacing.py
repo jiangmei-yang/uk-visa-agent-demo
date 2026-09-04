@@ -5,7 +5,7 @@ import pytest
 
 from visa_agent.domain.models import Case, CaseStatus, InboundEvent
 from visa_agent.domain.policy import load_policy
-from visa_agent.domain.rules import evaluate_gate
+from visa_agent.domain.rules import build_requirements, evaluate_gate
 from visa_agent.llm.guarded import GuardedLLM, deterministic_fallback_message
 from visa_agent.llm.offline import OfflineFixtureLLM
 from visa_agent.storage.sqlite import SQLiteStore
@@ -164,6 +164,37 @@ def test_date_pair_is_one_question_without_losing_either_required_field(language
     assert case.profile.planned_arrival_date is None
     assert case.profile.planned_departure_date is None
     assert not case.final_summary_confirmed
+
+
+@pytest.mark.parametrize("language,body", [("zh", "请先把需要的材料清单发给我。"),
+                                          ("en", "Please send me the document checklist first.")])
+def test_explicit_checklist_request_is_answered_before_finishing_intake(language, body):
+    case = example()
+    case.customer_language = language
+    case.profile.occupation_status = "student"
+    case.profile.funding_source = "self"
+    case.latest_customer_message = body
+    policy = load_policy(Path("knowledge/uk_standard_visitor_2026-02-25.yaml"))
+    case.requirements = build_requirements(case, policy)
+    before = case.model_dump_json()
+    _, questions, documents = reply_items(case)
+    assert len(documents) >= 4
+    assert questions
+    text = deterministic_fallback_message(case, "blocked")
+    assert all(item in text for item in documents)
+    assert text.index(documents[0]) < text.index(questions[0])
+    assert case.model_dump_json() == before
+    assert not evaluate_gate(case, policy, date(2026, 9, 4)).allowed
+
+
+@pytest.mark.parametrize("body", ["不用发材料清单，我晚点再说。",
+    "I don't need the document checklist yet.",
+    "Thanks.\n\nOn Friday, Adviser wrote:\nPlease send me the document checklist first."])
+def test_declined_or_quoted_checklist_request_does_not_expand_reply(body):
+    case = example()
+    case.latest_customer_message = body
+    case.requirements = build_requirements(case, load_policy(Path("knowledge/uk_standard_visitor_2026-02-25.yaml")))
+    assert reply_items(case)[2] == []
 
 
 @pytest.mark.parametrize("body", ["我还没核对其他资料，晚点回复。",

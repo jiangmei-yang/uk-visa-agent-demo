@@ -267,6 +267,24 @@ QUESTION_TEXT_EN = {
 }
 
 
+def document_list_requested(case: Case) -> bool:
+    """A bounded explicit request, after enough context to select material categories."""
+    if not all((case.profile.visit_purpose, case.profile.nationality_country,
+                case.profile.application_country, case.profile.occupation_status,
+                case.profile.funding_source)):
+        return False
+    text = latest_reply_text(case.latest_customer_message)
+    if re.search(r"(?:不用|不需要|不要).{0,20}(?:清单|材料|资料)|"
+                 r"(?:don't|do not|no need).{0,30}(?:checklist|documents|list)", text, re.I):
+        return False
+    return bool(re.search(
+        r"(?:请|麻烦|想要|需要).{0,25}(?:材料清单|资料清单)|"
+        r"(?:需要|准备|还缺)(?:什么|哪些)(?:材料|资料)|"
+        r"(?:send|share|show|give).{0,30}(?:document checklist|document list|list of documents)|"
+        r"(?:what|which) documents.{0,20}(?:need|required|prepare)", text, re.I,
+    ))
+
+
 def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
     """Only the next few questions; completeness remains enforced by the delivery gate."""
     zh = case.customer_language == "zh"
@@ -318,7 +336,8 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
         del questions[question_fields.index("planned_departure_date")]
     # An initial enquiry should not receive the entire form and document checklist at once.
     documents = []
-    if not questions or case.documents:
+    requested_list = document_list_requested(case)
+    if not questions or case.documents or requested_list:
         documents = [
             DOCUMENT_LABELS_ZH.get(item.id, item.title) if zh else item.title
             for item in case.requirements
@@ -332,7 +351,8 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
                 )
             )
         ]
-    documents = documents[: max(0, 3 - len(issues) - len(questions))]
+    if not requested_list:
+        documents = documents[: max(0, 3 - len(issues) - len(questions))]
     return issues, questions, documents
 
 
@@ -433,13 +453,6 @@ def blocked_customer_message(case: Case) -> str:
             )
             + "\n".join(f"- {item}" for item in issues)
         )
-    if questions:
-        # Keep the grounded questions verbatim, but don't turn a short conversation
-        # into a labelled form. Longer questions get their own paragraph.
-        separator = "" if zh else " "
-        joined = separator.join(questions)
-        sections.append(joined if len(joined) <= (100 if zh else 240)
-                        else "\n\n".join(questions))
     if documents:
         sections.append(
             (
@@ -449,6 +462,19 @@ def blocked_customer_message(case: Case) -> str:
             )
             + "\n".join(f"- {item}" for item in documents)
         )
+        if document_list_requested(case):
+            sections.append(
+                "这是按目前信息列出的待补材料；如果行程或资助情况有变化，我会再调整。"
+                if zh else "These are the outstanding documents based on what you've told me so far. "
+                "I'll adjust the list if your travel or funding arrangements change."
+            )
+    if questions:
+        # Keep the grounded questions verbatim, but don't turn a short conversation
+        # into a labelled form. Longer questions get their own paragraph.
+        separator = "" if zh else " "
+        joined = separator.join(questions)
+        sections.append(joined if len(joined) <= (100 if zh else 240)
+                        else "\n\n".join(questions))
     return "\n\n".join(sections)
 
 
