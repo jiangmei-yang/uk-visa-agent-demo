@@ -17,7 +17,7 @@ explicitly recorded here.
 
 Updated 2026-09-04. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**. The current local suite has
-601 passing tests; this is not a naturalness score or a general accuracy/reliability percentage.
+1,179 passing tests; this is not a naturalness score or a general accuracy/reliability percentage.
 
 Current owner-directed priority: improve the shared agent and use Gmail as the primary realistic
 test channel. Preserve the existing WhatsApp adapter contracts; defer further channel expansion
@@ -35,7 +35,7 @@ and device trials. This sequencing does not turn untested WhatsApp behavior into
 | Event/send idempotency | Local tests + specific live crash/reconciliation | Provider IDs deduplicate; accepted Gmail send recovered without resend; uncertain outcomes withheld ([evidence](GMAIL_LIVE_EVIDENCE.md)) | Other live outage windows; lost-SID Twilio recovery remains manual |
 | Pack determinism | Local/CI fixture runs | Twenty identical fixture ZIPs documented; Docker state migration verified ([accuracy scope](ACCURACY.md)) | Independent cross-platform reproducibility and realistic-material output review |
 | Model extraction/injection | Synthetic corpora with real DeepSeek + local guards | Separate precision/recall, negative-fact and perturbation reports; failures retained ([reports](ACCURACY.md)) | Real-user distribution, broader document attacks, monitoring and drift |
-| Human-review recovery | Local integration | Held messages preserved; audited operator retry for non-finalized Gmail intake resets consent ([scope](HUMAN_REVIEW_RECOVERY.md)) | Nontechnical operator UI, authenticated roles, finalized-case revision and real recovery journey |
+| Human-review recovery | Local integration | Held messages preserved; audited intake retry and operator-authorized finalized-case revisions preserve old archives and require fresh confirmation ([scope](HUMAN_REVIEW_RECOVERY.md)) | Nontechnical operator UI, authenticated roles, real recovery journey and recipient-side revised-pack redelivery |
 | Human usability | Internal browser review + owner's critical feedback | Launchers/guided flow exist; guide corrected to describe persistent state ([walkthrough](START_HERE.md)) | Uncoached independent interviewer/applicant observation; no full-mark claim |
 | Local data controls | Local tests + earlier browser review | Export/deletion includes held updates and review actions; held bodies are explicitly retained pending review ([scope](HUMAN_REVIEW_RECOVERY.md)) | Retention automation, access roles, encrypted storage, provider/backup deletion policy |
 
@@ -52,7 +52,7 @@ and device trials. This sequencing does not turn untested WhatsApp behavior into
    the assumption that a mechanically passing reply necessarily sounds natural.
 5. Gmail rewrites RFC Message-ID; the implemented correlation-header recovery passed a specific
    real crash test. Other outages and both negative history-recovery probes remain unproven.
-6. Independent usability evidence, finalized-case revision and production privacy/operations controls
+6. Independent usability evidence, real revised-pack redelivery and production privacy/operations controls
    are incomplete. None is waived by a higher automated-test count.
 
 ## Experiment sequence

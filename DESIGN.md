@@ -11,7 +11,7 @@ an optional live adapter. The application is a modular monolith divided into pla
 application workflow, domain, and infrastructure modules. SQLite stores a canonical Pydantic case
 snapshot plus idempotency, outbox, and delivery records. Generated PDFs/JSON/ZIP are derived outputs.
 
-The product excludes visa/ETA advice, other routes, minors, application submission, legal conclusions,
+The product excludes personal visa/ETA eligibility decisions, finalizing other routes, minors, application submission, legal conclusions,
 approval prediction and document authenticity decisions. The default review UI uses synthetic
 offline data. Gmail integration exists separately; WhatsApp and realistic-material end-to-end
 acceptance remain incomplete. See VALIDATION.md for the current evidence and privacy boundaries.
@@ -19,6 +19,26 @@ acceptance remain incomplete. See VALIDATION.md for the current evidence and pri
 The primary completion event is one pack generated after all current gate checks pass. Guardrails are
 zero unsupported-route finalisations, zero packs with an open blocker, zero duplicate side effects on
 replay, and zero unprovenanced critical facts.
+
+### Adviser understanding and reply boundaries
+
+The current model is an API-connected pretrained DeepSeek model, not a model trained in this
+repository. One bounded extraction proposes applicant updates, date-question deferrals and customer
+question topics. Local validation checks types, literal sources and conflicts; the canonical case,
+sent-question ledger, confirmation context and delivery gate remain controlled by code. A reviewed,
+dated answer catalogue supplies application links, practical preparation steps and bounded official
+guidance. The installed default does not let an unconstrained model compose legal answers.
+
+`off_topic` is distinct from a UK-visa question not fully answered by the catalogue (`unsupported`).
+Neither can change eligibility or release a pack. Separate corrections and requests to continue in
+the same message must not be lost because one question is outside scope. See `RELIABILITY.md`.
+
+This design still misses genuine questions in real-provider probes and sometimes sounds formulaic.
+The next candidate should evaluate a separate, narrowly scoped question-understanding pass against
+the current combined call, measuring omissions, mixed-turn preservation, latency and cost before
+adoption. That is a proposed experiment, not an implemented multi-agent system or a promise that
+more model calls will improve quality. Rendering/content coverage needs its own evaluation; a correct
+topic or a passing delivery gate does not prove the customer received a helpful answer.
 
 ## Intent
 

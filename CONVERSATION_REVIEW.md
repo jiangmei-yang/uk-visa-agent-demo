@@ -566,3 +566,98 @@ New PID 60803 was separately confirmed live and completed an idle poll at 2026-0
 The raw case/outbox fingerprint matched before and after: one case and eight SENT replies. No
 historic mail was replayed or manually sent. This is a safe-loading observation, not a new customer
 reply, recipient-side usability result, or evidence that the failed holdout issue was fixed.
+
+## New scope corpus and reply-level review
+
+The next independent corpus has 24 development and eight reserved holdout cases, with evaluator-only
+expectations for explicit applicant corrections. Original messages/labels/splits were frozen before
+measurement; the correction annotations did not change them. See `evals/README.md` for fingerprints.
+`off_topic` now distinguishes unrelated requests from UK-visa questions outside the reviewed answer
+catalogue (`unsupported`). This follows the explicit out-of-task handling recommended in the
+[structured-output guidance](https://developers.openai.com/api/docs/guides/structured-outputs#handling-user-generated-input),
+not a claim that a schema can prove meaning. DeepSeek remains JSON Chat plus local Pydantic validation,
+not OpenAI strict-schema enforcement. No model, temperature, endpoint or token limit was changed.
+
+The first real development run, `adviser_scope_development_2026-09-04.json`, is retained unchanged:
+22/24 cases passed the selected checks, with 24 API calls and 65,200 provider tokens. Twenty-three
+extractions were schema-valid; one added forbidden `value: null` keys to date deferrals. The other
+failure proposed an unnecessary whole-document checklist for a question about obtaining bank
+statements. Raw and guarded exact-topic results were both 22/24 including the schema failure;
+micro precision was 23/24 and recall 1.0 among available classifications. No real mail was sent.
+The schema error occurred in this probe's single extraction before workflow capture; it is not
+evidence that the installed worker failed to reply. Production's bounded retry/review fallback is
+covered separately and must not be silently substituted for the failed measurement.
+
+Independent engineering reading of every actual reply found further problems, including a PASS
+that answered a bank-statement question with visa decision timing and omitted online acquisition.
+Both generic work/medical responses were safe abstentions but gave no useful verification step.
+Other observed weaknesses include repeated route disclaimers/links, field-like English correction
+wording, and asking for a passport in a checklist without acknowledging that the applicant said
+they already have it. Possession must not be confused with submission or verification. These
+observations are not independent customer usability acceptance, and the passing cases are not
+therefore declared adviser-quality passes.
+
+Development changes clarify deferral object keys and the distinction between a document list and
+obtaining one document. Bank answers now add a practical collection step when asked: look for an
+official electronic statement or request it from the bank. That suggestion is not a guarantee of
+acceptance and is separate from the reviewed financial-evidence explanation. Timing keyword
+fallback cannot expand a classified bank-coverage clause into a visa-decision answer; separate
+timing questions remain answerable.
+
+The [permitted-activities page](https://www.gov.uk/standard-visitor) and
+[medical-visit page](https://www.gov.uk/standard-visitor/visit-for-medical-reasons) were checked on
+2026-09-04. Bounded contextual verification replies now point to these pages without deciding
+whether an individual's work or treatment plan qualifies. They share the existing 2026-10-04
+review deadline and are suppressed for an independently stated different route. Declining links
+removes source lines, not the rest of a multi-question answer.
+
+Scope-only turns keep existing case details and an unchanged, actually-SENT summary context;
+independent corrections, files, date deferrals, natural confirmations and requests to continue
+still use normal workflow checks. Review flags, sender mismatch, old events, finalization and
+held-update restrictions precede or exclude this path. Distinct grounded boundary excerpts are
+preserved even when they share a topic, so a second unrelated application-fee question cannot
+escape its scope just because the first unrelated question was already recorded. These are
+bounded code/contract guarantees, not proof that the model always finds the correct scope.
+
+The second real development run (`adviser_scope_development_2026-09-04-v2.json`) used 24 calls
+and 66,962 tokens. All extractions were schema-valid; two genuine unrelated questions were omitted
+and got quiet receipts instead of scope responses. Exact topic sets remained 22/24, with precision
+1.0 and recall 21/23. One additional content failure was an evaluator defect: a fixed 40-character
+negation window misread “not a guarantee that any downloaded file will be accepted” as a promise.
+The corrected evaluator tests scoped negation without allowing an unrelated earlier “not” to
+excuse a later affirmative guarantee. The original report remains failed and unchanged.
+
+The final development candidate (`adviser_scope_development_2026-09-04-v3.json`) used 24 calls
+and 67,852 tokens. All extractions were schema-valid, but only 21/24 topic sets and selected case
+checks passed (precision 1.0, recall 20/23). Two unrelated requests and one genuine English
+document-list request were omitted; their receipts were not adequate answers. Both explicit
+corrections were retained. The bank subquestions were answered without irrelevant visa timing,
+work/medical questions received their reviewed verification steps, and an explicit “carry on”
+request now received preparation guidance despite a separate date deferral. These improvements
+do not cancel the three omissions or establish improvement in general model accuracy.
+
+Preparation resumption now evaluates whole current sentences rather than vetoing a message
+because “later” appears in a separate date statement. Comma-linked hypothetical/negative clauses,
+quoted requests and link opt-outs remain excluded. The full suite passes 1,179 tests, ruff and
+mypy (56 source files), with the existing Starlette/httpx deprecation warning. Those are local
+regressions, not a reason to call this conversational candidate complete. The candidate was frozen
+after these checks for its first new eight-case holdout measurement; no exposed holdout was reused.
+
+The single new holdout run (`adviser_scope_holdout_2026-09-04.json`) passed all eight expected
+topic sets and selected checks, with eight API calls and 23,040 tokens. Both held-out explicit
+corrections reached their expected profile values. The measured source hashes match the final
+development candidate. No real Gmail send, applicant confirmation or final pack occurred.
+These eight inputs are now exposed and cannot be reused as unseen evidence. This small holdout
+pass does not override the three development omissions or the remaining formulaic/low-information
+replies. The conversational acceptance remains **incomplete**.
+
+The incremental test candidate was loaded into the existing registered Gmail worker under the
+state lock (PID 64418), with reviewed wording, sender scope and final-send restrictions unchanged.
+This reload was **not** a state-preserving idle experiment: a new ordinary all-materials request
+arrived at 11:35:29 UTC and was replied to at 11:35:56 UTC, increasing the outbox from eight to nine
+SENT replies. Its five-item response explains each document's purpose and includes official
+application/document links. Read-only authenticated Gmail GETs confirmed the SENT copy's exact
+persisted body, recipient, thread, reply header and no attachments. A following idle poll retained
+one outbox row for that event. See `eval_output/gmail_scope_live_reply_2026-09-04.json`.
+This proves one real ordinary-message reply, not recipient-side reading, approved naturalness,
+correction of the development omissions, or final-pack delivery. No manual message was sent.

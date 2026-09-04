@@ -183,13 +183,25 @@ def next_fact_questions(case: Case) -> list[str]:
 def customer_requests_next_step(body: str) -> bool:
     """Permission to resume questions only, never consent to a summary or delivery."""
     text = latest_reply_text(body)
-    text = re.sub(r'“[^”]*”|‘[^’]*’|"[^"\n]*"', "", text)
-    if re.search(r"还没|尚未|暂时|先不|不要|不用|如果|\b(?:not|haven't|if|later)\b|don't", text, re.I):
-        return False
-    return bool(re.search(
-        r"下一步|接下来(?:需要|该|怎么)|还缺(?:什么|哪些)|(?:现在|已经).{0,5}(?:可以继续|准备好了)|继续问|"
-        r"\bwhat(?:'s| is) next\b|\bnext step\b|\bready to (?:continue|proceed)\b|"
-        r"\bwhat.{0,15}(?:still missing|else do you need)\b", text, re.I))
+    text = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"', "", text)
+    text = re.sub(r"(?<!\w)'[^'\n]+'(?!\w)|`[^`\n]+`", "", text)
+    # A separate date deferral must not veto a current request to prepare other items.
+    # Keep comma-linked conditions together: 'If ..., please continue' is not consent.
+    for clause in re.split(r"[。！!；;\n]|(?<=[?？])\s*|\.(?:\s|$)", text):
+        if re.search(r"还没|尚未|暂时|先不|不要|不用|不想|不需要|不能|如果|假如|"
+                     r"\b(?:not|never|haven't|if|later|tomorrow|maybe|cannot|stop)\b|"
+                     r"(?:don|can|won|wouldn|couldn|shouldn)['’]t", clause, re.I):
+            continue
+        if re.search(
+            r"下一步|接下来(?:需要|该|怎么)|还缺(?:什么|哪些)|(?:现在|已经).{0,5}(?:可以继续|准备好了)|继续问|"
+            r"(?:继续|接着)(?:准备|整理|收集).{0,6}(?:材料|资料|申请)|"
+            r"\bwhat(?:'s| is) next\b|\bnext step\b|\bready to (?:continue|proceed)\b|"
+            r"\b(?:let['’]s|please|can we|could we) (?:continue|carry on|resume|proceed).{0,30}"
+            r"(?:prepar\w*|application|documents?|evidence)\b|"
+            r"\bwhat.{0,15}(?:still missing|else do you need)\b", clause, re.I,
+        ):
+            return True
+    return False
 
 
 def update_deferred_questions(case: Case, body: str) -> None:
@@ -404,6 +416,20 @@ def document_list_requested(case: Case) -> bool:
     if re.search(r"(?:不用|不需要|不要).{0,20}(?:清单|材料|资料)|"
                  r"(?:don't|do not|no need).{0,30}(?:checklist|documents|list)", text, re.I):
         return False
+    if {"off_topic", "unsupported"}.intersection(case.customer_question_topics):
+        # A separate visa question still gets keyword fallback. Exclude only clauses
+        # covered by validated scope excerpts, never the whole mixed customer message.
+        if "document_checklist" in case.customer_question_topics:
+            return True
+        if not case.customer_question_exclusions:
+            return False  # Older snapshots have topics but no excerpt scope.
+        excerpts = [re.sub(r"\s+", " ", value).strip().casefold()
+                    for value in case.customer_question_exclusions]
+        clauses = re.split(r"[。！!；;\n，,]|(?<=[?？])\s*|\.(?:\s|$)", text)
+        text = "\n".join(clause for clause in clauses if not any(
+            excerpt in re.sub(r"\s+", " ", clause).strip().casefold()
+            or re.sub(r"\s+", " ", clause).strip().casefold() in excerpt for excerpt in excerpts
+        ))
     if "document_checklist" in case.customer_question_topics:
         return True
     return bool(re.search(
@@ -603,6 +629,13 @@ def blocked_customer_message(case: Case) -> str:
     sections = ([intro] if contextual or (case.question_plan == [] and case.pending_question_fields
                                         and not case.customer_answers and not documents)
                 else ([] if case.customer_answers or documents else [greeting, intro]))
+    if not questions and not issues and not documents and not case.customer_answers and not acknowledgements:
+        # Do not announce more questions when this turn has none, or restart a greeting
+        # before the only useful response: acknowledgement of explicitly undecided dates.
+        sections = [] if case.latest_deferred_fields else [
+            "好的，已有资料会保留。有新安排或材料时，直接接着回复就好。"
+            if zh else "Your existing details will stay on file. Just reply when you have new plans or documents to add."
+        ]
     if case.latest_deferred_fields and (
         not case.customer_answers or case.proactive_guidance_offered or case.latest_received_facts or case.latest_changes
     ):

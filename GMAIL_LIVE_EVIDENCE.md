@@ -212,3 +212,18 @@ in customer mail; synthetic status belongs in the operator's test records. Run `
 inspect the generated outbox text, then explicitly run `send-reviewed` (one due reply
 per invocation). Reuse the same directory for replay; never delete state to retry an
 uncertain send. Do not use this runner with real applicant data.
+
+## New ordinary checklist request — 2026-09-04 11:35 UTC
+
+After the incremental adviser candidate was loaded, the existing registered sender's new request
+to explain all needed documents received one automatic reviewed reply. It listed five material
+categories with purposes/collection guidance and official application/document links, without
+requesting an exact travel date or attaching a pack. It did not require a demo label or scripted
+confirmation phrase. Local state advanced from eight to nine SENT replies for that new event.
+
+Authenticated read-only Gmail GETs verified the provider's SENT MIME body against the persisted
+outbox, plus recipient, thread, exact reply header, auto-reply marker and absence of attachments.
+The following poll still showed one reply row for the event. The redacted observation is
+`eval_output/gmail_scope_live_reply_2026-09-04.json`; it contains no applicant body or email address.
+This is provider-side evidence for one reply, not recipient observation, general answer quality,
+ordinary-document final-pack acceptance, or a cure for the retained development omissions.

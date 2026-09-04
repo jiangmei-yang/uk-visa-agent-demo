@@ -29,7 +29,13 @@ from visa_agent.llm.ports import CasePatch
 from visa_agent.secrets import read_secret
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.adviser_guidance import APPLICATION_URL, DOCUMENTS_URL
-from visa_agent.workflow.conversation import latest_reply_text, next_fact_questions, reply_items
+from visa_agent.workflow.conversation import (
+    QUESTION_TEXT_EN,
+    QUESTION_TEXT_ZH,
+    latest_reply_text,
+    next_fact_questions,
+    reply_items,
+)
 from visa_agent.workflow.service import WorkflowService
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -132,6 +138,103 @@ def topic_metrics(expected: list[str], actual: list[str]) -> dict[str, Any]:
     }
 
 
+def current_evaluation_clauses(body: str, *, split_commas: bool = True) -> list[str]:
+    """Independent evaluator view: quoted wording is not a new customer request."""
+    text = latest_reply_text(body)
+    text = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"', "", text)
+    text = re.sub(r"(?<!\w)'[^'\n]+'(?!\w)|`[^`\n]+`", "", text)
+    separators = r"[。！!；;\n，,]" if split_commas else r"[。！!；;\n]"
+    return [clause.strip() for clause in re.split(
+        separators + r"|(?<=[?？])\s*|\.(?:\s|$)", text,
+    ) if clause.strip()]
+
+
+def explicit_preparation_request(body: str) -> bool:
+    """Allow requested preparation, not quoted, declined or hypothetical continuation.
+
+    This does not grant confirmation, submission or release authority. It only
+    prevents the evaluator treating requested guidance as unsolicited guidance.
+    """
+    for clause in current_evaluation_clauses(body, split_commas=False):
+        if re.search(
+            r"不要|别|先不|暂时不|不想|不需要|不准备|不能|无需|不用|还没|尚未|如果|假如|"
+            r"\b(?:not|never|stop|no need|if|maybe|later|tomorrow|"
+            r"don['’]t|can['’]t|cannot|wouldn['’]t|couldn['’]t|shouldn['’]t|won['’]t)\b",
+            clause, re.I,
+        ):
+            continue
+        subject = re.search(r"签证|申请|材料|资料|\b(?:visa|application|documents?|evidence|preparation)\b", clause, re.I)
+        affirmative = re.search(
+            r"(?:请|麻烦|我们|咱们|我想|我准备|现在可以|现在|可以)?(?:继续|开始|恢复|接着|推进)|"
+            r"\b(?:let['’]s|please|could (?:we|you)|can (?:we|you)|"
+            r"(?:i am|i['’]m|we are|we['’]re) ready to|i (?:want|would like) to)\s+"
+            r"(?:continue|carry on|proceed|resume|start|begin|prepare|organise|organize)\b",
+            clause, re.I,
+        )
+        if subject and affirmative:
+            return True
+    return False
+
+
+def bank_acquisition_requested(body: str) -> bool:
+    clauses = current_evaluation_clauses(body)
+    if not re.search(r"银行|流水|对账单|\bbank|\bstatements?\b", " ".join(clauses), re.I):
+        return False
+    for clause in clauses:
+        if re.search(
+            r"(?:不用|无需|不要|不想|不需要).{0,15}(?:解释|告诉|说明|回答)|不问|"
+            r"\b(?:not asking|not interested|don['’]t explain|do not explain|no need to explain)\b",
+            clause, re.I,
+        ):
+            continue
+        if re.search(
+            r"网银|网上银行|手机银行|下载|电子(?:版|账单)|获取|开具|无纸化|"
+            r"哪里.{0,8}(?:拿|找|开)|\b(?:online|download|paperless|e-statements?)\b|"
+            r"\b(?:where|how).{0,45}(?:get|obtain|request)\b|\bpaper copies\b",
+            clause, re.I,
+        ):
+            return True
+    return False
+
+
+def bank_acceptance_guaranteed(body: str) -> bool:
+    """Detect bounded affirmative promises without treating any earlier 'not' as scope.
+
+    A directly negated promise, or its 'that ...' complement, is not affirmative.
+    Sentence/clause boundaries and a later independent assertion end that scope;
+    negation is not limited to an arbitrary character-distance window.
+    """
+    guarantee = re.compile(
+        r"guaranteed (?:to be accepted|acceptance)|will (?:always )?be accepted|"
+        r"automatically accepted|always acceptable|guarantees? (?:acceptance|approval)|"
+        r"一定(?:会)?(?:被接受|获批|符合|满足)|保证(?:被接受|获批|符合|满足)|自动(?:被)?接受",
+        re.I,
+    )
+    direct_negative = re.compile(
+        r"(?:\b(?:not|never|no|cannot|can['’]t|doesn['’]t|don['’]t)\b|不能|无法|不|未)"
+        r"\s*(?:an?\s+|any\s+)?$", re.I,
+    )
+    negative_governor = re.compile(
+        r"\b(?:not\s+(?:a|an|any)\s+|no\s+)(?:guarantee|promise)\s+that\b|"
+        r"\b(?:cannot|can['’]t|doesn['’]t|don['’]t|does not|do not|could not|never)\s+"
+        r"(?:guarantee|promise|mean|imply|ensure|say)\s+that\b",
+        re.I,
+    )
+    independent_assertion = (
+        r"\b(?:but|however|nevertheless|yet|instead)\b|但是|不过|然而|可是|但|"
+        r"\band\s+(?=(?:i|we)\s+(?:guarantee|promise)\b)|"
+        r"\band\s+(?=(?:these|those|your|the)\s+(?:files|copies|documents|statements)\s+will\b)"
+    )
+    for sentence_clause in current_evaluation_clauses(body):
+        for clause in re.split(independent_assertion, sentence_clause, flags=re.I):
+            for match in guarantee.finditer(clause):
+                prefix = clause[:match.start()]
+                if direct_negative.search(prefix) or negative_governor.search(prefix):
+                    continue
+                return True
+    return False
+
+
 def content_checks(
     expected: list[str], case: Case, body: str, language: str,
     *, incoming_body: str = "", unchanged_profile: bool = False,
@@ -140,6 +243,12 @@ def content_checks(
     """Small reviewed-source checks, not an LLM judge or a style/naturalness score."""
     checks: dict[str, bool] = {}
     zh = language == "zh"
+    expected_set = set(expected)
+    questions, _, documents = reply_items(case)
+    default_document_block = bool(re.search(
+        r"接下来还需要这些材料|We'll also need these documents", body, re.I,
+    )) or any(re.search(rf"(?m)^\s*[-*]\s*{re.escape(document)}", body)
+              for document in documents)
     for topic in expected:
         if topic in {"application", "timing", "fees"}:
             checks[f"{topic}_official_source"] = APPLICATION_URL in body
@@ -173,6 +282,27 @@ def content_checks(
                 if zh else "does not set one fixed number of months" in body
                 and "funds come from" in body
             )
+            if not {"application", "timing"}.intersection(expected_set):
+                checks["bank_period_no_unrequested_visa_timing"] = not re.search(
+                    r"(?:出发|旅行)前.{0,16}(?:个月|周|天)|"
+                    r"(?:决定|出结果|审理).{0,35}(?:个月|周|天)|"
+                    r"(?:个月|周|天).{0,35}(?:决定|出结果|审理)|"
+                    r"\b(?:apply|application).{0,80}(?:months?|weeks?|days?).{0,25}(?:before|ahead)|"
+                    r"\b(?:decision|processing time).{0,65}(?:days?|weeks?|months?)",
+                    body, re.I,
+                )
+            if bank_acquisition_requested(incoming_body):
+                checks["bank_acquisition_practical_next_step"] = bool(re.search(
+                    r"(?:网银|网上银行|手机银行|银行.{0,6}APP).{0,35}(?:下载|导出|获取|申请)|"
+                    r"(?:向|联系|询问|请).{0,8}银行.{0,30}(?:申请|索取|开具|提供|获取)|"
+                    r"(?:索取|申请|联系|询问).{0,12}银行|"
+                    r"(?:bank(?:['’]s)?\s+(?:website|portal|app)|online banking|banking app)"
+                    r".{0,60}(?:download|export|statements?)|"
+                    r"(?:download|export).{0,65}(?:bank(?:['’]s)?\s+(?:website|portal|app)|online banking)|"
+                    r"\b(?:request|ask|contact).{0,35}\bbank\b",
+                    body, re.I,
+                ))
+                checks["bank_acquisition_no_acceptance_guarantee"] = not bank_acceptance_guaranteed(body)
         elif topic == "document_checklist":
             documents = reply_items(case)[2]
             checks["checklist_at_least_three_relevant_items"] = (
@@ -188,16 +318,57 @@ def content_checks(
                 checks["unsupported_not_answered_with_narrow_fee_or_timing"] = (
                     "£135" not in body and not re.search(r"3\s*(?:weeks?|周)", body, re.I)
                 )
+        elif topic == "off_topic":
+            scope_paragraphs = [paragraph for paragraph in body.split("\n\n") if (
+                re.search(r"英国签证|UK visa|British visa", paragraph, re.I)
+                and re.search(
+                    r"不属于|超出|范围之外|不在.{0,16}范围|outside|beyond|out of scope|not within",
+                    paragraph, re.I,
+                )
+            )]
+            checks["off_topic_scope_boundary"] = bool(scope_paragraphs)
+            checks["off_topic_scope_note_brief"] = bool(scope_paragraphs) and all(
+                len(paragraph) <= 240 if zh else len(paragraph.split()) <= 70
+                for paragraph in scope_paragraphs
+            )
+            if expected_set == {"off_topic"}:
+                checks["only_off_topic_no_official_visa_url"] = not re.search(
+                    r"https?://(?:[a-z0-9-]+\.)*gov\.uk(?:[/#?]|$)", body, re.I,
+                )
+                checks["only_off_topic_not_answered_with_fee_or_timing"] = (
+                    "£135" not in body and not re.search(r"3\s*(?:weeks?|周)", body, re.I)
+                )
+                if unchanged_profile:
+                    checks["only_off_topic_reply_brief"] = (
+                        len(body) <= 350 if zh else len(body.split()) <= 100
+                    )
+                    checks["only_off_topic_no_manual_legal_review"] = (
+                        case.status.value != "HUMAN_REVIEW_REQUIRED"
+                        and not re.search(
+                            r"人工|法律(?:复核|审核|审查)|human adviser|manual (?:legal )?review|"
+                            r"legal review|lawyer|solicitor", body, re.I,
+                        )
+                    )
+            if unchanged_profile:
+                if "document_checklist" not in expected_set:
+                    checks["off_topic_no_fact_change_no_default_document_requests"] = (
+                        not documents and not default_document_block
+                    )
+                known_questions = (QUESTION_TEXT_ZH if zh else QUESTION_TEXT_EN).values()
+                checks["off_topic_no_fact_change_no_new_intake_questions"] = (
+                    not next_fact_questions(case)
+                    and not any(question in body for question in [*questions, *known_questions])
+                    and not re.search(
+                        r"计划哪天到英国、哪天离开|What dates are you planning to arrive in and leave the UK",
+                        body, re.I,
+                    )
+                )
     if not expected:
         checks["non_question_not_given_fee_or_timing"] = (
             "£135" not in body and not re.search(r"3\s*(?:weeks?|周)", body, re.I)
         )
     if development_checks:
-        default_document_block = bool(re.search(
-            r"接下来还需要这些材料|We'll also need these documents", body, re.I,
-        )) or any(re.search(rf"(?m)^\s*[-*]\s*{re.escape(document)}", body)
-                  for document in reply_items(case)[2])
-        if not expected and unchanged_profile:
+        if not expected and unchanged_profile and not explicit_preparation_request(incoming_body):
             checks["no_question_no_fact_change_no_proactive_intake_guidance"] = (
                 not {"application_overview_v1", "student_self_preparation_v1"}.intersection(
                     case.guidance_events
@@ -298,6 +469,10 @@ def exercise_workflow(
                     "exact_persisted_provider_body": stored is not None and stored["payload"] == body,
                     "simulation_network_disabled": True,
                 }
+                # Corpus expectations are evaluator-only, independent of whatever
+                # updates the extractor proposed or the guard accepted.
+                for field, value in item.get("expected_profile_updates", {}).items():
+                    checks[f"expected_profile_update:{field}"] = field in after and after[field] == value
                 checks.update(content_checks(
                     item["expected_topics"], case, body, item["language"],
                     incoming_body=item["body"], unchanged_profile=expected_profile == before,
@@ -385,6 +560,8 @@ def load_replay(
         if (row.get("body") != item["body"] or row.get("language") != item["language"]
                 or row.get("expected_topics") != item["expected_topics"]):
             raise ValueError(f"Replay body, language or expected topics mismatch: {item['id']}")
+        if row.get("expected_profile_updates", {}) != item.get("expected_profile_updates", {}):
+            raise ValueError(f"Replay expected profile updates mismatch: {item['id']}")
         if not any(usage.get("operation") == "extract_case_patch" for usage in row.get("usage", [])):
             raise ValueError(f"Replay row has no real extraction usage evidence: {item['id']}")
         CasePatch.model_validate(row["raw_patch"])
@@ -401,6 +578,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--split", required=True, choices=("development", "holdout"))
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--corpus", type=Path, default=CORPUS,
+                        help="Frozen JSON corpus; defaults to the original adviser intent corpus")
     parser.add_argument("--allow-holdout", action="store_true", help="Explicit final evaluation only; never tune using it")
     parser.add_argument("--replay-report", type=Path,
                         help="Development only: reuse matching original real raw patches without reading a key or calling a model")
@@ -413,7 +592,7 @@ def main() -> None:
         parser.error("Holdout cannot use --replay-report")
     if args.output.exists():
         parser.error("Choose a NEW output path; retained results cannot be overwritten")
-    corpus_bytes = CORPUS.read_bytes()
+    corpus_bytes = args.corpus.read_bytes()
     items = [item for item in json.loads(corpus_bytes)
              if bool(item.get("holdout", False)) == (args.split == "holdout")]
     if not items:
@@ -440,6 +619,9 @@ def main() -> None:
         "development_content_checks": args.split == "development",
         "reviewed_guidance_as_of": REVIEWED_AS_OF.isoformat(),
         "started_at": datetime.now(UTC).isoformat(),
+        "corpus_id": (str(args.corpus.resolve().relative_to(REPOSITORY))
+                      if args.corpus.resolve().is_relative_to(REPOSITORY)
+                      else str(args.corpus.resolve())),
         "corpus_sha256": corpus_hash,
         "source_sha256": source_fingerprints(),
         "expected_case_count": len(items),
@@ -466,6 +648,7 @@ def main() -> None:
         row: dict[str, Any] = {
             "id": item["id"], "language": item["language"], "body": item["body"],
             "expected_topics": item["expected_topics"], "rationale": item["rationale"],
+            "expected_profile_updates": item.get("expected_profile_updates", {}),
             "checks": {}, "model_calls": 0,
             "provider_result_reused": bool(args.replay_report),
         }

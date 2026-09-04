@@ -132,3 +132,21 @@ The separate historical `eval_output/gmail_invalid_auth_2026-09-04.json` is real
 401 evidence only; it must not be combined with these simulations into a claim of live OAuth
 recovery. Real account reconnection and recipient-side observation remain required. The full
 local regression suite after adding these tests passes 335 tests, with lint and typing passing.
+
+## Incremental adviser candidate — 2026-09-04
+
+The scope/answer refinements in `CONVERSATION_REVIEW.md` were loaded under the existing state lock;
+the supervised worker was confirmed running as PID 64418. Reviewed wording remains the default,
+the registered sender binding was unchanged, and final `ready` dispatch is still excluded.
+
+A new ordinary request for the complete document list arrived during this rollout. It received one
+automatic reply with five explained material categories and the GOV.UK application/document links.
+Read-only Gmail raw/metadata requests confirmed the SENT copy's recipient, thread, In-Reply-To,
+automatic-reply header and exact persisted body. Outbox count increased from eight to nine because
+of that new message, not an unchanged-state reload. The following completed idle poll at
+2026-09-04T11:36:58Z still showed just one reply row for the new event. Evidence is in
+`eval_output/gmail_scope_live_reply_2026-09-04.json`.
+
+The full local suite has 1,179 passes, but the final 24-case development probe still omitted three
+questions. A separate eight-case first holdout pass does not cancel those failures. This remains
+an incremental registered-sender test service, not a completed or generally reliable public adviser.

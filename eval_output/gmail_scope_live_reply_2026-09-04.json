@@ -1,0 +1,35 @@
+{
+  "evidence_class": "provider observation",
+  "scope": "Read-only verification of one newly received, registered-sender request and its automatic reviewed Gmail reply",
+  "candidate_source_evidence": "adviser_scope_holdout_2026-09-04.json",
+  "new_inbound_received_utc": "2026-09-04T11:35:29Z",
+  "sent_at": "2026-09-04T11:35:56.321033+00:00",
+  "provider_message_id_sha256": "4b13b156dc5b8a65922385d663af806942a1d7de1086a4e8940d32d001631ca9",
+  "reply_body_sha256": "804fee45256df04b57b7c94621917d9c50c9995cd4fcf28635e6f82092dac84a",
+  "verification_method": "Authenticated Gmail raw-message GET plus inbound metadata GET; compare decoded plain-text MIME, threading and recipient to persisted outbox. No manual send or replay.",
+  "checks": {
+    "provider_sent_label": true,
+    "recipient_matches_case": true,
+    "same_provider_thread": true,
+    "reply_to_exact_inbound": true,
+    "automatic_reply_header": true,
+    "body_matches_persisted_reviewed_reply": true,
+    "no_attachments": true,
+    "one_outbox_for_event": true,
+    "exactly_five_document_bullets": true,
+    "includes_official_application_entry": true,
+    "includes_official_document_guide": true
+  },
+  "all_selected_checks_passed": true,
+  "local_outbox_rows_before_reload": 8,
+  "local_outbox_rows_after_new_reply": 9,
+  "new_event_outbox_rows_after_following_poll": 1,
+  "worker_idle_at": "2026-09-04T11:36:58.867269+00:00",
+  "not_proven": [
+    "recipient-side inbox receipt or reading",
+    "recipient acceptance of tone and completeness",
+    "correction of the three retained development question omissions",
+    "final-pack delivery",
+    "general accuracy or reliability"
+  ]
+}

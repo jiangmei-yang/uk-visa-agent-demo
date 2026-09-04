@@ -126,3 +126,22 @@ block ready planning, generation, download and dispatch. Provider reconciliation
 with respect to a new revision: finding an old accepted send does not resend it or release new work.
 Local tests cover these contracts, atomic batch rollback and exact-byte capture. They do not prove
 real recipient redelivery or cancellation of a provider request already in flight.
+
+## Conversation scope is not delivery authority
+
+Question classification has explicit `off_topic` and `unsupported` alternatives. The former means
+outside UK-visa preparation; the latter means a UK-visa question the reviewed answer set cannot
+fully resolve. Neither supplies facts, consent, eligibility, free-form legal advice or a URL.
+Distinct grounded boundary excerpts survive topic deduplication so downstream keyword fallback
+does not reinterpret an excluded second question as a new visa fee or document-list request.
+
+A narrow DRAFT scope-only response can preserve an unchanged SENT summary rather than replacing
+it with a newly requested summary. It is unavailable for independent fact updates, attachments,
+deferrals, existing blockers/held updates, review state, explicit or recognized natural confirmation,
+or a request to continue preparation. Duplicate, sender and event-order checks still precede
+extraction. Only the existing context-bound confirmation path may confirm a summary; no off-topic
+classification grants that authority. Case excerpts reset each new event and are presentation data.
+
+Real-provider failures and actual reply-level weaknesses are recorded in `CONVERSATION_REVIEW.md`.
+Exact excerpts, confidence and typed fields still cannot prove semantic correctness. This boundary
+reduces specific regressions without making the adviser a universal question-answering system.

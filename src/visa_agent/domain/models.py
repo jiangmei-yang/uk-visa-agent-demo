@@ -174,6 +174,7 @@ class Case(BaseModel):
     customer_answers: list[str] = Field(default_factory=list)
     # Topics from this turn only; not applicant facts or permission to progress.
     customer_question_topics: list[str] = Field(default_factory=list)
+    customer_question_exclusions: list[str] = Field(default_factory=list)
     proactive_guidance_offered: bool = False
     # Advice topic -> most recent event whose reply offered it; a SENT outbox row
     # is required before subsequent turns suppress it as already communicated.

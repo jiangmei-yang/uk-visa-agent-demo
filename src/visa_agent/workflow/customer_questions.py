@@ -9,6 +9,8 @@ from visa_agent.workflow.conversation import latest_reply_text
 SOURCE = "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
 APPLICATION_SOURCE = "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
 PROCESSING_SOURCE = "https://www.gov.uk/guidance/visa-processing-times-applications-outside-the-uk#when-your-application-processing-time-ends"
+ACTIVITIES_SOURCE = "https://www.gov.uk/standard-visitor"
+MEDICAL_SOURCE = "https://www.gov.uk/standard-visitor/visit-for-medical-reasons"
 CHECKED_AT = date(2026, 9, 4)
 REVIEW_AFTER = date(2026, 10, 4)
 OTHER_ROUTE = r"学生签证|工作签证|结婚签证|\b(?:student visa|work visa|marriage visa)\b"
@@ -68,12 +70,13 @@ def _booking_guidance(language: str, today: date, *, transit: bool = False,
     return [answer + "\nGOV.UK: " + SOURCE + "#documents-you-should-not-use-as-evidence"]
 
 
-def _active_clauses(body: str) -> list[str]:
+def _active_clauses(body: str, *, split_commas: bool = True) -> list[str]:
     """Quoted and explicitly declined topics are not fresh requests for advice."""
     text = latest_reply_text(body)
     text = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"', "", text)
     text = re.sub(r"(?<!\w)'[^'\n]+'(?!\w)|`[^`\n]+`", "", text)
-    clauses = re.split(r"[。！!；;\n，,]|(?<=[?？])\s*|\.(?:\s|$)", text)
+    separators = r"[。！!；;\n，,]" if split_commas else r"[。！!；;\n]"
+    clauses = re.split(separators + r"|(?<=[?？])\s*|\.(?:\s|$)", text)
     declined = (
         r"(?:不用|不需要|无需|别|不要|不想|不必).{0,10}(?:发|给|说|讲|解释|介绍|告诉|知道)|"
         r"\b(?:don['’]t|do not|no need to|not asking|not interested).{0,18}"
@@ -142,7 +145,7 @@ def validated_customer_questions(body: str, proposals: list[CustomerQuestion]) -
     Validate the whole containing clause, so a substring cannot strip away a refusal.
     """
     active = _active_clauses(body)
-    accepted: dict[str, CustomerQuestion] = {}
+    accepted: dict[tuple[str, str], CustomerQuestion] = {}
     for proposal in proposals:
         excerpt = _normalised_excerpt(proposal.source_excerpt)
         fragments = [_normalised_excerpt(fragment) for fragment in re.split(
@@ -153,7 +156,18 @@ def validated_customer_questions(body: str, proposals: list[CustomerQuestion]) -
                 and (excerpt in _normalised_excerpt("\n".join(active)) or all(
                     any(fragment in _normalised_excerpt(clause) for clause in active) for fragment in fragments
                 ))):
-            accepted.setdefault(proposal.topic, proposal)
+            scope_key = excerpt if proposal.topic in {"off_topic", "unsupported"} else ""
+            accepted.setdefault((proposal.topic, scope_key), proposal)
+    # Resolve contradictory interpretations before exposing current topics to other
+    # consumers (not just FAQ rendering). A narrow answer must not revive a request
+    # whose same clause was classified as outside scope or not safely answerable.
+    for boundary in ("off_topic", "unsupported"):
+        excerpts = [item.source_excerpt for item in accepted.values() if item.topic == boundary]
+        restricted = [clause for clause in active if any(_overlapping_excerpt(excerpt, clause) for excerpt in excerpts)]
+        accepted = {key: item for key, item in accepted.items()
+                    if item.topic in {boundary, "off_topic"} or not any(
+                        _overlapping_excerpt(item.source_excerpt, clause) for clause in restricted
+                    )}
     return list(accepted.values())
 
 
@@ -168,8 +182,8 @@ def _capped_answers(answers: list[tuple[str, str]], language: str) -> list[str]:
     if len(unique) <= 3:
         return [answer for _, answer in unique]
 
-    unsupported = next((item for item in unique if item[0] == "unsupported"), None)
-    selected = ([item for item in unique if item[0] != "unsupported"][:2] + [unsupported]) if unsupported else unique[:3]
+    boundaries = [item for item in unique if item[0] in {"unsupported", "off_topic"}]
+    selected = [item for item in unique if item[0] not in {"unsupported", "off_topic"}][:3 - len(boundaries)] + boundaries
     omitted = [topic for topic, answer in unique if answer not in {text for _, text in selected}]
     names = {
         "booking": ("预订安排", "bookings"), "application": ("申请步骤", "application steps"),
@@ -280,6 +294,22 @@ def _reviewed_answer(topic: str, language: str, *, body: str = "") -> str:
             "We need to check the actual full translation and whether it can be independently verified; "
             "I cannot guarantee acceptance or decide from the relationship alone."
         )
+    elif topic == "bank_period" and re.search(
+        r"网银|银行\s*[Aa][Pp][Pp]|下载|电子(?:版|对账单|流水)|纸质|哪里.{0,8}(?:流水|对账单)|"
+        r"(?:online|mobile) banking|download|paper(?:less| copies| statements)?|"
+        r"(?:where|how).{0,25}(?:get|obtain|request).{0,20}statements?", body, re.I,
+    ):
+        answer += (
+            "\n获取方面，可以先在网银或银行 App 里找正式电子对账单；没有下载入口的话，向银行索取。"
+            "这是收集材料的办法，不代表任何下载文件都会被接受。拿到后还要核对账户持有人、"
+            "交易记录、资金来源和可用资金；不要只发一个余额截图来代替完整说明。"
+            if language == "zh" else
+            "\nTo obtain them, look for official electronic statements in your online banking or bank app; "
+            "if downloads are unavailable, request statements from your bank. This is a collection step, "
+            "not a guarantee that any downloaded file will be accepted. We still need to check the "
+            "account holder, transaction history, source and availability of funds; a balance screenshot "
+            "alone does not explain all of that."
+        )
     return answer + "\nGOV.UK: " + source + ("\nGOV.UK: " + extra_source if extra_source else "")
 
 
@@ -305,6 +335,43 @@ def _requests_previous_application_link(body: str) -> bool:
     ))
 
 
+def _unsupported_answer(requests: str, language: str, today: date, *, other_route: bool = False) -> str:
+    """Offer a reviewed verification starting point, never a personal eligibility decision."""
+    if (CHECKED_AT <= today <= REVIEW_AFTER and not other_route
+            and not _mentions_current_route(requests, OTHER_ROUTE + "|" + TRANSIT_ROUTE)):
+        if re.search(r"医疗|治疗|\b(?:medical|treatment)\b", requests, re.I):
+            return (
+                "你问的医疗访问有专门的要求，不能直接按普通旅游材料来判断。"
+                "可以先看下面 GOV.UK 的医疗访问页面，按其中的治疗安排、费用和证明要求逐项核对。"
+                "我目前不能确认你的具体治疗计划是否符合这一路线，仍需要单独核实。"
+                if language == "zh" else
+                "Medical visits have specific requirements, so an ordinary holiday checklist is not enough. "
+                "Start with the GOV.UK medical-visit page below and check its treatment-arrangement, "
+                "funding and evidence requirements. I cannot reliably confirm whether your particular "
+                "treatment plan qualifies; that still needs a separate check."
+            ) + "\nGOV.UK: " + MEDICAL_SOURCE
+        if re.search(r"工作|兼职|打工|\b(?:work|job|employment|self-employed)\b", requests, re.I):
+            return (
+                "关于在英国工作：GOV.UK 说明，Standard Visitor 通常不能为英国公司做有偿或无偿工作，"
+                "也不能自雇；获准的付费活动或活动参与等例外有特定条件。"
+                "不能只凭兼职或短期就判断符合例外。请先对照官网允许活动的说明核对具体工作，"
+                "我目前不能确认你的安排是否被允许。"
+                if language == "zh" else
+                "On working in the UK: GOV.UK says Standard Visitors generally cannot do paid or unpaid "
+                "work for a UK company or be self-employed, apart from permitted paid engagements or events. "
+                "A job being part-time or short-term does not establish an exception. Check the official "
+                "permitted-activities guidance against the specific work; I cannot reliably confirm "
+                "that your arrangement is allowed."
+            ) + "\nGOV.UK: " + ACTIVITIES_SOURCE
+    return (
+        "你问的这点，我目前没有核验过的依据，不能直接给你确定答复。"
+        "这项需要另行核实，不能把还没确认的结论写进申请材料；已确定的信息可以继续整理。"
+        if language == "zh" else
+        "I don't currently have verified guidance to answer that point reliably. "
+        "It needs a separate check before we rely on it in the application; we can still organise the details already established."
+    )
+
+
 def grounded_customer_answers(
     body: str, language: str, today: date, *, sent_application_guidance: bool = False,
     semantic_questions: list[CustomerQuestion] | None = None,
@@ -313,13 +380,22 @@ def grounded_customer_answers(
     """Reviewed facts only, capped at three relevant answers, never a case-state update."""
     current = latest_reply_text(body)
     semantic = validated_customer_questions(current, semantic_questions or [])
-    unsupported_excerpts = [item.source_excerpt for item in semantic if item.topic == "unsupported"]
+    off_topic_excerpts = [item.source_excerpt for item in semantic if item.topic == "off_topic"]
+    off_topic_clauses = [clause for clause in _active_clauses(current) if any(
+        _overlapping_excerpt(excerpt, clause) for excerpt in off_topic_excerpts
+    )]
+    # A non-visa request must not be turned into immigration advice by either
+    # a competing model proposal or keyword matching of words such as "application".
+    semantic = [item for item in semantic if item.topic == "off_topic" or not any(
+        _overlapping_excerpt(item.source_excerpt, clause) for clause in off_topic_clauses
+    )]
+    unsupported_excerpts = [item.source_excerpt for item in semantic if item.topic in {"unsupported", "off_topic"}]
     unsupported_clauses = [clause for clause in _active_clauses(current) if any(
         _overlapping_excerpt(excerpt, clause) for excerpt in unsupported_excerpts
     )]
     # Two different proposals about one question are not independent evidence that
     # it is answerable. Unknown scope takes priority over a narrower canned answer.
-    semantic = [item for item in semantic if item.topic == "unsupported" or not any(
+    semantic = [item for item in semantic if item.topic in {"unsupported", "off_topic"} or not any(
         _overlapping_excerpt(item.source_excerpt, clause) for clause in unsupported_clauses
     )]
     clauses = _question_clauses(current)
@@ -360,17 +436,24 @@ def grounded_customer_answers(
             r"\b(?:months?|how far back|what period).{0,25}bank statements?\b"
         ),
     }
+    bank_excerpts = [item.source_excerpt for item in semantic if item.topic == "bank_period"]
+    timing_excerpts = [item.source_excerpt for item in semantic if item.topic == "timing"]
     requested = [topic for topic, pattern in patterns.items()
-                 if any(re.search(pattern, clause, re.I) for clause in clauses)]
+                 if any(re.search(pattern, clause, re.I) and not (
+                     topic == "timing"
+                     and any(_overlapping_excerpt(excerpt, clause) for excerpt in bank_excerpts)
+                     and not any(_overlapping_excerpt(excerpt, clause) for excerpt in timing_excerpts)
+                 ) for clause in clauses)]
     semantic_topics = {item.topic for item in semantic}
     for item in semantic:
-        if item.topic not in {"booking", "document_checklist", "unsupported"} and item.topic not in requested:
+        if item.topic not in {"booking", "document_checklist", "unsupported", "off_topic"} and item.topic not in requested:
             requested.append(item.topic)
-    previous_link_requested = sent_application_guidance and _requests_previous_application_link(current)
+    previous_link_requested = (not off_topic_excerpts and sent_application_guidance
+                               and _requests_previous_application_link(current))
     if previous_link_requested and "application" not in requested:
         requested.insert(0, "application")
     # Preserve booking's cross-clause context ("I have no tickets; must I buy them?").
-    active_text = "\n".join(_active_clauses(current))
+    active_text = "\n".join(clause for clause in _active_clauses(current) if clause not in off_topic_clauses)
     booking_text = "\n".join(clause for clause in _active_clauses(current) if not any(
         _overlapping_excerpt(excerpt, clause) for excerpt in unsupported_excerpts
     ))
@@ -396,12 +479,18 @@ def grounded_customer_answers(
             language, body=active_text,
         )) for topic in requested)
     if "unsupported" in semantic_topics and include_unsupported:
-        answers.append(("unsupported",
-            "你问的这点，我目前没有核验过的依据，不能直接给你确定答复。"
-            "这项需要另行核实，不能把还没确认的结论写进申请材料；已确定的信息可以继续整理。"
+        boundaries = dict.fromkeys(_unsupported_answer(
+            item.source_excerpt, language, today,
+            other_route=_mentions_current_route(active_text, OTHER_ROUTE + "|" + TRANSIT_ROUTE),
+        ) for item in semantic if item.topic == "unsupported")
+        answers.append(("unsupported", "\n\n".join(boundaries)))
+    if "off_topic" in semantic_topics:
+        answers.append(("off_topic",
+            "这个问题不属于英国签证准备，我这边没法给你可靠的答案或链接。"
+            "如果你还有签证材料方面的问题，可以接着问。"
             if language == "zh" else
-            "I don't currently have verified guidance to answer that point reliably. "
-            "It needs a separate check before we rely on it in the application; we can still organise the details already established."
+            "That question is outside UK visa preparation, so I can't give you a reliable answer or link here. "
+            "If you have another question about your visa documents, feel free to ask."
         ))
     if re.search(
         r"(?:不要|不用|无需|不需要|别).{0,12}(?:链接|网址|网站|官网)|"
@@ -409,7 +498,8 @@ def grounded_customer_answers(
         r"(?:links?|websites?)\b|\b(?:no links?|without links?)\b",
         current, re.I,
     ):
-        answers = [(topic, answer.split("\nGOV.UK:", 1)[0]) for topic, answer in answers]
+        answers = [(topic, re.sub(r"(?m)^[ \t]*GOV\.UK:[^\n]*(?:\n|$)", "", answer).strip())
+                   for topic, answer in answers]
         answers = [(topic, answer.replace("下面的 GOV.UK 页面", "GOV.UK 官方申请页面")
                    .replace("the GOV.UK page below", "the official GOV.UK application page"))
                    for topic, answer in answers]

@@ -114,3 +114,37 @@ The 2026-09-04 multi-turn semantic run also retained two failed exact-phrase che
 showed equivalent funding explanations in the detailed checklist. Its oracle now checks the
 document/context and accepts both reviewed explanations; repeated-introduction detection checks
 the introduction itself, not a legitimate source link. Original report bytes remain unchanged.
+
+## Adviser scope: new independent corpus
+
+`adviser_scope_cases.json` is a separate, independently authored 32-case bilingual corpus:
+24 development cases and eight reserved holdout cases. It distinguishes supported UK-visa
+questions, UK-visa questions outside the reviewed answer catalogue (`unsupported`), unrelated
+requests (`off_topic`), and turns with no current question. Mixed turns include explicit applicant
+corrections. Do not use the exposed holdout from the earlier intent corpus as fresh evidence.
+
+The messages, topics and split were frozen before this candidate was evaluated. Evaluator-only
+`expected_profile_updates` annotations were then added before any provider measurement, without
+changing those original fields. The canonical original-field digest remained
+`811f1f73f10edeeea5c1353fb87d44d6099ef7ab8cd10dc09cf6c880326c079b`; the annotated file digest is
+`04fe690e0de125b605bf1a7baf82f978da3241ce1abcf96287d8920d1a66ee4b`.
+These expectations never enter the model input. They detect omitted explicit corrections even
+when the resulting profile is internally consistent with the model's incomplete proposal.
+
+```bash
+uv run python scripts/adviser_intent_probe.py --corpus evals/adviser_scope_cases.json \
+  --split development --output NEW_SCOPE_DEVELOPMENT.json
+uv run python scripts/adviser_intent_probe.py --corpus evals/adviser_scope_cases.json \
+  --split holdout --allow-holdout --output NEW_SCOPE_HOLDOUT.json
+```
+
+Both commands make real API calls with fictional cases only, and capture Gmail sends locally.
+Freeze the final candidate before the first holdout run; retain failures without tuning or
+rerunning it. The optional development-only replay mode retains corpus, input, context, expectation
+and original-report fingerprints. A replay is never a new provider result. Selected scope,
+fact-preservation and send checks do not establish complete answers or natural adviser quality.
+
+The first scope holdout was run once on 2026-09-04: eight of eight selected cases passed.
+Its messages are now exposed; do not reuse them as fresh holdout evidence. All three preceding
+real development runs are retained, including the final candidate's three question omissions
+(21/24). The holdout pass must not erase those failures or be reported as universal accuracy.

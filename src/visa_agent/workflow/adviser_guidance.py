@@ -24,11 +24,21 @@ def preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> list
             or case.open_blockers()
             or case.latest_document_names or case.status != CaseStatus.DRAFT):
         return []
-    text = "\n".join(_active_clauses(latest_reply_text(case.latest_customer_message)))
+    current = latest_reply_text(case.latest_customer_message)
+    unquoted = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"', "", current)
+    unquoted = re.sub(r"(?<!\w)'[^'\n]+'(?!\w)|`[^`\n]+`", "", unquoted)
+    # Preserve comma-linked conditions and negations before selecting an affirmative
+    # preparation request. A separate later-date statement does not veto that request.
+    text = "\n".join(clause for clause in _active_clauses(current, split_commas=False)
+                     if not re.search(
+                         r"如果|假如|暂时|先不|不想|不需要|不能|尚未|还没|"
+                         r"\b(?:if|not|later|tomorrow|maybe|cannot|never|stop)\b|"
+                         r"(?:don|can|won|wouldn|couldn|shouldn)['’]t", clause, re.I,
+                     ))
     # An unshared topic is not by itself a reason to send it now. Proactive advice
     # needs progress in intake or a current preparation request; existing profile
     # data must not turn unrelated chatter or control instructions into a brochure.
-    if not (case.latest_received_facts or case.latest_changes or customer_requests_next_step(text)
+    if not (case.latest_received_facts or case.latest_changes or customer_requests_next_step(current)
             or re.search(
                 r"(?:想|准备|打算|需要).{0,6}(?:申请|办理).{0,6}(?:英国|签证)|"
                 r"(?:准备|整理|收集|补充).{0,8}(?:材料|资料|文件)|"
@@ -41,7 +51,7 @@ def preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> list
         return []
     if (re.search(r"(?:不用|不需要|不要|无需|不想).{0,18}(?:链接|官网|流程|材料|建议|说明)|"
                   r"(?:don't|do not|no need|stop).{0,30}(?:link|website|guidance|explain|advice)|"
-                  r"\bno links?\b", text, re.I)
+                  r"\bno links?\b", unquoted, re.I)
             or re.fullmatch(r"(?:谢谢|好的|收到|了解|thanks|thank you|okay|ok)[。.!！\s]*", text, re.I)):
         return []
     profile = case.profile

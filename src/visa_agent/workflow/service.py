@@ -169,6 +169,8 @@ class WorkflowService:
         patch = self.llm.extract_case_patch(customer_event)
         case.proactive_guidance_offered = False
         case.customer_question_topics = [item.topic for item in patch.customer_questions]
+        case.customer_question_exclusions = [item.source_excerpt for item in patch.customer_questions
+                                             if item.topic in {"off_topic", "unsupported"}]
         case.customer_answers = grounded_customer_answers(
             customer_event.body, case.customer_language, self.today_provider(),
             sent_application_guidance=case.guidance_events.get("application_overview_v1") in sent_events,
@@ -191,6 +193,33 @@ class WorkflowService:
             update.field: str(update.value) for update in patch.updates
             if customer_event.known_profile.get(update.field) is None
         }
+        # Preserve the existing deterministic date fallback even when the model finds
+        # an unrelated question but omits the customer's separate date uncertainty.
+        update_deferred_questions(case, customer_event.body)
+        if (set(case.customer_question_topics) == {"off_topic"}
+                and not patch.updates and not patch.question_deferrals and not event.attachment_paths
+                and not case.latest_deferred_fields
+                and not has_explicit_confirmation_line(
+                    customer_event.body, PROFILE_CONFIRMATION_LINES | FINAL_CONFIRMATION_LINES,
+                )
+                and not clear_natural_confirmation(customer_event.body)
+                and not customer_requests_next_step(customer_event.body)
+                and case.status == CaseStatus.DRAFT and not case.open_blockers()
+                and not self.store.has_unreviewed_held_updates(case.id)):
+            # A scope-only exchange neither requests a new summary nor invalidates an
+            # unchanged summary already sent to the customer. It has no gate authority.
+            case.question_plan = []
+            case.pending_question_fields = prior_pending
+            case.last_requested_fields = []
+            case.latest_deferred_fields = []
+            case.last_inbound_received_at = event.received_at
+            case.updated_at = datetime.now(UTC)
+            message = self.llm.render_message(case, "blocked")
+            message_id = stable_id("message", f"{event.id}:blocked")
+            if message_id not in case.outbound_message_ids:
+                case.outbound_message_ids.append(message_id)
+            self.store.commit_event(case, event, "blocked", message)
+            return case, False, "blocked"
         self._apply_patch(case, customer_event, patch.model_dump()["updates"])
         update_deferred_questions(case, customer_event.body)
         # Model intent may pause an unanswered question, never mutate a fact or release gate.
@@ -306,6 +335,11 @@ class WorkflowService:
             if waiting_acknowledgement(case):
                 # This renderer emits only a receipt. Never record unseen candidate questions
                 # against that receipt's SENT event, even when an older draft was never sent.
+                case.question_plan = []
+            elif ("off_topic" in case.customer_question_topics and not answered_fields
+                    and not case.latest_document_names and not case.open_blockers()
+                    and not customer_requests_next_step(customer_event.body)):
+                # A scope reply is not permission to start or restart intake questions.
                 case.question_plan = []
             elif case.pending_question_fields and customer_requests_next_step(customer_event.body):
                 case.question_plan = candidates[:1]
