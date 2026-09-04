@@ -173,20 +173,24 @@ def next_fact_questions(case: Case) -> list[str]:
         )
     ]
     actionable = [field for field in missing if field not in case.deferred_fields]
-    return (actionable or missing)[: max(0, 3 - len(case.open_blockers()))]
+    return actionable[: max(0, 3 - len(case.open_blockers()))]
 
 
 def update_deferred_questions(case: Case, body: str) -> None:
     """Defer unanswered dates, not requirements or previously supplied facts."""
     case.latest_deferred_fields = []
+    body = latest_reply_text(body)
     broad_trip_without_plan = bool(
         re.search(r"(?:今年|明年).{0,4}(?:上半年|下半年)", body)
         and re.search(r"(?:^|[，,。])\s*(?:我)?(?:还没(?:有)?|尚未)(?:具体|详细)(?:的)?(?:规划|计划|安排|行程)", body)
     )
     if broad_trip_without_plan or re.search(
-        r"(?:日期|时间|行程).{0,8}(?:还没|尚未|未|没有)(?:定|确定|决定)|"
+        r"(?<!出生)(?:日期|时间|行程).{0,8}(?:还没|尚未|未|没有|没)(?:定|确定|决定)|"
+        r"(?:还没|尚未|没有|没)(?:确定|定下|决定)(?:具体的?|确切的?)?(?:出行|旅行)?日期|"
         r"(?:haven't|have not).{0,15}(?:decided|fixed).{0,15}dates|"
-        r"dates.{0,12}(?:not|aren't).{0,8}(?:set|fixed|decided)", body, re.I
+        r"dates.{0,12}(?:not|aren't).{0,8}(?:set|fixed|decided)|"
+        r"dates.{0,8}(?:undecided|unknown)|"
+        r"(?:don't|do not) know.{0,12}(?:travel |trip )?dates", body, re.I
     ):
         for field in ("planned_arrival_date", "planned_departure_date"):
             if getattr(case.profile, field) is None:
@@ -483,6 +487,12 @@ def blocked_customer_message(case: Case) -> str:
         sections.append(
             "日期先留空，等你确定后再补。我们先整理其他信息。"
             if zh else "We can leave the dates open for now and collect the other details first."
+        )
+    elif case.deferred_fields and not questions and not issues and not documents:
+        sections.append(
+            "日期确定后再告诉我就好，已经提供的信息会保留。具体日期补齐前，还不能完成最终核对。"
+            if zh else "Let me know when your dates are decided; the details you've already provided are retained. "
+            "The final check will remain on hold until the dates are supplied."
         )
     sections.extend(case.customer_answers)
     if issues:

@@ -114,10 +114,14 @@ class WorkflowService:
                 return case, False, plan
 
         # Quoted messages are history, never a new instruction or fresh consent.
+        # Recover a previously missed deferral from the saved latest customer turn.
+        # This supports existing cases after a parser fix without replaying an event or email.
+        update_deferred_questions(case, case.latest_customer_message)
         customer_event = event.model_copy(
             update={
                 "body": latest_reply_text(event.body),
-                "requested_fields": case.last_requested_fields,
+                "requested_fields": [field for field in case.last_requested_fields
+                                     if field not in case.deferred_fields],
                 "known_profile": case.profile.model_dump(mode="json"),
             }
         )

@@ -216,3 +216,51 @@ def test_finalized_receipt_respects_recipient_scope_and_current_case_state(tmp_p
         assert adapter.calls == []
     finally:
         store.close()
+
+
+def test_existing_gmail_case_recovers_missed_date_deferral_and_keeps_it_across_turns(tmp_path):
+    from visa_agent.domain.policy import load_policy
+    from visa_agent.llm.offline import OfflineFixtureLLM
+    from visa_agent.llm.ports import CasePatch
+    from visa_agent.workflow.service import WorkflowService
+
+    class CaptureExtraction(OfflineFixtureLLM):
+        requested = []
+
+        def extract_case_patch(self, event):
+            self.requested.append(event.requested_fields)
+            return CasePatch(updates=[], ambiguities=[])
+
+    path = tmp_path / 'db'
+    store = SQLiteStore(path)
+    case = Case(id='c', external_thread_id='t', applicant_contact='user@example.test', policy_version='v',
+        primary_channel='gmail', customer_language='zh', latest_customer_message='日期没定，姓名是示例申请人。',
+        last_requested_fields=['planned_arrival_date','planned_departure_date','date_of_birth'])
+    case.profile.full_name = 'Example Applicant'
+    store.save_case(case)
+    model = CaptureExtraction()
+    adapter = CaptureAdapter()
+    try:
+        for index in range(3):
+            store.close()
+            store = SQLiteStore(path)
+            workflow = WorkflowService(store, load_policy(Path('knowledge/uk_standard_visitor_2026-02-25.yaml')), model)
+            now = datetime.now(UTC)
+            event = InboundEvent(id=f'followup-{index}', external_thread_id='t', sender=case.applicant_contact,
+                subject='UK trip', body='其他资料我在整理。', channel='gmail', received_at=now)
+            result, _, _ = workflow.process(event)
+            dates = {'planned_arrival_date','planned_departure_date'}
+            assert dates <= set(result.deferred_fields)
+            assert not dates & set(model.requested[-1])
+            assert not dates & set(result.last_requested_fields)
+            dispatcher = OutboxDispatcher(store, AutomaticGmailReplySender(adapter, store, case.applicant_contact),
+                                          channel='gmail', allowed_message_types=('blocked',))
+            assert dispatcher.dispatch_due(now)[0].status == 'SENT'
+            assert '哪天' not in adapter.calls[-1]['body']
+            assert '抵达英国' not in adapter.calls[-1]['body']
+            assert '离开英国' not in adapter.calls[-1]['body']
+            assert workflow.process(event)[1]
+            assert dispatcher.dispatch_due(now) == []
+        assert len(adapter.calls) == 3
+    finally:
+        store.close()

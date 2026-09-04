@@ -87,6 +87,38 @@ def test_coarse_horizon_does_not_erase_known_dates():
     assert case.profile.planned_departure_date == date(2026, 11, 17)
 
 
+@pytest.mark.parametrize('body', ['日期没定，姓名是示例申请人。', '日期没确定', '还没确定日期',
+    '我没有决定具体出行日期。', "I don't know the travel dates yet.", 'The dates are undecided.'])
+def test_plain_unknown_dates_are_remembered(body):
+    case = example()
+    update_deferred_questions(case, body)
+    assert set(case.deferred_fields) == {'planned_arrival_date', 'planned_departure_date'}
+    restored = Case.model_validate_json(case.model_dump_json())
+    update_deferred_questions(restored, 'My name is Example Applicant.')
+    assert restored.deferred_fields == case.deferred_fields
+    assert not set(next_fact_questions(restored)) & set(case.deferred_fields)
+
+
+@pytest.mark.parametrize('body', ['出生日期没确定', '预算没定',
+    'Hello\n\nOn Friday, Adviser wrote:\n日期没定'])
+def test_other_unknown_fields_and_quoted_text_do_not_defer_trip_dates(body):
+    case = example()
+    update_deferred_questions(case, body)
+    assert case.deferred_fields == []
+
+
+def test_exhausted_actionable_fields_do_not_restart_deferred_questions():
+    from visa_agent.domain.rules import required_profile_facts
+
+    case = example()
+    case.deferred_fields = sorted(required_profile_facts(case))
+    assert next_fact_questions(case) == []
+    reply = deterministic_fallback_message(case, 'blocked')
+    assert '具体日期补齐前，还不能完成最终核对' in reply
+    assert '？' not in reply
+    assert not case.final_summary_confirmed
+
+
 def test_acknowledgement_uses_only_newly_received_facts() -> None:
     case = example()
     case.latest_received_facts = {"occupation_status": "student", "funding_source": "self"}

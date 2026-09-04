@@ -216,3 +216,25 @@ budget uncertainty not being mistaken for date uncertainty, and preservation of 
 All 375 local tests, lint and typing pass. The existing live case/reply was not edited or replayed;
 this fix has not yet been observed in a subsequent live conversation. Broader paraphrase coverage
 and carrying newly recognized older uncertainty into an already-running case remain to be checked.
+
+## Repeated date questions reported by the owner
+
+Recipient screenshots and the private live case disproved the completeness of the previous fix:
+the plain phrase "日期没定" did not match the recognizer, and the saved case had no deferral flags.
+An additional planner fallback reintroduced deferred fields once other questions were exhausted.
+Both are application-level defects; the automatic sender uses deterministic wording, and the
+model extraction schema does not itself control question deferral. No model training or fine-tuning
+has been performed.
+
+The recognizer now covers bare uncertainty and tested English variants, excludes quoted history
+and unknown birthdates, and the planner never automatically reintroduces deferred questions. On a
+new event, the workflow first recovers deferral from the saved latest customer turn, then processes
+new facts; known dates remain untouched and newly supplied dates clear deferral normally. This
+supports the existing case without editing its database or replaying the already-sent emails.
+
+Eleven added regressions cover phrase variants, negatives, exhausted questions and a legacy Gmail
+case across three new turns and database reopenings. The sender-level test checks extraction context,
+persisted next-question fields, provider-bound bodies and replay non-repetition. Its first stub
+omitted required CasePatch fields and correctly fell into human review; the stub was corrected,
+not the guard. All 386 local tests, lint and typing pass. New live follow-up behavior still needs
+recipient observation; earlier SENT replies and the owner's failure evidence remain unchanged.
