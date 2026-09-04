@@ -11,9 +11,19 @@ from visa_agent.llm.evaluation import (
     evaluate_extractor,
     expand_corpus_with_perturbations,
     load_corpus,
+    release_metric_failures,
     score_patch,
 )
 from visa_agent.llm.ports import CasePatch, FactUpdate
+
+
+def test_release_gate_rejects_missing_metrics_and_incomplete_recall() -> None:
+    assert release_metric_failures({})
+    metrics = {name: 1.0 for name in release_metric_failures({})}
+    metrics.update(unsupported_claim_rate=0.0, raw_boundary_violation_rate=0.0)
+    assert release_metric_failures({"metrics": metrics}) == []
+    metrics["all_field_recall"] = 0.99
+    assert release_metric_failures({"metrics": metrics}) == ["all_field_recall"]
 
 
 class StableScriptedExtractor:

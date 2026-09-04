@@ -1,0 +1,29 @@
+version: negative-facts-v1
+cases:
+  - id: chinese_explicit_clean_history
+    category: negation
+    body: 我没有犯罪记录、拒签、遣返或违反移民规定的历史。
+    expected_updates:
+      has_serious_history: false
+  - id: english_explicit_clean_history
+    category: negation
+    body: No visa refusal, criminal conviction, removal or immigration breach has ever happened to me.
+    expected_updates:
+      has_serious_history: false
+  - id: chinese_different_route
+    category: unsupported_route
+    body: 我不是申请标准访客签证，我想申请英国学生签证。
+    expected_updates:
+      route_confirmed_standard_visitor: false
+    expects_human_review: true
+  - id: outside_uk_sponsor
+    category: negation
+    body: My mother will personally sponsor my trip. She lives in Singapore, not the UK.
+    expected_updates:
+      funding_source: personal_sponsor
+      sponsor_relationship: mother
+      sponsor_is_in_uk: false
+  - id: unknown_is_not_denial
+    category: non_inference
+    body: I cannot answer the history questions yet. I need to check my records first.
+    expected_updates: {}

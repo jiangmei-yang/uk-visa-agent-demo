@@ -23,6 +23,11 @@ ordinary, unmarked enquiries, follows Chinese/English, asks a few questions at a
 context-bound natural confirmation. It is still a manually operated trial, not an unattended
 production service. See [live successes, failures and remaining work](GMAIL_LIVE_EVIDENCE.md).
 
+The live Gmail runner additionally supports bounded ordinary-PDF text extraction and local OCR.
+A real two-turn Gmail experiment received four fictional ordinary PDFs, answered a sourced
+booking question and applied a date correction without re-upload. The identity summary stayed
+withheld: this is not yet a complete ordinary-document-to-final-pack acceptance test.
+
 ## Easiest path for an interviewer
 
 No Python, API key, Gmail account, or terminal knowledge is required. Install and open

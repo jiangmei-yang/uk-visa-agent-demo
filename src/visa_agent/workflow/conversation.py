@@ -144,7 +144,7 @@ def next_fact_questions(case: Case) -> list[str]:
             getattr(case.profile, field) is None
             or (field == "route_confirmed_standard_visitor" and not getattr(case.profile, field))
         )
-    ][:3]
+    ][: max(0, 3 - len(case.open_blockers()))]
 
 
 DOCUMENT_LABELS_ZH = {
@@ -201,6 +201,13 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
                 if doc.status == DocumentStatus.NEEDS_CERTIFIED_TRANSLATION
             )
             issues.append(f"还缺认证翻译：{names}。请同时保留原文，我会把翻译和原件对应起来。")
+        elif zh and "Specimen is not an identity document" in issue.detail:
+            names = ", ".join(
+                doc.filename for doc in case.documents if doc.id in issue.related_document_ids
+            )
+            issues.append(
+                f"{names} 是你整理的信息摘要，不能代替护照。等方便时，请补护照资料页的清晰扫描或照片；这份摘要不会被算作有效护照。"
+            )
         elif zh:
             names = ", ".join(
                 doc.filename for doc in case.documents if doc.id in issue.related_document_ids
@@ -232,7 +239,19 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
                 )
             )
         ]
+    documents = documents[: max(0, 3 - len(issues) - len(questions))]
     return issues, questions, documents
+
+
+def change_acknowledgement(case: Case) -> str | None:
+    if not case.latest_changes:
+        return None
+    changes = "；".join(
+        f"{fact_label(case, key)}：{value}" for key, value in case.latest_changes.items()
+    )
+    if case.customer_language == "zh":
+        return f"收到更正，我已更新：{changes}。下面只列仍需处理的事项。"
+    return f"Thanks for the correction. I've updated: {changes}. The remaining points are below."
 
 
 def blocked_customer_message(case: Case) -> str:
@@ -243,7 +262,9 @@ def blocked_customer_message(case: Case) -> str:
         if zh
         else (f"Hello {name}," if name else "Hello,")
     )
-    if case.latest_document_names:
+    if acknowledgement := change_acknowledgement(case):
+        intro = acknowledgement
+    elif case.latest_document_names:
         intro = (
             f"收到你这次发来的 {len(case.latest_document_names)} 份材料了。"
             if zh
@@ -257,6 +278,7 @@ def blocked_customer_message(case: Case) -> str:
         )
     issues, questions, documents = reply_items(case)
     sections = [greeting, intro]
+    sections.extend(case.customer_answers)
     if issues:
         sections.append(
             (

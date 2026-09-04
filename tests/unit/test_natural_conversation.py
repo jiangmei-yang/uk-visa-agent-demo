@@ -55,6 +55,31 @@ def test_old_gmail_reply_is_not_a_new_fact() -> None:
     )
 
 
+@pytest.mark.parametrize("value", ["mother", "My mother", "母亲", "我的妈妈", "employer"])
+def test_sponsor_relationship_cannot_satisfy_personal_name(value: str) -> None:
+    event = InboundEvent(
+        id="e", external_thread_id="t", sender="a@example.test", subject="Visa",
+        body=value, received_at=datetime.now(UTC),
+    )
+    result = validate_case_patch(event, CasePatch(updates=[FactUpdate(
+        field="sponsor_name", value=value, source_excerpt=value, confidence=1,
+    )], ambiguities=[]))
+    assert result.updates == []
+    assert not result.requires_human_review
+
+
+def test_actual_sponsor_name_remains_accepted() -> None:
+    event = InboundEvent(
+        id="e", external_thread_id="t", sender="a@example.test", subject="Visa",
+        body="My mother is Mei Chen.", received_at=datetime.now(UTC),
+    )
+    result = validate_case_patch(event, CasePatch(updates=[FactUpdate(
+        field="sponsor_name", value="Mei Chen", source_excerpt="My mother is Mei Chen.",
+        confidence=1,
+    )], ambiguities=[]))
+    assert result.updates[0].value == "Mei Chen"
+
+
 def test_chinese_first_turn_asks_only_next_three_questions_without_internal_codes() -> None:
     case = Case(
         id="c",
@@ -143,3 +168,68 @@ def test_short_answer_uses_the_previous_unambiguous_question() -> None:
         ambiguities=[],
     )
     assert validate_case_patch(event, patch).updates == patch.updates
+
+
+def test_shared_year_expands_to_a_real_sentence_not_current_year() -> None:
+    event = InboundEvent(
+        id="e",
+        external_thread_id="t",
+        sender="a@example.test",
+        subject="dates",
+        body="计划 2026 年 11 月 9 日到英国，11 月 11\n日离开。",
+        received_at=datetime.now(UTC),
+    )
+    patch = CasePatch(
+        updates=[
+            FactUpdate(
+                field="planned_departure_date",
+                value="2026-11-11",
+                source_excerpt="11 月 11\n日离开",
+                confidence=1,
+            )
+        ],
+        ambiguities=[],
+    )
+    checked = validate_case_patch(event, patch)
+    assert not checked.requires_human_review
+    assert "2026 年" in checked.updates[0].source_excerpt
+    assert checked.updates[0].source_excerpt in event.body
+    patch.updates[0].value = "2027-11-11"
+    assert validate_case_patch(event, patch).updates == []
+
+
+def test_study_location_does_not_establish_nationality() -> None:
+    event = InboundEvent(
+        id="e",
+        external_thread_id="t",
+        sender="a@example.test",
+        subject="enquiry",
+        body="在香港读大学",
+        received_at=datetime.now(UTC),
+    )
+    patch = CasePatch(
+        updates=[
+            FactUpdate(
+                field="nationality_country", value="China", source_excerpt=event.body, confidence=1
+            )
+        ],
+        ambiguities=[],
+    )
+    checked = validate_case_patch(event, patch)
+    assert checked.updates == []
+    assert not checked.requires_human_review
+
+
+def test_reply_acknowledges_correction_instead_of_restarting_onboarding() -> None:
+    case = Case(
+        id="c",
+        external_thread_id="t",
+        applicant_contact="a@example.test",
+        policy_version="v",
+        customer_language="zh",
+    )
+    case.latest_changes = {"planned_departure_date": "2026-11-13"}
+    message = deterministic_fallback_message(case, "blocked")
+    assert "收到更正" in message
+    assert "2026-11-13" in message
+    assert "可以先聊" not in message

@@ -8,7 +8,6 @@ import shutil
 import subprocess
 import tempfile
 from dataclasses import dataclass
-from datetime import date
 from pathlib import Path
 from typing import Literal, Protocol
 
@@ -16,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pypdf import PdfReader
 
 from visa_agent.documents.processor import inspect_pdf
+from visa_agent.domain.date_evidence import date_is_grounded
 
 DocumentKind = Literal[
     "unknown",
@@ -116,16 +116,9 @@ def validate_document(
         if item.confidence < 0.95 or not _grounded(item.excerpt, item.page, pages):
             raise ValueError("Document fact lacks sufficiently grounded page evidence")
         if item.field.endswith("_date") or item.field == "date_of_birth":
-            value = date.fromisoformat(item.value)
-            variants = [
-                value.isoformat(),
-                value.strftime("%d %B %Y"),
-                value.strftime("%d %b %Y"),
-                value.strftime("%B %d, %Y"),
-                f"{value.year}年{value.month}月{value.day}日",
-            ]
-            variants += [variant.lstrip("0") for variant in variants]
-            if not any(_normalise(variant) in _normalise(item.excerpt) for variant in variants):
+            if not date_is_grounded(
+                item.value, item.excerpt, allow_shared_year=item.field != "date_of_birth"
+            ):
                 raise ValueError("A document date cannot be traced to its excerpt")
         elif item.field in {"full_name", "translation_for_filename"} and _normalise(
             item.value

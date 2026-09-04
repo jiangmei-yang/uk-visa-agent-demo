@@ -1,0 +1,221 @@
+{
+  "corpus_version": "agent-corpus-v2",
+  "model_version": "deepseek-v4-flash",
+  "case_count": 1,
+  "repeat_count": 5,
+  "run_count": 5,
+  "metrics": {
+    "schema_valid_rate": 1.0,
+    "critical_field_precision": 1.0,
+    "critical_field_recall": 1.0,
+    "all_field_precision": 1.0,
+    "all_field_recall": 1.0,
+    "unsupported_claim_rate": 0.0,
+    "raw_boundary_violation_rate": 0.0,
+    "human_review_decision_rate": 1.0,
+    "ambiguity_detection_rate": 1.0,
+    "semantic_repeat_consistency_rate": 1.0,
+    "latency_ms_median": 1011.679916002322,
+    "latency_ms_p95": 1292.3129579867236,
+    "input_tokens": 6310,
+    "output_tokens": 243,
+    "estimated_cost_usd": null
+  },
+  "perturbation_slices": {
+    "original": {
+      "run_count": 5,
+      "schema_valid_rate": 1.0,
+      "all_field_precision": 1.0,
+      "all_field_recall": 1.0,
+      "human_review_decision_rate": 1.0,
+      "ambiguity_detection_rate": 1.0
+    }
+  },
+  "notes": [
+    "Inputs are synthetic and contain no real applicant data.",
+    "Token totals come from provider telemetry; cost remains null until a dated price snapshot is supplied explicitly.",
+    "Raw boundary violations are measured before deterministic patch filtering."
+  ],
+  "runs": [
+    {
+      "case_id": "missing_facts",
+      "repeat": 1,
+      "schema_valid": true,
+      "true_positive": 1,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 1,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 1292.3129579867236,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {\"full_name\": \"Sam Lee\"}}",
+      "raw_updates": [
+        {
+          "field": "full_name",
+          "value": "Sam Lee",
+          "source_excerpt": "My name is Sam Lee.",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "full_name",
+          "value": "Sam Lee",
+          "source_excerpt": "My name is Sam Lee.",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1262,
+      "output_tokens": 68,
+      "error_type": null
+    },
+    {
+      "case_id": "missing_facts",
+      "repeat": 2,
+      "schema_valid": true,
+      "true_positive": 1,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 1,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 639.8069999995641,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {\"full_name\": \"Sam Lee\"}}",
+      "raw_updates": [
+        {
+          "field": "full_name",
+          "value": "Sam Lee",
+          "source_excerpt": "My name is Sam Lee",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "full_name",
+          "value": "Sam Lee",
+          "source_excerpt": "My name is Sam Lee",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1262,
+      "output_tokens": 43,
+      "error_type": null
+    },
+    {
+      "case_id": "missing_facts",
+      "repeat": 3,
+      "schema_valid": true,
+      "true_positive": 1,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 1,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 824.3372500000987,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {\"full_name\": \"Sam Lee\"}}",
+      "raw_updates": [
+        {
+          "field": "full_name",
+          "value": "Sam Lee",
+          "source_excerpt": "My name is Sam Lee",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "full_name",
+          "value": "Sam Lee",
+          "source_excerpt": "My name is Sam Lee",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1262,
+      "output_tokens": 54,
+      "error_type": null
+    },
+    {
+      "case_id": "missing_facts",
+      "repeat": 4,
+      "schema_valid": true,
+      "true_positive": 1,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 1,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 1011.679916002322,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {\"full_name\": \"Sam Lee\"}}",
+      "raw_updates": [
+        {
+          "field": "full_name",
+          "value": "Sam Lee",
+          "source_excerpt": "My name is Sam Lee",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "full_name",
+          "value": "Sam Lee",
+          "source_excerpt": "My name is Sam Lee",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1262,
+      "output_tokens": 43,
+      "error_type": null
+    },
+    {
+      "case_id": "missing_facts",
+      "repeat": 5,
+      "schema_valid": true,
+      "true_positive": 1,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 1,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 1070.5115830060095,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {\"full_name\": \"Sam Lee\"}}",
+      "raw_updates": [
+        {
+          "field": "full_name",
+          "value": "Sam Lee",
+          "source_excerpt": "My name is Sam Lee",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "full_name",
+          "value": "Sam Lee",
+          "source_excerpt": "My name is Sam Lee",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1262,
+      "output_tokens": 35,
+      "error_type": null
+    }
+  ]
+}

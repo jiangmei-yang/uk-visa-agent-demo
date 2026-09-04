@@ -37,6 +37,7 @@ from visa_agent.workflow.conversation import (
     next_fact_questions,
     summary_fingerprint,
 )
+from visa_agent.workflow.customer_questions import grounded_customer_answers
 
 PROFILE_CONFIRMATION_LINES = {
     "profile confirmed",
@@ -124,6 +125,9 @@ class WorkflowService:
             case.customer_language = "zh"
         elif len(re.findall(r"[A-Za-z]+", customer_event.body)) > 4:
             case.customer_language = "en"
+        case.customer_answers = grounded_customer_answers(
+            customer_event.body, case.customer_language, self.today_provider()
+        )
         prior_profile = summary_fingerprint(case, include_documents=False)
         prior_confirmation = case.confirmation_fingerprint
         prior_kind = case.confirmation_kind
@@ -139,6 +143,12 @@ class WorkflowService:
             case.human_review_reason = (
                 "; ".join(patch.ambiguities) or "Bounded extractor requested human review."
             )
+        case.latest_changes = {
+            update.field: str(update.value)
+            for update in patch.updates
+            if customer_event.known_profile.get(update.field) is not None
+            and customer_event.known_profile.get(update.field) != update.value
+        }
         self._apply_patch(case, customer_event, patch.model_dump()["updates"])
         self._ingest_attachments(case, event)
         profile_changed = prior_profile != summary_fingerprint(case, include_documents=False)
@@ -204,6 +214,7 @@ class WorkflowService:
             case.status != CaseStatus.HUMAN_REVIEW_REQUIRED
             and gate.checks["required_profile_facts_complete"]
             and gate.checks["route_in_scope"]
+            and not case.open_blockers()
             and not case.profile_confirmed
         ):
             plan = "awaiting_profile_confirmation"
@@ -275,7 +286,8 @@ class WorkflowService:
                 value = date.fromisoformat(str(value))
             setattr(case.profile, field, value)
             for old in case.active_evidence(field):
-                old.superseded = True
+                if old.source_document_id is None:
+                    old.superseded = True
             case.evidence.append(
                 Evidence(
                     id=stable_id("ev", f"{event.id}:{field}:{value}"),
@@ -286,7 +298,11 @@ class WorkflowService:
                     extraction_method="bounded_structured_extraction",
                     model_version=getattr(self.llm, "version", "unknown"),
                     confidence=float(update["confidence"]),
-                    provenance_state=ProvenanceState.DEMO_SYNTHETIC,
+                    provenance_state=(
+                        ProvenanceState.DEMO_SYNTHETIC
+                        if event.channel.endswith("fixture")
+                        else ProvenanceState.EXTRACTED_UNVERIFIED
+                    ),
                 )
             )
 

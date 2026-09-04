@@ -65,6 +65,25 @@ Run the ordinary-text real-model regression without sending email:
 ```bash
 uv run python scripts/natural_conversation_eval.py --runs 2
 ```
+
+For the four approved fictional ordinary PDFs already generated under
+`data/natural-document-eval/`, replay text/OCR ingestion and a natural correction locally:
+
+```bash
+uv run python scripts/natural_journey_eval.py --repeats 3 --report eval_output/natural_journey.json
+```
+
+This requires the configured DeepSeek key and local PDF/OCR dependencies; it does not send mail.
+The identity-summary blocker is expected, not a reason to bypass the passport check. For a
+strict model-only extraction release gate, including explicit negatives:
+
+```bash
+uv run python scripts/agent_eval.py --provider deepseek --model deepseek-v4-flash --corpus evals/negative_facts.yaml --repeats 3 --strict --output eval_output/negative_facts.json
+```
+
+`--strict` preserves the JSON report but exits nonzero when any corpus metric fails. A passing
+gate describes only those synthetic inputs, not unrestricted advice or production accuracy.
+
 # Continuous preparation and crash recovery
 
 `scripts/gmail_sandbox.py prepare --watch` repeatedly prepares replies within the bound

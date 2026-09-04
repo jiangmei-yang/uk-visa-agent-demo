@@ -1,0 +1,105 @@
+{
+  "synthetic": true,
+  "all_passed": true,
+  "records": [
+    {
+      "repeat": 1,
+      "step": "ordinary_attachments",
+      "checks": {
+        "routine_enquiry_not_escalated": true,
+        "arrival_preserved": true,
+        "departure_preserved": true,
+        "student_preserved": true,
+        "nationality_not_invented": true,
+        "date_conflict_detected": true,
+        "identity_summary_withheld": true,
+        "actual_ocr": true,
+        "booking_question_answered": true,
+        "specific_passport_explanation": true,
+        "at_most_three_next_actions": true,
+        "pack_withheld": true
+      },
+      "reply": "Lin Chen，你好。\n\n收到你这次发来的 4 份材料了。\n\n关于机票和酒店：普通 Standard Visitor 申请不需要为了提供这些预订证明而先购买。官方材料指南把酒店预订和机票预订（过境除外）列为不应作为证据提交的材料。我们先整理真实的计划行程和住宿安排；不要把尚未确定的安排写成已经预订。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence\n\n我核对时发现下面这些地方需要你补充或确认：\n- passport_summary.pdf 是你整理的信息摘要，不能代替护照。等方便时，请补护照资料页的清晰扫描或照片；这份摘要不会被算作有效护照。\n- 行程与邀请函日期不一致：你计划 2026-11-11 离英，但活动到 2026-11-12 才结束。请告诉我实际行程，或补一份修正后的邀请函。\n\n先帮我确认这几项就好：\n- 你持哪个国家的护照？\n\n你直接回复这封邮件就可以。我会先核对信息，资料确认之前不会交付最终材料包。",
+      "reply_fallback": true,
+      "extraction_error": null,
+      "review_reason": null
+    },
+    {
+      "repeat": 1,
+      "step": "natural_correction",
+      "checks": {
+        "correction_applied": true,
+        "date_conflict_resolved": true,
+        "not_escalated": true,
+        "pack_still_withheld": true
+      },
+      "reply": "收到更正，我已更新：计划离英日期：2026-11-13。下面只列仍需处理的事项。\n\n你提到护照稍后补，没问题。请记得：passport_summary.pdf 是你整理的信息摘要，不能代替护照。等方便时，请补护照资料页的清晰扫描或照片；这份摘要不会被算作有效护照。\n\n另外，还需你确认两点：你持哪个国家的护照？你的出生日期是什么？请写完整年月日。\n\n先处理这两项即可，其他暂不用动。"
+    },
+    {
+      "repeat": 2,
+      "step": "ordinary_attachments",
+      "checks": {
+        "routine_enquiry_not_escalated": true,
+        "arrival_preserved": true,
+        "departure_preserved": true,
+        "student_preserved": true,
+        "nationality_not_invented": true,
+        "date_conflict_detected": true,
+        "identity_summary_withheld": true,
+        "actual_ocr": true,
+        "booking_question_answered": true,
+        "specific_passport_explanation": true,
+        "at_most_three_next_actions": true,
+        "pack_withheld": true
+      },
+      "reply": "Lin Chen，你好。\n\n收到你这次发来的 4 份材料了。\n\n关于机票和酒店：普通 Standard Visitor 申请不需要为了提供这些预订证明而先购买。官方材料指南把酒店预订和机票预订（过境除外）列为不应作为证据提交的材料。我们先整理真实的计划行程和住宿安排；不要把尚未确定的安排写成已经预订。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence\n\n我核对时发现下面这些地方需要你补充或确认：\n- passport_summary.pdf 是你整理的信息摘要，不能代替护照。等方便时，请补护照资料页的清晰扫描或照片；这份摘要不会被算作有效护照。\n- 行程与邀请函日期不一致：你计划 2026-11-11 离英，但活动到 2026-11-12 才结束。请告诉我实际行程，或补一份修正后的邀请函。\n\n先帮我确认这几项就好：\n- 你持哪个国家的护照？\n\n你直接回复这封邮件就可以。我会先核对信息，资料确认之前不会交付最终材料包。",
+      "reply_fallback": true,
+      "extraction_error": null,
+      "review_reason": null
+    },
+    {
+      "repeat": 2,
+      "step": "natural_correction",
+      "checks": {
+        "correction_applied": true,
+        "date_conflict_resolved": true,
+        "not_escalated": true,
+        "pack_still_withheld": true
+      },
+      "reply": "Lin Chen，你好。\n\n收到更正，我已更新：计划离英日期：2026-11-13。下面只列仍需处理的事项。\n\n我核对时发现下面这些地方需要你补充或确认：\n- passport_summary.pdf 是你整理的信息摘要，不能代替护照。等方便时，请补护照资料页的清晰扫描或照片；这份摘要不会被算作有效护照。\n\n先帮我确认这几项就好：\n- 你持哪个国家的护照？\n- 你的出生日期是什么？请写完整年月日。\n\n你直接回复这封邮件就可以。我会先核对信息，资料确认之前不会交付最终材料包。"
+    },
+    {
+      "repeat": 3,
+      "step": "ordinary_attachments",
+      "checks": {
+        "routine_enquiry_not_escalated": true,
+        "arrival_preserved": true,
+        "departure_preserved": true,
+        "student_preserved": true,
+        "nationality_not_invented": true,
+        "date_conflict_detected": true,
+        "identity_summary_withheld": true,
+        "actual_ocr": true,
+        "booking_question_answered": true,
+        "specific_passport_explanation": true,
+        "at_most_three_next_actions": true,
+        "pack_withheld": true
+      },
+      "reply": "Lin Chen，你好。\n\n收到你这次发来的 4 份材料了。\n\n关于机票和酒店：普通 Standard Visitor 申请不需要为了提供这些预订证明而先购买。官方材料指南把酒店预订和机票预订（过境除外）列为不应作为证据提交的材料。我们先整理真实的计划行程和住宿安排；不要把尚未确定的安排写成已经预订。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence\n\n我核对时发现下面这些地方需要你补充或确认：\n- passport_summary.pdf 是你整理的信息摘要，不能代替护照。等方便时，请补护照资料页的清晰扫描或照片；这份摘要不会被算作有效护照。\n- 行程与邀请函日期不一致：你计划 2026-11-11 离英，但活动到 2026-11-12 才结束。请告诉我实际行程，或补一份修正后的邀请函。\n\n先帮我确认这几项就好：\n- 你持哪个国家的护照？\n\n你直接回复这封邮件就可以。我会先核对信息，资料确认之前不会交付最终材料包。",
+      "reply_fallback": true,
+      "extraction_error": null,
+      "review_reason": null
+    },
+    {
+      "repeat": 3,
+      "step": "natural_correction",
+      "checks": {
+        "correction_applied": true,
+        "date_conflict_resolved": true,
+        "not_escalated": true,
+        "pack_still_withheld": true
+      },
+      "reply": "Lin Chen，你好。\n\n收到更正，我已更新：计划离英日期：2026-11-13。下面只列仍需处理的事项。\n\n我核对时发现下面这些地方需要你补充或确认：\n- passport_summary.pdf 是你整理的信息摘要，不能代替护照。等方便时，请补护照资料页的清晰扫描或照片；这份摘要不会被算作有效护照。\n\n先帮我确认这几项就好：\n- 你持哪个国家的护照？\n- 你的出生日期是什么？请写完整年月日。\n\n你直接回复这封邮件就可以。我会先核对信息，资料确认之前不会交付最终材料包。"
+    }
+  ]
+}

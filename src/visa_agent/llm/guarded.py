@@ -5,10 +5,12 @@ from collections.abc import Callable
 
 from pydantic import TypeAdapter, ValidationError
 
+from visa_agent.domain.date_evidence import date_is_grounded, has_calendar_day
 from visa_agent.domain.models import Case, CaseProfile, CaseStatus, InboundEvent
 from visa_agent.llm.ports import CasePatch, FactUpdate, LLMClient
 from visa_agent.workflow.conversation import (
     blocked_customer_message,
+    change_acknowledgement,
     confirmation_message,
     reply_items,
 )
@@ -17,7 +19,11 @@ MIN_ACCEPTED_CONFIDENCE = 0.8
 MAX_MODEL_ATTEMPTS = 2
 MAX_REPLY_CHARACTERS = 4_000
 FORBIDDEN_REPLY_CLAIMS = (
-    "保证获批", "保证通过", "一定获批", "签证已经批准", "已替你提交申请",
+    "保证获批",
+    "保证通过",
+    "一定获批",
+    "签证已经批准",
+    "已替你提交申请",
     "your visa is approved",
     "your application is approved",
     "you are eligible",
@@ -74,21 +80,49 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
 
     for update in proposed.updates:
         update = update.model_copy(update={"value": _canonical_value(update.field, update.value)})
-        if update.field in {"planned_arrival_date", "planned_departure_date", "date_of_birth"} and not re.search(
-            r"\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{4}年\d{1,2}月\d{1,2}[日号]|\d{1,2}\s+\w+\s+\d{4}|\w+\s+\d{1,2},?\s+\d{4}",
-            update.source_excerpt,
+        if update.field == "sponsor_name" and re.fullmatch(
+            r"(?:(?:my|the|our)\s+)?(?:mother|father|sister|brother|spouse|partner|friend|"
+            r"employer|parent|sponsor|wife|husband)|(?:我的?|我们的?)?(?:母亲|父亲|妈妈|爸爸|"
+            r"姐姐|妹妹|哥哥|弟弟|朋友|配偶|丈夫|妻子|雇主|资助人)",
+            str(update.value).strip(),
+            re.I,
         ):
+            # A relationship is not a personal name; retain the missing-name question.
+            continue
+        is_date = update.field in {
+            "planned_arrival_date",
+            "planned_departure_date",
+            "date_of_birth",
+        }
+        if is_date and not has_calendar_day(update.source_excerpt):
             # "November" is useful conversational context, not a precise date and
             # not a reason to lock a routine enquiry into human review.
             continue
+        allow_shared_year = update.field != "date_of_birth"
+        if is_date and not date_is_grounded(
+            str(update.value), update.source_excerpt, allow_shared_year=allow_shared_year
+        ):
+            candidates = [
+                sentence.strip()
+                for sentence in re.split(r"[。！？!?；;]", event.body)
+                if _normalise_evidence(update.source_excerpt) in _normalise_evidence(sentence)
+                and date_is_grounded(str(update.value), sentence, allow_shared_year=allow_shared_year)
+            ]
+            if len(candidates) == 1:
+                update = update.model_copy(update={"source_excerpt": candidates[0]})
         # A literal quote is necessary but not sufficient: employment/passport facts
         # must not silently become residential/application-location facts.
         cues = {
             "application_country": r"appl(?:y|ying|ication)|申请|递交|提交",
             "current_address": r"address|residen|live|living|住址|居住|住在|家在|地址",
+            "nationality": r"passport|citizen|national|国籍|护照|公民|国人|\b(?:Chinese|British|American|Canadian|French|German|Indian|Australian)\b",
+            "nationality_country": r"passport|citizen|national|国籍|护照|公民|国人|\b(?:Chinese|British|American|Canadian|French|German|Indian|Australian)\b",
         }
-        if update.field in cues and event.requested_fields != [update.field] and not re.search(
-            cues[update.field], update.source_excerpt, re.I
+        if (
+            update.field in cues
+            and update.confidence >= MIN_ACCEPTED_CONFIDENCE
+            and event.requested_fields != [update.field]
+            and not re.search(cues[update.field], update.source_excerpt, re.I)
         ):
             # Leave the ordinary question open, rather than escalating routine missing data.
             continue
@@ -103,6 +137,10 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
             reason = f"Evidence excerpt for {update.field} was not found in the inbound message."
         elif update.confidence < MIN_ACCEPTED_CONFIDENCE:
             reason = f"Low-confidence value proposed for {update.field}."
+        elif is_date and not date_is_grounded(
+            str(update.value), update.source_excerpt, allow_shared_year=allow_shared_year
+        ):
+            reason = f"Date value for {update.field} was not grounded in its excerpt."
         else:
             try:
                 TypeAdapter(field_info.annotation).validate_python(update.value)
@@ -142,11 +180,12 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
 
 def deterministic_fallback_message(case: Case, plan: str) -> str:
     if case.status == CaseStatus.HUMAN_REVIEW_REQUIRED:
-        return (
+        message = (
             "收到你的信息了。这部分需要顾问进一步核实，我暂时不能自动继续整理材料包。已收到的资料会保留，不需要重复提交。"
-            if case.customer_language == "zh" else
-            "Thank you for explaining. This needs a human adviser to check before we continue. Your information is retained; you don't need to resend it. I haven't prepared or submitted an application."
+            if case.customer_language == "zh"
+            else "Thank you for explaining. This needs a human adviser to check before we continue. Your information is retained; you don't need to resend it. I haven't prepared or submitted an application."
         )
+        return "\n\n".join([message, *case.customer_answers])
     if plan == "blocked":
         return blocked_customer_message(case)
     if plan == "ready":
@@ -176,6 +215,7 @@ class GuardedLLM:
         self.on_failure = on_failure
         self.version = f"guarded:{getattr(delegate, 'version', 'unknown')}"
         self.last_extraction_fallback = False
+        self.last_extraction_error: str | None = None
         self.last_render_fallback = False
         self.last_render_error: str | None = None
 
@@ -184,13 +224,20 @@ class GuardedLLM:
         for _ in range(self.max_attempts):
             try:
                 patch = validate_case_patch(event, self.delegate.extract_case_patch(event))
+                if any(
+                    reason.startswith(("Evidence excerpt for ", "Date value for "))
+                    for reason in patch.ambiguities
+                ):
+                    raise UnsafeModelOutput("; ".join(patch.ambiguities))
                 self.last_extraction_fallback = False
+                self.last_extraction_error = None
                 return patch
             except Exception as error:  # Provider/SDK failures must not mutate or lose the case.
                 last_error = error
         assert last_error is not None
         self._report("extract_case_patch", last_error)
         self.last_extraction_fallback = True
+        self.last_extraction_error = str(last_error)
         return CasePatch(
             updates=[],
             ambiguities=["Automated extraction was unavailable; manual review is required."],
@@ -224,16 +271,34 @@ class GuardedLLM:
                 raise UnsafeModelOutput("Model message contained an unresolved placeholder")
             if plan == "blocked":
                 issues, questions, documents = reply_items(case)
-                required_items = issues + questions + documents
+                required_items = case.customer_answers + issues + questions + documents
+                if acknowledgement := change_acknowledgement(case):
+                    required_items.append(acknowledgement)
                 if any(item.casefold() not in normalised for item in required_items):
-                    raise UnsafeModelOutput("Model message omitted or changed a grounded next action")
-                length_budget = max(420 if case.customer_language == "zh" else 1100,
-                                    len("\n".join(required_items)) + 180)
+                    raise UnsafeModelOutput(
+                        "Model message omitted or changed a grounded next action"
+                    )
+                length_budget = max(
+                    420 if case.customer_language == "zh" else 1100,
+                    len("\n".join(required_items)) + 180,
+                )
                 if len(message) > length_budget:
                     raise UnsafeModelOutput("Model buried the next action in excessive prose")
-                if any(phrase in normalised for phrase in ("没有现成的标准答案", "不能给你一个确切的步骤清单", "no standard answer")):
-                    raise UnsafeModelOutput("Model denied a preparation step already supplied in its brief")
-                if re.search(r"(?:时间|日期).{0,12}(?:没问题|没有问题|来得及)|\benough time\b|\bdates (?:are|look) (?:fine|acceptable)\b", normalised):
+                if any(
+                    phrase in normalised
+                    for phrase in (
+                        "没有现成的标准答案",
+                        "不能给你一个确切的步骤清单",
+                        "no standard answer",
+                    )
+                ):
+                    raise UnsafeModelOutput(
+                        "Model denied a preparation step already supplied in its brief"
+                    )
+                if re.search(
+                    r"(?:时间|日期).{0,12}(?:没问题|没有问题|来得及)|\benough time\b|\bdates (?:are|look) (?:fine|acceptable)\b",
+                    normalised,
+                ):
                     raise UnsafeModelOutput("Model added an unsupported timing assurance")
                 if case.customer_language == "zh" and not re.search(r"[\u4e00-\u9fff]", message):
                     raise UnsafeModelOutput("Model ignored the customer's language")
@@ -246,7 +311,8 @@ class GuardedLLM:
                 raise UnsafeModelOutput("Model message claimed release before confirmation")
             if plan == "ready" and not (
                 ("human" in normalised and "review" in normalised)
-                if case.customer_language != "zh" else "顾问复核" in message
+                if case.customer_language != "zh"
+                else "顾问复核" in message
             ):
                 raise UnsafeModelOutput("Model message omitted the human-review boundary")
             self.last_render_fallback = False

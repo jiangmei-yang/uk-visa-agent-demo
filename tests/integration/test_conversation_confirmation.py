@@ -127,3 +127,26 @@ def test_ordinary_pdf_without_fixture_markers_is_not_falsely_accepted(tmp_path: 
         )
     finally:
         store.close()
+
+
+def test_email_name_correction_cannot_erase_conflicting_document_evidence(tmp_path: Path) -> None:
+    store, service, _, event = setup_case(tmp_path)
+    try:
+        case, _, plan = service.process(
+            event.model_copy(
+                update={
+                    "body": "My name should be Alex Chen.\n<!-- DEMO_FACTS\nfull_name=Alex Chen\n-->",
+                }
+            )
+        )
+        assert plan == "blocked"
+        assert not case.final_summary_confirmed
+        assert any(i.code == "EVIDENCE_CONFLICT_FULL_NAME" for i in case.open_blockers())
+        assert any(e.source_document_id for e in case.active_evidence("full_name"))
+        assert any(
+            e.source_document_id is None and e.value == "Alex Chen"
+            for e in case.active_evidence("full_name")
+        )
+        assert case.latest_changes == {"full_name": "Alex Chen"}
+    finally:
+        store.close()

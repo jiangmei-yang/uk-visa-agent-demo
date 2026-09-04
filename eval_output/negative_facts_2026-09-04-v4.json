@@ -1,0 +1,617 @@
+{
+  "corpus_version": "negative-facts-v1",
+  "model_version": "deepseek-v4-flash",
+  "case_count": 5,
+  "repeat_count": 3,
+  "run_count": 15,
+  "metrics": {
+    "schema_valid_rate": 1.0,
+    "critical_field_precision": 1.0,
+    "critical_field_recall": 1.0,
+    "all_field_precision": 1.0,
+    "all_field_recall": 1.0,
+    "unsupported_claim_rate": 0.0,
+    "raw_boundary_violation_rate": 0.0,
+    "human_review_decision_rate": 1.0,
+    "ambiguity_detection_rate": 1.0,
+    "semantic_repeat_consistency_rate": 1.0,
+    "latency_ms_median": 878.6265829985496,
+    "latency_ms_p95": 1110.480458009988,
+    "input_tokens": 22065,
+    "output_tokens": 943,
+    "estimated_cost_usd": null
+  },
+  "perturbation_slices": {
+    "original": {
+      "run_count": 15,
+      "schema_valid_rate": 1.0,
+      "all_field_precision": 1.0,
+      "all_field_recall": 1.0,
+      "human_review_decision_rate": 1.0,
+      "ambiguity_detection_rate": 1.0
+    }
+  },
+  "notes": [
+    "Inputs are synthetic and contain no real applicant data.",
+    "Token totals come from provider telemetry; cost remains null until a dated price snapshot is supplied explicitly.",
+    "Raw boundary violations are measured before deterministic patch filtering."
+  ],
+  "runs": [
+    {
+      "case_id": "chinese_explicit_clean_history",
+      "repeat": 1,
+      "schema_valid": true,
+      "true_positive": 1,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 1,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 1489.297959022224,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {\"has_serious_history\": false}}",
+      "raw_updates": [
+        {
+          "field": "has_serious_history",
+          "value": false,
+          "source_excerpt": "我没有犯罪记录、拒签、遣返或违反移民规定的历史。",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "has_serious_history",
+          "value": false,
+          "source_excerpt": "我没有犯罪记录、拒签、遣返或违反移民规定的历史。",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1471,
+      "output_tokens": 63,
+      "error_type": null
+    },
+    {
+      "case_id": "chinese_explicit_clean_history",
+      "repeat": 2,
+      "schema_valid": true,
+      "true_positive": 1,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 1,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 731.6334170172922,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {\"has_serious_history\": false}}",
+      "raw_updates": [
+        {
+          "field": "has_serious_history",
+          "value": false,
+          "source_excerpt": "我没有犯罪记录、拒签、遣返或违反移民规定的历史。",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "has_serious_history",
+          "value": false,
+          "source_excerpt": "我没有犯罪记录、拒签、遣返或违反移民规定的历史。",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1471,
+      "output_tokens": 63,
+      "error_type": null
+    },
+    {
+      "case_id": "chinese_explicit_clean_history",
+      "repeat": 3,
+      "schema_valid": true,
+      "true_positive": 1,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 1,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 878.6265829985496,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {\"has_serious_history\": false}}",
+      "raw_updates": [
+        {
+          "field": "has_serious_history",
+          "value": false,
+          "source_excerpt": "我没有犯罪记录、拒签、遣返或违反移民规定的历史。",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "has_serious_history",
+          "value": false,
+          "source_excerpt": "我没有犯罪记录、拒签、遣返或违反移民规定的历史。",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1471,
+      "output_tokens": 63,
+      "error_type": null
+    },
+    {
+      "case_id": "english_explicit_clean_history",
+      "repeat": 1,
+      "schema_valid": true,
+      "true_positive": 1,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 1,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 1076.6774170042481,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {\"has_serious_history\": false}}",
+      "raw_updates": [
+        {
+          "field": "has_serious_history",
+          "value": false,
+          "source_excerpt": "No visa refusal, criminal conviction, removal or immigration breach has ever happened to me.",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "has_serious_history",
+          "value": false,
+          "source_excerpt": "No visa refusal, criminal conviction, removal or immigration breach has ever happened to me.",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1472,
+      "output_tokens": 64,
+      "error_type": null
+    },
+    {
+      "case_id": "english_explicit_clean_history",
+      "repeat": 2,
+      "schema_valid": true,
+      "true_positive": 1,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 1,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 870.5755000119098,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {\"has_serious_history\": false}}",
+      "raw_updates": [
+        {
+          "field": "has_serious_history",
+          "value": false,
+          "source_excerpt": "No visa refusal, criminal conviction, removal or immigration breach has ever happened to me.",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "has_serious_history",
+          "value": false,
+          "source_excerpt": "No visa refusal, criminal conviction, removal or immigration breach has ever happened to me.",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1472,
+      "output_tokens": 64,
+      "error_type": null
+    },
+    {
+      "case_id": "english_explicit_clean_history",
+      "repeat": 3,
+      "schema_valid": true,
+      "true_positive": 1,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 1,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 816.9977079960518,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {\"has_serious_history\": false}}",
+      "raw_updates": [
+        {
+          "field": "has_serious_history",
+          "value": false,
+          "source_excerpt": "No visa refusal, criminal conviction, removal or immigration breach has ever happened to me.",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "has_serious_history",
+          "value": false,
+          "source_excerpt": "No visa refusal, criminal conviction, removal or immigration breach has ever happened to me.",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1472,
+      "output_tokens": 64,
+      "error_type": null
+    },
+    {
+      "case_id": "chinese_different_route",
+      "repeat": 1,
+      "schema_valid": true,
+      "true_positive": 1,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 1,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 783.7167909892742,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": true, \"updates\": {\"route_confirmed_standard_visitor\": false}}",
+      "raw_updates": [
+        {
+          "field": "route_confirmed_standard_visitor",
+          "value": false,
+          "source_excerpt": "我不是申请标准访客签证",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "route_confirmed_standard_visitor",
+          "value": false,
+          "source_excerpt": "我不是申请标准访客签证",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1469,
+      "output_tokens": 59,
+      "error_type": null
+    },
+    {
+      "case_id": "chinese_different_route",
+      "repeat": 2,
+      "schema_valid": true,
+      "true_positive": 1,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 1,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 878.0595829884987,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": true, \"updates\": {\"route_confirmed_standard_visitor\": false}}",
+      "raw_updates": [
+        {
+          "field": "route_confirmed_standard_visitor",
+          "value": false,
+          "source_excerpt": "我不是申请标准访客签证",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "route_confirmed_standard_visitor",
+          "value": false,
+          "source_excerpt": "我不是申请标准访客签证",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1469,
+      "output_tokens": 59,
+      "error_type": null
+    },
+    {
+      "case_id": "chinese_different_route",
+      "repeat": 3,
+      "schema_valid": true,
+      "true_positive": 1,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 1,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 1043.6992920003831,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": true, \"updates\": {\"route_confirmed_standard_visitor\": false}}",
+      "raw_updates": [
+        {
+          "field": "route_confirmed_standard_visitor",
+          "value": false,
+          "source_excerpt": "我不是申请标准访客签证",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "route_confirmed_standard_visitor",
+          "value": false,
+          "source_excerpt": "我不是申请标准访客签证",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1469,
+      "output_tokens": 57,
+      "error_type": null
+    },
+    {
+      "case_id": "outside_uk_sponsor",
+      "repeat": 1,
+      "schema_valid": true,
+      "true_positive": 3,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 3,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 925.594792002812,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {\"funding_source\": \"personal_sponsor\", \"sponsor_is_in_uk\": false, \"sponsor_relationship\": \"mother\"}}",
+      "raw_updates": [
+        {
+          "field": "funding_source",
+          "value": "personal_sponsor",
+          "source_excerpt": "My mother will personally sponsor my trip.",
+          "confidence": 1.0
+        },
+        {
+          "field": "sponsor_relationship",
+          "value": "mother",
+          "source_excerpt": "My mother will personally sponsor my trip.",
+          "confidence": 1.0
+        },
+        {
+          "field": "sponsor_is_in_uk",
+          "value": false,
+          "source_excerpt": "She lives in Singapore, not the UK.",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "funding_source",
+          "value": "personal_sponsor",
+          "source_excerpt": "My mother will personally sponsor my trip.",
+          "confidence": 1.0
+        },
+        {
+          "field": "sponsor_relationship",
+          "value": "mother",
+          "source_excerpt": "My mother will personally sponsor my trip.",
+          "confidence": 1.0
+        },
+        {
+          "field": "sponsor_is_in_uk",
+          "value": false,
+          "source_excerpt": "She lives in Singapore, not the UK.",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1472,
+      "output_tokens": 110,
+      "error_type": null
+    },
+    {
+      "case_id": "outside_uk_sponsor",
+      "repeat": 2,
+      "schema_valid": true,
+      "true_positive": 3,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 3,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 904.813415982062,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {\"funding_source\": \"personal_sponsor\", \"sponsor_is_in_uk\": false, \"sponsor_relationship\": \"mother\"}}",
+      "raw_updates": [
+        {
+          "field": "funding_source",
+          "value": "personal_sponsor",
+          "source_excerpt": "My mother will personally sponsor my trip.",
+          "confidence": 1.0
+        },
+        {
+          "field": "sponsor_relationship",
+          "value": "mother",
+          "source_excerpt": "My mother will personally sponsor my trip.",
+          "confidence": 1.0
+        },
+        {
+          "field": "sponsor_is_in_uk",
+          "value": false,
+          "source_excerpt": "She lives in Singapore, not the UK.",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "funding_source",
+          "value": "personal_sponsor",
+          "source_excerpt": "My mother will personally sponsor my trip.",
+          "confidence": 1.0
+        },
+        {
+          "field": "sponsor_relationship",
+          "value": "mother",
+          "source_excerpt": "My mother will personally sponsor my trip.",
+          "confidence": 1.0
+        },
+        {
+          "field": "sponsor_is_in_uk",
+          "value": false,
+          "source_excerpt": "She lives in Singapore, not the UK.",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1472,
+      "output_tokens": 110,
+      "error_type": null
+    },
+    {
+      "case_id": "outside_uk_sponsor",
+      "repeat": 3,
+      "schema_valid": true,
+      "true_positive": 3,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 3,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 1110.480458009988,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {\"funding_source\": \"personal_sponsor\", \"sponsor_is_in_uk\": false, \"sponsor_relationship\": \"mother\"}}",
+      "raw_updates": [
+        {
+          "field": "funding_source",
+          "value": "personal_sponsor",
+          "source_excerpt": "My mother will personally sponsor my trip.",
+          "confidence": 1.0
+        },
+        {
+          "field": "sponsor_relationship",
+          "value": "mother",
+          "source_excerpt": "My mother will personally sponsor my trip.",
+          "confidence": 1.0
+        },
+        {
+          "field": "sponsor_is_in_uk",
+          "value": false,
+          "source_excerpt": "She lives in Singapore, not the UK.",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_updates": [
+        {
+          "field": "funding_source",
+          "value": "personal_sponsor",
+          "source_excerpt": "My mother will personally sponsor my trip.",
+          "confidence": 1.0
+        },
+        {
+          "field": "sponsor_relationship",
+          "value": "mother",
+          "source_excerpt": "My mother will personally sponsor my trip.",
+          "confidence": 1.0
+        },
+        {
+          "field": "sponsor_is_in_uk",
+          "value": false,
+          "source_excerpt": "She lives in Singapore, not the UK.",
+          "confidence": 1.0
+        }
+      ],
+      "guarded_ambiguities": [],
+      "input_tokens": 1472,
+      "output_tokens": 110,
+      "error_type": null
+    },
+    {
+      "case_id": "unknown_is_not_denial",
+      "repeat": 1,
+      "schema_valid": true,
+      "true_positive": 0,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 0,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 784.3533330014907,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {}}",
+      "raw_updates": [],
+      "guarded_updates": [],
+      "guarded_ambiguities": [],
+      "input_tokens": 1471,
+      "output_tokens": 19,
+      "error_type": null
+    },
+    {
+      "case_id": "unknown_is_not_denial",
+      "repeat": 2,
+      "schema_valid": true,
+      "true_positive": 0,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 0,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 696.2425409874413,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {}}",
+      "raw_updates": [],
+      "guarded_updates": [],
+      "guarded_ambiguities": [],
+      "input_tokens": 1471,
+      "output_tokens": 19,
+      "error_type": null
+    },
+    {
+      "case_id": "unknown_is_not_denial",
+      "repeat": 3,
+      "schema_valid": true,
+      "true_positive": 0,
+      "unsupported": 0,
+      "missed": 0,
+      "critical_true_positive": 0,
+      "critical_unsupported": 0,
+      "critical_missed": 0,
+      "boundary_violation": false,
+      "human_review_correct": true,
+      "ambiguity_correct": true,
+      "latency_ms": 927.3506669851486,
+      "semantic_signature": "{\"has_ambiguity\": false, \"requires_human_review\": false, \"updates\": {}}",
+      "raw_updates": [],
+      "guarded_updates": [],
+      "guarded_ambiguities": [],
+      "input_tokens": 1471,
+      "output_tokens": 19,
+      "error_type": null
+    }
+  ],
+  "prompt_sha256": "aff1b90ea24167efc93b17941afa14288cb0f46bf32c3e272dd277141869f079",
+  "release_gate": {
+    "scope": "this synthetic corpus only",
+    "passed": true,
+    "failed_metrics": []
+  }
+}

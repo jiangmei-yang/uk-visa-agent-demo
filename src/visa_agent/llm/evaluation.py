@@ -342,5 +342,23 @@ def evaluate_extractor(
     }
 
 
+def release_metric_failures(report: dict[str, Any]) -> list[str]:
+    """A strict internal corpus gate, never a claim of general accuracy."""
+    metrics = report.get("metrics", {})
+    expected = {
+        "schema_valid_rate": 1.0,
+        "critical_field_precision": 1.0,
+        "critical_field_recall": 1.0,
+        "all_field_precision": 1.0,
+        "all_field_recall": 1.0,
+        "unsupported_claim_rate": 0.0,
+        "raw_boundary_violation_rate": 0.0,
+        "human_review_decision_rate": 1.0,
+        "ambiguity_detection_rate": 1.0,
+        "semantic_repeat_consistency_rate": 1.0,
+    }
+    return [name for name, target in expected.items() if metrics.get(name) != target]
+
+
 def allowed_profile_fields() -> set[str]:
     return set(CaseProfile.model_fields)

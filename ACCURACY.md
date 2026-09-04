@@ -4,7 +4,44 @@ Accuracy and stability are separate release gates. A deterministic workflow can 
 test while an external model still fails extraction, and a model can extract facts correctly while
 an unsafe workflow releases an incomplete pack. This repository reports both layers separately.
 
-## Current result (2026-09-04)
+## Latest measured result (2026-09-04, ordinary Gmail hardening)
+
+- Local suite: 183 tests; lint and strict typing pass. Deterministic stability: 20 identical
+  complete ZIP runs and 100 successful concurrent reads.
+- Ordinary four-PDF/OCR intake plus natural date correction: 3 repeated journeys,
+  48/48 checks (`eval_output/natural_journey_2026-09-04-v4.json`). The same two-turn
+  scenario was exercised through real Gmail, with both reviewed replies visibly received.
+  Both Gmail replies used safe fallback wording; the identity-summary blocker correctly
+  prevented a final delivery. This is not a complete ordinary-document-to-pack test.
+- The first broad extraction regression missed a name (all-field recall 97.5%). After that
+  correction, a 45-run regression exposed missing explicit negative facts (95% recall).
+  Both failed reports are preserved. After negative-fact instructions, the same 15-case,
+  3-repeat matrix reached 100% on its extraction and safety metrics in
+  `eval_output/agent_regression_2026-09-04-v3.json`.
+- A separate new negative-language matrix then exposed omitted Chinese route denial
+  (`eval_output/negative_facts_2026-09-04.json`, 83.33% field recall, safety decisions passed).
+  Passing the earlier matrix was therefore **not** proof of general accuracy. See the
+  subsequent reports and live evidence log for follow-up results. Further iterations exposed
+  a relationship incorrectly used as sponsor name, then an omitted funding source; these failed
+  reports are also retained. Code now rejects relationship-only names. After corrections,
+  `eval_output/negative_facts_2026-09-04-v4.json` passed all 15 runs and its strict corpus gate.
+- The evaluator now records a prompt SHA-256 and explicit release-gate result; `--strict` exits
+  nonzero on failure after preserving the report. Missing metrics also fail this gate.
+- The updated extractor passed all 75 formatting/quoted-history/injection inputs in
+  `eval_output/agent_stress_2026-09-04-v3.json`, and all 10 targeted repetitions of the
+  multilingual sponsor-injection input in `eval_output/sponsor_injection_2026-09-04.json`.
+  The 75-input run repeats each surface once: its consistency metric is not repeatability
+  evidence. The separate targeted run supplies repeatability evidence only for that one case.
+- An intermediate extractor snapshot's larger 225-run stress test is retained separately in
+  `eval_output/agent_stress_2026-09-04-v2.json`: all-field recall 99.33%, critical recall 99.30%,
+  repeat consistency 98.67%, with no unsupported accepted facts or unsafe boundary proposals.
+  It missed four sponsor facts in one multilingual-injection repetition. The newer 75-input
+  and 10-repeat results above do not retroactively turn that larger failed run into a pass.
+
+All of these are internal synthetic evaluations. They are not an external usability study,
+an applicant outcome study, a legal accuracy guarantee or a universal “full marks” score.
+
+## Earlier baseline (2026-09-04; retained, not the current release score)
 
 | Layer | Evidence | Result |
 |---|---|---:|

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -9,8 +10,9 @@ from visa_agent.llm.evaluation import (
     evaluate_extractor,
     expand_corpus_with_perturbations,
     load_corpus,
+    release_metric_failures,
 )
-from visa_agent.llm.openai_client import OpenAIStructuredLLM
+from visa_agent.llm.openai_client import EXTRACTION_INSTRUCTIONS, OpenAIStructuredLLM
 from visa_agent.secrets import read_secret
 
 
@@ -19,6 +21,7 @@ def main() -> None:
     parser.add_argument("--provider", choices=("openai", "deepseek"), default="openai")
     parser.add_argument("--model", required=True)
     parser.add_argument("--repeats", type=int, default=3)
+    parser.add_argument("--strict", action="store_true", help="Exit nonzero if any corpus release metric fails.")
     parser.add_argument(
         "--perturbations",
         action="store_true",
@@ -96,9 +99,17 @@ def main() -> None:
             f"dated {args.price_snapshot_date}: {args.pricing_url}"
         )
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    report["prompt_sha256"] = hashlib.sha256(EXTRACTION_INSTRUCTIONS.encode()).hexdigest()
+    report["release_gate"] = {
+        "scope": "this synthetic corpus only",
+        "passed": not release_metric_failures(report),
+        "failed_metrics": release_metric_failures(report),
+    }
     args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
     print(json.dumps(report["metrics"], indent=2))
     print(f"Full report: {args.output}")
+    if args.strict and release_metric_failures(report):
+        raise SystemExit("Corpus release gate failed; the full report was preserved.")
 
 
 if __name__ == "__main__":

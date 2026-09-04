@@ -113,6 +113,40 @@ and raw messages are deliberately excluded from this report.
   timeouts. These four specimens are not a general accuracy benchmark or a Gmail
   attachment end-to-end test. Offline console extraction remains fixture-only.
 
+## Ordinary attachments and correction D — real Gmail
+
+- An ordinary Chinese conference enquiry was sent through the owner's Gmail account with
+  four previously approved fictional PDFs: an identity summary, invitation, student letter
+  and image-only student-letter scan. Neither subject nor body contained test commands.
+- The first intake exposed spaced/shared-year date parsing and non-verbatim model quotation
+  failures, causing an unnecessary review escalation. The inadequate reply was **never sent**.
+  After checking zero send attempts and zero deliveries, the original database was preserved
+  as `first-attempt-unsent.db`; the same inbound message was replayed into corrected active state.
+- Date evidence now supports explicit shared years and Gmail line wrapping, but never fills a
+  missing year from the clock. A bounded extraction retry handles invalid model quotations.
+  Study location cannot establish nationality, and corrections cannot erase contrary PDF facts.
+- Text extraction and actual OCR completed. The invitation/itinerary date conflict was flagged;
+  the explicitly non-identity passport summary stayed blocked. The reply answered the customer's
+  booking question using a GOV.UK source checked on 2026-09-04, with a transit exception and
+  a bounded answer-review window. It then asked at most three selected next actions.
+- A second natural email corrected departure to 2026-11-13, retaining arrival 2026-11-09.
+  The invitation conflict resolved without re-uploading any of the four attachments. The reply
+  explicitly acknowledged the correction and asked only outstanding questions. Both reviewed
+  service replies were sent and visually verified in the recipient's Gmail thread.
+- Both replies used deterministic safe fallback wording. No passport was fabricated or accepted
+  from the summary; this case has **zero final deliveries**, intentionally. It does not prove
+  an ordinary-document final-pack journey, document authenticity or unrestricted advice accuracy.
+- Local real-model replay: three repetitions of the two-step journey passed **48/48 checks**
+  (`eval_output/natural_journey_2026-09-04-v4.json`). The initial failed report is retained.
+- Local automated suite: **183 tests passed**, lint and strict typing passed. A separate stability
+  run passed 20 complete deterministic workflows with identical ZIP hashes and 100 concurrent
+  console reads. These are bounded internal tests, not a production reliability guarantee.
+- The updated extraction corpus, negative-fact corpus and perturbation corpus have separate
+  scored reports in `ACCURACY.md`. Failures are preserved, not removed after a passing run.
+- The final local Docker rebuild was healthy; its existing runtime database SHA-256 was
+  `562f693a0cc6ea2b5406521e960238a83b9c8ad214eab8faac9b8b8132e76653` both before and
+  after the update. No runtime reset or unattended Gmail sending was performed.
+
 ## Remaining acceptance work
 
 - Unstructured conversation requires broader multi-turn testing: deferring unknown dates,
@@ -120,8 +154,8 @@ and raw messages are deliberately excluded from this report.
 - Natural confirmation currently recognises a conservative set of clear expressions with
   context/fingerprint checks. It no longer demands one exact command, but arbitrary paraphrases
   are not yet comprehensively covered; uncertain wording asks again rather than releasing a pack.
-- Ordinary text/scan extraction now has a small local real-model test; broader document
-  coverage, translation matching and live ordinary-attachment testing remain unfinished.
+- Ordinary text/scan extraction now has a small local real-model test and a real Gmail
+  attachment/correction test; broader document coverage and translation matching remain unfinished.
 - The final natural confirmation and ZIP delivery passed in the fixture-document thread;
   this must not be described as full ordinary-document end-to-end acceptance.
 - Live 429/5xx, revocation and permanent provider errors remain untested; automated
