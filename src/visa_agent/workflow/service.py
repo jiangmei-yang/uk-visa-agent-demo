@@ -700,14 +700,29 @@ class WorkflowService:
                 translation_for_document_id=translation_for_document_id,
             )
             case.documents.append(document)
-            if kind == "unknown" or inspection.requires_review:
+            expected_financial = {
+                "employment_letter": "salary",
+                "bank_statement": "closing_balance",
+                "sponsor_funds": "closing_balance",
+            }.get(kind)
+            missing_financial = bool(
+                expected_financial
+                and inspection.method != "deterministic_pdf_fixture_extractor"
+                and not any(item.kind == expected_financial for item in inspection.financial_observations)
+            )
+            needs_review = inspection.requires_review or missing_financial
+            if kind == "unknown" or needs_review:
                 document.status = DocumentStatus.HUMAN_REVIEW_REQUIRED
                 case.issues.append(
                     Issue(
                         id=stable_id("issue", f"unclassified:{document_id}"),
                         code=f"UNCLASSIFIED_DOCUMENT_{document_id}",
                         title="Document needs manual classification",
-                        detail=f"The content of {path.name} requires review before it can satisfy a requirement. {inspection.review_reason or 'A human must identify and verify this document.'}",
+                        detail=(f"The content of {path.name} requires review before it can satisfy a requirement. "
+                            + (inspection.review_reason or (
+                                f"Missing grounded financial observation: {expected_financial}."
+                                if missing_financial else "A human must identify and verify this document."
+                            ))),
                         severity=IssueSeverity.BLOCKER,
                         related_document_ids=[document_id],
                     )
@@ -734,6 +749,32 @@ class WorkflowService:
                         extraction_method=inspection.method,
                         model_version=inspection.model_version,
                         confidence=inspection.confidence,
+                        provenance_state=(
+                            ProvenanceState.DEMO_SYNTHETIC
+                            if inspection.method == "deterministic_pdf_fixture_extractor"
+                            else ProvenanceState.EXTRACTED_UNVERIFIED
+                        ),
+                    )
+                )
+            for index, observation in enumerate(inspection.financial_observations):
+                # This evidence is intentionally separate from CaseProfile. A
+                # quoted balance or salary never becomes a customer-confirmed
+                # income, trip cost, sponsor or funding decision automatically.
+                observation_value = observation.model_dump(
+                    mode="json", exclude={"amount_page", "amount_excerpt", "confidence"}
+                )
+                case.evidence.append(
+                    Evidence(
+                        id=stable_id("ev", f"{document_id}:financial:{index}:{observation_value}"),
+                        fact_key="financial_observation",
+                        value=observation_value,
+                        source_event_id=event.id,
+                        source_document_id=document.id,
+                        source_excerpt=observation.amount_excerpt,
+                        page=observation.amount_page,
+                        extraction_method=inspection.method,
+                        model_version=inspection.model_version,
+                        confidence=observation.confidence,
                         provenance_state=(
                             ProvenanceState.DEMO_SYNTHETIC
                             if inspection.method == "deterministic_pdf_fixture_extractor"

@@ -155,6 +155,7 @@ class DeepSeekStructuredLLM:
         return content
 
     def extract_document(self, pages: list[str]) -> DocumentProposal:
+        self.last_extraction_content = None
         schema = json.dumps(DocumentProposal.model_json_schema(), ensure_ascii=False)
         response = self.client.chat.completions.create(
             model=self.model,
@@ -171,6 +172,17 @@ class DeepSeekStructuredLLM:
                     "Use ISO dates only when a full date is printed. funding_source may be self, "
                     "employer_or_school or personal_sponsor; occupation_status may be employed, "
                     "student or self_employed. If uncertain use kind unknown or requires_review. "
+                    "For an employment_letter extract an explicit salary as a financial_observation, "
+                    "keeping its printed currency, monthly/annual period, gross/net basis and the "
+                    "explicit full date of the letter or pay statement. For a "
+                    "bank_statement or sponsor_funds extract an explicit closing balance, statement "
+                    "date and account holder; include an account reference only when printed. "
+                    "Ground the holder, amount, date and any account reference independently using "
+                    "their separate page/excerpt fields; do not join unrelated people, accounts, dates "
+                    "or currencies. account_page/account_excerpt must both be null when no reference is printed. "
+                    "Never convert currencies, sum transactions, infer an annual amount, infer an account "
+                    "owner, or treat a bank balance as income. A sponsor account holder is not the "
+                    "applicant full_name. Unsupported currencies require review rather than conversion. "
                     "Language describes the document, not the desired reply. A certified_translation "
                     "requires an explicit completeness/accuracy certification and translator identity; "
                     "otherwise use other_supporting_document. translation_for_filename must be "
@@ -185,4 +197,6 @@ class DeepSeekStructuredLLM:
         content = response.choices[0].message.content
         if not isinstance(content, str):
             raise ValueError("Document model returned no structured content")
+        if self.capture_raw_responses:
+            self.last_extraction_content = content
         return DocumentProposal.model_validate_json(content)

@@ -3,7 +3,16 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from pathlib import Path
 
-from visa_agent.domain.models import Case, CaseProfile, Document, DocumentStatus, Evidence
+import pytest
+
+from visa_agent.domain.models import (
+    Case,
+    CaseProfile,
+    Document,
+    DocumentStatus,
+    Evidence,
+    ProvenanceState,
+)
 from visa_agent.domain.policy import load_policy
 from visa_agent.domain.rules import (
     build_requirements,
@@ -177,6 +186,16 @@ def test_sponsor_evidence_requires_each_official_component() -> None:
         document("sponsor_funds"),
         document("relationship_evidence"),
     ]
+    case.evidence.append(Evidence(id="sponsor-balance", fact_key="financial_observation",
+        value={"kind": "closing_balance", "subject_name": "Mei Chen", "amount": "12000",
+               "currency": "GBP", "period": "closing", "basis": "unspecified",
+               "as_of": "2026-08-31", "account_reference": "1234",
+               "subject_page": 1, "subject_excerpt": "Account holder Mei Chen, account ending 1234",
+               "date_page": 1, "date_excerpt": "Statement date 2026-08-31",
+               "account_page": 1, "account_excerpt": "Account ending 1234"},
+        source_event_id="event-accuracy", source_document_id="doc-sponsor_funds",
+        source_excerpt="Closing balance GBP 12,000 on 2026-08-31", page=1,
+        extraction_method="test", model_version="none", confidence=1))
 
     requirements = {item.id: item for item in build_requirements(case, POLICY)}
     assert requirements["sponsor_evidence"].satisfied is False
@@ -189,6 +208,124 @@ def test_sponsor_evidence_requires_each_official_component() -> None:
 def test_policy_and_prompt_canonical_values_align() -> None:
     assert "family_or_friends" in POLICY.scope["purposes"]
     assert "employer_or_school" in POLICY.scope["funding"]
+
+
+def test_ordinary_financial_document_without_structured_observation_cannot_satisfy_requirement() -> None:
+    case = case_with(funding_source="self")
+    statement = document("bank_statement")
+    case.documents = [statement]
+    requirements = {item.id: item for item in build_requirements(case, POLICY)}
+    assert not requirements["funding_evidence"].satisfied
+
+
+@pytest.mark.parametrize(
+    "state",
+    [ProvenanceState.STALE, ProvenanceState.INSUFFICIENT, ProvenanceState.UNAVAILABLE],
+)
+def test_inactive_financial_observation_cannot_satisfy_requirement(state) -> None:
+    case = case_with(funding_source="self")
+    statement = document("bank_statement")
+    case.documents = [statement]
+    case.evidence.append(Evidence(
+        id="inactive-balance", fact_key="financial_observation",
+        value={"kind": "closing_balance", "subject_name": "Lin Xiao", "amount": "12000",
+               "currency": "GBP", "period": "closing", "basis": "unspecified",
+               "as_of": "2026-08-31", "account_reference": "1234",
+               "subject_page": 1, "subject_excerpt": "Account holder Lin Xiao",
+               "date_page": 1, "date_excerpt": "Statement date 2026-08-31",
+               "account_page": 1, "account_excerpt": "Account ending 1234"},
+        source_event_id="event-accuracy", source_document_id=statement.id,
+        source_excerpt="Closing balance GBP 12000", page=1,
+        extraction_method="test", model_version="none", confidence=1,
+        provenance_state=state,
+    ))
+    requirements = {item.id: item for item in build_requirements(case, POLICY)}
+    assert not requirements["funding_evidence"].satisfied
+
+
+@pytest.mark.parametrize(("fact_key", "value", "excerpt", "state"), [
+    ("full_name", "Lin Xiao", "FACT full_name=Lin Xiao", ProvenanceState.DEMO_SYNTHETIC),
+    ("_fixture_document_contract", "employment_letter",
+     "FACT _fixture_document_contract=employment_letter", ProvenanceState.DEMO_SYNTHETIC),
+    ("_fixture_document_contract", "bank_statement",
+     "FACT _fixture_document_contract=bank_statement", ProvenanceState.EXTRACTED_UNVERIFIED),
+])
+def test_fixture_method_alone_cannot_bypass_financial_requirement(
+    fact_key, value, excerpt, state,
+) -> None:
+    case = case_with(funding_source="self")
+    statement = document("bank_statement")
+    case.documents = [statement]
+    case.evidence.append(Evidence(
+        id="untrusted-fixture-marker", fact_key=fact_key, value=value,
+        source_event_id="event-accuracy", source_document_id=statement.id,
+        source_excerpt=excerpt, extraction_method="deterministic_pdf_fixture_extractor",
+        model_version="none", confidence=1, provenance_state=state,
+    ))
+    requirements = {item.id: item for item in build_requirements(case, POLICY)}
+    assert not requirements["funding_evidence"].satisfied
+
+    case.evidence.append(Evidence(id="malformed-balance", fact_key="financial_observation",
+        value={"kind": "closing_balance", "amount": "12000"}, source_event_id="event-accuracy",
+        source_document_id=statement.id, source_excerpt="GBP 12,000", page=1,
+        extraction_method="bounded_pdf_text_extraction", model_version="test", confidence=1))
+    requirements = {item.id: item for item in build_requirements(case, POLICY)}
+    assert not requirements["funding_evidence"].satisfied
+
+
+@pytest.mark.parametrize(("funding", "wrong_kind", "right_kind"), [
+    ("self", "funding_letter", "bank_statement"),
+    ("employer_or_school", "bank_statement", "funding_letter"),
+    ("personal_sponsor", "funding_letter", "sponsor_funds"),
+])
+def test_funding_requirement_cannot_be_satisfied_by_another_branch(
+    funding, wrong_kind, right_kind,
+) -> None:
+    case = case_with(funding_source=funding)
+    wrong = document(wrong_kind)
+    case.documents = [wrong]
+    # Explicit synthetic-fixture provenance bypasses ordinary amount extraction,
+    # but must not bypass the selected funding branch.
+    case.evidence.append(Evidence(id="fixture-evidence", fact_key="_fixture_document_contract",
+        value=wrong.kind, source_event_id="event-accuracy", source_document_id=wrong.id,
+        source_excerpt=f"FACT _fixture_document_contract={wrong.kind}",
+        extraction_method="deterministic_pdf_fixture_extractor", model_version="none", confidence=1))
+    assert not {item.id: item for item in build_requirements(case, POLICY)}[
+        "funding_evidence"
+    ].satisfied
+    right = document(right_kind)
+    case.documents.append(right)
+    case.evidence.append(Evidence(id="right-fixture", fact_key="_fixture_document_contract",
+        value=right.kind, source_event_id="event-accuracy", source_document_id=right.id,
+        source_excerpt=f"FACT _fixture_document_contract={right.kind}",
+        extraction_method="deterministic_pdf_fixture_extractor", model_version="none", confidence=1))
+    assert {item.id: item for item in build_requirements(case, POLICY)}[
+        "funding_evidence"
+    ].satisfied
+
+
+@pytest.mark.parametrize(("occupation", "wrong_kind", "right_kind"), [
+    ("employed", "student_letter", "employment_letter"),
+    ("student", "employment_letter", "student_letter"),
+    ("self_employed", "student_letter", "self_employment_evidence"),
+])
+def test_status_requirement_must_match_the_current_occupation(
+    occupation, wrong_kind, right_kind,
+) -> None:
+    case = case_with(occupation_status=occupation)
+    case.documents = [document(wrong_kind)]
+    assert not {item.id: item for item in build_requirements(case, POLICY)}[
+        "status_evidence"
+    ].satisfied
+    right = document(right_kind)
+    case.documents.append(right)
+    case.evidence.append(Evidence(id="status-fixture", fact_key="_fixture_document_contract",
+        value=right.kind, source_event_id="event-accuracy", source_document_id=right.id,
+        source_excerpt=f"FACT _fixture_document_contract={right.kind}",
+        extraction_method="deterministic_pdf_fixture_extractor", model_version="none", confidence=1))
+    assert {item.id: item for item in build_requirements(case, POLICY)}[
+        "status_evidence"
+    ].satisfied
 
 
 def test_every_non_english_document_needs_its_own_linked_translation() -> None:

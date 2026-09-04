@@ -5,6 +5,10 @@ from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any
 
+import pytest
+from pydantic import ValidationError
+
+from visa_agent.documents.natural import DocumentProposal
 from visa_agent.domain.models import InboundEvent
 from visa_agent.llm.deepseek_client import DeepSeekStructuredLLM
 from visa_agent.llm.ports import CasePatch, FactUpdate
@@ -77,3 +81,39 @@ def test_deepseek_extraction_uses_json_chat_without_openai_only_fields() -> None
             "total_tokens": 96,
         }
     ]
+
+
+def test_document_diagnostic_capture_retains_success_and_invalid_json() -> None:
+    proposal = DocumentProposal(kind="other_supporting_document", language="en",
+        classification_page=1, classification_excerpt="Fictional supporting note", confidence=1)
+
+    class Completions:
+        content = proposal.model_dump_json()
+        create_arguments: dict[str, Any] = {}
+
+        def create(self, **kwargs: Any) -> Any:
+            self.create_arguments = kwargs
+            return SimpleNamespace(choices=[SimpleNamespace(
+                message=SimpleNamespace(content=self.content))], usage=SimpleNamespace(
+                    prompt_tokens=20, completion_tokens=10, total_tokens=30))
+
+    completions = Completions()
+    adapter = DeepSeekStructuredLLM.__new__(DeepSeekStructuredLLM)
+    adapter.client = SimpleNamespace(chat=SimpleNamespace(completions=completions))
+    adapter.model = adapter.version = "fictional-model"
+    adapter.last_usage = None
+    adapter.usage_history = []
+    adapter.capture_raw_responses = True
+    adapter.last_extraction_content = None
+
+    assert adapter.extract_document(["Fictional supporting note"]) == proposal
+    assert adapter.last_extraction_content == proposal.model_dump_json()
+    instructions = completions.create_arguments["messages"][0]["content"]
+    assert "Ground the holder, amount, date" in instructions
+    assert "Never Ground" not in instructions
+    assert "Never convert currencies" in instructions
+
+    completions.content = "not valid JSON"
+    with pytest.raises(ValidationError):
+        adapter.extract_document(["Fictional supporting note"])
+    assert adapter.last_extraction_content == "not valid JSON"

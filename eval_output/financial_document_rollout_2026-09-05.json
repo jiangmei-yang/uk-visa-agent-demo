@@ -1,0 +1,95 @@
+{
+  "scope": "Ordinary financial-document provenance, branch matching and like-for-like consistency review",
+  "baseline_commit": "ecd74e7c1c8e95fd1b924cd131a68d727ad35f71",
+  "provider": "deepseek-v4-flash",
+  "new_paid_model_calls": 11,
+  "provider_reported_tokens": {"input": 18612, "output": 3422, "total": 22034},
+  "manual_live_mailbox_sends": 0,
+  "real_documents_processed": 0,
+  "not_a_naturalness_or_accuracy_score": true,
+  "not_a_blind_holdout": true,
+  "provider_runs": [
+    {"report": "financial_document_deepseek_2026-09-05.json", "sha256": "d8f6c1c251276553b46b5a41a099818786e5b625198221aec1a2ead8a6bee3fd", "calls": 4, "passed": 1, "failed": 3, "tokens": 7689, "raw_capture_missing": true},
+    {"report": "financial_document_deepseek_2026-09-05-v2.json", "sha256": "ef1319947ca4eb4a166243a27b93d4ff6d2b28967f1761d94cf7195772e8cb19", "calls": 3, "passed": 0, "failed": 3, "tokens": 5823, "diagnostic_only": true},
+    {"report": "financial_document_deepseek_2026-09-05-v3.json", "sha256": "1ee995da2d54a04a5fa67e30f7f2d124f2fbab3c8c1632c98c29f953bb6ad7f9", "calls": 3, "passed": 3, "failed": 0, "tokens": 6414, "current_schema": true},
+    {"report": "financial_document_deepseek_2026-09-05-v4.json", "sha256": "d463cbef0bf94d0ad53948b1294bce64faab7cb4e8862feafc35ff6d7c5398f8", "calls": 1, "passed": 1, "failed": 0, "tokens": 2108, "current_schema": true}
+  ],
+  "historical_report_corrections": [
+    {
+      "report": "financial_document_deepseek_2026-09-05-v2.json",
+      "field": "scope",
+      "recorded_value": "four fictional financial PDFs; one DeepSeek extraction each",
+      "corrected_value": "3 selected fictional financial PDFs; one DeepSeek extraction each",
+      "evidence": {"maximum_model_calls": 3, "retained_result_rows": 3, "passed": 0, "failed": 3},
+      "historical_report_left_unchanged": true
+    }
+  ],
+  "historical_provider_report_provenance_limit": {
+    "reports": [
+      "financial_document_deepseek_2026-09-05.json",
+      "financial_document_deepseek_2026-09-05-v2.json",
+      "financial_document_deepseek_2026-09-05-v3.json",
+      "financial_document_deepseek_2026-09-05-v4.json"
+    ],
+    "limitation": "These retained reports predate the v2 evidence contract and do not bind the source bundle, document schema, effective prompt, request configuration, git revision, run identity or provider response model. Current local PDF hashes can be checked during offline replay, but those checks cannot retroactively prove the exact code and prompt used for the historical calls.",
+    "historical_reports_left_unchanged": true
+  },
+  "subsequent_probe_evidence_contract": {
+    "version": "financial-document-probe-v2",
+    "preflight": "Every selected PDF must match its frozen SHA-256 and embedded fictional-evaluation label before a provider client is constructed.",
+    "report_metadata": [
+      "document source manifest and bundle SHA-256",
+      "implementation file and bundle SHA-256",
+      "document schema SHA-256",
+      "effective document prompt SHA-256",
+      "request configuration SHA-256",
+      "git HEAD, UTC run timestamps and run ID",
+      "provider response model and its SHA-256 per retained result"
+    ],
+    "historical_results_not_upgraded_by_this_contract": true
+  },
+  "full_suite": {"passed": 3985, "failed": 0, "warnings": 1, "seconds": 60.38},
+  "focused_financial_and_adapter_suites": {"passed": 156, "failed": 0, "seconds": 0.64},
+  "checks": {"ruff": "passed", "strict_mypy": "passed", "mypy_source_files": 72, "diff_check": "passed"},
+  "pdf_visual_qa": {
+    "documents": 4,
+    "pages": 4,
+    "page_size": "A4",
+    "rendered_with": "pdftoppm",
+    "inspected": true,
+    "observed_defects": 0,
+    "synthetic_labels_visible": true
+  },
+  "gmail_worker": {
+    "pid": 14344,
+    "observed_phase": "idle",
+    "observed_at": "2026-09-04T18:28:26+00:00",
+    "configuration_unchanged": true,
+    "plist_sha256": "a82564de8ab818088e5afb363de951b1a7ad6a93459e21ae4a645aa487587d7e",
+    "business_projection_sha256_before_and_after": "939aac258e7e217b002f2eea3857727698bfbc24047c4fc016a68d718af5cac0",
+    "existing_cases": 1,
+    "existing_sent": 9,
+    "existing_deliveries": 0,
+    "applicant_processing_permission": "unknown; not fabricated or bypassed"
+  },
+  "docker": {
+    "container_id": "3de718e6e863e0e7ec6ee3002b4c7a67108222799ea281e6aecb2c8622c0f7b5",
+    "image_id": "sha256:d8a56982abac60e878f5cab66a66d4490978a21bab217f803f9ef844ae281c45",
+    "health": "healthy",
+    "preserved_volume": "uk-visa-agent-demo_review-runtime",
+    "local_and_container_source_manifest_sha256": "345b2b1e15dfa9068f219b0c91baae04448d164a3c3be05aeff2c7478fc8007d",
+    "source_files": 72,
+    "persistent_zip_sha256_before_and_after": "8bc0681a837437d30675da7650cd9c61e1ecc69532ea969c77ceb383c458f724",
+    "isolated_network_none_demo": {
+      "cases": 1, "processed_events": 3, "outbox": 3, "deliveries": 1,
+      "unchanged_zip_sha256": "7e27fe057a2643dd892bd41e94ed47245a225ff716bb99a7a4802bb0447b641f"
+    }
+  },
+  "remaining_scope": [
+    "No funding-sufficiency score, conversion or fixed statement-month rule",
+    "No comprehensive transaction-origin or joint-account interpretation",
+    "Employer or school sponsorship terms and relationship documents remain bounded",
+    "No real applicant documents, blind holdout, recipient-side delivery or live WhatsApp evidence"
+  ],
+  "overall_acceptance": "incomplete"
+}

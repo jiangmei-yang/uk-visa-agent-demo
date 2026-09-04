@@ -18,12 +18,17 @@ for these outcomes.
    OAuth, a mailbox allowlist, operator approval, or the retry CLI's model
    flag is not applicant privacy consent. Do not ask a new participant to send
    ordinary personal documents until this is addressed and consent established.
-2. **Ordinary-document cross-source evidence coverage.** The natural PDF proposal
-   schema currently extracts a bounded set of identity, invitation dates,
-   occupation, funding category and translation-link facts. It does not establish
-   comprehensive income, sponsor identity/relationship or financial-amount
-   cross-checks. Generic conflict logic cannot compare facts the reader never
-   extracts. Explicitly synthetic fixture success is not proof of this coverage.
+2. **Ordinary-document cross-source evidence coverage.**
+   [Bounded financial observations](FINANCIAL_DOCUMENT_EVIDENCE.md) now retain
+   independently grounded holder, amount, original currency, date, period/basis
+   and optional account reference. Like-for-like contradictions and known holder
+   mismatches block delivery without conversion, summing, sufficiency scoring or
+   profile overwrites. Ordinary financial documents without a valid observation
+   cannot satisfy the gate; funding and occupation evidence must match the current
+   branch. Real-model v1/v2 failures and v3/v4 repairs are retained. Comprehensive
+   transaction-origin analysis, joint accounts, all currencies, sponsor support
+   terms and relationship extraction remain incomplete. Explicitly synthetic
+   fixture success is still not proof of ordinary-document coverage.
 3. **Requested intake coverage.** Ordinary travel history and UK contacts are not
    structured, provenance-backed profile fields. A serious-history flag is not
    equivalent to complete travel history.

@@ -14,6 +14,7 @@ from visa_agent.domain.models import (
     Issue,
     IssueSeverity,
     IssueStatus,
+    ProvenanceState,
     Requirement,
     WorkflowStage,
 )
@@ -145,7 +146,25 @@ def build_requirements(case: Case, policy: Policy) -> list[Requirement]:
             for doc in case.documents
             if doc.kind in rule.acceptable_evidence
             and doc.status.value == "ACCEPTED_FOR_REVIEW"
+            and _document_has_required_financial_observation(case, doc.id, doc.kind)
         ]
+        if rule.id == "status_evidence":
+            expected_status_kind = {
+                "employed": "employment_letter", "student": "student_letter",
+                "self_employed": "self_employment_evidence",
+            }.get(case.profile.occupation_status or "")
+            matching = [document_id for document_id in matching
+                if next(doc for doc in case.documents if doc.id == document_id).kind
+                == expected_status_kind]
+        if rule.id == "funding_evidence":
+            expected_funding_kinds = {
+                "self": {"bank_statement"},
+                "employer_or_school": {"funding_letter"},
+                "personal_sponsor": {"sponsor_funds"},
+            }.get(case.profile.funding_source or "", set())
+            matching = [document_id for document_id in matching
+                if next(doc for doc in case.documents if doc.id == document_id).kind
+                in expected_funding_kinds]
         requirement_satisfied = bool(matching)
         if rule.id == "sponsor_evidence" and applicable:
             required_sponsor_kinds = {
@@ -159,6 +178,7 @@ def build_requirements(case: Case, policy: Policy) -> list[Requirement]:
                 doc.kind
                 for doc in case.documents
                 if doc.status == DocumentStatus.ACCEPTED_FOR_REVIEW
+                and _document_has_required_financial_observation(case, doc.id, doc.kind)
             }
             requirement_satisfied = required_sponsor_kinds <= present_sponsor_kinds
         if rule.id == "certified_translation" and applicable:
@@ -192,6 +212,41 @@ def build_requirements(case: Case, policy: Policy) -> list[Requirement]:
             )
         )
     return result
+
+
+def _document_has_required_financial_observation(
+    case: Case, document_id: str, kind: str,
+) -> bool:
+    expected = {
+        "employment_letter": "salary",
+        "bank_statement": "closing_balance",
+        "sponsor_funds": "closing_balance",
+    }.get(kind)
+    if expected is None:
+        return True
+    evidence = [item for item in case.evidence
+        if not item.superseded and item.source_document_id == document_id
+        and item.provenance_state not in {
+            ProvenanceState.STALE,
+            ProvenanceState.INSUFFICIENT,
+            ProvenanceState.UNAVAILABLE,
+        }]
+    # The marker-driven demo remains deterministic and explicitly synthetic; it
+    # is never counted as ordinary-document evidence in evaluation claims.
+    if any(
+        item.extraction_method == "deterministic_pdf_fixture_extractor"
+        and item.provenance_state == ProvenanceState.DEMO_SYNTHETIC
+        and item.fact_key == "_fixture_document_contract"
+        and item.value == kind
+        and item.source_excerpt == f"FACT _fixture_document_contract={kind}"
+        for item in evidence
+    ):
+        return True
+    from visa_agent.domain.financial_review import financial_observation_is_valid
+
+    return any(item.fact_key == "financial_observation"
+        and isinstance(item.value, dict) and item.value.get("kind") == expected
+        and financial_observation_is_valid(item, kind) for item in evidence)
 
 
 def _upsert_issue(case: Case, issue: Issue) -> None:
@@ -283,6 +338,10 @@ def run_consistency_checks(case: Case) -> None:
         if not evidence.superseded:
             evidence_by_fact.setdefault(evidence.fact_key, []).append(evidence)
     for fact_key, evidence_items in evidence_by_fact.items():
+        if fact_key == "financial_observation":
+            # Structured monetary observations require like-for-like comparison;
+            # stringifying the dict would falsely conflict currencies and dates.
+            continue
         values = {str(item.value).strip().casefold() for item in evidence_items}
         issue_code = f"EVIDENCE_CONFLICT_{fact_key.upper()}"
         if len(values) > 1:
@@ -306,6 +365,9 @@ def run_consistency_checks(case: Case) -> None:
             )
         else:
             resolve_issue(case, issue_code, "Only one active value remains across the evidence.")
+    from visa_agent.domain.financial_review import apply_financial_consistency_checks
+
+    apply_financial_consistency_checks(case)
 
 
 def passport_valid_through_stay(case: Case) -> bool:

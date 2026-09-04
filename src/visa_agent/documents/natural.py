@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 import unicodedata
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Literal, Protocol
 
@@ -17,6 +18,7 @@ from pypdf import PdfReader
 
 from visa_agent.documents.processor import inspect_pdf
 from visa_agent.domain.date_evidence import date_is_grounded
+from visa_agent.domain.financial_evidence import financial_fields_are_coherent
 
 DocumentKind = Literal[
     "unknown",
@@ -48,6 +50,9 @@ FactName = Literal[
     "funding_source",
     "translation_for_filename",
 ]
+FinancialObservationKind = Literal["salary", "closing_balance"]
+FinancialPeriod = Literal["annual", "monthly", "closing"]
+FinancialBasis = Literal["gross", "net", "unspecified"]
 
 
 class DocumentFact(BaseModel):
@@ -59,6 +64,29 @@ class DocumentFact(BaseModel):
     confidence: float = Field(ge=0, le=1)
 
 
+class FinancialObservation(BaseModel):
+    """One quoted amount, retained in its printed currency and time basis."""
+
+    model_config = ConfigDict(extra="forbid")
+    kind: FinancialObservationKind
+    subject_name: str = Field(min_length=1, max_length=160)
+    amount: str = Field(pattern=r"^-?(?:0|[1-9][0-9]{0,12})(?:\.\d{1,2})?$")
+    currency: Literal["GBP", "CNY", "HKD", "USD", "EUR"]
+    period: FinancialPeriod
+    basis: FinancialBasis = "unspecified"
+    as_of: date | None = None
+    account_reference: str | None = Field(default=None, min_length=2, max_length=80)
+    subject_page: int = Field(ge=1)
+    subject_excerpt: str = Field(min_length=1, max_length=600)
+    amount_page: int = Field(ge=1)
+    amount_excerpt: str = Field(min_length=1, max_length=600)
+    date_page: int = Field(ge=1)
+    date_excerpt: str = Field(min_length=1, max_length=600)
+    account_page: int | None = Field(default=None, ge=1)
+    account_excerpt: str | None = Field(default=None, min_length=1, max_length=600)
+    confidence: float = Field(ge=0, le=1)
+
+
 class DocumentProposal(BaseModel):
     model_config = ConfigDict(extra="forbid")
     kind: DocumentKind
@@ -67,6 +95,7 @@ class DocumentProposal(BaseModel):
     classification_excerpt: str = Field(min_length=1, max_length=1200)
     confidence: float = Field(ge=0, le=1)
     facts: list[DocumentFact] = Field(default_factory=list, max_length=30)
+    financial_observations: list[FinancialObservation] = Field(default_factory=list, max_length=20)
     requires_review: bool = False
     review_reason: str | None = None
 
@@ -82,6 +111,7 @@ class DocumentReadResult:
     confidence: float = 1.0
     requires_review: bool = False
     review_reason: str | None = None
+    financial_observations: tuple[FinancialObservation, ...] = ()
 
 
 class DocumentReader(Protocol):
@@ -115,6 +145,36 @@ def _grounded(excerpt: str, page: int, pages: list[str]) -> bool:
     return 1 <= page <= len(pages) and _normalise(excerpt) in _normalise(pages[page - 1])
 
 
+def _money_is_grounded(item: FinancialObservation, pages: list[str]) -> bool:
+    if (item.confidence < 0.95
+            or not _grounded(item.subject_excerpt, item.subject_page, pages)
+            or not _grounded(item.amount_excerpt, item.amount_page, pages)
+            or not _grounded(item.date_excerpt, item.date_page, pages)):
+        return False
+    if item.account_reference:
+        if (item.account_page is None or item.account_excerpt is None
+                or not _grounded(item.account_excerpt, item.account_page, pages)):
+            return False
+    elif item.account_page is not None or item.account_excerpt is not None:
+        return False
+    if item.as_of is None:
+        return False
+    return financial_fields_are_coherent(
+        kind=item.kind,
+        subject_name=item.subject_name,
+        amount=item.amount,
+        currency=item.currency,
+        period=item.period,
+        basis=item.basis,
+        as_of=item.as_of.isoformat(),
+        account_reference=item.account_reference,
+        subject_excerpt=item.subject_excerpt,
+        amount_excerpt=item.amount_excerpt,
+        date_excerpt=item.date_excerpt,
+        account_excerpt=item.account_excerpt,
+    )
+
+
 def validate_document(
     proposal: DocumentProposal, pages: list[str], *, method: str, version: str
 ) -> DocumentReadResult:
@@ -136,6 +196,27 @@ def validate_document(
         if item.field in facts and facts[item.field][0] != item.value:
             raise ValueError("Conflicting document facts require review")
         facts[item.field] = (item.value, item.page, item.excerpt)
+    financial_observations = []
+    for financial_item in proposal.financial_observations:
+        if not _money_is_grounded(financial_item, pages):
+            raise ValueError("A financial observation lacks a grounded subject, amount or currency")
+        financial_observations.append(financial_item)
+    permitted_financial_kinds = {
+        "employment_letter": {"salary"},
+        "bank_statement": {"closing_balance"},
+        "sponsor_funds": {"closing_balance"},
+    }
+    permitted = permitted_financial_kinds.get(proposal.kind, set())
+    if any(financial_item.kind not in permitted for financial_item in financial_observations):
+        raise ValueError("Financial observation type does not match the document kind")
+    identified_person = facts.get("full_name")
+    if proposal.kind == "sponsor_funds" and identified_person:
+        raise ValueError("A sponsor account holder must not be stored as the applicant's full_name")
+    if identified_person and any(
+        _normalise(financial_item.subject_name) != _normalise(str(identified_person[0]))
+        for financial_item in financial_observations
+    ):
+        raise ValueError("Financial subject conflicts with the document holder")
     required = {
         "passport": {"full_name", "date_of_birth", "passport_expiry_date"},
         "travel_document": {"full_name", "passport_expiry_date"},
@@ -149,6 +230,16 @@ def validate_document(
         "bank_statement": {"full_name"},
     }.get(proposal.kind, set())
     missing = required - facts.keys()
+    required_financial_kind = {
+        "employment_letter": "salary",
+        "bank_statement": "closing_balance",
+        "sponsor_funds": "closing_balance",
+    }.get(proposal.kind)
+    missing_financial = bool(
+        required_financial_kind
+        and not any(financial_item.kind == required_financial_kind
+                    for financial_item in financial_observations)
+    )
     # This is a negative evidence check, not authentication. Normalize compatibility
     # characters only for warning detection; source-quotation grounding remains unchanged.
     identity_text = _normalise(unicodedata.normalize("NFKC", "\n".join(pages)))
@@ -166,17 +257,23 @@ def validate_document(
         facts,
         method,
         version,
-        min([proposal.confidence] + [item.confidence for item in proposal.facts]),
+        min([proposal.confidence] + [item.confidence for item in proposal.facts]
+            + [financial_item.confidence for financial_item in financial_observations]),
         proposal.requires_review
         or proposal.confidence < 0.95
         or proposal.kind == "unknown"
         or bool(missing)
+        or missing_financial
         or specimen_identity,
         "Missing grounded document fields: " + ", ".join(sorted(missing))
         if missing
         else (
-            "Specimen is not an identity document" if specimen_identity else proposal.review_reason
+            f"Missing grounded financial observation: {required_financial_kind}"
+            if missing_financial else (
+                "Specimen is not an identity document" if specimen_identity else proposal.review_reason
+            )
         ),
+        tuple(financial_observations),
     )
 
 

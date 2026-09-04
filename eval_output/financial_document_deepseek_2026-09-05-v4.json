@@ -1,0 +1,60 @@
+{
+  "scope": "1 selected fictional financial PDFs; one DeepSeek extraction each",
+  "model": "deepseek-v4-flash",
+  "maximum_model_calls": 1,
+  "mailbox_calls": 0,
+  "real_documents": 0,
+  "completed": true,
+  "all_passed": true,
+  "results": [
+    {
+      "filename": "fictional_sponsor_statement.pdf",
+      "sha256": "e255b307ec708735dfda4ce81f69c3425a61afd871b270d1c4dcc278325dddea",
+      "checks": {
+        "expected_kind": true,
+        "accepted_extraction": true,
+        "one_financial_observation": true,
+        "expected_financial_kind": true,
+        "expected_subject": true,
+        "expected_amount": true,
+        "expected_currency": true
+      },
+      "passed": true,
+      "read_result": {
+        "kind": "sponsor_funds",
+        "requires_review": false,
+        "review_reason": null,
+        "financial_observations": [
+          {
+            "kind": "closing_balance",
+            "subject_name": "Mina Example",
+            "amount": "88000.00",
+            "currency": "HKD",
+            "period": "closing",
+            "basis": "unspecified",
+            "as_of": "2026-08-31",
+            "account_reference": "9876",
+            "subject_page": 1,
+            "subject_excerpt": "Account holder: Mina Example. Account ending: 9876.",
+            "amount_page": 1,
+            "amount_excerpt": "Closing balance HKD 88,000.00 as of 2026-08-31.",
+            "date_page": 1,
+            "date_excerpt": "Closing balance HKD 88,000.00 as of 2026-08-31.",
+            "account_page": 1,
+            "account_excerpt": "Account ending: 9876.",
+            "confidence": 0.99
+          }
+        ]
+      },
+      "raw_model_response": "{\n  \"kind\": \"sponsor_funds\",\n  \"language\": \"en\",\n  \"classification_page\": 1,\n  \"classification_excerpt\": \"Harbour Test Bank - Sponsor Funds Statement\",\n  \"confidence\": 0.99,\n  \"facts\": [],\n  \"financial_observations\": [\n    {\n      \"kind\": \"closing_balance\",\n      \"subject_name\": \"Mina Example\",\n      \"amount\": \"88000.00\",\n      \"currency\": \"HKD\",\n      \"period\": \"closing\",\n      \"basis\": \"unspecified\",\n      \"as_of\": \"2026-08-31\",\n      \"account_reference\": \"9876\",\n      \"subject_page\": 1,\n      \"subject_excerpt\": \"Account holder: Mina Example. Account ending: 9876.\",\n      \"amount_page\": 1,\n      \"amount_excerpt\": \"Closing balance HKD 88,000.00 as of 2026-08-31.\",\n      \"date_page\": 1,\n      \"date_excerpt\": \"Closing balance HKD 88,000.00 as of 2026-08-31.\",\n      \"account_page\": 1,\n      \"account_excerpt\": \"Account ending: 9876.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"requires_review\": false,\n  \"review_reason\": null\n}",
+      "usage": [
+        {
+          "operation": "extract_document",
+          "input_tokens": 1813,
+          "output_tokens": 295,
+          "total_tokens": 2108
+        }
+      ]
+    }
+  ]
+}

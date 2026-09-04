@@ -1,0 +1,158 @@
+{
+  "scope": "3 selected fictional financial PDFs; one DeepSeek extraction each",
+  "model": "deepseek-v4-flash",
+  "maximum_model_calls": 3,
+  "mailbox_calls": 0,
+  "real_documents": 0,
+  "completed": true,
+  "all_passed": true,
+  "results": [
+    {
+      "filename": "fictional_employment_letter.pdf",
+      "sha256": "64146476e2b61f5d5305e7436c81b6dfe976a213adacbdf6e6c69edee2e23e80",
+      "checks": {
+        "expected_kind": true,
+        "accepted_extraction": true,
+        "one_financial_observation": true,
+        "expected_financial_kind": true,
+        "expected_subject": true,
+        "expected_amount": true,
+        "expected_currency": true
+      },
+      "passed": true,
+      "read_result": {
+        "kind": "employment_letter",
+        "requires_review": false,
+        "review_reason": null,
+        "financial_observations": [
+          {
+            "kind": "salary",
+            "subject_name": "Kai Example",
+            "amount": "42000.00",
+            "currency": "GBP",
+            "period": "annual",
+            "basis": "gross",
+            "as_of": "2026-08-31",
+            "account_reference": null,
+            "subject_page": 1,
+            "subject_excerpt": "Employee: Kai Example",
+            "amount_page": 1,
+            "amount_excerpt": "Gross annual salary: GBP 42,000.00.",
+            "date_page": 1,
+            "date_excerpt": "Letter date: 2026-08-31",
+            "account_page": null,
+            "account_excerpt": null,
+            "confidence": 1.0
+          }
+        ]
+      },
+      "raw_model_response": "{\n  \"kind\": \"employment_letter\",\n  \"language\": \"en\",\n  \"classification_page\": 1,\n  \"classification_excerpt\": \"North Harbour Trading Ltd - Employment Letter\",\n  \"confidence\": 0.99,\n  \"facts\": [\n    {\n      \"field\": \"full_name\",\n      \"value\": \"Kai Example\",\n      \"page\": 1,\n      \"excerpt\": \"Employee: Kai Example\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"occupation_status\",\n      \"value\": \"employed\",\n      \"page\": 1,\n      \"excerpt\": \"Kai Example is employed as an analyst.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"financial_observations\": [\n    {\n      \"kind\": \"salary\",\n      \"subject_name\": \"Kai Example\",\n      \"amount\": \"42000.00\",\n      \"currency\": \"GBP\",\n      \"period\": \"annual\",\n      \"basis\": \"gross\",\n      \"as_of\": \"2026-08-31\",\n      \"account_reference\": null,\n      \"subject_page\": 1,\n      \"subject_excerpt\": \"Employee: Kai Example\",\n      \"amount_page\": 1,\n      \"amount_excerpt\": \"Gross annual salary: GBP 42,000.00.\",\n      \"date_page\": 1,\n      \"date_excerpt\": \"Letter date: 2026-08-31\",\n      \"account_page\": null,\n      \"account_excerpt\": null,\n      \"confidence\": 1.0\n    }\n  ],\n  \"requires_review\": false,\n  \"review_reason\": null\n}",
+      "usage": [
+        {
+          "operation": "extract_document",
+          "input_tokens": 1796,
+          "output_tokens": 354,
+          "total_tokens": 2150
+        }
+      ]
+    },
+    {
+      "filename": "fictional_bank_statement_a.pdf",
+      "sha256": "70d27a0e37878bbba55a787ac705066ad27333a07222f29ecacb73302118e1f7",
+      "checks": {
+        "expected_kind": true,
+        "accepted_extraction": true,
+        "one_financial_observation": true,
+        "expected_financial_kind": true,
+        "expected_subject": true,
+        "expected_amount": true,
+        "expected_currency": true
+      },
+      "passed": true,
+      "read_result": {
+        "kind": "bank_statement",
+        "requires_review": false,
+        "review_reason": null,
+        "financial_observations": [
+          {
+            "kind": "closing_balance",
+            "subject_name": "Kai Example",
+            "amount": "12500.50",
+            "currency": "GBP",
+            "period": "closing",
+            "basis": "unspecified",
+            "as_of": "2026-08-31",
+            "account_reference": "1234",
+            "subject_page": 1,
+            "subject_excerpt": "Account holder: Kai Example.",
+            "amount_page": 1,
+            "amount_excerpt": "Closing balance GBP 12,500.50 as of 2026-08-31.",
+            "date_page": 1,
+            "date_excerpt": "Closing balance GBP 12,500.50 as of 2026-08-31.",
+            "account_page": 1,
+            "account_excerpt": "Account ending: 1234.",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "raw_model_response": "{\n  \"kind\": \"bank_statement\",\n  \"language\": \"en\",\n  \"classification_page\": 1,\n  \"classification_excerpt\": \"North Harbour Bank - Current Account Statement\",\n  \"confidence\": 1.0,\n  \"facts\": [\n    {\n      \"field\": \"full_name\",\n      \"value\": \"Kai Example\",\n      \"page\": 1,\n      \"excerpt\": \"Account holder: Kai Example.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"financial_observations\": [\n    {\n      \"kind\": \"closing_balance\",\n      \"subject_name\": \"Kai Example\",\n      \"amount\": \"12500.50\",\n      \"currency\": \"GBP\",\n      \"period\": \"closing\",\n      \"basis\": \"unspecified\",\n      \"as_of\": \"2026-08-31\",\n      \"account_reference\": \"1234\",\n      \"subject_page\": 1,\n      \"subject_excerpt\": \"Account holder: Kai Example.\",\n      \"amount_page\": 1,\n      \"amount_excerpt\": \"Closing balance GBP 12,500.50 as of 2026-08-31.\",\n      \"date_page\": 1,\n      \"date_excerpt\": \"Closing balance GBP 12,500.50 as of 2026-08-31.\",\n      \"account_page\": 1,\n      \"account_excerpt\": \"Account ending: 1234.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"requires_review\": false,\n  \"review_reason\": null\n}",
+      "usage": [
+        {
+          "operation": "extract_document",
+          "input_tokens": 1797,
+          "output_tokens": 333,
+          "total_tokens": 2130
+        }
+      ]
+    },
+    {
+      "filename": "fictional_bank_statement_b.pdf",
+      "sha256": "adae3cdd2a6740f5fac82bac11f0c2e4801e2a25fa24c565356bc35688a77f63",
+      "checks": {
+        "expected_kind": true,
+        "accepted_extraction": true,
+        "one_financial_observation": true,
+        "expected_financial_kind": true,
+        "expected_subject": true,
+        "expected_amount": true,
+        "expected_currency": true
+      },
+      "passed": true,
+      "read_result": {
+        "kind": "bank_statement",
+        "requires_review": false,
+        "review_reason": null,
+        "financial_observations": [
+          {
+            "kind": "closing_balance",
+            "subject_name": "Kai Example",
+            "amount": "13000.00",
+            "currency": "GBP",
+            "period": "closing",
+            "basis": "unspecified",
+            "as_of": "2026-08-31",
+            "account_reference": "1234",
+            "subject_page": 1,
+            "subject_excerpt": "Account holder: Kai Example.",
+            "amount_page": 1,
+            "amount_excerpt": "Closing balance GBP 13,000.00 as of 2026-08-31.",
+            "date_page": 1,
+            "date_excerpt": "Closing balance GBP 13,000.00 as of 2026-08-31.",
+            "account_page": 1,
+            "account_excerpt": "Account ending: 1234.",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "raw_model_response": "{\n  \"kind\": \"bank_statement\",\n  \"language\": \"en\",\n  \"classification_page\": 1,\n  \"classification_excerpt\": \"North Harbour Bank - Corrected Current Account Statement\",\n  \"confidence\": 1.0,\n  \"facts\": [\n    {\n      \"field\": \"full_name\",\n      \"value\": \"Kai Example\",\n      \"page\": 1,\n      \"excerpt\": \"Account holder: Kai Example.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"financial_observations\": [\n    {\n      \"kind\": \"closing_balance\",\n      \"subject_name\": \"Kai Example\",\n      \"amount\": \"13000.00\",\n      \"currency\": \"GBP\",\n      \"period\": \"closing\",\n      \"basis\": \"unspecified\",\n      \"as_of\": \"2026-08-31\",\n      \"account_reference\": \"1234\",\n      \"subject_page\": 1,\n      \"subject_excerpt\": \"Account holder: Kai Example.\",\n      \"amount_page\": 1,\n      \"amount_excerpt\": \"Closing balance GBP 13,000.00 as of 2026-08-31.\",\n      \"date_page\": 1,\n      \"date_excerpt\": \"Closing balance GBP 13,000.00 as of 2026-08-31.\",\n      \"account_page\": 1,\n      \"account_excerpt\": \"Account ending: 1234.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"requires_review\": false,\n  \"review_reason\": null\n}",
+      "usage": [
+        {
+          "operation": "extract_document",
+          "input_tokens": 1799,
+          "output_tokens": 335,
+          "total_tokens": 2134
+        }
+      ]
+    }
+  ]
+}

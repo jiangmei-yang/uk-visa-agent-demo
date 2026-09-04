@@ -42,6 +42,7 @@ SAMPLE_DOCUMENTS: dict[str, list[str]] = {
         "Synthetic personal funds statement - DEMO ONLY",
         "DOCUMENT_KIND=bank_statement",
         "LANGUAGE=en",
+        "FACT _fixture_document_contract=bank_statement",
         "FACT full_name=Lin Chen",
         "Available funds are shown without an invented fixed-month rule.",
     ],

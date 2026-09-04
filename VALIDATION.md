@@ -17,7 +17,8 @@ explicitly recorded here.
 
 Updated 2026-09-05. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **3,854 passing tests**; see the latest [application-information priority repair](docs/APPLICATION_INFORMATION_PRIORITY.md),
+The local suite has **3,985 passing tests**; see the latest [financial-document evidence repair](docs/FINANCIAL_DOCUMENT_EVIDENCE.md),
+[application-information priority repair](docs/APPLICATION_INFORMATION_PRIORITY.md),
 [school-record and undecided-date repair](docs/SCHOOL_RECORD_GUIDANCE.md),
 [contextual adviser reply repair](docs/CONSULTANT_CONTEXT_REPAIR_2026-09-05.md),
 [separate-email consultation repair](docs/BATCHED_CONSULTATION.md),
@@ -33,6 +34,25 @@ The local suite has **3,854 passing tests**; see the latest [application-informa
 [credential recovery](GMAIL_RECOVERY.md)
 and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
+
+Latest ordinary financial-document repair: **3,985 passed in 60.38s**, Ruff and
+strict Mypy passed (72 source files); the existing test-client warning remains.
+The frozen financial/provider-replay/adapter set passed **156 checks in 0.64s**.
+Financial subjects, amounts, original currencies, dates, period/basis and optional
+account references now have separate page/excerpt provenance. Only like-for-like
+values are compared; holder mismatches and comparable contradictions block the
+gate without conversion, summing, sufficiency scoring or profile overwrites.
+Ordinary financial documents lacking valid observations cannot satisfy a requirement,
+and occupation/funding evidence must match the current branch. Eleven real-model
+calls over four fictional PDFs retained all v1/v2 failures and the v3/v4 repair:
+current-schema results were 4/4, while total provider-reported use was 22,034 tokens.
+This is exposed development evidence, not real documents, Gmail delivery, a blind
+holdout or an accuracy score. See [failure history and limits](docs/FINANCIAL_DOCUMENT_EVIDENCE.md)
+and [rollout evidence](eval_output/financial_document_rollout_2026-09-05.json).
+The Gmail worker reloaded as PID 14344 and was observed idle at 2026-09-04
+18:28:26 UTC. Existing business data and unknown permission are unchanged. Docker
+is healthy, all 72 source hashes match, the persistent volume is preserved and
+both existing ZIP hashes are unchanged.
 
 Latest application-information priority repair: **3,854 passed in 60.73s**, Ruff
 and strict Mypy passed (70 source files); the existing test-client warning remains.
