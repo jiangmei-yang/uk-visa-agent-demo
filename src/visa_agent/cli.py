@@ -76,11 +76,17 @@ def main() -> None:
         if not args.model:
             raise SystemExit("Set --model or LLM_MODEL to an evaluated model ID.")
         from visa_agent.channels.inbound_worker import InboundEventWorker
+        from visa_agent.documents.natural import (
+            DocumentReader,
+            NaturalPDFReader,
+            hold_unconfigured_live_pdf,
+        )
         from visa_agent.domain.policy import load_policy
         from visa_agent.storage.sqlite import SQLiteStore
         from visa_agent.workflow.service import WorkflowService
 
         live_llm: LLMClient
+        document_reader: DocumentReader = hold_unconfigured_live_pdf
         if args.provider == "deepseek":
             from visa_agent.llm.deepseek_client import DeepSeekStructuredLLM
 
@@ -91,7 +97,9 @@ def main() -> None:
             )
             if not deepseek_key:
                 raise SystemExit("Set DEEPSEEK_API_KEY for the DeepSeek provider.")
-            live_llm = DeepSeekStructuredLLM(args.model, api_key=deepseek_key)
+            deepseek_model = DeepSeekStructuredLLM(args.model, api_key=deepseek_key)
+            live_llm = deepseek_model
+            document_reader = NaturalPDFReader(deepseek_model)
         else:
             if not os.getenv("OPENAI_API_KEY"):
                 raise SystemExit("Set OPENAI_API_KEY for the OpenAI provider.")
@@ -105,6 +113,7 @@ def main() -> None:
                 store,
                 load_policy(settings.policy_path),
                 live_llm,
+                document_reader=document_reader,
             )
             inbound_outcomes = InboundEventWorker(
                 store,

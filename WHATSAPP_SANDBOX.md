@@ -5,6 +5,23 @@ a WhatsApp Business Account or registered sender. It remains a provider sandbox,
 deployment. The repository includes a free provider-only TryCloudflare tunnel launcher; the review
 console and case APIs are not exposed by that gateway.
 
+## Ordinary PDF worker wiring
+
+An audit found that `inbound-worker` constructed its workflow without a document reader, so the
+generic CLI path inherited the offline fixture parser. The dedicated Gmail runner had already
+configured its natural reader; this gap affected the generic WhatsApp worker path. The DeepSeek
+CLI now explicitly uses `NaturalPDFReader` for text extraction/OCR and grounded document proposals.
+The optional OpenAI CLI currently has no document-model adapter: it retains attachments for manual
+classification with a configuration reason instead of interpreting fixture markers as evidence.
+
+Two command-level integration tests enqueue an ordinary one-page fictional student letter, execute
+the actual CLI, and inspect the retained document and queue outcome. A stub document model returns
+page-grounded classification/name evidence; this tests wiring, not real-model accuracy or Twilio
+media delivery. The PDF was rendered and visually checked as readable. An initial stub omitted the
+required name evidence and was correctly held; the test then supplied the name actually present
+on the page without weakening the rule. The full local suite passes 340 tests, lint and typing.
+Continuous worker supervision and real device exchange are still required beyond the batch commands.
+
 ## Current preparation status
 
 The repository has automated contracts for signed inbound form payloads, MessageSid idempotency,

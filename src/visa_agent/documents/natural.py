@@ -99,6 +99,14 @@ def read_fixture_pdf(path: Path) -> DocumentReadResult:
     return DocumentReadResult(kind, language, count, facts)
 
 
+def hold_unconfigured_live_pdf(path: Path) -> DocumentReadResult:
+    """Retain an attachment without interpreting fixture markers as real evidence."""
+    del path
+    return DocumentReadResult("unknown", "other", 0, {}, method="reader_not_configured",
+        confidence=0, requires_review=True,
+        review_reason="A live PDF reader is not configured for this provider; operator review is required.")
+
+
 def _normalise(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().casefold()
 
