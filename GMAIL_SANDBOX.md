@@ -39,3 +39,42 @@ Do not mark E-04 complete until one redacted report records all of the following
 
 The current repository passes a fake-provider contract for these boundaries. That is automated
 simulation, not Gmail sandbox evidence.
+
+Initial live testing was performed on 2026-09-04. See [the redacted evidence report](GMAIL_LIVE_EVIDENCE.md)
+for observed successes, the Gmail Message-ID rewrite defect and fix, and remaining acceptance work.
+E-04 remains incomplete until the entire checklist above is satisfied.
+
+## Ordinary-language trials
+
+Customers do not need a `VISA-DEMO` subject/body marker, fixture facts, or a fixed confirmation
+command. The operator restricts access by the dedicated mailbox and allowed sender. `--subject`
+is optional: include it for one isolated thread, or omit it to accept arbitrary subjects from that
+sender. Do not create a second state directory over already-processed mail: that can duplicate
+replies. Changing the scope of an existing bound directory is deliberately rejected.
+
+The current runner is invoked manually (`prepare`, review, `send-reviewed`) and sends at most one
+due reply per invocation. It is **not yet an unattended interviewer-facing inbox service**.
+
+Natural final consent is accepted only against the current, unchanged summary; Gmail additionally
+requires that summary's outbox record to be SENT. A receipt such as “收到”, a question, a quoted
+confirmation, or a simultaneous correction cannot release the pack. Corrections require a fresh
+summary. Unknown ordinary PDFs are held for manual classification, not assumed to be verified.
+
+Run the ordinary-text real-model regression without sending email:
+
+```bash
+uv run python scripts/natural_conversation_eval.py --runs 2
+```
+# Continuous preparation and crash recovery
+
+`scripts/gmail_sandbox.py prepare --watch` repeatedly prepares replies within the bound
+sender/subject/state directory. Polling defaults to 60 seconds and never automatically
+sends. Keep using `send-reviewed` only after checking the pending reply. Each action
+uses a non-blocking state-directory lock. Complete inbox pagination is bounded to 100
+messages; an oversized result stops explicitly instead of silently dropping older mail.
+
+After an interrupted send, use the same scope and state directory with `reconcile`.
+A missing or ambiguous provider match requires manual investigation; do not delete
+the database or make a fresh directory to resend. For an explicitly reviewed synthetic
+crash experiment only, `send-reviewed --crash-after-send` terminates immediately after
+provider acceptance (exit code 75). It must be followed by reconciliation, not a forced retry.

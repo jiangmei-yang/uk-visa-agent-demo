@@ -17,7 +17,7 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from reportlab.platypus.flowables import Flowable
 
-from visa_agent.domain.models import Case, CaseStatus, IssueStatus, WorkflowStage
+from visa_agent.domain.models import Case, CaseStatus, DocumentStatus, IssueStatus, WorkflowStage
 from visa_agent.domain.policy import Policy
 from visa_agent.domain.rules import evaluate_gate, transition
 from visa_agent.storage.sqlite import SQLiteStore
@@ -204,9 +204,7 @@ def _document_index_pdf(path: Path, rows: list[str], label: str) -> None:
     cell = ParagraphStyle(
         "IndexCell", parent=styles["BodyText"], fontSize=7.2, leading=9, textColor=NAVY
     )
-    small = ParagraphStyle(
-        "IndexSmall", parent=cell, fontSize=6.2, leading=7.5, textColor=MUTED
-    )
+    small = ParagraphStyle("IndexSmall", parent=cell, fontSize=6.2, leading=7.5, textColor=MUTED)
     header_cell = ParagraphStyle(
         "IndexHeader",
         parent=cell,
@@ -229,7 +227,9 @@ def _document_index_pdf(path: Path, rows: list[str], label: str) -> None:
         digest, language, pages = digest_and_notes.split("; ", 2)
         table_rows.append(
             [
-                Paragraph(f"<b>{escape(filename)}</b><br/><font size='6'>{escape(digest)}</font>", cell),
+                Paragraph(
+                    f"<b>{escape(filename)}</b><br/><font size='6'>{escape(digest)}</font>", cell
+                ),
                 Paragraph(escape(kind.replace("_", " ")), cell),
                 Paragraph(escape(status.replace("_", " ")), cell),
                 Paragraph(f"{escape(language)}<br/>{escape(pages)}", small),
@@ -282,6 +282,15 @@ def generate_pack(
         return None, gate.reasons
     if case.delivery_path:
         return Path(case.delivery_path), []
+    if any(
+        row["case_id"] == case.id
+        and row["message_type"] == "ready"
+        and (int(row["attempt_count"]) > 0 or row["status"] in {"SENDING", "SENT", "AMBIGUOUS"})
+        for row in store.list_outbox()
+    ):
+        return None, [
+            "A delivery send was already attempted; keep its original artifact immutable."
+        ]
 
     case_dir = output_root / case.id
     pack_dir = case_dir / "pack"
@@ -320,6 +329,7 @@ def generate_pack(
         f"{doc.filename} - {doc.kind}; {doc.status}; SHA-256 {doc.sha256}; "
         f"language {doc.language}; pages {doc.page_count}"
         for doc in case.documents
+        if doc.status == DocumentStatus.ACCEPTED_FOR_REVIEW
     ]
     _document_index_pdf(pack_dir / "03_document_index.pdf", index_rows, label)
     _pdf(
@@ -374,12 +384,15 @@ def generate_pack(
     ] or ["No open issues in the deterministic demo checks. Human review is still required."]
     _pdf(pack_dir / "06_open_issues.pdf", "Open issues", open_issues, label)
     for document in case.documents:
+        if document.status != DocumentStatus.ACCEPTED_FOR_REVIEW:
+            continue
         destination = support_dir / document.filename
         if not destination.exists():
             shutil.copy2(document.path, destination)
 
     zip_path = output_root / f"visa_application_pack_{case.id}.zip"
-    transition(case, CaseStatus.READY_FOR_HUMAN_REVIEW)
+    if case.status != CaseStatus.READY_FOR_HUMAN_REVIEW:
+        transition(case, CaseStatus.READY_FOR_HUMAN_REVIEW)
     case.stage = WorkflowStage.READY_FOR_HUMAN_REVIEW
     case.delivery_path = str(zip_path)
 
@@ -394,12 +407,8 @@ def generate_pack(
         + "\n",
         encoding="utf-8",
     )
-    (audit_dir / "gate_result.json").write_text(
-        gate.model_dump_json(indent=2), encoding="utf-8"
-    )
-    (audit_dir / "case_snapshot.json").write_text(
-        case.model_dump_json(indent=2), encoding="utf-8"
-    )
+    (audit_dir / "gate_result.json").write_text(gate.model_dump_json(indent=2), encoding="utf-8")
+    (audit_dir / "case_snapshot.json").write_text(case.model_dump_json(indent=2), encoding="utf-8")
     (audit_dir / "rule_evaluations.json").write_text(
         json.dumps(
             [item.model_dump(mode="json") for item in case.requirements],

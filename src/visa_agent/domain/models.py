@@ -56,6 +56,7 @@ class IssueStatus(StrEnum):
 
 
 class ProvenanceState(StrEnum):
+    EXTRACTED_UNVERIFIED = "extracted_unverified"
     VERIFIED = "verified"
     DEMO_SYNTHETIC = "demo_synthetic"
     STALE = "stale"
@@ -169,6 +170,13 @@ class Case(BaseModel):
     profile: CaseProfile = Field(default_factory=CaseProfile)
     profile_confirmed: bool = False
     final_summary_confirmed: bool = False
+    customer_language: str = "en"
+    latest_customer_message: str = ""
+    latest_document_names: list[str] = Field(default_factory=list)
+    last_requested_fields: list[str] = Field(default_factory=list)
+    confirmation_fingerprint: str | None = None
+    confirmation_kind: str | None = None
+    confirmation_request_event_id: str | None = None
     human_review_reason: str | None = None
     policy_version: str
     requirements: list[Requirement] = Field(default_factory=list)
@@ -201,6 +209,8 @@ class InboundEvent(BaseModel):
     sender: str
     subject: str
     body: str
+    requested_fields: list[str] = Field(default_factory=list)
+    known_profile: dict[str, Any] = Field(default_factory=dict)
     attachment_paths: list[str] = Field(default_factory=list)
     rfc_message_id: str | None = None
     references: str | None = None

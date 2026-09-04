@@ -77,6 +77,26 @@ class Service:
         return self._messages
 
 
+def test_complete_inbox_batch_follows_pagination() -> None:
+    class PagedMessages(Messages):
+        def list(self, **kwargs: Any) -> Call:
+            if kwargs.get("pageToken") == "page-two":
+                return Call({"messages": [{"id": "old"}]})
+            return Call({"messages": [{"id": "new"}], "nextPageToken": "page-two"})
+
+    adapter = GmailAdapter(Service(PagedMessages()))
+    assert adapter.list_complete_message_ids("bounded", limit=2) == ["new", "old"]
+    with pytest.raises(ValueError, match="exceeds"):
+        adapter.list_complete_message_ids("bounded", limit=1)
+
+
+def test_complete_inbox_batch_rejects_repeated_page_tokens() -> None:
+    messages = Messages()
+    messages.list_result = {"messages": [], "nextPageToken": "loop"}
+    with pytest.raises(ValueError, match="repeated"):
+        GmailAdapter(Service(messages)).list_complete_message_ids("bounded")
+
+
 def _reply_request() -> ReplyRequest:
     return ReplyRequest(
         outbox_id="out-1",
@@ -118,6 +138,7 @@ def test_gmail_reply_preserves_thread_headers_and_deterministic_message_id() -> 
     assert provider_id == "gmail-sent-1"
     assert messages.send_arguments["body"]["threadId"] == "gmail-thread-1"
     assert str(parsed["Message-ID"]) == "<out-1@visa-agent.local>"
+    assert str(parsed["X-Visa-Agent-Message-ID"]) == "<out-1@visa-agent.local>"
     assert str(parsed["In-Reply-To"]) == "<inbound@example.test>"
     assert str(parsed["References"]) == "<first@example.test> <inbound@example.test>"
     attachment = next(parsed.iter_attachments())
@@ -144,6 +165,26 @@ def test_gmail_send_without_provider_id_is_permanent_failure() -> None:
 
     with pytest.raises(PermanentChannelError, match="no message ID"):
         sender.send(_reply_request())
+
+
+@pytest.mark.parametrize("sent_label,expected", [(True, "gmail-found-1"), (False, None)])
+def test_reconcile_rewritten_message_id(sent_label: bool, expected: str | None) -> None:
+    class RewrittenMessages(Messages):
+        def list(self, **kwargs: Any) -> Call:
+            return Call(
+                {"messages": []}
+                if "rfc822msgid:" in kwargs["q"]
+                else {"messages": [{"id": "gmail-found-1"}]}
+            )
+
+    messages = RewrittenMessages()
+    messages.get_result = {
+        "labelIds": ["SENT"] if sent_label else ["INBOX"],
+        "payload": {
+            "headers": [{"name": "x-visa-agent-message-id", "value": "<out-1@visa-agent.local>"}]
+        },
+    }
+    assert GmailAdapter(Service(messages)).find_sent_message("<out-1@visa-agent.local>") == expected
 
 
 @pytest.mark.parametrize(

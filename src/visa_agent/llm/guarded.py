@@ -6,13 +6,18 @@ from collections.abc import Callable
 from pydantic import TypeAdapter, ValidationError
 
 from visa_agent.domain.models import Case, CaseProfile, CaseStatus, InboundEvent
-from visa_agent.domain.rules import required_profile_facts
 from visa_agent.llm.ports import CasePatch, FactUpdate, LLMClient
+from visa_agent.workflow.conversation import (
+    blocked_customer_message,
+    confirmation_message,
+    reply_items,
+)
 
 MIN_ACCEPTED_CONFIDENCE = 0.8
 MAX_MODEL_ATTEMPTS = 2
 MAX_REPLY_CHARACTERS = 4_000
 FORBIDDEN_REPLY_CLAIMS = (
+    "保证获批", "保证通过", "一定获批", "签证已经批准", "已替你提交申请",
     "your visa is approved",
     "your application is approved",
     "you are eligible",
@@ -69,6 +74,24 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
 
     for update in proposed.updates:
         update = update.model_copy(update={"value": _canonical_value(update.field, update.value)})
+        if update.field in {"planned_arrival_date", "planned_departure_date", "date_of_birth"} and not re.search(
+            r"\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{4}年\d{1,2}月\d{1,2}[日号]|\d{1,2}\s+\w+\s+\d{4}|\w+\s+\d{1,2},?\s+\d{4}",
+            update.source_excerpt,
+        ):
+            # "November" is useful conversational context, not a precise date and
+            # not a reason to lock a routine enquiry into human review.
+            continue
+        # A literal quote is necessary but not sufficient: employment/passport facts
+        # must not silently become residential/application-location facts.
+        cues = {
+            "application_country": r"appl(?:y|ying|ication)|申请|递交|提交",
+            "current_address": r"address|residen|live|living|住址|居住|住在|家在|地址",
+        }
+        if update.field in cues and event.requested_fields != [update.field] and not re.search(
+            cues[update.field], update.source_excerpt, re.I
+        ):
+            # Leave the ordinary question open, rather than escalating routine missing data.
+            continue
         reason: str | None = None
         field_info = CaseProfile.model_fields.get(update.field)
         if field_info is None:
@@ -118,42 +141,22 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
 
 
 def deterministic_fallback_message(case: Case, plan: str) -> str:
-    if plan == "blocked":
-        outstanding = [item.title for item in case.open_blockers()]
-        outstanding.extend(
-            item.title
-            for item in case.requirements
-            if item.applicable and item.blocker and not item.satisfied
-            and not (
-                item.id == "certified_translation"
-                and any(
-                    issue.code == "MISSING_CERTIFIED_TRANSLATION"
-                    for issue in case.open_blockers()
-                )
-            )
-        )
-        outstanding.extend(
-            field.replace("_", " ").title()
-            for field in sorted(required_profile_facts(case))
-            if getattr(case.profile, field) is None
-        )
-        issues = "; ".join(dict.fromkeys(outstanding))
-        detail = f" Please resolve or provide: {issues}." if issues else ""
+    if case.status == CaseStatus.HUMAN_REVIEW_REQUIRED:
         return (
-            "Thank you — your message is recorded, but the review pack cannot be prepared yet."
-            f"{detail} A human adviser will review the case. This service does not decide "
-            "eligibility or submit an application."
+            "收到你的信息了。这部分需要顾问进一步核实，我暂时不能自动继续整理材料包。已收到的资料会保留，不需要重复提交。"
+            if case.customer_language == "zh" else
+            "Thank you for explaining. This needs a human adviser to check before we continue. Your information is retained; you don't need to resend it. I haven't prepared or submitted an application."
         )
+    if plan == "blocked":
+        return blocked_customer_message(case)
     if plan == "ready":
+        if case.customer_language == "zh":
+            return "材料包已整理好，供顾问复核。请先看包内的说明和资料摘要；如发现任何错误，请回复这封邮件。这不代表签证获批，也没有替你提交申请。"
         return (
             "Your review pack is ready for human review. This is not an approval prediction or a "
             "submitted visa application."
         )
-    return (
-        "Thank you — the current checks show no document blocker, but the review pack remains "
-        "withheld. Please review the facts summary and reply on a standalone line with exactly: "
-        "I CONFIRM THE FINAL SUMMARY. A human adviser will review the pack before anything is used."
-    )
+    return confirmation_message(case)
 
 
 class GuardedLLM:
@@ -199,6 +202,10 @@ class GuardedLLM:
             self.last_render_fallback = True
             self.last_render_error = "case_requires_human_review"
             return deterministic_fallback_message(case, plan)
+        if plan in {"awaiting_confirmation", "awaiting_profile_confirmation"}:
+            self.last_render_fallback = False
+            self.last_render_error = None
+            return confirmation_message(case, profile_only=plan == "awaiting_profile_confirmation")
         try:
             message = _normalise_message_formatting(
                 self.delegate.render_message(case, plan).strip()
@@ -215,29 +222,21 @@ class GuardedLLM:
                 for placeholder in ("[name]", "[applicant name]", "[your name]")
             ):
                 raise UnsafeModelOutput("Model message contained an unresolved placeholder")
-            if plan == "blocked" and any(
-                item.title.casefold() not in normalised for item in case.open_blockers()
-            ):
-                raise UnsafeModelOutput("Model message omitted an open blocker")
-            if plan == "blocked" and any(
-                item.title.casefold() not in normalised
-                for item in case.requirements
-                if item.applicable and item.blocker and not item.satisfied
-                and not (
-                    item.id == "certified_translation"
-                    and any(
-                        issue.code == "MISSING_CERTIFIED_TRANSLATION"
-                        for issue in case.open_blockers()
-                    )
-                )
-            ):
-                raise UnsafeModelOutput("Model message omitted a required document")
-            if plan == "blocked" and any(
-                field.replace("_", " ").casefold() not in normalised
-                for field in required_profile_facts(case)
-                if getattr(case.profile, field) is None
-            ):
-                raise UnsafeModelOutput("Model message omitted a required fact")
+            if plan == "blocked":
+                issues, questions, documents = reply_items(case)
+                required_items = issues + questions + documents
+                if any(item.casefold() not in normalised for item in required_items):
+                    raise UnsafeModelOutput("Model message omitted or changed a grounded next action")
+                length_budget = max(420 if case.customer_language == "zh" else 1100,
+                                    len("\n".join(required_items)) + 180)
+                if len(message) > length_budget:
+                    raise UnsafeModelOutput("Model buried the next action in excessive prose")
+                if any(phrase in normalised for phrase in ("没有现成的标准答案", "不能给你一个确切的步骤清单", "no standard answer")):
+                    raise UnsafeModelOutput("Model denied a preparation step already supplied in its brief")
+                if re.search(r"(?:时间|日期).{0,12}(?:没问题|没有问题|来得及)|\benough time\b|\bdates (?:are|look) (?:fine|acceptable)\b", normalised):
+                    raise UnsafeModelOutput("Model added an unsupported timing assurance")
+                if case.customer_language == "zh" and not re.search(r"[\u4e00-\u9fff]", message):
+                    raise UnsafeModelOutput("Model ignored the customer's language")
             if plan == "awaiting_confirmation" and "i confirm the final summary" not in normalised:
                 raise UnsafeModelOutput("Model message omitted the exact confirmation statement")
             if plan == "awaiting_confirmation" and any(
@@ -245,8 +244,9 @@ class GuardedLLM:
                 for claim in ("pack is ready", "pack has been prepared", "pack is released")
             ):
                 raise UnsafeModelOutput("Model message claimed release before confirmation")
-            if plan == "ready" and (
-                "human" not in normalised or "review" not in normalised
+            if plan == "ready" and not (
+                ("human" in normalised and "review" in normalised)
+                if case.customer_language != "zh" else "顾问复核" in message
             ):
                 raise UnsafeModelOutput("Model message omitted the human-review boundary")
             self.last_render_fallback = False

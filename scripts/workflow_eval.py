@@ -68,7 +68,7 @@ Lin"""
 
 I reviewed the final facts summary and the listed source documents.
 
-I CONFIRM THE FINAL SUMMARY
+Everything is correct, please proceed.
 
 Regards,
 Lin"""
@@ -103,7 +103,7 @@ def _reply_checks(message: str, plan: str, blockers: list[str]) -> dict[str, boo
         "every_open_blocker_named": all(item.casefold() in normalised for item in blockers),
         "confirmation_boundary_present": (
             plan != "awaiting_confirmation"
-            or "i confirm the final summary" in normalised
+            or ("facts summary" in normalised and "everything is correct, please proceed" in normalised)
         ),
         "no_premature_pack_release_claim": (
             plan != "awaiting_confirmation"
@@ -184,7 +184,9 @@ def run_once(model: str, api_key: str) -> dict[str, Any]:
                         "open_blockers": sorted(blockers),
                         "gate_reasons": gate_reasons,
                         "reply": message,
-                        "model_reply_accepted": not service.llm.last_render_fallback,
+                        "model_reply_accepted": plan not in {"awaiting_confirmation", "awaiting_profile_confirmation"} and not service.llm.last_render_fallback,
+                        "reply_did_not_fallback": not service.llm.last_render_fallback,
+                        "deterministic_confirmation": plan in {"awaiting_confirmation", "awaiting_profile_confirmation"},
                         "render_fallback_reason": service.llm.last_render_error,
                         "latency_ms": round(latency_ms, 2),
                         "checks": step_checks,
@@ -228,7 +230,7 @@ def run_once(model: str, api_key: str) -> dict[str, Any]:
                     "pack_sha256": pack_hash,
                 },
                 "passed": all(all_checks)
-                and all(item["model_reply_accepted"] for item in step_reports),
+                and all(item["reply_did_not_fallback"] for item in step_reports),
                 "limitations": [
                     "All applicant data and documents are synthetic.",
                     "The document reader is the deterministic PDF fixture extractor, not production OCR.",

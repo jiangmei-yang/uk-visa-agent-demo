@@ -1,0 +1,107 @@
+{
+  "synthetic": true,
+  "scope": "ordinary-text PDFs plus one image-only scan; not authenticity verification",
+  "all_passed": false,
+  "results": [
+    {
+      "file": "passport_summary.pdf",
+      "checks": {
+        "expected_kind": true,
+        "grounded_name": true,
+        "no_review_required": false,
+        "non_fixture_method": true,
+        "expiry_correct": true
+      },
+      "method": "bounded_pdf_text_extraction",
+      "kind": "passport",
+      "facts": {
+        "full_name": [
+          "Lin Chen",
+          1,
+          "Holder: Lin Chen"
+        ],
+        "date_of_birth": [
+          "1997-04-18",
+          1,
+          "Date of birth: 1997-04-18"
+        ],
+        "passport_expiry_date": [
+          "2028-07-01",
+          1,
+          "Date of expiry: 2028-07-01"
+        ]
+      }
+    },
+    {
+      "file": "invitation.pdf",
+      "checks": {
+        "expected_kind": true,
+        "grounded_name": false,
+        "no_review_required": true,
+        "non_fixture_method": true,
+        "event_end_correct": true
+      },
+      "method": "bounded_pdf_text_extraction",
+      "kind": "conference_invitation",
+      "facts": {
+        "invitation_event_start_date": [
+          "2026-11-10",
+          1,
+          "The conference begins on 2026-11-10"
+        ],
+        "invitation_event_end_date": [
+          "2026-11-12",
+          1,
+          "ends on 2026-11-12"
+        ]
+      }
+    },
+    {
+      "file": "student_letter.pdf",
+      "checks": {
+        "expected_kind": true,
+        "grounded_name": true,
+        "no_review_required": true,
+        "non_fixture_method": true
+      },
+      "method": "bounded_pdf_text_extraction",
+      "kind": "student_letter",
+      "facts": {
+        "full_name": [
+          "Lin Chen",
+          1,
+          "Lin Chen is enrolled as a full-time student at our university."
+        ],
+        "occupation_status": [
+          "student",
+          1,
+          "Lin Chen is enrolled as a full-time student at our university."
+        ]
+      }
+    },
+    {
+      "file": "student_letter_scan.pdf",
+      "checks": {
+        "expected_kind": true,
+        "grounded_name": true,
+        "no_review_required": true,
+        "non_fixture_method": true,
+        "actual_ocr_used": true
+      },
+      "method": "bounded_pdf_ocr_extraction",
+      "kind": "student_letter",
+      "facts": {
+        "full_name": [
+          "Lin Chen",
+          1,
+          "Lin Chen is enrolled as a full-time student at our university."
+        ],
+        "occupation_status": [
+          "student",
+          1,
+          "Lin Chen is enrolled as a full-time student at our university."
+        ]
+      }
+    }
+  ]
+}

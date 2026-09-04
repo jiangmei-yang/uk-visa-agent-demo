@@ -229,3 +229,33 @@ def test_human_review_case_never_delegates_customer_message() -> None:
 
     assert "human adviser" in message.lower()
     assert message != "ordinary model reply"
+    assert "I CONFIRM THE FINAL SUMMARY" not in message
+
+
+def test_confirmation_summary_is_not_delegated_to_model() -> None:
+    delegate = ScriptedLLM([], message=RuntimeError("Model must not write confirmation facts"))
+    case = Case(
+        id="case-confirmation",
+        external_thread_id="thread-confirmation",
+        applicant_contact="applicant@example.test",
+        policy_version="test-policy",
+    )
+    case.profile.full_name = "Synthetic Applicant"
+    case.profile.estimated_trip_cost_gbp = 2200
+    guarded = GuardedLLM(delegate)
+    message = guarded.render_message(case, "awaiting_confirmation")
+    assert "Full Name: Synthetic Applicant" in message
+    assert "Estimated Trip Cost Gbp: 2200" in message
+    assert "CURRENT DOCUMENTS" in message
+    assert not guarded.last_render_fallback
+
+
+def test_natural_tone_must_not_add_unsupported_timing_assurances() -> None:
+    from visa_agent.workflow.conversation import blocked_customer_message
+
+    case = Case(id="timing", external_thread_id="timing", applicant_contact="a@example.test", policy_version="v", customer_language="zh")
+    safe = blocked_customer_message(case)
+    guarded = GuardedLLM(ScriptedLLM([], message=safe + "\n这个时间点本身没问题。"))
+    message = guarded.render_message(case, "blocked")
+    assert guarded.last_render_fallback
+    assert "时间点本身没问题" not in message

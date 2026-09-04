@@ -49,4 +49,4 @@ stop:
 	docker compose down
 
 clean:
-	rm -rf demo_output data .pytest_cache .mypy_cache .ruff_cache
+	rm -rf .pytest_cache .mypy_cache .ruff_cache

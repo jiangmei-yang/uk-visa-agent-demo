@@ -16,6 +16,13 @@ summary. Only then does deterministic code generate a `READY_FOR_HUMAN_REVIEW` p
 The language model is never the control plane. It may propose schema-bound facts and draft text,
 but it cannot select requirements, mutate workflow stages, clear issues, or authorise delivery.
 
+**Current limitations:** the credential-free guided lab is not a general-purpose document agent.
+Its PDF extraction primarily uses labelled fixtures; arbitrary PDFs and scans are not yet fully
+supported and unclassified PDFs are held for manual review. The real Gmail trial now accepts
+ordinary, unmarked enquiries, follows Chinese/English, asks a few questions at a time, and supports
+context-bound natural confirmation. It is still a manually operated trial, not an unattended
+production service. See [live successes, failures and remaining work](GMAIL_LIVE_EVIDENCE.md).
+
 ## Easiest path for an interviewer
 
 No Python, API key, Gmail account, or terminal knowledge is required. Install and open
@@ -34,7 +41,10 @@ synthetic and credential-free; the page states clearly that its extractor is det
 than an external model.
 
 The first launch normally takes a few minutes because Docker downloads the base image. Later
-launches reuse it. All data is synthetic and stays inside the local Docker container.
+launches reuse it. The console's synthetic data is kept in the local Docker named volume
+`review-runtime`; restarting or rebuilding no longer resets existing cases. Do not run
+`docker compose down -v` unless you intend to delete that data. Gmail trial state remains
+separate, under the private local `data/` directory.
 
 ## Developer path
 

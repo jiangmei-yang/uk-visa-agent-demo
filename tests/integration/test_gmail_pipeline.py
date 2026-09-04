@@ -9,6 +9,7 @@ from visa_agent.channels.email_ingestion import EmailIngestionBoundary
 from visa_agent.channels.gmail import GmailRawMessage
 from visa_agent.channels.gmail_pipeline import GmailInboxProcessor
 from visa_agent.channels.outbound import OutboxDispatcher, ReplyRequest
+from visa_agent.domain.models import WorkflowStage
 from visa_agent.domain.policy import load_policy
 from visa_agent.llm.offline import OfflineFixtureLLM
 from visa_agent.storage.sqlite import SQLiteStore
@@ -90,6 +91,8 @@ def test_gmail_raw_message_reaches_workflow_and_replay_is_idempotent(tmp_path: P
         second = processor.process_query("label:visa-agent is:unread")
 
         assert first[0].status == "blocked"
+        assert first[0].case is not None
+        assert first[0].case.stage != WorkflowStage.FINAL_CONFIRMATION
         assert second[0].status == "duplicate_ignored"
         assert store.counts() == counts
         assert dispatch[0].status == "SENT"

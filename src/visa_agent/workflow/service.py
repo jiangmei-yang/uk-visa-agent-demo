@@ -11,7 +11,8 @@ from uuid import NAMESPACE_URL, uuid5
 
 from pypdf.errors import PdfReadError
 
-from visa_agent.documents.processor import inspect_pdf, sha256_file
+from visa_agent.documents.natural import DocumentReader, read_fixture_pdf
+from visa_agent.documents.processor import sha256_file
 from visa_agent.domain.models import (
     Case,
     CaseStatus,
@@ -29,6 +30,13 @@ from visa_agent.domain.rules import advance_stage, evaluate_gate, run_consistenc
 from visa_agent.llm.guarded import ensure_guarded
 from visa_agent.llm.ports import LLMClient
 from visa_agent.storage.sqlite import SQLiteStore
+from visa_agent.workflow.conversation import (
+    clear_natural_confirmation,
+    confirmation_has_caveat,
+    latest_reply_text,
+    next_fact_questions,
+    summary_fingerprint,
+)
 
 PROFILE_CONFIRMATION_LINES = {
     "profile confirmed",
@@ -48,9 +56,7 @@ def has_explicit_confirmation_line(body: str, accepted_lines: set[str]) -> bool:
     """Accept only a standalone confirmation line, not a quoted/injected substring."""
 
     lines = {
-        re.sub(r"\s+", " ", line).strip().casefold()
-        for line in body.splitlines()
-        if line.strip()
+        re.sub(r"\s+", " ", line).strip().casefold() for line in body.splitlines() if line.strip()
     }
     return bool(lines & accepted_lines)
 
@@ -67,11 +73,13 @@ class WorkflowService:
         llm: LLMClient,
         *,
         today_provider: Callable[[], date] = date.today,
+        document_reader: DocumentReader | None = None,
     ) -> None:
         self.store = store
         self.policy = policy
         self.llm = ensure_guarded(llm)
         self.today_provider = today_provider
+        self.document_reader = document_reader or read_fixture_pdf
 
     def process(self, event: InboundEvent) -> tuple[Case, bool, str]:
         if self.store.event_processed(event.id):
@@ -102,39 +110,113 @@ class WorkflowService:
                 )
                 return case, False, plan
 
-        patch = self.llm.extract_case_patch(event)
+        # Quoted messages are history, never a new instruction or fresh consent.
+        customer_event = event.model_copy(
+            update={
+                "body": latest_reply_text(event.body),
+                "requested_fields": case.last_requested_fields,
+                "known_profile": case.profile.model_dump(mode="json"),
+            }
+        )
+        case.latest_customer_message = customer_event.body
+        case.latest_document_names = [Path(path).name for path in event.attachment_paths]
+        if re.search(r"[\u4e00-\u9fff]", customer_event.body):
+            case.customer_language = "zh"
+        elif len(re.findall(r"[A-Za-z]+", customer_event.body)) > 4:
+            case.customer_language = "en"
+        prior_profile = summary_fingerprint(case, include_documents=False)
+        prior_confirmation = case.confirmation_fingerprint
+        prior_kind = case.confirmation_kind
+        request_delivered = case.primary_channel != "gmail" or any(
+            row["event_id"] == case.confirmation_request_event_id and row["status"] == "SENT"
+            for row in self.store.list_outbox()
+            if row["case_id"] == case.id
+        )
+        patch = self.llm.extract_case_patch(customer_event)
         if patch.requires_human_review:
             case.status = CaseStatus.HUMAN_REVIEW_REQUIRED
             advance_stage(case, WorkflowStage.HUMAN_REVIEW_REQUIRED)
-            case.human_review_reason = "Bounded extractor requested human review."
-        self._apply_patch(case, event, patch.model_dump()["updates"])
+            case.human_review_reason = (
+                "; ".join(patch.ambiguities) or "Bounded extractor requested human review."
+            )
+        self._apply_patch(case, customer_event, patch.model_dump()["updates"])
         self._ingest_attachments(case, event)
-
-        if has_explicit_confirmation_line(event.body, PROFILE_CONFIRMATION_LINES):
+        profile_changed = prior_profile != summary_fingerprint(case, include_documents=False)
+        if profile_changed:
+            case.profile_confirmed = False
+        case.final_summary_confirmed = False
+        natural_confirmation = clear_natural_confirmation(customer_event.body)
+        unchanged_summary = prior_confirmation == summary_fingerprint(
+            case, include_documents=prior_kind == "final"
+        )
+        contextual_confirmation = bool(
+            prior_confirmation
+            and unchanged_summary
+            and request_delivered
+            and case.status != CaseStatus.HUMAN_REVIEW_REQUIRED
+        )
+        if (
+            (
+                has_explicit_confirmation_line(customer_event.body, PROFILE_CONFIRMATION_LINES)
+                and not confirmation_has_caveat(customer_event.body)
+            )
+            or (contextual_confirmation and prior_kind == "profile" and natural_confirmation)
+        ) and case.status != CaseStatus.HUMAN_REVIEW_REQUIRED:
             case.profile_confirmed = True
-            advance_stage(case, WorkflowStage.COLLECTING_DOCUMENTS)
             for evidence in case.evidence:
                 if evidence.source_document_id is None:
                     evidence.confirmed = True
-        if has_explicit_confirmation_line(event.body, FINAL_CONFIRMATION_LINES):
+        if (
+            contextual_confirmation
+            and prior_kind == "final"
+            and (
+                natural_confirmation
+                or (
+                    has_explicit_confirmation_line(customer_event.body, FINAL_CONFIRMATION_LINES)
+                    and not confirmation_has_caveat(customer_event.body)
+                )
+            )
+        ):
             case.final_summary_confirmed = True
-            advance_stage(case, WorkflowStage.FINAL_CONFIRMATION)
 
         run_consistency_checks(case)
         case.last_inbound_received_at = event.received_at
         case.updated_at = datetime.now(UTC)
         gate = evaluate_gate(case, self.policy, self.today_provider())
+        failed_checks = {key for key, passed in gate.checks.items() if not passed}
         if case.status != CaseStatus.HUMAN_REVIEW_REQUIRED:
             if gate.allowed:
                 advance_stage(case, WorkflowStage.READY_FOR_HUMAN_REVIEW)
             elif case.open_blockers():
-                advance_stage(case, WorkflowStage.DOCUMENT_REVIEW)
-            elif not case.final_summary_confirmed:
-                advance_stage(case, WorkflowStage.FINAL_CONFIRMATION)
-        failed_checks = {key for key, passed in gate.checks.items() if not passed}
+                case.stage = WorkflowStage.DOCUMENT_REVIEW
+            elif failed_checks == {"applicant_explicitly_confirmed_final_summary"}:
+                case.stage = WorkflowStage.FINAL_CONFIRMATION
+            elif not gate.checks["required_profile_facts_complete"]:
+                case.stage = WorkflowStage.INTAKE
+            elif not case.profile_confirmed:
+                case.stage = WorkflowStage.PROFILE_CONFIRMATION
+            else:
+                case.stage = WorkflowStage.COLLECTING_DOCUMENTS
         plan = "ready" if gate.allowed else "blocked"
         if failed_checks == {"applicant_explicitly_confirmed_final_summary"}:
             plan = "awaiting_confirmation"
+        elif (
+            case.status != CaseStatus.HUMAN_REVIEW_REQUIRED
+            and gate.checks["required_profile_facts_complete"]
+            and gate.checks["route_in_scope"]
+            and not case.profile_confirmed
+        ):
+            plan = "awaiting_profile_confirmation"
+        case.confirmation_fingerprint = None
+        case.confirmation_kind = None
+        case.confirmation_request_event_id = None
+        if plan in {"awaiting_confirmation", "awaiting_profile_confirmation"}:
+            case.confirmation_kind = "final" if plan == "awaiting_confirmation" else "profile"
+            case.confirmation_fingerprint = summary_fingerprint(
+                case, include_documents=case.confirmation_kind == "final"
+            )
+            case.confirmation_request_event_id = event.id
+        case.last_requested_fields = next_fact_questions(case) if plan == "blocked" else []
         message = self.llm.render_message(case, plan)
         message_id = stable_id("message", f"{event.id}:{plan}")
         if message_id not in case.outbound_message_ids:
@@ -220,13 +302,19 @@ class WorkflowService:
                 continue
             document_id = stable_id("doc", digest)
             try:
-                kind, language, page_count, facts = inspect_pdf(path)
+                inspection = self.document_reader(path)
+                kind, language, page_count, facts = (
+                    inspection.kind,
+                    inspection.language,
+                    inspection.page_count,
+                    inspection.facts,
+                )
             except (OSError, ValueError, PdfReadError):
                 self._record_unreadable_document(case, event, path, document_id, digest)
                 existing_hashes.add(digest)
                 continue
             supersedes_document_id: str | None = None
-            if kind == "conference_invitation":
+            if kind == "conference_invitation" and not inspection.requires_review:
                 for old in case.documents:
                     if old.kind == kind and old.status == DocumentStatus.ACCEPTED_FOR_REVIEW:
                         supersedes_document_id = old.id
@@ -236,7 +324,7 @@ class WorkflowService:
                                 old_evidence.superseded = True
             translation_for_document_id: str | None = None
             translation_target_document: Document | None = None
-            if kind == "certified_translation":
+            if kind == "certified_translation" and not inspection.requires_review:
                 translation_target = facts.pop("translation_for_filename", None)
                 if translation_target is not None:
                     target_filename = str(translation_target[0])
@@ -271,12 +359,27 @@ class WorkflowService:
                 translation_for_document_id=translation_for_document_id,
             )
             case.documents.append(document)
+            if kind == "unknown" or inspection.requires_review:
+                document.status = DocumentStatus.HUMAN_REVIEW_REQUIRED
+                case.issues.append(
+                    Issue(
+                        id=stable_id("issue", f"unclassified:{document_id}"),
+                        code=f"UNCLASSIFIED_DOCUMENT_{document_id}",
+                        title="Document needs manual classification",
+                        detail=f"The content of {path.name} requires review before it can satisfy a requirement. {inspection.review_reason or 'A human must identify and verify this document.'}",
+                        severity=IssueSeverity.BLOCKER,
+                        related_document_ids=[document_id],
+                    )
+                )
             if translation_target_document is not None:
                 translation_target_document.status = DocumentStatus.ACCEPTED_FOR_REVIEW
             existing_hashes.add(digest)
             for key, (value, page, excerpt) in facts.items():
                 for prior_evidence in case.active_evidence(key):
-                    if prior_evidence.source_document_id == document.supersedes_document_id:
+                    if (
+                        document.supersedes_document_id is not None
+                        and prior_evidence.source_document_id == document.supersedes_document_id
+                    ):
                         prior_evidence.superseded = True
                 case.evidence.append(
                     Evidence(
@@ -287,10 +390,14 @@ class WorkflowService:
                         source_document_id=document.id,
                         source_excerpt=excerpt,
                         page=page,
-                        extraction_method="deterministic_pdf_fixture_extractor",
-                        model_version="none",
-                        confidence=1.0,
-                        provenance_state=ProvenanceState.DEMO_SYNTHETIC,
+                        extraction_method=inspection.method,
+                        model_version=inspection.model_version,
+                        confidence=inspection.confidence,
+                        provenance_state=(
+                            ProvenanceState.DEMO_SYNTHETIC
+                            if inspection.method == "deterministic_pdf_fixture_extractor"
+                            else ProvenanceState.EXTRACTED_UNVERIFIED
+                        ),
                     )
                 )
 

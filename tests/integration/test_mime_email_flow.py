@@ -67,6 +67,15 @@ def test_standard_mime_thread_reaches_pack_without_demo_attachment_header(tmp_pa
             assert duplicate is False
             plans.append(plan)
             packages.append(package)
+            if plan == "awaiting_confirmation":
+                message = store.list_outbox()[-1]["payload"]
+                assert "FACTS SUMMARY" in message
+                assert "Full Name: Lin Chen" in message
+                assert "Estimated Trip Cost Gbp: 2200" in message
+                assert "conference_invitation_corrected.pdf" in message
+                assert "conference_invitation_original.pdf" not in message
+                assert "family_funds_certified_translation.pdf" in message
+                assert "Everything is correct, please proceed" in message
 
         assert plans == ["blocked", "awaiting_confirmation", "ready"]
         assert packages[:2] == [None, None]

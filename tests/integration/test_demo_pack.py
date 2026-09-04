@@ -40,6 +40,8 @@ def test_demo_generates_source_linked_pack_and_is_idempotent(tmp_path: Path) -> 
         names = set(archive.namelist())
         assert names >= EXPECTED_PACK_FILES
         assert any(name.startswith("supporting_documents/") for name in names)
+        assert "supporting_documents/conference_invitation_original.pdf" not in names
+        assert "supporting_documents/conference_invitation_corrected.pdf" in names
         answers = json.loads(archive.read("05_application_answers.json"))
         assert answers["status"] == "READY_FOR_HUMAN_REVIEW"
         assert all(item["source_event_id"] for item in answers["facts"])

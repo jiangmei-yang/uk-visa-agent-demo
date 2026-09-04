@@ -110,7 +110,9 @@ def build_requirements(case: Case, policy: Policy) -> list[Requirement]:
     non_english_documents = [
         doc
         for doc in case.documents
-        if doc.language not in {"en", "cy"} and doc.status != DocumentStatus.SUPERSEDED
+        if doc.language not in {"en", "cy"}
+        and doc.kind != "unknown"
+        and doc.status != DocumentStatus.SUPERSEDED
     ]
     has_non_english = bool(non_english_documents)
     result: list[Requirement] = []
@@ -201,6 +203,17 @@ def resolve_issue(case: Case, code: str, resolution: str) -> None:
 
 def run_consistency_checks(case: Case) -> None:
     profile = case.profile
+    passports = [doc for doc in case.documents if doc.kind in {"passport", "travel_document"} and doc.status == DocumentStatus.ACCEPTED_FOR_REVIEW]
+    if passports and profile.planned_departure_date:
+        if not passport_valid_through_stay(case):
+            _upsert_issue(case, Issue(
+                id=f"issue-{case.id}-passport-validity", code="PASSPORT_VALIDITY",
+                title="Passport validity needs checking",
+                detail="A readable expiry date on the travel document must cover the planned departure date. Please provide the expiry page or a replacement travel document.",
+                severity=IssueSeverity.BLOCKER, related_document_ids=[doc.id for doc in passports],
+            ))
+        else:
+            resolve_issue(case, "PASSPORT_VALIDITY", "The evidenced expiry date covers the planned stay.")
     invitation_end = case.active_evidence("invitation_event_end_date")
     if invitation_end and profile.planned_departure_date:
         event_end = date.fromisoformat(str(invitation_end[-1].value))
@@ -224,7 +237,9 @@ def run_consistency_checks(case: Case) -> None:
     non_english_documents = [
         doc
         for doc in case.documents
-        if doc.language not in {"en", "cy"} and doc.status != DocumentStatus.SUPERSEDED
+        if doc.language not in {"en", "cy"}
+        and doc.kind != "unknown"
+        and doc.status != DocumentStatus.SUPERSEDED
     ]
     translated_document_ids = {
         doc.translation_for_document_id
@@ -281,6 +296,21 @@ def run_consistency_checks(case: Case) -> None:
             resolve_issue(case, issue_code, "Only one active value remains across the evidence.")
 
 
+def passport_valid_through_stay(case: Case) -> bool:
+    if case.profile.planned_departure_date is None:
+        return False
+    passport_ids = {doc.id for doc in case.documents if doc.kind in {"passport", "travel_document"} and doc.status == DocumentStatus.ACCEPTED_FOR_REVIEW}
+    for evidence in case.active_evidence("passport_expiry_date"):
+        if evidence.source_document_id not in passport_ids:
+            continue
+        try:
+            if date.fromisoformat(str(evidence.value)) >= case.profile.planned_departure_date:
+                return True
+        except ValueError:
+            continue
+    return False
+
+
 def evaluate_gate(case: Case, policy: Policy, today: date) -> GateResult:
     in_scope, scope_reason = route_in_scope(case, policy, today)
     case.requirements = build_requirements(case, policy)
@@ -295,6 +325,7 @@ def evaluate_gate(case: Case, policy: Policy, today: date) -> GateResult:
         "profile_confirmed": case.profile_confirmed,
         "required_profile_facts_complete": complete_profile,
         "travel_dates_are_valid_and_within_six_months": travel_dates_valid(case, today),
+        "passport_valid_through_stay": passport_valid_through_stay(case),
         "all_blocker_requirements_resolved": all(
             item.satisfied for item in case.requirements if item.applicable and item.blocker
         ),

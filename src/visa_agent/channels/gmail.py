@@ -49,6 +49,32 @@ class GmailAdapter:
         )
         return dict(result)
 
+    def list_complete_message_ids(self, query: str, limit: int = 100) -> list[str]:
+        """Fetch a bounded complete result, never silently discard older conversation mail."""
+        if not 1 <= limit <= 500:
+            raise ValueError("Complete inbox batch limit must be between 1 and 500")
+        identifiers: list[str] = []
+        token: str | None = None
+        seen_tokens: set[str] = set()
+        while True:
+            kwargs: dict[str, Any] = {
+                "userId": self.user_id,
+                "q": query,
+                "maxResults": min(100, limit - len(identifiers)),
+            }
+            if token:
+                kwargs["pageToken"] = token
+            response = self.service.users().messages().list(**kwargs).execute()
+            identifiers.extend(str(item["id"]) for item in response.get("messages", []))
+            token = response.get("nextPageToken")
+            if len(identifiers) > limit or (token and len(identifiers) >= limit):
+                raise ValueError("Inbox scope exceeds the bounded batch; narrow the query")
+            if not token:
+                return list(dict.fromkeys(identifiers))
+            if token in seen_tokens:
+                raise ValueError("Gmail returned a repeated pagination token")
+            seen_tokens.add(token)
+
     def get_raw_message(self, message_id: str) -> GmailRawMessage:
         result = (
             self.service.users()
@@ -76,7 +102,36 @@ class GmailAdapter:
 
     def find_sent_message(self, rfc_message_id: str) -> str | None:
         matches = self.list_message_ids(f"in:sent rfc822msgid:{rfc_message_id}", max_results=2)
-        return matches[0] if matches else None
+        if len(matches) > 1:
+            raise PermanentChannelError("Multiple sent messages match the outbound identifier")
+        if matches:
+            return matches[0]
+        # Gmail can rewrite Message-ID. A private correlation header survives that rewrite.
+        # Search is deliberately bounded: an older/unlocated message stays AMBIGUOUS,
+        # never becomes an automatic resend on the strength of a negative search.
+        recovered = []
+        for identifier in self.list_message_ids("in:sent", max_results=100):
+            item = (
+                self.service.users()
+                .messages()
+                .get(
+                    userId=self.user_id,
+                    id=identifier,
+                    format="metadata",
+                    metadataHeaders=["X-Visa-Agent-Message-ID"],
+                )
+                .execute()
+            )
+            values = [
+                str(header.get("value", "")).strip()
+                for header in item.get("payload", {}).get("headers", [])
+                if str(header.get("name", "")).casefold() == "x-visa-agent-message-id"
+            ]
+            if "SENT" in item.get("labelIds", []) and values == [rfc_message_id]:
+                recovered.append(identifier)
+        if len(recovered) > 1:
+            raise PermanentChannelError("Multiple sent messages match the outbound identifier")
+        return recovered[0] if recovered else None
 
     def send_reply(
         self,
@@ -95,6 +150,7 @@ class GmailAdapter:
         message["In-Reply-To"] = in_reply_to
         message["References"] = references
         message["Message-ID"] = message_id
+        message["X-Visa-Agent-Message-ID"] = message_id
         message.set_content(body)
         if attachment:
             filename, content = attachment

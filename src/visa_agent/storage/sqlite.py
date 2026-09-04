@@ -57,6 +57,13 @@ CREATE TABLE IF NOT EXISTS inbound_failures (
     retryable INTEGER NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS delivery_versions (
+    case_id TEXT NOT NULL,
+    path TEXT NOT NULL,
+    sha256 TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(case_id, sha256)
+);
 CREATE TABLE IF NOT EXISTS inbound_queue (
     id TEXT PRIMARY KEY,
     channel TEXT NOT NULL,
@@ -278,8 +285,24 @@ class SQLiteStore:
 
     def save_delivery(self, case_id: str, path: str, sha256: str) -> None:
         with self.connection:
+            previous = self.connection.execute(
+                "SELECT path, sha256 FROM deliveries WHERE case_id = ?", (case_id,)
+            ).fetchone()
+            if previous and (previous["path"] != path or previous["sha256"] != sha256):
+                unsafe = self.connection.execute(
+                    "SELECT 1 FROM outbox WHERE case_id = ? AND message_type = 'ready' "
+                    "AND (attempt_count > 0 OR status IN ('SENDING', 'SENT', 'AMBIGUOUS'))",
+                    (case_id,),
+                ).fetchone()
+                if unsafe:
+                    raise ValueError("Cannot replace a delivery after a send attempt")
+                self.connection.execute(
+                    "INSERT OR IGNORE INTO delivery_versions(case_id, path, sha256) VALUES (?, ?, ?)",
+                    (case_id, previous["path"], previous["sha256"]),
+                )
             self.connection.execute(
-                "INSERT OR IGNORE INTO deliveries(id, case_id, path, sha256) VALUES (?, ?, ?, ?)",
+                "INSERT INTO deliveries(id, case_id, path, sha256) VALUES (?, ?, ?, ?) "
+                "ON CONFLICT(case_id) DO UPDATE SET path = excluded.path, sha256 = excluded.sha256",
                 (f"delivery-{case_id}", case_id, path, sha256),
             )
 

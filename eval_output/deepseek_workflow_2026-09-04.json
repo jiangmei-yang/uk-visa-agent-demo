@@ -1,0 +1,153 @@
+{
+  "synthetic": true,
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "evaluation_date": "2026-09-02",
+  "scope": "natural-language intake through deterministic pack release",
+  "repeat_count": 1,
+  "runs": [
+    {
+      "repeat": 1,
+      "synthetic": true,
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "evaluation_date": "2026-09-02",
+      "scope": "natural-language intake through deterministic pack release",
+      "steps": [
+        {
+          "step": 1,
+          "plan": "blocked",
+          "stage": "DOCUMENT_REVIEW",
+          "open_blockers": [
+            "Certified translation required",
+            "Travel and invitation dates differ"
+          ],
+          "gate_reasons": [
+            "all blocker requirements resolved",
+            "no unresolved blocker issue",
+            "applicant explicitly confirmed final summary"
+          ],
+          "reply": "Hello Lin Chen,\n\nThanks for the 7 documents you've sent.\n\nThese points still need attention:\n- Travel and invitation dates differ: The current trip ends on 2026-09-15, but the invitation states the event ends on 2026-09-16.\n- Certified translation required: These non-English/Welsh documents need linked translations: family_funds_cn.pdf.\n\nYou can reply here in your own words. I'll check the details before assembling the final pack.",
+          "model_reply_accepted": false,
+          "render_fallback_reason": "UnsafeModelOutput: Model message omitted or changed a grounded next action",
+          "latency_ms": 6498.58,
+          "checks": {
+            "not_duplicate": true,
+            "expected_plan": true,
+            "expected_blockers": true,
+            "pack_release_boundary": true,
+            "gate_release_boundary": true,
+            "extraction_did_not_fallback": true,
+            "non_empty": true,
+            "within_length_limit": true,
+            "no_prohibited_outcome_claim": true,
+            "every_open_blocker_named": true,
+            "confirmation_boundary_present": true,
+            "no_premature_pack_release_claim": true,
+            "human_review_boundary_present": true
+          },
+          "passed": true
+        },
+        {
+          "step": 2,
+          "plan": "awaiting_confirmation",
+          "stage": "FINAL_CONFIRMATION",
+          "open_blockers": [],
+          "gate_reasons": [
+            "applicant explicitly confirmed final summary"
+          ],
+          "reply": "I've brought your details together below. Please check that I've understood them correctly.\n\nFACTS SUMMARY\n- Full Name: Lin Chen\n- Date Of Birth: 1997-04-18\n- Nationality Country: China\n- Application Country: Hong Kong\n- Planned Arrival Date: 2026-09-10\n- Planned Departure Date: 2026-09-15\n- Visit Purpose: conference\n- Uk Accommodation: Northstar Hotel, London\n- Estimated Trip Cost Gbp: 2200\n- Current Address: 88 Synthetic Road, Hong Kong\n- Occupation Status: student\n- Annual Income Gbp: 18000\n- Funding Source: employer or school\n- Has Serious History: No\n- Route Confirmed Standard Visitor: Yes\n\nCURRENT DOCUMENTS\n- passport.pdf\n- student_letter.pdf\n- school_funding_letter.pdf\n- bank_statement.pdf\n- hong_kong_residence_status.pdf\n- family_funds_cn.pdf\n- conference_invitation_corrected.pdf\n- family_funds_certified_translation.pdf\n\nIf everything is correct, you can simply reply 'Everything is correct, please proceed.' Otherwise, tell me what needs changing.\nAfter your confirmation, I'll assemble the pack for human review. It is not an approval prediction or a submitted application.",
+          "model_reply_accepted": true,
+          "render_fallback_reason": null,
+          "latency_ms": 573.86,
+          "checks": {
+            "not_duplicate": true,
+            "expected_plan": true,
+            "expected_blockers": true,
+            "pack_release_boundary": true,
+            "gate_release_boundary": true,
+            "extraction_did_not_fallback": true,
+            "non_empty": true,
+            "within_length_limit": true,
+            "no_prohibited_outcome_claim": true,
+            "every_open_blocker_named": true,
+            "confirmation_boundary_present": true,
+            "no_premature_pack_release_claim": true,
+            "human_review_boundary_present": true
+          },
+          "passed": true
+        },
+        {
+          "step": 3,
+          "plan": "ready",
+          "stage": "READY_FOR_HUMAN_REVIEW",
+          "open_blockers": [],
+          "gate_reasons": [],
+          "reply": "Your review pack is ready for human review. This is not an approval prediction or a submitted visa application.",
+          "model_reply_accepted": false,
+          "render_fallback_reason": "UnsafeModelOutput: Model message contained an unresolved placeholder",
+          "latency_ms": 2500.42,
+          "checks": {
+            "not_duplicate": true,
+            "expected_plan": true,
+            "expected_blockers": true,
+            "pack_release_boundary": true,
+            "gate_release_boundary": true,
+            "extraction_did_not_fallback": true,
+            "non_empty": true,
+            "within_length_limit": true,
+            "no_prohibited_outcome_claim": true,
+            "every_open_blocker_named": true,
+            "confirmation_boundary_present": true,
+            "no_premature_pack_release_claim": true,
+            "human_review_boundary_present": true
+          },
+          "passed": true
+        }
+      ],
+      "metrics": {
+        "workflow_steps_passed": 3,
+        "workflow_step_count": 3,
+        "individual_checks_passed": 39,
+        "individual_check_count": 39,
+        "model_replies_accepted": 1,
+        "reply_count": 3,
+        "provider_call_count": 5,
+        "input_tokens": 5063,
+        "output_tokens": 886,
+        "latency_ms_median": 2500.42,
+        "latency_ms_max": 6498.58,
+        "pack_sha256": "51a42aef5a1d413b7dff6819c1d9da2748b95c9f3e42b6949e11a14f8ea9779a"
+      },
+      "passed": false,
+      "limitations": [
+        "All applicant data and documents are synthetic.",
+        "The document reader is the deterministic PDF fixture extractor, not production OCR.",
+        "This run does not exercise Gmail, WhatsApp, or a real applicant."
+      ]
+    }
+  ],
+  "metrics": {
+    "workflow_runs_passed": 0,
+    "workflow_run_count": 1,
+    "workflow_steps_passed": 3,
+    "workflow_step_count": 3,
+    "individual_checks_passed": 39,
+    "individual_check_count": 39,
+    "model_replies_accepted": 1,
+    "reply_count": 3,
+    "provider_call_count": 5,
+    "input_tokens": 5063,
+    "output_tokens": 886,
+    "semantic_repeat_consistency_rate": 1.0,
+    "latency_ms_median": 2500.42,
+    "latency_ms_max": 6498.58,
+    "unique_pack_hash_count": 1
+  },
+  "passed": false,
+  "limitations": [
+    "All applicant data and documents are synthetic.",
+    "The document reader is the deterministic PDF fixture extractor, not production OCR.",
+    "This run does not exercise Gmail, WhatsApp, or a real applicant."
+  ]
+}
