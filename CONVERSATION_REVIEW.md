@@ -105,3 +105,27 @@ of the expected locations; run 2 lacks enough data to resolve its values. The ev
 location comparison now recognise a bounded alias set without changing original facts. All three
 reports and this oracle limitation are retained; see `evals/README.md`. Local regressions after
 these changes pass 329 tests, lint and typing. No new recipient-side naturalness evidence is claimed.
+
+## English continuity and question grouping
+
+A code/read-through review found that `received_context` returned nothing for English: newly
+provided work/funding details were ignored in the opening, which instead repeated generic reassurance.
+English now acknowledges only supported newly received purpose/work/funding facts, as Chinese does;
+unknown values and older profile facts are not invented or restated as new. Short follow-up questions
+retain their exact grounded content but use prose instead of a questionnaire heading and bullet list.
+Document lists and discrepancy lists are unchanged so actionable details remain easy to inspect.
+
+Reading the actual rendered example then exposed repeated uncertainty instructions for arrival and
+departure. When both are currently requested, one question asks for both dates and the year; missing
+facts, deferral and confirmation state are unchanged. If only one date is missing, its existing question
+is retained. This grouping is shared by the guarded renderer and the deterministic Gmail fallback.
+
+Five added regressions cover bilingual follow-ups, English factual continuity and bilingual date-pair
+grouping. The first three failed before the implementation. One existing test counted bullet markers;
+it was updated to assert all three specific questions and their count instead, preserving its original
+next-three-fields/no-internal-code contract. All 350 local tests, lint and typing pass, with the existing
+Starlette/httpx deprecation warning. This is internal wording review and local regression evidence,
+not independent naturalness acceptance or a new live recipient observation.
+The existing registered-sender Gmail LaunchAgent was reloaded under its state lock, and its new
+process completed an idle poll at 2026-09-04T09:32:05Z. No old replies were manually resent; this
+runtime observation establishes loading/polling only, not how a new recipient judges the wording.

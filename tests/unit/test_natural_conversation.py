@@ -113,7 +113,10 @@ def test_chinese_first_turn_asks_only_next_three_questions_without_internal_code
     case.profile.planned_arrival_date = date(2026, 11, 10)
     message = deterministic_fallback_message(case, "blocked")
     assert len(next_fact_questions(case)) == 3
-    assert message.count("\n- ") == 3
+    assert message.count("？") == 3
+    assert "你持哪个国家的护照？" in message
+    assert "你准备在哪个国家或地区递交申请？" in message
+    assert "你目前在工作、读书，还是自己经营业务？" in message
     assert "收到，我再了解一下你的情况" in message
     assert "planned_arrival_date" not in message
     assert "Date Of Birth" not in message

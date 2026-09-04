@@ -193,9 +193,28 @@ def update_deferred_questions(case: Case, body: str) -> None:
 
 
 def received_context(case: Case) -> str:
-    if case.customer_language != "zh":
-        return ""
     facts = case.latest_received_facts
+    if case.customer_language != "zh":
+        phrases = {
+            "visit_purpose": {
+                "tourism": "you're planning a holiday in the UK",
+                "conference": "you're going to the UK for a conference",
+                "family_or_friends": "you're visiting family or friends in the UK",
+                "business": "you're planning a business visit to the UK",
+            },
+            "occupation_status": {
+                "employed": "you're currently employed", "student": "you're studying",
+                "self_employed": "you're self-employed",
+            },
+            "funding_source": {
+                "self": "you're paying for the trip yourself",
+                "employer_or_school": "your employer or school is covering the trip",
+                "personal_sponsor": "someone is helping fund your trip",
+            },
+        }
+        received = [values[facts[key]] for key, values in phrases.items()
+                    if facts.get(key) in values]
+        return "Thanks, " + " and ".join(received[:2]) + "." if received else ""
     parts = []
     purposes = {"tourism": "你打算去英国旅游", "conference": "你准备去英国参加会议",
                 "family_or_friends": "你打算去英国探亲访友", "business": "这次是商务访问"}
@@ -282,12 +301,21 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
             )
         else:
             issues.append(f"{issue.title}: {issue.detail}")
+    question_fields = next_fact_questions(case)
     questions = [
         QUESTION_TEXT_ZH.get(key, fact_label(case, key))
         if zh
         else QUESTION_TEXT_EN.get(key, f"Could you tell me your {fact_label(case, key).lower()}?")
-        for key in next_fact_questions(case)
+        for key in question_fields
     ]
+    if {"planned_arrival_date", "planned_departure_date"} <= set(question_fields):
+        arrival_index = question_fields.index("planned_arrival_date")
+        questions[arrival_index] = (
+            "计划哪天到英国、哪天离开？请带上年份；日期没定的话也可以先告诉我。"
+            if zh else "What dates are you planning to arrive in and leave the UK? "
+            "Please include the year; if you haven't decided yet, just let me know."
+        )
+        del questions[question_fields.index("planned_departure_date")]
     # An initial enquiry should not receive the entire form and document checklist at once.
     documents = []
     if not questions or case.documents:
@@ -400,10 +428,12 @@ def blocked_customer_message(case: Case) -> str:
             + "\n".join(f"- {item}" for item in issues)
         )
     if questions:
-        sections.append(questions[0] if len(questions) == 1 else
-            ("还想跟你确认一下：\n" if zh else "Could you help me with these details first?\n")
-            + "\n".join(f"- {item}" for item in questions)
-        )
+        # Keep the grounded questions verbatim, but don't turn a short conversation
+        # into a labelled form. Longer questions get their own paragraph.
+        separator = "" if zh else " "
+        joined = separator.join(questions)
+        sections.append(joined if len(joined) <= (100 if zh else 240)
+                        else "\n\n".join(questions))
     if documents:
         sections.append(
             (

@@ -12,6 +12,8 @@ from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.conversation import (
     clear_natural_confirmation,
     next_fact_questions,
+    received_context,
+    reply_items,
     update_deferred_questions,
     waiting_acknowledgement,
 )
@@ -111,6 +113,57 @@ def test_one_remaining_question_is_prose_not_a_questionnaire() -> None:
     assert "你准备在哪个国家或地区递交申请？" in text
     assert "\n- " not in text
     assert "还想跟你确认一下" not in text
+
+
+@pytest.mark.parametrize("language", ["zh", "en"])
+def test_followup_questions_keep_content_without_form_heading(language: str) -> None:
+    case = example()
+    case.customer_language = language
+    case.latest_received_facts = {"visit_purpose": "tourism"}
+    before = case.model_dump_json()
+    text = deterministic_fallback_message(case, "blocked")
+    questions = reply_items(case)[1]
+    assert len(questions) > 1
+    assert all(question in text for question in questions)
+    assert "\n- " not in text
+    assert "Could you help me with these details first?" not in text
+    assert "还想跟你确认一下" not in text
+    assert not text.startswith(("Hello", "你好"))
+    assert case.model_dump_json() == before
+
+
+def test_english_acknowledgement_uses_new_facts_not_old_profile() -> None:
+    case = example()
+    case.customer_language = "en"
+    case.latest_received_facts = {"occupation_status": "student", "funding_source": "self"}
+    case.profile.occupation_status = "student"
+    case.profile.funding_source = "self"
+    text = deterministic_fallback_message(case, "blocked")
+    assert "you're studying" in text and "paying for the trip yourself" in text
+    assert "tourism" not in received_context(case)
+    assert "don't need to have every document ready" not in text
+    assert "Who will pay for the trip?" not in text
+    assert "Are you currently employed" not in text
+    case.latest_received_facts = {"occupation_status": "unknown"}
+    assert received_context(case) == ""
+
+
+@pytest.mark.parametrize("language", ["zh", "en"])
+def test_date_pair_is_one_question_without_losing_either_required_field(language: str) -> None:
+    case = example()
+    case.customer_language = language
+    case.profile.occupation_status = "student"
+    case.profile.funding_source = "self"
+    fields = next_fact_questions(case)
+    assert fields == ["planned_arrival_date", "planned_departure_date", "full_name"]
+    questions = reply_items(case)[1]
+    assert len(questions) == 2
+    assert ("哪天到英国、哪天离开" if language == "zh" else "arrive in and leave the UK") in questions[0]
+    assert ("年份" if language == "zh" else "year") in questions[0]
+    assert ("姓名" if language == "zh" else "name") in questions[1]
+    assert case.profile.planned_arrival_date is None
+    assert case.profile.planned_departure_date is None
+    assert not case.final_summary_confirmed
 
 
 @pytest.mark.parametrize("body", ["我还没核对其他资料，晚点回复。",
