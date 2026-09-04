@@ -89,7 +89,8 @@ def test_operator_command_checks_revision_and_does_not_touch_case_database(tmp_p
     (tmp_path / "binding.json").write_text(json.dumps(binding))
     case_db = tmp_path / "sandbox.db"
     case_db.write_bytes(b"untouched-case-database-sentinel")
-    journal = GmailSyncJournal(tmp_path / "sync.db", json.dumps(binding))
+    # The actual service uses sorted keys, unlike binding.json's insertion order.
+    journal = GmailSyncJournal(tmp_path / "sync.db", json.dumps(binding, sort_keys=True))
     state = journal.start_full("100", None)
     journal.close()
     monkeypatch.setattr(argparse.ArgumentParser, "parse_args", lambda self: argparse.Namespace(

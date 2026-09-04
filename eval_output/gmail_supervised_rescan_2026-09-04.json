@@ -1,0 +1,39 @@
+{
+  "evidence_class": "live registered-mailbox supervised rescan drill",
+  "completed_cycle_utc": "2026-09-04T09:18:04.674031+00:00",
+  "scope": "existing registered sender and activation boundary; no messages authored by the probe",
+  "initial_failure": {
+    "type": "ValueError",
+    "reason": "Recovery command serialized scope without sorted keys, unlike the live runner",
+    "rescan_recorded": false,
+    "case_database_changed": false,
+    "fix": "Match the runner's sorted-key JSON scope representation and reproduce it in the command test"
+  },
+  "observed_sequence": {
+    "reviewed_revision": 53,
+    "requested_revision": 54,
+    "requested_phase": "rescan",
+    "completed_revision": 57,
+    "completed_phase": "ready",
+    "same_worker_process_before_and_after": true,
+    "inspection_during_poll_rejected_by_state_lock": true
+  },
+  "checks": {
+    "recovery_actions_added": 1,
+    "pending_candidates_after": 0,
+    "processed_candidates_before_and_after": 2,
+    "ignored_candidates_before_and_after": 1,
+    "cases_before_and_after": 1,
+    "processed_events_before_and_after": 2,
+    "sent_outbox_rows_before_and_after": 2,
+    "final_deliveries_before_and_after": 0,
+    "case_database_sha256_unchanged": true
+  },
+  "passed_for_stated_scope": true,
+  "limitations": [
+    "Checkpoint was healthy; no provider page-token rejection, natural history expiry or outage was induced.",
+    "Only a tiny existing mailbox scope was rescanned; this is not large-backlog evidence.",
+    "No new mail or final ZIP was sent, and recipient-side delivery was not tested.",
+    "Raw mailbox addresses, message bodies, provider tokens and database digest are omitted from this public report."
+  ]
+}

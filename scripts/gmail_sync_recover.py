@@ -23,7 +23,7 @@ def main() -> None:
     if args.action == "rescan" and (args.expected_revision is None or not args.actor or not args.reason):
         parser.error("Rescan requires --expected-revision, --actor and --reason")
     with exclusive_state(args.state_dir):
-        journal = GmailSyncJournal(database, json.dumps(json.loads(binding.read_text())))
+        journal = GmailSyncJournal(database, json.dumps(json.loads(binding.read_text()), sort_keys=True))
         try:
             checkpoint = journal.checkpoint()
             if args.action == "rescan":

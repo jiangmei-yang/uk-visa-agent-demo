@@ -158,4 +158,21 @@ approve documents, resolve held case revisions or grant final-pack sending permi
 Local integration tests cover close/reopen, provider-read failure, preserved pending/processed
 IDs, overlap discovery, stale revisions, audit-write rollback, and the actual command leaving a
 case-database sentinel unchanged. They are simulated recovery evidence, not live expired-token
-recovery. No rescan was requested against the running mailbox as part of this implementation.
+recovery. Initial implementation was tested locally; the subsequent live drill is documented below.
+
+## Supervised live rescan drill, 2026-09-04
+
+The real registered-mailbox worker completed one deliberate rescan at 09:18:04 UTC. This was
+a healthy-checkpoint operational exercise, not a provider fault. Its first command failed safely:
+the command serialized scope keys differently from the runner, so binding validation rejected it.
+The test fixture had used the same incorrect ordering as the command. The fixture now reproduces
+the runner's sorted-key binding, and the command uses the matching representation. The failure
+and fix are retained in `eval_output/gmail_supervised_rescan_2026-09-04.json`.
+
+After correction, revision 53 was explicitly reviewed, revision 54 requested rescan, and the same
+live worker reached ready revision 57. An overlapping inspection was refused by the state lock;
+no restart or duplicate rescan was used. One recovery audit record exists. Candidate counts stayed
+at two processed/one ignored with none pending; the case database's SHA-256 stayed identical,
+including two SENT replies, two processed events, one case and zero final deliveries. Thus this
+drill supports live rescan continuity and no duplicate sending in this tiny scope. It does not
+prove natural history/page expiry recovery, large backlogs, new-email intake or final delivery.
