@@ -15,33 +15,41 @@ explicitly recorded here.
 
 ## Current capability ledger
 
+Updated 2026-09-04. The dated experiment entries below are historical records, not current
+configuration assertions. Overall acceptance is **incomplete**. The current local suite has
+297 passing tests; this is not a naturalness score or a general accuracy/reliability percentage.
+
 | Capability | Current evidence | Honest status | Missing proof |
 |---|---|---|---|
-| Three-email case progression | Automated simulation + provider evaluation | Credential-free guided UI runs the real workflow one step at a time; DeepSeek also completed one natural-language blocked → corrected → confirmed path | Real applicant distribution and provider delivery |
-| Inbound attachments | Automated simulation | Standard MIME PDFs are extracted with filename, type, count, and size controls | Gmail attachment payloads and provider redelivery |
-| Human-like replies | Provider evaluation | Three DeepSeek replies passed plan-specific completeness, premature-release, confirmation, human-review, placeholder, length, and outcome-claim guards | Independent human tone review and broader clarification loops |
-| Gmail API boundary | Automated simulation | Raw MIME ingestion, threaded send, sent lookup, outbox mapping, OAuth file safety, and error classes pass fake-provider tests | Real OAuth, mailbox delivery, attachment/thread behaviour, quota and revoked-token evidence |
-| WhatsApp | Automated simulation | Twilio boundary covers signature-first text/PDF intake, durable lease queue, public route, channel isolation, finite send failures, idempotency, and reply-window enforcement | Account/device sandbox and real media/reply/status callbacks |
-| Delivery safety gate | Automated simulation + provider evaluation | Ten deterministic checks block delivery, are rechecked at download, and passed 39/39 complete-workflow assertions | Concurrent case mutation and production recovery evidence |
-| Event idempotency | Automated simulation | Accepted and rejected provider IDs are persisted once; concurrent outbox claims are exclusive | Provider redelivery and external delivery reconciliation |
-| Pack determinism | Automated simulation | Twenty clean runs generate the same ZIP hash | Cross-platform/runtime reproducibility and migration compatibility |
-| Model extraction | Provider evaluation | 15 cases x 3 and a separate 75-input formatting/injection stress run completed on DeepSeek; final stress critical precision 100%, recall 97.37% | Real applicant language and production-distribution monitoring |
-| Prompt-injection resistance | Provider evaluation | English and Chinese injection variants completed with unsupported claims and unsafe boundary violations at 0% in the final 75-input run | Real document-borne attacks and production monitoring |
-| Human usability | Internal browser review only | Desktop/narrow-screen layout, three-step interaction, audit expansion, download path and console errors were checked on the Docker build | Independent interviewer and applicant task observation |
-| Local data export/deletion | Automated simulation + browser review | JSON export, exact-confirmation deletion, database cleanup and case-owned artifact cleanup pass; raw processed inbound bodies are not retained | Production retention schedule, access roles and encrypted storage |
+| Case progression and final ZIP | Local simulation + bounded live Gmail evidence | Fixture-document thread B reached ordinary confirmation and recipient-visible ZIP; ordinary-document thread D completed attachment/correction stages only ([evidence](GMAIL_LIVE_EVIDENCE.md)) | Ordinary-document end-to-end final delivery with an authorized participant |
+| Inbound attachments | Local tests + real Gmail/OCR evidence | Approved fictional PDFs arrived through Gmail; ordinary text/scan extraction and correction were exercised; non-identity summary remains blocked ([evidence](GMAIL_LIVE_EVIDENCE.md)) | Broader document/OCR coverage, translation matching, real authorized materials |
+| Human-like replies | Internal reading + real-model evaluations | Chinese multi-stage pacing improved; mechanical passes still produced formulaic replies ([review](CONVERSATION_REVIEW.md)) | Independent tone/usability observation, broader multi-turn and English review |
+| Gmail service | Real authorized account + local supervised service | OAuth, threaded replies, fixture ZIP and one crash-after-acceptance reconciliation verified; registered-sender incremental worker deployed ([service](GMAIL_AUTOMATIC_SERVICE.md)) | Public onboarding, live expiry/quota/revocation recovery, always-on deployment |
+| Incremental Gmail intake | Local integration + live single-message migration | Durable pagination/backlog handling, 152-message runner test and preserved live migration; two real negative probes did not prove expiry recovery ([details](GMAIL_INCREMENTAL_SYNC.md)) | Real large backlog/expired-history recovery and operational recovery for unavailable candidates |
+| WhatsApp | Local signed SDK tests + tunnel smoke only | Inbound/media/outbox and signed status receipt boundaries implemented ([runbook](WHATSAPP_SANDBOX.md)) | Configured account, enrolled device, real text/PDF/reply/status exchange and final handoff |
+| Delivery safety | Local tests + bounded Gmail scenarios | Source/confirmation gates, held-update delivery/download stops and exact archive hash checks ([reliability](RELIABILITY.md)) | Broader concurrent mutation/recovery and ordinary-document release evidence |
+| Event/send idempotency | Local tests + specific live crash/reconciliation | Provider IDs deduplicate; accepted Gmail send recovered without resend; uncertain outcomes withheld ([evidence](GMAIL_LIVE_EVIDENCE.md)) | Other live outage windows; lost-SID Twilio recovery remains manual |
+| Pack determinism | Local/CI fixture runs | Twenty identical fixture ZIPs documented; Docker state migration verified ([accuracy scope](ACCURACY.md)) | Independent cross-platform reproducibility and realistic-material output review |
+| Model extraction/injection | Synthetic corpora with real DeepSeek + local guards | Separate precision/recall, negative-fact and perturbation reports; failures retained ([reports](ACCURACY.md)) | Real-user distribution, broader document attacks, monitoring and drift |
+| Human-review recovery | Local integration | Held messages preserved; audited operator retry for non-finalized Gmail intake resets consent ([scope](HUMAN_REVIEW_RECOVERY.md)) | Nontechnical operator UI, authenticated roles, finalized-case revision and real recovery journey |
+| Human usability | Internal browser review + owner's critical feedback | Launchers/guided flow exist; guide corrected to describe persistent state ([walkthrough](START_HERE.md)) | Uncoached independent interviewer/applicant observation; no full-mark claim |
+| Local data controls | Local tests + earlier browser review | Export/deletion includes held updates and review actions; held bodies are explicitly retained pending review ([scope](HUMAN_REVIEW_RECOVERY.md)) | Retention automation, access roles, encrypted storage, provider/backup deletion policy |
 
 ## High-risk gaps discovered
 
-1. The offline extractor reads a hidden `DEMO_FACTS` block. It proves deterministic orchestration,
-   not natural-language understanding.
-2. Gmail is connected to the shared ingestion/workflow/outbox contracts under fake-provider tests,
-   but no OAuth account or real mailbox has been exercised.
-3. DeepSeek provider variance is measured on the release corpus and a 75-input stress suite. The
-   suite remains synthetic, so real-applicant language distribution and drift are still unmeasured.
-4. The outbox reconciliation contract is provider-neutral and locally simulated; Gmail search by
-   deterministic RFC Message-ID and its consistency window are not yet verified.
-5. WhatsApp has a durable local signature/media/queue/send boundary, but status callbacks, provider
-   ordering evidence, a joined device, and real provider delivery remain open.
+1. The credential-free extractor still proves fixture orchestration, not understanding arbitrary
+   applicant emails. The separate real-model/ordinary-document path must not be conflated with it.
+2. Ordinary-document final ZIP acceptance needs an authorized participant and explicit local/model
+   processing consent. Participation has been requested; an identity summary cannot be relabelled
+   a valid passport to obtain a pass.
+3. Twilio configuration is absent from the currently inspected process environment. Account/device
+   setup and actual exchanges are external prerequisites, not something passing local tests supplies.
+4. Real-model evaluation corpora remain bounded and synthetic. Owner feedback already disproved
+   the assumption that a mechanically passing reply necessarily sounds natural.
+5. Gmail rewrites RFC Message-ID; the implemented correlation-header recovery passed a specific
+   real crash test. Other outages and both negative history-recovery probes remain unproven.
+6. Independent usability evidence, finalized-case revision and production privacy/operations controls
+   are incomplete. None is waived by a higher automated-test count.
 
 ## Experiment sequence
 
@@ -186,6 +194,13 @@ reconciliation. Tests cover unpadded base64url payloads, 429/5xx transient class
 The optional SDKs import successfully. No OAuth client or token is present, so no Gmail request was
 made and E-04 remains open. `GMAIL_SANDBOX.md` contains the explicit test-account runbook.
 
+**Live follow-up — 2026-09-04:** the preparation statement above is superseded for account presence.
+Real OAuth, threaded replies, fixture attachments/ZIP, ordinary-language attachment corrections,
+registered-sender automatic intake and a send-acceptance crash/reconciliation were exercised.
+Details and failures are in `GMAIL_LIVE_EVIDENCE.md` and `GMAIL_INCREMENTAL_SYNC.md`.
+E-04 remains **partial**, because its full failure/recovery scope and ordinary-material final
+delivery are not proven. In particular, two real history-cursor probes have `passed: false`.
+
 ### E-05 — WhatsApp sandbox
 
 Begin only after E-01 through E-03 pass because WhatsApp must reuse the same typed event contract,
@@ -216,11 +231,17 @@ and reached the local provider gateway. `/health` returned 200, `/` and `/api/ca
 and an unsigned/unconfigured WhatsApp POST returned 503. The tunnel was then stopped. This proves
 the free ingress path and isolation, but no Twilio request or message was involved.
 
+**Local follow-up — 2026-09-04:** signed delivery-status receipt ingestion and conflict reduction
+are implemented and SDK-signed local tests pass. This does not supply the missing joined device,
+real callbacks or actual delivery evidence. E-05 remains open.
+
 ### E-06 — External usability
 
 Ask a nontechnical evaluator to start the repository, explain why the first pack was withheld, find
 the exact correction request, verify why the final pack was released, and download it. Observe the
 task without coaching. Internal heuristic scores do not count as this evidence.
+Use `evals/external_usability_protocol.md` to record the uncoached run and any assistance. No
+completed participant record is currently present; E-06 remains open.
 
 ## Release rule
 
