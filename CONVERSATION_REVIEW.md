@@ -286,3 +286,23 @@ requirements. One contract test covers this metadata; all 393 local tests, lint 
 The provider report predates these brief changes and remains unchanged. These new prompt instructions
 have not yet had a second real-model run. Automatic Gmail sending remains deterministic, and no
 worker reload was needed for this offline comparison; this is not a live prose rollout.
+
+## Follow-up prose comparison: improvements and remaining failures
+
+`eval_output/gmail_model_prose_comparison_2026-09-04-v2.json` retains the single follow-up run after
+the richer brief. All eight mechanical checks again passed because actual captured sending remains
+deterministic. Six raw drafts were rejected by the existing exact-action guard; only two passed.
+Reading shows fewer generic introductions in Chinese, but continued form-like English replies,
+an unsupported "no documents are needed" statement, and a claim that all further steps wait for
+summary review. Prompt changes alone did not establish acceptable natural conversation.
+
+Question matching now tolerates prose punctuation/case/whitespace variation, including an Oxford
+comma. This tolerance is limited to questions: grounded answers, document labels, discrepancies and
+correction acknowledgements remain exact. Numeric punctuation and all words are retained, so this
+does not allow different amounts/dates, dropped negation or different requested information. Added
+bounded rejection checks also stop the observed document-waiver/global-pause claims even if all
+required questions are present. Eight new regressions pass; all 401 local tests, lint and typing pass.
+
+The retained v2 report predates these guard changes, and no third provider run or live model-prose
+rollout is claimed. Broad paraphrase validation and acceptance of natural model-written Gmail replies
+remain unfinished; this narrower formatting tolerance is not presented as solving them.

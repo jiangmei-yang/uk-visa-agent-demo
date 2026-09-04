@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections.abc import Callable
 
 from pydantic import TypeAdapter, ValidationError
@@ -59,6 +60,18 @@ def _normalise_evidence(value: str) -> str:
 def _normalise_message_formatting(value: str) -> str:
     value = re.sub(r"\*\*(.+?)\*\*", r"\1", value)
     return re.sub(r"`([^`]+)`", r"\1", value)
+
+
+def _question_format_key(value: str) -> str:
+    """Ignore prose punctuation only, retaining words and numeric punctuation."""
+    value = unicodedata.normalize('NFKC', value).casefold()
+    kept = []
+    for index, char in enumerate(value):
+        near_digit = (index > 0 and value[index - 1].isdigit()) or (
+            index + 1 < len(value) and value[index + 1].isdigit())
+        if not unicodedata.category(char).startswith('P') or near_digit:
+            kept.append(char)
+    return re.sub(r'\s+', ' ', ''.join(kept)).strip()
 
 
 def _canonical_value(field: str, value: str | int | bool) -> str | int | bool:
@@ -281,13 +294,22 @@ class GuardedLLM:
                 raise UnsafeModelOutput("Model message contained an unresolved placeholder")
             if plan == "blocked":
                 issues, questions, documents = reply_items(case)
-                required_items = case.customer_answers + issues + questions + documents
+                exact_items = case.customer_answers + issues + documents
                 if acknowledgement := change_acknowledgement(case):
-                    required_items.append(acknowledgement)
-                if any(item.casefold() not in normalised for item in required_items):
+                    exact_items.append(acknowledgement)
+                required_items = exact_items + questions
+                if (any(item.casefold() not in normalised for item in exact_items)
+                        or any(_question_format_key(item) not in _question_format_key(message)
+                               for item in questions)):
                     raise UnsafeModelOutput(
                         "Model message omitted or changed a grounded next action"
                     )
+                if re.search(
+                    r"no documents (?:are )?(?:needed|required)|"
+                    r"hold off on any further steps|won['’]t move forward with anything|"
+                    r"(?:不需要|不用)(?:任何)?(?:文件|材料)", normalised,
+                ):
+                    raise UnsafeModelOutput("Model added an unsupported preparation waiver or global pause")
                 length_budget = max(
                     420 if case.customer_language == "zh" else 1100,
                     len("\n".join(required_items)) + 180,
