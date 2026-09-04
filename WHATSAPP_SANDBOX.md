@@ -20,7 +20,39 @@ page-grounded classification/name evidence; this tests wiring, not real-model ac
 media delivery. The PDF was rendered and visually checked as readable. An initial stub omitted the
 required name evidence and was correctly held; the test then supplied the name actually present
 on the page without weakening the rule. The full local suite passes 340 tests, lint and typing.
-Continuous worker supervision and real device exchange are still required beyond the batch commands.
+Continuous worker operation is now available below; real device exchange remains unverified.
+
+## Continuous local processing
+
+With the gateway and this worker using the same `VISA_AGENT_DATABASE`, and the Twilio/DeepSeek
+environment values configured, run:
+
+```bash
+uv run python scripts/whatsapp_service.py --model deepseek-v4-flash --interval 10
+```
+
+Use `--once` for one supervised cycle. The script does not create an account, join a phone, start
+a gateway/tunnel or open a browser. Leave its terminal running; stop with Ctrl-C. Missing settings
+fail before a provider client is created. This is not an installed always-on service. Do not run
+the manual inbound/dispatch batch commands concurrently with this loop. Loop instances sharing a
+database are protected by a dedicated local lock, while the gateway remains able to enqueue.
+
+Each cycle first investigates old uncertain sends, then processes up to 20 WhatsApp queue items.
+Any unfinished item, including a failed one needing operator repair, withholds all automatic
+WhatsApp replies in this small sandbox deployment. Once intake drains, obsolete never-attempted
+drafts are retained as FAILED/withheld and at most one current reply is attempted. A final sender
+check refuses obsolete replies, pending/held intake, attachments and final-pack messages. The
+existing free-form deadline and uncertain-send semantics still apply. The loop waits at least
+five seconds between cycles; this is not a claim to satisfy every provider/account rate limit.
+
+`ready` rows remain pending for operator-reviewed final handoff. Lost-SID recovery remains manual;
+the loop cannot turn uncertainty into a safe resend. Global pause on one failed queue item,
+arrival/send race windows, operator recovery UI, permanent hosting and end-to-end secure handoff
+remain limitations. A completed cycle or provider SID is not proof of device receipt.
+
+Four local integration tests exercise real workflow/queue/outbox components with a capture Twilio
+client: intake drain/latest-only reply, failed-intake hold, uncertain-send non-repetition, and
+Email/final-pack exclusion. No actual WhatsApp service was started for these tests.
 
 ## Current preparation status
 
