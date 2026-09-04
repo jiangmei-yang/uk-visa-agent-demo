@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from datetime import date
 from pathlib import Path
-from urllib.parse import parse_qsl
+from urllib.parse import parse_qsl, quote
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, Response
@@ -179,11 +180,14 @@ def delete_case(case_id: str, request: Request) -> Response:
 
 
 @app.get("/api/cases/{case_id}/pack")
-def get_pack(case_id: str) -> FileResponse:
+def get_pack(case_id: str) -> Response:
     request_store = SQLiteStore(settings.database_path)
     try:
         case = request_store.get_case(case_id)
         held_updates = request_store.has_unreviewed_held_updates(case_id)
+        registered = request_store.connection.execute(
+            "SELECT path, sha256 FROM deliveries WHERE case_id=?", (case_id,),
+        ).fetchone()
     finally:
         request_store.close()
     if case is None or case.delivery_path is None:
@@ -203,7 +207,18 @@ def get_pack(case_id: str) -> FileResponse:
     allowed_root = settings.output_dir.resolve()
     if allowed_root not in path.parents or not path.is_file():
         raise HTTPException(status_code=404, detail="Review pack is not available")
-    return FileResponse(path, filename=path.name, media_type="application/zip")
+    if registered is None or registered["path"] != case.delivery_path:
+        raise HTTPException(status_code=409, detail="Review pack does not match its delivery record")
+    try:
+        content = path.read_bytes()
+    except OSError as error:
+        raise HTTPException(status_code=404, detail="Review pack is not available") from error
+    if hashlib.sha256(content).hexdigest() != registered["sha256"]:
+        raise HTTPException(status_code=409, detail="Review pack integrity check failed")
+    return Response(content, media_type="application/zip", headers={
+        "Content-Disposition": "attachment; filename*=UTF-8''" + quote(path.name, safe=""),
+        "Cache-Control": "no-store",
+    })
 
 
 @app.get("/health")

@@ -113,6 +113,24 @@ def test_unrelated_sender_cannot_block_a_confirmed_pack(tmp_path):
     store.close()
 
 
+@pytest.mark.parametrize("change", ["modified_bytes", "missing_registry", "different_path"])
+def test_unverified_final_archive_is_never_sent(tmp_path, change):
+    store = _demo_store(tmp_path)
+    case = store.list_cases()[0]
+    if change == "modified_bytes":
+        Path(case.delivery_path).write_bytes(b"not the confirmed archive")
+    elif change == "missing_registry":
+        with store.connection:
+            store.connection.execute("DELETE FROM deliveries WHERE case_id=?", (case.id,))
+    else:
+        with store.connection:
+            store.connection.execute("UPDATE deliveries SET path='another-pack.zip' WHERE case_id=?", (case.id,))
+    sender = FakeSender(["must-not-send"])
+    outcome = OutboxDispatcher(store, sender, allowed_message_types=("ready",)).dispatch_due(datetime.now(UTC))
+    assert outcome[0].status == "FAILED" and sender.requests == []
+    store.close()
+
+
 def test_outbox_dispatches_each_reply_once_and_attaches_ready_pack(tmp_path: Path) -> None:
     store = _demo_store(tmp_path)
     sender = FakeSender(["provider-1", "provider-2", "provider-3"])

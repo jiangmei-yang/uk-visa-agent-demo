@@ -67,6 +67,8 @@ def test_review_console_and_pack_download(tmp_path: Path) -> None:
     assert "Delivery gate" in body
     assert "Active evidence ledger" in body
     assert download.media_type == "application/zip"
+    assert bytes(download.body) == result.package_path.read_bytes()
+    assert download.headers["cache-control"] == "no-store"
 
 
 def test_guided_lab_runs_real_workflow_one_step_at_a_time(tmp_path: Path) -> None:
@@ -157,6 +159,27 @@ def test_pack_download_is_withheld_after_a_new_held_update(tmp_path: Path) -> No
         web.get_pack(case.id)
     assert error.value.status_code == 409
     assert Path(case.delivery_path).exists()  # Retain the historical artifact; do not destroy it.
+
+
+@pytest.mark.parametrize("change", ["modified_bytes", "missing_registry", "different_path"])
+def test_pack_download_rejects_unverified_archive(tmp_path: Path, change: str) -> None:
+    test_settings = Settings(database_path=tmp_path / "visa.db", output_dir=tmp_path / "output",
+        policy_path=Path("knowledge/uk_standard_visitor_2026-02-25.yaml"))
+    result = run_demo(test_settings, reset=True)
+    store = SQLiteStore(test_settings.database_path)
+    if change == "modified_bytes":
+        result.package_path.write_bytes(b"changed archive")
+    else:
+        with store.connection:
+            if change == "missing_registry":
+                store.connection.execute("DELETE FROM deliveries")
+            else:
+                store.connection.execute("UPDATE deliveries SET path='unrelated.zip'")
+    store.close()
+    web.settings = test_settings
+    with pytest.raises(HTTPException) as error:
+        web.get_pack(result.case.id)
+    assert error.value.status_code == 409
 
 
 def test_case_can_be_exported_and_exactly_confirmed_for_local_deletion(tmp_path: Path) -> None:

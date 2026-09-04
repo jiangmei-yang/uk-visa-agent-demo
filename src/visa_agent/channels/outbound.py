@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -159,8 +160,17 @@ class OutboxDispatcher:
         if str(row["message_type"]) == "ready" and str(row.get("channel")) != "whatsapp_twilio":
             if not case.delivery_path:
                 raise PermanentChannelError("Ready reply has no generated pack")
+            registered = self.store.connection.execute(
+                "SELECT path, sha256 FROM deliveries WHERE case_id=?", (case.id,),
+            ).fetchone()
+            if registered is None or registered["path"] != case.delivery_path:
+                raise PermanentChannelError("Final pack does not match the registered delivery")
             pack_path = Path(case.delivery_path)
-            attachment = (pack_path.name, pack_path.read_bytes())
+            pack_bytes = pack_path.read_bytes()
+            if hashlib.sha256(pack_bytes).hexdigest() != registered["sha256"]:
+                raise PermanentChannelError("Final pack integrity check failed; review before sending")
+            # Send these exact verified bytes, never reopen a mutable path after verification.
+            attachment = (pack_path.name, pack_bytes)
         return ReplyRequest(
             outbox_id=outbox_id,
             recipient=str(row["recipient"] or case.applicant_contact),

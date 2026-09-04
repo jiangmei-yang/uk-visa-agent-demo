@@ -74,7 +74,23 @@ not retained. Case deletion needs both a visible browser confirmation and the ex
 request header; it deletes database rows, pending events for the same thread, and only that case's
 derived directory and ZIP inside the configured output root.
 
-## Replay and audit
+## Final archive integrity
+
+Before attaching a final ZIP, the sender requires a matching delivery-registry path and verifies
+the SHA-256 of the exact bytes passed to the provider. It does not reopen the path after checking.
+The case-pack download endpoint uses the same registry/hash requirement, returns the verified
+bytes directly with `Cache-Control: no-store`, and rejects mismatches with HTTP 409. Historical
+files are not deleted or regenerated just to make a failing check pass.
+
+On 2026-09-04, three sender regressions initially returned SENT for modified file contents,
+a missing delivery registry row and a different registered path (fake providers only). Those
+tests and the corresponding three download checks now pass. Valid download tests also compare
+the returned bytes to the generated archive. These checks assume a trusted local database;
+they do not authenticate applicant documents, prove the initial pack is correct, protect against
+simultaneous malicious modification of both registry and file, or recall a previously sent ZIP.
+Downloads now hold the ZIP bytes in memory; large-package resource testing remains separate.
+
+## Replay evidence
 
 The assessment event log is a set of ordered `.eml` fixtures. `make demo` processes it, records
 state/outbox/delivery counts, replays it in full, and fails if counts change. The audit directory
