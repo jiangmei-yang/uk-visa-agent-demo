@@ -11,6 +11,7 @@ from visa_agent.llm.offline import OfflineFixtureLLM
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.conversation import (
     clear_natural_confirmation,
+    document_label,
     next_fact_questions,
     received_context,
     reply_items,
@@ -222,6 +223,27 @@ def test_english_accommodation_question_does_not_expose_field_name():
     text = deterministic_fallback_message(case, "blocked")
     assert "Where are you planning to stay in the UK?" in text
     assert "your uk accommodation" not in text
+
+
+@pytest.mark.parametrize("language", ["zh", "en"])
+@pytest.mark.parametrize("occupation,expected", [
+    ("student", ("在读证明", "student status")),
+    ("employed", ("在职证明", "your employment")),
+    ("self_employed", ("自雇经营", "your self-employment")),
+])
+def test_checklist_labels_follow_known_circumstances_without_changing_requirements(language, occupation, expected):
+    case = example()
+    case.customer_language = language
+    case.profile.occupation_status = occupation
+    case.profile.funding_source = "employer_or_school"
+    case.profile.visit_purpose = "conference"
+    case.requirements = build_requirements(case, load_policy(Path("knowledge/uk_standard_visitor_2026-02-25.yaml")))
+    before = case.model_dump_json()
+    labels = {item.id: document_label(case, item) for item in case.requirements}
+    assert expected[0 if language == "zh" else 1] in labels['status_evidence']
+    assert ("主办方" if language == "zh" else "organiser") in labels['purpose_evidence']
+    assert ("承担哪些费用" if language == "zh" else "which costs it covers") in labels['funding_evidence']
+    assert case.model_dump_json() == before
 
 
 @pytest.mark.parametrize("body", ["我还没核对其他资料，晚点回复。",

@@ -187,3 +187,18 @@ retaining the missing questions; it does not alter confirmation or suppress corr
 Three local regressions cover these adjustments. All 360 tests, lint and typing pass. The original
 provider report is retained unchanged and predates these wording fixes; no second provider run or
 independent naturalness pass is claimed.
+
+## Material categories explained for the applicant
+
+On 2026-09-04 the official [supporting-document guide](https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk)
+was checked directly, particularly sections 2, 3 and 6. It describes circumstance-dependent evidence
+and specifically addresses organiser invitations for conferences; its examples must not be presented
+as one mandatory checklist for everybody. This review does not extend the policy's freshness window.
+
+The reply renderer now labels the existing status requirement for the known student/employed/
+self-employed branch, identifies the conference organiser's invitation, and distinguishes self-funded
+evidence from an organisation's explanation of costs covered. An explicitly requested list states
+that it is case-specific preparation, not a universal mandatory checklist. The underlying evidence
+alternatives, requirement applicability and release gates are unchanged. Six bilingual regressions
+verify the tailored labels and unchanged case state; all 366 local tests, lint and typing pass.
+This is a source check plus local wording evidence, not a new provider or applicant validation.

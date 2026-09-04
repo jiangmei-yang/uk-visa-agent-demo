@@ -6,7 +6,7 @@ import hashlib
 import json
 import re
 
-from visa_agent.domain.models import Case, DocumentStatus
+from visa_agent.domain.models import Case, DocumentStatus, Requirement
 from visa_agent.domain.rules import required_profile_facts
 
 
@@ -240,6 +240,31 @@ DOCUMENT_LABELS_ZH = {
     "sponsor_evidence": "资助人的相关证明",
     "certified_translation": "非英文或威尔士文材料的认证翻译",
 }
+
+
+def document_label(case: Case, item: Requirement) -> str:
+    """Explain an existing requirement, without changing what evidence is accepted."""
+    zh = case.customer_language == "zh"
+    if item.id == "status_evidence":
+        labels = {
+            "student": ("在读证明", "Evidence of your student status"),
+            "employed": ("在职证明", "Evidence of your employment"),
+            "self_employed": ("自雇经营情况的证明", "Evidence of your self-employment"),
+        }
+        if case.profile.occupation_status in labels:
+            return labels[case.profile.occupation_status][0 if zh else 1]
+    if item.id == "purpose_evidence" and case.profile.visit_purpose == "conference":
+        return "会议主办方的邀请函" if zh else "Invitation from the conference organiser"
+    if item.id == "funding_evidence":
+        if case.profile.funding_source == "employer_or_school":
+            return ("资助单位的证明，说明承担哪些费用" if zh
+                    else "Evidence from the funding organisation explaining which costs it covers")
+        if case.profile.funding_source == "self":
+            return ("可用资金及来源证明，例如银行流水" if zh
+                    else "Evidence of available funds and their source, such as bank statements")
+    return DOCUMENT_LABELS_ZH.get(item.id, item.title) if zh else item.title
+
+
 QUESTION_TEXT_ZH = {
     "application_country": "你准备在哪个国家或地区递交申请？",
     "nationality_country": "你持哪个国家的护照？",
@@ -340,7 +365,7 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
     requested_list = document_list_requested(case)
     if not questions or case.documents or requested_list:
         documents = [
-            DOCUMENT_LABELS_ZH.get(item.id, item.title) if zh else item.title
+            document_label(case, item)
             for item in case.requirements
             if item.applicable
             and item.blocker
@@ -476,9 +501,10 @@ def blocked_customer_message(case: Case) -> str:
         )
         if document_list_requested(case):
             sections.append(
-                "这是按目前信息列出的待补材料；如果行程或资助情况有变化，我会再调整。"
-                if zh else "These are the outstanding documents based on what you've told me so far. "
-                "I'll adjust the list if your travel or funding arrangements change."
+                "这是按你的情况列出的待补材料，不是所有申请人通用的强制清单。"
+                "如果行程或资助情况有变化，我会再调整。"
+                if zh else "This is a preparation list for your circumstances, not a universal "
+                "mandatory checklist. I'll adjust it if your travel or funding arrangements change."
             )
     if questions:
         # Keep the grounded questions verbatim, but don't turn a short conversation
