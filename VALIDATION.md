@@ -17,7 +17,9 @@ explicitly recorded here.
 
 Updated 2026-09-04. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **2,838 passing tests**; see the latest [consultant-usefulness repair](docs/CONSULTANT_REPLY_DESIGN.md),
+The local suite has **3,059 passing tests**; see the latest [independent usefulness review and repairs](docs/ADVISER_USEFULNESS_REVIEW_2026-09-04.md),
+[processing-permission boundary](docs/PROCESSING_CONSENT.md),
+[earlier consultant-usefulness repair](docs/CONSULTANT_REPLY_DESIGN.md),
 [remaining acceptance audit](docs/END_TO_END_ACCEPTANCE_AUDIT.md),
 [adviser-pacing repair](docs/ADVISER_PACING.md),
 [cold-start conversation work](docs/COLD_START_CONVERSATIONS.md),
@@ -25,6 +27,48 @@ The local suite has **2,838 passing tests**; see the latest [consultant-usefulne
 [credential recovery](GMAIL_RECOVERY.md)
 and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
+
+Latest local repair: **3,059 passed**, Ruff and strict Mypy passed (66 source files).
+The full run retains one FastAPI/Starlette test-client deprecation warning.
+No paid model calls or real mailbox test sends were made in this repair. Five
+[captured reviewed replies](eval_output/adviser_usefulness_repair_2026-09-04.json)
+show specific document instructions, exploratory consultation without a personal
+questionnaire, and foreign self-employment distinguished from work in the UK.
+Original seven-item review failures remain visible; deferred FAQ continuation,
+evidence that cannot be obtained and date-undecided next-step usefulness are not
+closed by these fixes. Source documentation was rechecked on GOV.UK on 2026-09-04;
+this does not add live web retrieval to the product.
+
+Applicant-processing permission now uses a versioned canonical scope/notice,
+actually SENT notice reference, explicit applicant grant and independent withdrawal
+epoch. Gmail preview does not materialize attachments or call models before a grant;
+all discovered controls precede normal work. Recovery uses original message IDs.
+Model/document/review/send/pack/download paths check current authority. Generic
+inbound defer now retains its original queue payload instead of clearing it as
+processed. These are captured-transport tests, not a real applicant consent trial
+or legal-compliance certification; WhatsApp pre-download permission and mixed
+consent-plus-business mails remain limited as documented.
+
+Retained local failures during this change: first full suite **2 failed / 2,936
+passed** because previous live-reader fixtures lacked the now-required consent;
+these now obtain actual captured-SENT grants. Second full suite **3 failed / 3,033
+passed** exposed the generic defer/replay data-loss defect (two tests written before
+its implementation) and an old unsupported-topic expectation for now-supported
+employment-letter instructions. That expectation was updated without weakening
+the independent bank-question isolation assertion. Earlier constructor-count
+expectations were updated because idle/reconciliation cycles now initialize no
+model client. None of these runs is represented as a live-provider result.
+
+The rebuilt image also completed its synthetic workflow under `--network none`:
+1 case, 3 processed events, 3 outbox entries, 1 ZIP; deterministic fixture ZIP hash
+`7e27fe057a2643dd892bd41e94ed47245a225ff716bb99a7a4802bb0447b641f`.
+
+The supervised Gmail worker was reloaded as PID 95365 and completed an idle cycle
+at 15:53:02 UTC; liveness was checked separately. Its configuration and existing
+profile/documents/evidence/outbox projection remained unchanged (one case, nine
+SENT rows). Consent migrated to **unknown**, not granted; no old mail was replayed
+and no notice was fabricated at restart. The persistent Docker UI is healthy, with
+the same existing ZIP bytes and named volume. See [rollout observations](eval_output/adviser_processing_rollout_2026-09-04.json).
 
 Latest consultant experiment: three seven-case fictional DeepSeek runs exercised the actual
 reviewed automatic Gmail sender with captured transport, not real mailbox sends. Original
@@ -43,7 +87,9 @@ needs the current unchanged profile summary actually SENT; document rereading ca
 restore confirmation by shortcut. Bounded local PDF recovery, retained Gmail metadata-404
 observations and signed WhatsApp account/recipient binding are tested, not new live-channel
 acceptance. Ordinary-document processing consent, broader cross-source evidence and
-independent usability remain open in the [audit](docs/END_TO_END_ACCEPTANCE_AUDIT.md).
+independent usability remain open in the [audit](docs/END_TO_END_ACCEPTANCE_AUDIT.md);
+the earlier statement about absent processing-consent enforcement is superseded
+by the implementation and bounded evidence above, not by a claim of real consent.
 The supervised Gmail worker and persistent Docker UI loaded the changes with existing
 case/outbox/ZIP projections unchanged; see [the rollout record](eval_output/consultant_value_rollout_2026-09-04.json).
 Normal sync polling revisions advanced; candidate dispositions, scope and recovery actions

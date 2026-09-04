@@ -145,7 +145,11 @@ def test_obtaining_an_independent_document_does_not_trigger_bank_statement_colle
         CustomerQuestion(topic="bank_period", source_excerpt=bank_request, confidence=0.99),
         CustomerQuestion(topic="unsupported", source_excerpt=other_request, confidence=0.99),
     ]
-    assert validated_customer_questions(body, questions) == questions
+    # Employment-letter instructions now have their own reviewed answer; that
+    # must still not leak the other question's obtain verb into the bank answer.
+    assert validated_customer_questions(body, questions) == [
+        questions[0], questions[1].model_copy(update={"topic": "document_checklist"}),
+    ]
     answers = grounded_customer_answers(body, language, TODAY, semantic_questions=questions)
     bank = next(answer for answer in answers if re.search(r"账户持有人|account holder", answer, re.I))
     assert_no_acceptance_sufficiency_or_approval_promise(bank)

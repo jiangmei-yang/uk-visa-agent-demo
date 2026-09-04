@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-04",
+  "scope": "local supervised Gmail worker and persistent Docker UI reload, not a new recipient trial",
+  "tests": {"passed": 3059, "failed": 0, "warnings": 1, "duration_seconds": 46.29, "ruff": "passed", "mypy_source_files": 66},
+  "paid_model_calls": 0,
+  "manual_gmail_sends": 0,
+  "gmail": {
+    "old_pid": 91885,
+    "new_pid": 95365,
+    "idle_at_utc": "2026-09-04T15:53:02.004264+00:00",
+    "plist_unchanged_sha256": "a82564de8ab818088e5afb363de951b1a7ad6a93459e21ae4a645aa487587d7e",
+    "cases": 1,
+    "sent_outbox": 9,
+    "deliveries": 0,
+    "profile_documents_evidence_and_outbox_before_after_sha256": "939aac258e7e217b002f2eea3857727698bfbc24047c4fc016a68d718af5cac0",
+    "processing_state": {"unknown": 1, "granted": 0, "control_events": 0, "deferred_events": 0},
+    "migration": "Processing scope configured; existing case permission remains unknown, no grant or notice fabricated. Summary confirmation authority is invalidated; business facts/evidence and send history preserved."
+  },
+  "docker": {
+    "container": "b599a6e62dea9f8f6e15456f891cc99368c8f5c1d92e6116d80bfbb374f076c8",
+    "image": "sha256:8d905fc7dda53e83948c8f6444e12403ad25096d3e0480f23c1364b87c25e045",
+    "health": "healthy",
+    "volume": "uk-visa-agent-demo_review-runtime",
+    "existing_pack_sha256": "8bc0681a837437d30675da7650cd9c61e1ecc69532ea969c77ceb383c458f724",
+    "network_none_fixture": {"cases": 1, "processed_events": 3, "outbox": 3, "deliveries": 1, "zip_sha256": "7e27fe057a2643dd892bd41e94ed47245a225ff716bb99a7a4802bb0447b641f"},
+    "warning": "Compose reported missing buildx; classic builder completed successfully. No volume reset."
+  },
+  "not_proven": ["human-like general conversation", "real applicant processing consent", "mixed consent and business mail", "unanswered FAQ continuation", "unavailable-document alternatives", "WhatsApp pre-download consent or live device acceptance"]
+}

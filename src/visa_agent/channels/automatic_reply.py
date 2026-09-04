@@ -9,6 +9,7 @@ from visa_agent.channels.outbound import PermanentChannelError, ReplyRequest
 from visa_agent.domain.models import Case, CaseStatus, InboundEvent
 from visa_agent.llm.guarded import GuardedLLM, deterministic_fallback_message
 from visa_agent.llm.ports import CasePatch
+from visa_agent.privacy.consent import CONTROL_MESSAGE_TYPES, ConsentLedger
 from visa_agent.storage.sqlite import SQLiteStore
 
 
@@ -45,6 +46,7 @@ class AutomaticGmailReplySender(GmailReplySender):
                 event = InboundEvent.model_validate_json(row['payload_json'])
                 addresses = [a.casefold() for _, a in getaddresses([event.sender])]
                 if (case is None or case.primary_channel != 'gmail' or event.channel != 'gmail'
+                        or not ConsentLedger(self.store).allowed(case)
                         or addresses != [self.allowed_sender.casefold()]
                         or case.status not in {CaseStatus.READY_FOR_HUMAN_REVIEW, CaseStatus.DELIVERED_AFTER_CONFIRMATION}
                         or (case.last_inbound_received_at and event.received_at < case.last_inbound_received_at)
@@ -114,7 +116,7 @@ class AutomaticGmailReplySender(GmailReplySender):
 
     def send(self, request: ReplyRequest) -> str:
         row = self.store.connection.execute(
-            "SELECT case_id, event_id, message_type, preparation_control_epoch FROM outbox WHERE id = ?", (request.outbox_id,)
+            "SELECT * FROM outbox WHERE id = ?", (request.outbox_id,)
         ).fetchone()
         recipients = [address.casefold() for _, address in getaddresses([request.recipient])]
         if row is None or recipients != [self.allowed_sender.casefold()]:
@@ -128,14 +130,25 @@ class AutomaticGmailReplySender(GmailReplySender):
             raise PermanentChannelError("Obsolete reply withheld in favour of current case state")
         case = self.store.get_case(row["case_id"])
         if case is None or row["message_type"] not in {
-            "blocked", "awaiting_profile_confirmation", "awaiting_confirmation", "held_update_received"
+            "blocked", "awaiting_profile_confirmation", "awaiting_confirmation", "held_update_received",
+            *CONTROL_MESSAGE_TYPES,
         }:
             raise PermanentChannelError("Unsupported automatic reply plan")
+        consent = ConsentLedger(self.store)
+        is_control = row["message_type"] in CONTROL_MESSAGE_TYPES
+        if is_control:
+            if not consent.validate_control(dict(row)):
+                raise PermanentChannelError("Processing notice or receipt is no longer current")
+        else:
+            consent.require(case)
+            if consent.required(case) and row["processing_consent_epoch"] != consent.epoch(case.id):
+                raise PermanentChannelError("Reply predates the current processing consent")
         if row["preparation_control_epoch"] != case.preparation_control_epoch:
             raise PermanentChannelError("Reply predates a customer preparation pause or restart")
-        if case.preparation_paused and row["message_type"] not in {"blocked", "held_update_received"}:
+        if case.preparation_paused and row["message_type"] not in {"blocked", "held_update_received", *CONTROL_MESSAGE_TYPES}:
             raise PermanentChannelError("Preparation is paused; confirmation requests are withheld")
-        body = (self._held_receipt(case.id, row['event_id']) if row['message_type'] == 'held_update_received'
+        body = (row["payload"] if is_control else
+                self._held_receipt(case.id, row['event_id']) if row['message_type'] == 'held_update_received'
                 else deterministic_fallback_message(case, row["message_type"]))
         render_mode = 'reviewed'
         render_error = None

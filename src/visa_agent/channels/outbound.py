@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Protocol
 
 from visa_agent.domain.models import CaseStatus, WorkflowStage
+from visa_agent.privacy.consent import (
+    CONTROL_MESSAGE_TYPES,
+    ConsentLedger,
+    ProcessingConsentRequired,
+)
 from visa_agent.storage.sqlite import SQLiteStore
 
 
@@ -199,10 +204,23 @@ class OutboxDispatcher:
         case = self.store.get_case(str(row["case_id"]))
         if case is None:
             raise PermanentChannelError("Outbox case no longer exists")
+        consent = ConsentLedger(self.store)
+        is_control = str(row["message_type"]) in CONTROL_MESSAGE_TYPES
+        if is_control:
+            if not consent.validate_control(row):
+                raise ReadyReplyAuthorityError("Processing control no longer matches its recorded notice or decision")
+        else:
+            try:
+                consent.require(case)
+            except ProcessingConsentRequired as error:
+                raise ReadyReplyAuthorityError(str(error)) from error
+            if (consent.required(case)
+                    and int(str(row.get("processing_consent_epoch", 0))) != consent.epoch(case.id)):
+                raise ReadyReplyAuthorityError("Reply predates the current processing consent")
         if int(str(row.get("preparation_control_epoch", 0))) != case.preparation_control_epoch:
             raise PermanentChannelError("Outbox reply belongs to a superseded preparation control epoch")
         if case.preparation_paused and str(row["message_type"]) not in {
-            "blocked", "held_update_received",
+            "blocked", "held_update_received", *CONTROL_MESSAGE_TYPES,
         }:
             raise PermanentChannelError("Preparation is paused; only a safe receipt or FAQ reply may be sent")
         if int(str(row.get("case_revision", 1))) != case.delivery_revision:

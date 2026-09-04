@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from visa_agent.channels.email_fixture import parse_email_bytes
@@ -28,6 +29,19 @@ class EmailIngestionBoundary:
         self.store = store
         self.document_dir = document_dir
 
+    def preview(
+        self, raw: bytes, *, provider_message_id: str, provider_thread_id: str,
+        channel: str = "email", received_at: datetime | None = None,
+    ) -> EmailIngestionResult:
+        """In-memory control preview: no attachment decode/write or failure-body logging."""
+        try:
+            event = parse_email_bytes(raw, self.document_dir,
+                external_thread_id=provider_thread_id, provider_message_id=provider_message_id,
+                channel=channel, materialize_attachments=False, received_at_override=received_at)
+        except ValueError as error:
+            return EmailIngestionResult(event=None, failure_code=_failure_code(error))
+        return EmailIngestionResult(event=event)
+
     def ingest(
         self,
         raw: bytes,
@@ -35,6 +49,7 @@ class EmailIngestionBoundary:
         provider_message_id: str,
         provider_thread_id: str,
         channel: str = "email",
+        received_at: datetime | None = None,
     ) -> EmailIngestionResult:
         try:
             event = parse_email_bytes(
@@ -43,6 +58,7 @@ class EmailIngestionBoundary:
                 external_thread_id=provider_thread_id,
                 provider_message_id=provider_message_id,
                 channel=channel,
+                received_at_override=received_at,
             )
         except ValueError as error:
             code = _failure_code(error)

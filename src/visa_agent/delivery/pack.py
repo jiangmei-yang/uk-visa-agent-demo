@@ -29,6 +29,7 @@ from visa_agent.domain.models import (
 )
 from visa_agent.domain.policy import Policy
 from visa_agent.domain.rules import evaluate_gate, transition
+from visa_agent.privacy.consent import ConsentLedger
 from visa_agent.storage.sqlite import SQLiteStore
 
 FIXED_ZIP_TIME = (2026, 2, 25, 0, 0, 0)
@@ -303,6 +304,8 @@ def generate_pack(
 
 def _preparation_control_rejection(case: Case, store: SQLiteStore) -> str | None:
     current = store.get_case(case.id)
+    if not ConsentLedger(store).allowed(current or case):
+        return "Processing consent is required; pack generation and access are withheld."
     if case.preparation_paused or (current is not None and current.preparation_paused):
         return "Preparation is paused; pack generation and access are withheld."
     if current is not None and case.preparation_control_epoch != current.preparation_control_epoch:

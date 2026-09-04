@@ -201,7 +201,7 @@ def _configure(directory: Path, fault: str | None = None, followup: str | None =
 
 def _run(directory: Path, fault: str | None = None, followup: str | None = None):
     runner, args, observations, _ = _configure(directory, fault, followup)
-    runner.run_once(args, argparse.ArgumentParser())
+    runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     return observations
 
 
@@ -229,7 +229,7 @@ def test_pack_failure_keeps_candidate_pending_and_recovery_does_not_repeat_workf
     case_id = _seed_before_confirmation(tmp_path)
     runner, args, observations, _ = _configure(tmp_path, fault)
     with pytest.raises((RuntimeError, OSError)):
-        runner.run_once(args, argparse.ArgumentParser())
+        runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     before = _state(tmp_path)
     assert before["case"].id == case_id and before["case"].final_summary_confirmed
     assert before["case"].delivery_path is None
@@ -291,7 +291,7 @@ def test_pack_failure_does_not_trap_later_customer_update_behind_old_ready_event
     _seed_before_confirmation(tmp_path)
     runner, args, observations, _ = _configure(tmp_path, fault, followup)
     with pytest.raises(runner.PackPreparationError) as raised:
-        runner.run_once(args, argparse.ArgumentParser())
+        runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     assert PRIVATE_ERROR not in str(raised.value)
     assert raised.value.__cause__ is None and raised.value.__context__ is None
     before = _state(tmp_path)
@@ -323,7 +323,7 @@ def test_workflow_failure_is_not_swallowed_as_a_pack_failure(tmp_path):
     _seed_before_confirmation(tmp_path)
     runner, args, observations, _ = _configure(tmp_path, "workflow_failure", "pause")
     with pytest.raises(OSError, match=PRIVATE_ERROR):
-        runner.run_once(args, argparse.ArgumentParser())
+        runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     state = _state(tmp_path)
     assert observations["raw_reads"] == [FINAL_ID]
     assert observations["pack_calls"] == observations["dispatches"] == observations["sends"] == []
@@ -347,7 +347,7 @@ def test_damaged_registered_archive_is_not_rebuilt_but_later_correction_is_retai
     archive.write_bytes(b"synthetic corrupted archive; must not be regenerated")
     runner, args, observations, _ = _configure(tmp_path, followup="correction")
     with pytest.raises(runner.PackPreparationError):
-        runner.run_once(args, argparse.ArgumentParser())
+        runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     after = _state(tmp_path)
     assert archive.read_bytes() == b"synthetic corrupted archive; must not be regenerated"
     assert after["pending"] == [FINAL_ID]
@@ -403,7 +403,7 @@ def test_one_hundred_committed_pack_failures_do_not_starve_new_customer_update(t
     finally:
         store.close()
     runner, args, observations, _ = _configure(tmp_path, "refused", followup, committed_backlog=99)
-    runner.run_once(args, argparse.ArgumentParser())
+    runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     after = _state(tmp_path)
     assert observations["raw_reads"][0] == FOLLOWUP_ID
     assert len(observations["raw_reads"]) == 100
@@ -417,7 +417,7 @@ def test_one_hundred_committed_pack_failures_do_not_starve_new_customer_update(t
     else:
         assert after["case"].profile.estimated_trip_cost_gbp == 2600
     runner, args, recovered, _ = _configure(tmp_path, "refused", followup, committed_backlog=99)
-    runner.run_once(args, argparse.ArgumentParser())
+    runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     assert len(recovered["raw_reads"]) == 1 and len(recovered["sends"]) == 1
     assert recovered["pack_calls"] == []
     assert _state(tmp_path)["drained"]

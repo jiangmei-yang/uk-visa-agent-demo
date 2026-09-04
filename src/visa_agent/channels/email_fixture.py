@@ -49,6 +49,8 @@ def parse_email_bytes(
     external_thread_id: str | None = None,
     provider_message_id: str | None = None,
     channel: str = "email_fixture",
+    materialize_attachments: bool = True,
+    received_at_override: datetime | None = None,
 ) -> InboundEvent:
     if len(raw) > MAX_MESSAGE_BYTES:
         raise ValueError(f"Email exceeds {MAX_MESSAGE_BYTES} bytes")
@@ -64,15 +66,17 @@ def parse_email_bytes(
         raise ValueError("Email has no sender")
 
     parsed_date = message.get("Date")
-    received_at = datetime.now(UTC)
-    if parsed_date is not None:
+    received_at = received_at_override or datetime.now(UTC)
+    if received_at_override is None and parsed_date is not None:
         parsed_datetime = getattr(parsed_date, "datetime", None)
         if parsed_datetime is None:
             raise ValueError("Email Date header is invalid")
         received_at = datetime.fromtimestamp(parsed_datetime.timestamp(), UTC)
 
     attachment_paths: list[str] = []
-    mime_attachments = list(message.iter_attachments())
+    # The consent preview must not decode attachments, inspect their filenames,
+    # resolve fixture paths, or create any local material copy.
+    mime_attachments = list(message.iter_attachments()) if materialize_attachments else []
     if mime_attachments:
         if len(mime_attachments) > MAX_ATTACHMENT_COUNT:
             raise ValueError(f"Email has more than {MAX_ATTACHMENT_COUNT} attachments")
@@ -88,7 +92,7 @@ def parse_email_bytes(
                     f"Email attachments exceed {MAX_TOTAL_ATTACHMENT_BYTES} total bytes"
                 )
             attachment_paths.append(str(save_pdf_attachment(document_dir, filename, content)))
-    else:
+    elif materialize_attachments:
         attachment_names = [
             name.strip()
             for name in str(message.get("X-Demo-Attachments", "")).split(",")

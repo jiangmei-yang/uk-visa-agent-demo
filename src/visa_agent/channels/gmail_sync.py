@@ -43,6 +43,9 @@ class GmailSyncJournal:
                 code TEXT NOT NULL, observations INTEGER NOT NULL DEFAULT 1,
                 first_seen TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 last_seen TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, resolved_at TEXT);
+            CREATE TABLE IF NOT EXISTS candidate_receipts (id TEXT PRIMARY KEY,
+                received_ms INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS candidate_threads (id TEXT PRIMARY KEY, thread_id TEXT NOT NULL);
         """)
         with self.connection:
             self.connection.execute("INSERT OR IGNORE INTO binding VALUES (1, ?)", (scope,))
@@ -140,6 +143,48 @@ class GmailSyncJournal:
         return [row[0] for row in self.connection.execute(
             "SELECT id FROM candidates WHERE status='pending' ORDER BY rowid")]
 
+    def record_receipt(self, identifier: str, received_ms: int) -> None:
+        """Provider receipt time, never the sender-controlled MIME Date header."""
+        with self.connection:
+            self.connection.execute("INSERT INTO candidate_receipts VALUES (?,?) "
+                "ON CONFLICT(id) DO UPDATE SET received_ms=excluded.received_ms", (identifier, received_ms))
+
+    def receipt_ms(self, identifier: str) -> int:
+        row = self.connection.execute("SELECT received_ms FROM candidate_receipts WHERE id=?",
+                                      (identifier,)).fetchone()
+        if row is None:
+            raise ValueError("Gmail candidate lacks its verified provider receipt")
+        return int(row[0])
+
+    def record_thread(self, identifier: str, thread_id: str) -> None:
+        with self.connection:
+            existing = self.connection.execute("SELECT thread_id FROM candidate_threads WHERE id=?",
+                                               (identifier,)).fetchone()
+            if existing is not None and existing[0] != thread_id:
+                raise ValueError("Gmail candidate provider thread changed")
+            self.connection.execute("INSERT OR IGNORE INTO candidate_threads VALUES (?,?)", (identifier, thread_id))
+
+    def thread_id(self, identifier: str) -> str:
+        row = self.connection.execute("SELECT thread_id FROM candidate_threads WHERE id=?", (identifier,)).fetchone()
+        if row is None:
+            raise ValueError("Gmail candidate lacks its verified provider thread")
+        return str(row[0])
+
+    def consent_scanned_ids(self) -> list[str]:
+        return [row[0] for row in self.connection.execute(
+            "SELECT c.id FROM candidates c JOIN candidate_receipts r ON r.id=c.id "
+            "WHERE c.status='consent_scanned' ORDER BY r.received_ms,c.id")]
+
+    def resume_awaiting_consent(self, identifiers: list[str]) -> None:
+        """Revisit original provider IDs after a current grant, never synthesize mail."""
+        with self.connection:
+            self.connection.executemany("UPDATE candidates SET status='pending',reason=NULL "
+                "WHERE id=? AND status='awaiting_consent'", [(value,) for value in identifiers])
+
+    def consent_scan_drained(self) -> bool:
+        state = self.checkpoint()
+        return state is not None and state.phase == "ready" and not self.pending_ids()
+
     def record_metadata_unavailable(self, identifier: str) -> None:
         """Retain a redacted observation, not an acknowledgement or disposition."""
         with self.connection:
@@ -160,18 +205,19 @@ class GmailSyncJournal:
                 for row in self.connection.execute("""SELECT id,code,observations,first_seen,last_seen
                     FROM candidate_metadata_errors WHERE resolved_at IS NULL ORDER BY first_seen,id""")]
 
-    def acknowledge(self, identifier: str, outcome: Literal["processed", "ignored", "rejected"],
+    def acknowledge(self, identifier: str, outcome: Literal[
+        "processed", "ignored", "rejected", "awaiting_consent", "consent_scanned", "consent_control"],
                     reason: str | None = None) -> None:
-        if outcome not in {"processed", "ignored", "rejected"}:
+        if outcome not in {"processed", "ignored", "rejected", "awaiting_consent", "consent_scanned", "consent_control"}:
             raise ValueError("Invalid candidate outcome")
-        if outcome != "processed" and not reason:
+        if outcome not in {"processed", "consent_scanned"} and not reason:
             raise ValueError("Ignored/rejected candidates require an auditable reason")
         with self.connection:
             row = self.connection.execute("SELECT status, reason FROM candidates WHERE id=?",
                                           (identifier,)).fetchone()
             if row is None:
                 raise ValueError("Unknown Gmail candidate")
-            if row[0] != "pending":
+            if row[0] not in {"pending", "consent_scanned"}:
                 if tuple(row) == (outcome, reason):
                     return
                 raise ValueError("Candidate already acknowledged with another outcome")
@@ -179,5 +225,4 @@ class GmailSyncJournal:
                                     (outcome, reason, identifier))
 
     def discovery_drained(self) -> bool:
-        state = self.checkpoint()
-        return state is not None and state.phase == "ready" and not self.pending_ids()
+        return self.consent_scan_drained() and not self.consent_scanned_ids()

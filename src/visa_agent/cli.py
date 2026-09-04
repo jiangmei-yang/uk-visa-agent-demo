@@ -127,6 +127,11 @@ def main() -> None:
 
         store = SQLiteStore(settings.database_path)
         try:
+            from visa_agent.privacy.consent import ConsentLedger, ProcessingScope
+
+            # Live worker configuration is an execution requirement, never an
+            # applicant grant. Existing cases remain unknown until they opt in.
+            ConsentLedger(store).configure(ProcessingScope(provider=args.provider, model=args.model))
             workflow = WorkflowService(
                 store,
                 load_policy(settings.policy_path),

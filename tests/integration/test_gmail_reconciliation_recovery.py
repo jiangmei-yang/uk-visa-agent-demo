@@ -415,7 +415,7 @@ def test_actual_runner_stops_before_intake_and_recovers_sent_evidence_without_re
     service.failure = (_refresh_error(monkeypatch) if failure_kind == "sdk_refresh"
                        else _http_error(403, "insufficientPermissions"))
     with pytest.raises(ReconciliationAccessError, match="restore") as raised:
-        runner.run_once(args, argparse.ArgumentParser())
+        runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     assert raised.value.__cause__ is None and raised.value.__context__ is None
     assert PRIVATE_DETAIL not in "".join(traceback.format_exception(raised.value))
     captured = capsys.readouterr()
@@ -433,8 +433,8 @@ def test_actual_runner_stops_before_intake_and_recovers_sent_evidence_without_re
 
     service.failure = None
     service.list_results = [{"messages": [{"id": "accepted-before-auth-failure"}]}]
-    runner.run_once(args, argparse.ArgumentParser())
-    runner.run_once(args, argparse.ArgumentParser())
+    runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
+    runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     store = SQLiteStore(tmp_path / "sandbox.db")
     try:
         row = store.list_outbox()[0]
@@ -442,7 +442,8 @@ def test_actual_runner_stops_before_intake_and_recovers_sent_evidence_without_re
         assert row["attempt_count"] == original_row["attempt_count"] == 1
         assert row["payload"] == original_row["payload"]
         assert store.get_case(original_row["case_id"]).model_dump_json() == original_case
-        assert len(model_calls) == 2 and service.intake_calls == 1 and service.send_calls == 0
+        # Reconciliation/idle cycles need no extraction client or model key.
+        assert model_calls == [] and service.intake_calls == 1 and service.send_calls == 0
     finally:
         store.close()
     captured = capsys.readouterr()
@@ -490,7 +491,7 @@ def test_actual_watch_heartbeat_reports_access_error_and_retries_at_original_int
     captured = capsys.readouterr()
     assert "Worker iteration failed: ReconciliationAccessError" in captured.out
     assert PRIVATE_DETAIL not in captured.out + captured.err
-    assert len(model_calls) == 1 and service.send_calls == 0
+    assert model_calls == [] and service.send_calls == 0
     store = SQLiteStore(tmp_path / "sandbox.db")
     try:
         row = store.list_outbox()[0]

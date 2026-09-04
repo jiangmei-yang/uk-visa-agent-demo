@@ -1,5 +1,21 @@
 # Controlled automatic Gmail service
 
+Current code adds a [versioned applicant processing boundary](docs/PROCESSING_CONSENT.md).
+`prepare` and `serve` inspect controls before materializing attachments or invoking
+the model; a grant requires an actually SENT current notice and its public reference.
+Existing cases are not silently granted permission. Pure permission mail is separate
+from business facts/materials. Gmail raw MIME still enters memory before that decision.
+This is not a claim of legal compliance, mixed-mail usability or WhatsApp pre-download
+consent. See the dated validation/rollout record for what is deployed; historical PIDs
+below are not current liveness assertions.
+
+Specific questions about obtaining or preparing enrolment/employment letters,
+self-employment records and invitations now have reviewed operational answers,
+with sources and no automatic full checklist. An exploratory “understand the process
+first” request does not start an identity questionnaire. The default remains reviewed
+composition, not a free-writing consultant; [remaining usefulness failures](docs/ADVISER_USEFULNESS_REVIEW_2026-09-04.md)
+are retained rather than converted into a universal naturalness score.
+
 Latest recovery rollout (2026-09-04): atomic token persistence, explicit mailbox-checked
 reauthorization and visible sent-evidence access recovery are loaded by PID 77184. A completed
 idle cycle was observed at 13:17:06 UTC and process liveness verified separately. The first

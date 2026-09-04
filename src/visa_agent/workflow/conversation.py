@@ -9,6 +9,7 @@ from datetime import date
 
 from visa_agent.domain.models import Case, DocumentStatus, Requirement
 from visa_agent.domain.rules import profile_fact_complete, required_profile_facts
+from visa_agent.workflow.document_preparation import reviewed_document_preparation
 from visa_agent.workflow.document_purpose import is_document_purpose_question
 from visa_agent.workflow.funding_wording import funding_label, funding_wording
 
@@ -219,6 +220,23 @@ def customer_requests_next_step(body: str) -> bool:
         ):
             return True
     return False
+
+
+def consultation_only_requested(body: str) -> bool:
+    """An information-first request is not an invitation to start a personal form.
+
+    This only suppresses this reply's intake questions. It never pauses the case,
+    waives missing facts, confirms a route or grants processing permission.
+    """
+    text = _unquoted_reply_text(body)
+    return bool(re.search(
+        r"(?:先|只是|只想|仅想|暂时|目前).{0,8}(?:了解|咨询|问问|看看).{0,16}"
+        r"(?:流程|过程|步骤|准备|怎么办|怎么申请|怎么做|材料|签证)|"
+        r"(?:还没|尚未|没有).{0,4}(?:决定|确定).{0,6}(?:是否|要不要)(?:申请|办理)|"
+        r"\b(?:just|only|first|for now).{0,16}(?:understand|learn|find out|ask about|explore)"
+        r".{0,35}(?:process|steps?|prepar\w*|documents?|visa|how to apply)\b|"
+        r"\b(?:haven['’]t|have not).{0,8}decided whether to apply\b", text, re.I,
+    ))
 
 
 def preparation_context_progress(case: Case) -> bool:
@@ -461,6 +479,11 @@ def document_list_requested(case: Case) -> bool:
     # A declined general checklist must not veto a separate current personal request.
     text = _document_list_request_text(case.latest_customer_message)
     if not text.strip():
+        return False
+    if (reviewed_document_preparation(text, case.customer_language)
+            and not _explicit_document_list_request(text)):
+        # Asking how to obtain one letter is not asking for every missing file.
+        # A separate explicit checklist request still retains its own answer.
         return False
     if is_document_purpose_question(text) and not _explicit_document_list_request(text):
         # A model can label an individual document's purpose as document_checklist.

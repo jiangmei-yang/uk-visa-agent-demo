@@ -9,6 +9,7 @@ from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
 
 from visa_agent.domain.models import Case, CaseStatus, InboundEvent, WorkflowStage
+from visa_agent.privacy.consent import ConsentLedger
 from visa_agent.storage.sqlite import SQLiteStore
 
 
@@ -30,6 +31,7 @@ def queue_review_retry(store: SQLiteStore, *, case_id: str, held_event_id: str,
         case = store.get_case(case_id)
         if case is None or review_fingerprint(case) != expected_fingerprint:
             raise ValueError("Case changed or missing; inspect again before retrying")
+        ConsentLedger(store).require(case)
         if case.status != CaseStatus.HUMAN_REVIEW_REQUIRED or case.delivery_path:
             raise ValueError("Only non-finalized human-review cases can retry intake")
         if case.primary_channel != "gmail":
@@ -89,6 +91,7 @@ def queue_finalized_revision(store: SQLiteStore, *, case_id: str, held_event_id:
         case = store.get_case(case_id)
         if case is None or review_fingerprint(case) != expected_fingerprint:
             raise ValueError("Case changed or missing; inspect again before revision")
+        ConsentLedger(store).require(case)
         if case.status not in {CaseStatus.READY_FOR_HUMAN_REVIEW, CaseStatus.DELIVERED_AFTER_CONFIRMATION} or not case.delivery_path:
             raise ValueError("Only a finalized case with a registered pack can start a revision")
         if case.primary_channel != "gmail":

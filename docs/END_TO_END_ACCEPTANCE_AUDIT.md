@@ -8,10 +8,13 @@ for these outcomes.
 ## Technical work still required
 
 1. **Applicant processing consent before ordinary personal-material processing.**
-   There is no enforced, versioned notice/provider-scope/consent/revocation record.
+   A versioned notice/provider-scope/grant/revocation ledger and Gmail preflight
+   have now been implemented and exercised with isolated, captured transports;
+   see [the exact boundary and remaining limits](PROCESSING_CONSENT.md).
    `CONSENTED` is a workflow-stage label, not proof that consent was obtained.
-   Current ingestion can retain attachments and call extraction without such a
-   gate. OAuth, a mailbox allowlist, operator approval, or the retry CLI's model
+   WhatsApp pre-download consent, mixed consent-plus-material emails, independent
+   notice usability and a real applicant grant still require verification.
+   OAuth, a mailbox allowlist, operator approval, or the retry CLI's model
    flag is not applicant privacy consent. Do not ask a new participant to send
    ordinary personal documents until this is addressed and consent established.
 2. **Ordinary-document cross-source evidence coverage.** The natural PDF proposal
@@ -26,6 +29,12 @@ for these outcomes.
 4. **Independent usability and real transport recovery.** Native Windows setup,
    uncoached interviewer use and real provider failure windows are not established
    by Linux/container or captured-transport tests.
+5. **Consultant usefulness beyond canned scenarios.** The [seven-item independent
+   review](ADVISER_USEFULNESS_REVIEW_2026-09-04.md) records ordinary questions that
+   a linked response or one-question limit did not solve. Specific-document help,
+   exploratory consultation and foreign-work context now have local repairs;
+   deferred FAQ continuation and advice when evidence cannot be obtained remain
+   open. No new live model run or independent recipient trial is implied.
 
 ## Bounded recovery added in this work
 

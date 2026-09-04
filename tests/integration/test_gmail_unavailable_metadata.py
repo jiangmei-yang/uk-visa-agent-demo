@@ -243,7 +243,7 @@ def test_actual_runner_keeps_unknown_pending_processes_healthy_and_recovers_with
         monkeypatch.setattr(runner, "build_gmail_service", lambda *a, **kw: mailbox.service())
         monkeypatch.setattr(runner, "read_secret", lambda *a, **kw: "unused-fictional-model-key")
         monkeypatch.setattr(runner, "DeepSeekStructuredLLM", lambda *a, **kw: Model())
-        runner.run_once(args, argparse.ArgumentParser())
+        runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
 
     # Bootstrap from no checkpoint; the first persisted candidate is unavailable.
     assert not (tmp_path / "sync.db").exists()

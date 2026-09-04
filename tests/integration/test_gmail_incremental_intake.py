@@ -162,12 +162,12 @@ def test_actual_runner_drains_over_100_messages_before_dispatch(tmp_path, monkey
     args = argparse.Namespace(action="serve", sender="applicant@example.test",
         mailbox="service@example.test", subject=None, after=1, state_dir=tmp_path,
         model="offline", watch=True)
-    runner.run_once(args, argparse.ArgumentParser())
+    runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     assert len(reads) == 100 and not sends
-    runner.run_once(args, argparse.ArgumentParser())
+    runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     assert reads == [f"id-{n}" for n in range(151)] + ["during-bootstrap"]
     assert len(sends) == 1
-    runner.run_once(args, argparse.ArgumentParser())
+    runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     assert len(reads) == 152  # No repeated raw fetch or workflow processing on an idle cycle.
     store = SQLiteStore(tmp_path / "sandbox.db")
     assert store.counts()["processed_events"] == 152

@@ -16,6 +16,7 @@ from visa_agent.domain.models import Case
 from visa_agent.domain.policy import load_policy
 from visa_agent.domain.rules import evaluate_gate
 from visa_agent.lab import get_lab_pack, get_lab_state, process_lab_step, reset_lab
+from visa_agent.privacy.consent import ConsentLedger
 from visa_agent.review_ui import render_empty_page, render_lab_page, render_page
 from visa_agent.storage.sqlite import SQLiteStore
 
@@ -196,6 +197,9 @@ def get_pack(case_id: str) -> Response:
     request_store = SQLiteStore(settings.database_path)
     try:
         case = request_store.get_case(case_id)
+        if case is not None and not ConsentLedger(request_store).allowed(case):
+            raise HTTPException(status_code=409, detail="Processing consent is required before pack access")
+        processing_epoch = ConsentLedger(request_store).epoch(case_id)
         held_updates = request_store.has_unreviewed_held_updates(case_id)
         registered = request_store.connection.execute(
             "SELECT path, sha256, case_revision FROM deliveries WHERE case_id=?", (case_id,),
@@ -228,6 +232,15 @@ def get_pack(case_id: str) -> Response:
         raise HTTPException(status_code=404, detail="Review pack is not available") from error
     if hashlib.sha256(content).hexdigest() != registered["sha256"]:
         raise HTTPException(status_code=409, detail="Review pack integrity check failed")
+    # A revocation arriving while the archive is read must stop this response.
+    # Bytes already delivered to a client cannot be recalled by this local gate.
+    verify_store = SQLiteStore(settings.database_path)
+    try:
+        consent = ConsentLedger(verify_store)
+        if not consent.allowed(case) or consent.epoch(case_id) != processing_epoch:
+            raise HTTPException(status_code=409, detail="Processing consent changed during pack access")
+    finally:
+        verify_store.close()
     return Response(content, media_type="application/zip", headers={
         "Content-Disposition": "attachment; filename*=UTF-8''" + quote(path.name, safe=""),
         "Cache-Control": "no-store",

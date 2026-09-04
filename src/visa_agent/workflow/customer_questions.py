@@ -5,6 +5,7 @@ from datetime import date
 
 from visa_agent.llm.ports import CustomerQuestion
 from visa_agent.workflow.conversation import latest_reply_text
+from visa_agent.workflow.document_preparation import reviewed_document_preparation
 from visa_agent.workflow.document_purpose import reviewed_document_purpose
 
 SOURCE = "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
@@ -401,6 +402,16 @@ def validated_customer_questions(body: str, proposals: list[CustomerQuestion]) -
                 # Correct only a strictly recognized generic request. Keep the raw
                 # proposal object, confidence and original evidence unchanged.
                 proposal = proposal.model_copy(update={"topic": "document_checklist"})
+            if (proposal.topic in {"document_checklist", "unsupported", "next_step"}
+                    and not _request_has_other_route(body, proposal.source_excerpt)
+                    and reviewed_document_preparation(proposal.source_excerpt, "en")
+                    and all(reviewed_document_preparation(clause, "en") for clause in
+                            _active_clauses(body, split_commas=False)
+                            if _overlapping_excerpt(proposal.source_excerpt, clause))):
+                # A narrow, reviewed operational question must not turn into the
+                # entire checklist or the next missing identity field. Do not
+                # rescue an off-topic question or strip qualifiers from a clause.
+                proposal = proposal.model_copy(update={"topic": "document_checklist"})
             scope_key = excerpt if proposal.topic in {"off_topic", "unsupported"} else ""
             accepted.setdefault((proposal.topic, scope_key), proposal)
     # Resolve contradictory interpretations before exposing current topics to other
@@ -672,12 +683,7 @@ def _unsupported_answer(requests: str, language: str, today: date, *, other_rout
                 "funding and evidence requirements. I cannot reliably confirm whether your particular "
                 "treatment plan qualifies; that still needs a separate check."
             ) + "\nGOV.UK: " + MEDICAL_SOURCE
-        if re.search(
-            r"(?:在|去|到)英国.{0,24}(?:工作|兼职|打工)|(?:工作|兼职|打工).{0,16}(?:在|去|到)英国|"
-            r"\b(?:work|job|employment|self-employed)\b.{0,45}\b(?:UK|Britain|British|Standard Visitor)\b|"
-            r"\b(?:UK|Britain|British|Standard Visitor)\b.{0,45}\b(?:work|job|employment|self-employed)\b",
-            requests, re.I,
-        ):
+        if _asks_about_uk_work(requests):
             work_answer = (
                 "关于在英国工作：GOV.UK 说明，Standard Visitor 通常不能为英国公司做有偿或无偿工作，"
                 "也不能自雇；获准的付费活动或活动参与等例外有特定条件。"
@@ -715,6 +721,28 @@ def _unsupported_answer(requests: str, language: str, today: date, *, other_rout
         "I don't currently have verified guidance to answer that point reliably. "
         "That point needs a separate check before using it to assess whether your evidence meets the requirements."
     )
+
+
+def _asks_about_uk_work(text: str) -> bool:
+    """Require a link between the work and the UK, not two nearby keywords.
+
+    'For my UK visa, explain being self-employed in Hong Kong' is evidence
+    preparation, not an intention to work in the UK. This selector cannot decide
+    whether any activity is permitted; it only chooses the relevant explanation.
+    """
+    return bool(re.search(
+        r"(?:在|去|到)英国(?:(?:旅行|旅游|访问|期间|时|短期|可以|能|做|从事|一份|有偿|无偿|的公司)){0,6}"
+        r"(?:工作|兼职|打工|自雇)|"
+        r"(?:工作|兼职|打工|自雇)(?:能否|是否|可以|能|在)?(?:去|到|在)英国|"
+        r"\b(?:work(?:ing)?|jobs?|employment|self-employed)\b"
+        r"(?:\s+(?:part[- ]time|full[- ]time|remotely|paid|unpaid|temporarily))?\s+"
+        r"(?:in\s+(?:the\s+)?(?:UK|Britain)|for\s+(?:a\s+|the\s+)?(?:UK|British)\s+company|"
+        r"(?:during|while on)\s+(?:a\s+|my\s+)?UK\s+visit)\b|"
+        r"\b(?:in|visiting)\s+(?:the\s+)?(?:UK|Britain)\s*[,，]?\s+"
+        r"(?:can|could|may|will|would)\s+I\s+(?:work|be self-employed)\b|"
+        r"\bas\s+(?:a\s+)?Standard Visitor\s*[,，]?\s+(?:can|could|may)\s+I\s+work\b",
+        text, re.I,
+    ))
 
 
 def grounded_customer_answers(
@@ -828,9 +856,16 @@ def grounded_customer_answers(
     # A source-grounded model topic is only a proposal. An individual document's
     # purpose is not a request for an entire missing-documents checklist.
     if CHECKED_AT <= today <= REVIEW_AFTER:
+        direct_preparation = reviewed_document_preparation(current, language)
+        if (direct_preparation and not off_topic_excerpts
+                and not _request_has_other_route(active_text, current)):
+            # Reviewed, narrow FAQ fallback also works when extraction omits a
+            # question entirely. It does not invent an LLM proposal or case fact.
+            answers.append(("document_preparation", direct_preparation))
         for item in semantic:
             if item.topic == "document_checklist" and not _request_has_other_route(active_text, item.source_excerpt):
-                purpose = reviewed_document_purpose(item.source_excerpt, language)
+                purpose = (reviewed_document_preparation(item.source_excerpt, language)
+                           or reviewed_document_purpose(item.source_excerpt, language))
                 if purpose:
                     answers.append(("document_purpose", purpose))
     if requested and not CHECKED_AT <= today <= REVIEW_AFTER:

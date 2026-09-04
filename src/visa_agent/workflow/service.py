@@ -35,11 +35,13 @@ from visa_agent.domain.rules import (
 )
 from visa_agent.llm.guarded import ensure_guarded
 from visa_agent.llm.ports import LLMClient
+from visa_agent.privacy.consent import ConsentLedger, ProcessingConsentRequired
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.adviser_guidance import APPLICATION_URL, preparation_guidance
 from visa_agent.workflow.conversation import (
     clear_natural_confirmation,
     confirmation_has_caveat,
+    consultation_only_requested,
     customer_requests_next_step,
     document_list_requested,
     latest_reply_text,
@@ -102,6 +104,18 @@ class WorkflowService:
                 raise RuntimeError("Processed event has no case")
             return existing, True, "duplicate_ignored"
 
+        # Privacy controls precede ordinary finalized/review rejection and any
+        # model, attachment reader or full-body held-event persistence.
+        consent = ConsentLedger(self.store)
+        decision = consent.handle(event, policy_version=self.policy.version)
+        if decision.action != "allow":
+            controlled_case = self.store.get_case(decision.case_id)
+            if controlled_case is None:
+                raise RuntimeError("Consent control has no case")
+            return controlled_case, False, (
+                "processing_notice" if decision.action == "defer" else "processing_receipt"
+            )
+
         case = self.store.get_case_by_thread(event.external_thread_id)
         if case is None:
             case = Case(
@@ -125,6 +139,7 @@ class WorkflowService:
                 )
                 return case, False, plan
 
+        processing_epoch = self._require_processing(case)
         prior_outbox = [row for row in self.store.list_outbox() if row["case_id"] == case.id]
         sent_events = {row["event_id"] for row in prior_outbox if row["status"] == "SENT"}
         # Existing deployments have the last question set but no event ledger yet.
@@ -171,6 +186,7 @@ class WorkflowService:
             if row["case_id"] == case.id
         )
         patch = self.llm.extract_case_patch(customer_event)
+        self._require_processing(case, processing_epoch)
         was_paused = case.preparation_paused
         case.latest_preparation_action = None
         if patch.preparation_intent is not None:
@@ -235,11 +251,7 @@ class WorkflowService:
             case.latest_deferred_fields = []
             case.last_inbound_received_at = event.received_at
             case.updated_at = datetime.now(UTC)
-            message = self.llm.render_message(case, "blocked")
-            message_id = stable_id("message", f"{event.id}:blocked")
-            if message_id not in case.outbound_message_ids:
-                case.outbound_message_ids.append(message_id)
-            self.store.commit_event(case, event, "blocked", message)
+            self._render_and_commit(case, event, "blocked", processing_epoch)
             return case, False, "blocked"
         self._apply_patch(case, customer_event, patch.model_dump()["updates"])
         update_deferred_questions(case, customer_event.body)
@@ -376,6 +388,14 @@ class WorkflowService:
                 # This renderer emits only a receipt. Never record unseen candidate questions
                 # against that receipt's SENT event, even when an older draft was never sent.
                 case.question_plan = []
+            elif consultation_only_requested(customer_event.body):
+                # Asking to understand the process first is not starting an
+                # identity questionnaire. Keep every required fact/gate intact.
+                case.question_plan = []
+                if case.next_step_advice is not None and case.next_step_advice.kind == "question":
+                    case.customer_answers = [answer for answer in case.customer_answers
+                                             if answer != case.next_step_advice.message]
+                    case.next_step_advice = None
             elif case.next_step_advice is not None:
                 field = case.next_step_advice.question_field
                 # A travel-date range is one main question, with both asked
@@ -420,12 +440,26 @@ class WorkflowService:
                 case.question_event_ids[field] = list(dict.fromkeys(delivered_ids[-1:] + [event.id]))
         else:
             case.last_requested_fields = []
+        self._render_and_commit(case, event, plan, processing_epoch)
+        return case, False, plan
+
+    def _require_processing(self, case: Case, expected_epoch: int | None = None) -> int:
+        consent = ConsentLedger(self.store)
+        consent.require(case)
+        epoch = consent.epoch(case.id)
+        if expected_epoch is not None and epoch != expected_epoch:
+            raise ProcessingConsentRequired("Processing consent changed during applicant processing")
+        return epoch
+
+    def _render_and_commit(self, case: Case, event: InboundEvent, plan: str, processing_epoch: int) -> None:
+        self._require_processing(case, processing_epoch)
         message = self.llm.render_message(case, plan)
         message_id = stable_id("message", f"{event.id}:{plan}")
-        if message_id not in case.outbound_message_ids:
-            case.outbound_message_ids.append(message_id)
-        self.store.commit_event(case, event, plan, message)
-        return case, False, plan
+        with self.store.atomic_write():
+            self._require_processing(case, processing_epoch)
+            if message_id not in case.outbound_message_ids:
+                case.outbound_message_ids.append(message_id)
+            self.store.commit_event(case, event, plan, message)
 
     def _inbound_rejection(
         self,
@@ -501,11 +535,15 @@ class WorkflowService:
     def _ingest_attachments(
         self, case: Case, event: InboundEvent, *, reread_attempt_id: str | None = None,
     ) -> None:
+        # Audited rereads call this entry point directly; operator approval is
+        # not permission to send applicant data to a model.
+        processing_epoch = self._require_processing(case)
         # Only the audited local document-review operation supplies an attempt ID.
         # Ordinary inbound delivery always retains hash deduplication. A reread keeps
         # the original customer source event, but records distinct extraction IDs.
         existing_hashes = {document.sha256 for document in case.documents}
         for raw_path in event.attachment_paths:
+            self._require_processing(case, processing_epoch)
             path = Path(raw_path)
             try:
                 digest = sha256_file(path)
@@ -523,9 +561,11 @@ class WorkflowService:
                     inspection.facts,
                 )
             except (OSError, ValueError, PdfReadError):
+                self._require_processing(case, processing_epoch)
                 self._record_unreadable_document(case, event, path, document_id, digest)
                 existing_hashes.add(digest)
                 continue
+            self._require_processing(case, processing_epoch)
             supersedes_document_id: str | None = None
             if (kind == "conference_invitation" and not inspection.requires_review
                     and reread_attempt_id is None):

@@ -89,6 +89,7 @@ def ordered_candidates(adapter: GmailAdapter, journal: GmailSyncJournal, *, send
         if not isinstance(timestamp, str) or not timestamp.isascii() or not timestamp.isdecimal():
             raise ValueError("Gmail candidate lacks a trustworthy receipt timestamp")
         received_ms = int(timestamp)
+        journal.record_receipt(identifier, received_ms)
         if received_ms <= after * 1000:
             journal.acknowledge(identifier, "ignored", "BEFORE_ACTIVATION")
             continue

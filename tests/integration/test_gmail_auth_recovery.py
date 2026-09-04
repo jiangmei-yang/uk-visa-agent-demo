@@ -78,7 +78,7 @@ def test_auth_failure_preserves_pending_reply_and_recovery_sends_once(tmp_path, 
         model="offline", watch=True)
 
     with pytest.raises(PermanentChannelError, match="authorization rejected"):
-        runner.run_once(args, argparse.ArgumentParser())
+        runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     store = SQLiteStore(tmp_path / "sandbox.db")
     assert store.get_case(case.id).model_dump_json() == original_case
     assert store.list_outbox() == original_outbox
@@ -87,8 +87,8 @@ def test_auth_failure_preserves_pending_reply_and_recovery_sends_once(tmp_path, 
     store.close()
 
     failing = False
-    runner.run_once(args, argparse.ArgumentParser())
-    runner.run_once(args, argparse.ArgumentParser())
+    runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
+    runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     store = SQLiteStore(tmp_path / "sandbox.db")
     try:
         assert len(sends) == 1

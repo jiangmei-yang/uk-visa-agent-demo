@@ -54,5 +54,5 @@ def test_uncertain_sends_reconcile_before_failed_intake(tmp_path, monkeypatch, f
         mailbox="service@example.test", subject=None, after=1788508800,
         state_dir=tmp_path, model="unused", watch=False)
     with pytest.raises(type(failure), match=str(failure)):
-        runner.run_once(args, argparse.ArgumentParser())
+        runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
     assert calls == ["reconcile", "intake"]

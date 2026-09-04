@@ -80,6 +80,20 @@ def main(argv: Sequence[str] | None = None, *,
                     "open_blockers": [{"code": issue.code, "document_ids": issue.related_document_ids}
                                       for issue in case.open_blockers()]}, ensure_ascii=False, indent=2))
                 return
+            if reader_factory is None:
+                # A real operator flag cannot substitute for an applicant's
+                # consent or silently change the provider they were told about.
+                from visa_agent.privacy.consent import ConsentLedger, ProcessingScope
+
+                consent = ConsentLedger(store)
+                configured = consent.scope()
+                expected = ProcessingScope(provider="DeepSeek", model=args.model)
+                if configured is None or (args.action == "retry" and configured.id != expected.id):
+                    parser.error("Establish applicant consent for this provider/model through the registered Gmail service first")
+                try:
+                    consent.require(case)
+                except ValueError as error:
+                    parser.error(str(error))
             factory = reader_factory or _cloud_reader
             def read_selected(path: Path):
                 # Delay key access/client construction until the recovery API has

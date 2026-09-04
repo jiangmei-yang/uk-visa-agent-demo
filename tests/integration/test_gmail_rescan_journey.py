@@ -224,7 +224,7 @@ def test_broken_page_rescan_and_restarted_runner_preserve_and_drain_the_same_jou
         monkeypatch.setattr(runner, "build_gmail_service", lambda *a, **kw: provider.service())
         monkeypatch.setattr(runner, "read_secret", lambda *a, **kw: "unused-offline-test-key")
         monkeypatch.setattr(runner, "DeepSeekStructuredLLM", lambda *a, **kw: TracingOfflineLLM())
-        runner.run_once(args, argparse.ArgumentParser())
+        runner.run_once(args, argparse.ArgumentParser(), fixture_without_processing_consent=True)
 
     # Start with no checkpoint. Page one is really received and committed before page two fails.
     assert not (tmp_path / "sync.db").exists()

@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS outbox (
     in_reply_to TEXT,
     references_header TEXT,
     preparation_control_epoch INTEGER NOT NULL DEFAULT 0,
+    processing_consent_epoch INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(event_id, message_type)
 );
@@ -105,6 +106,53 @@ CREATE TABLE IF NOT EXISTS inbound_queue (
     processed_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS processing_scope (
+    singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
+    scope_id TEXT NOT NULL,
+    scope_json TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS processing_consent (
+    case_id TEXT PRIMARY KEY,
+    status TEXT NOT NULL DEFAULT 'unknown',
+    scope_id TEXT NOT NULL,
+    epoch INTEGER NOT NULL DEFAULT 0,
+    contact TEXT NOT NULL,
+    channel TEXT NOT NULL,
+    thread_id TEXT NOT NULL,
+    notice_outbox_id TEXT,
+    updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS processing_consent_events (
+    event_id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    action TEXT NOT NULL,
+    scope_id TEXT NOT NULL,
+    epoch INTEGER NOT NULL,
+    excerpt TEXT NOT NULL,
+    received_at TEXT NOT NULL,
+    recorded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS processing_deferred_events (
+    event_id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    channel TEXT NOT NULL,
+    thread_id TEXT NOT NULL,
+    received_at TEXT NOT NULL,
+    rfc_message_id TEXT,
+    references_header TEXT,
+    completed_at TEXT
+);
+CREATE TABLE IF NOT EXISTS processing_control_outbox (
+    outbox_id TEXT PRIMARY KEY,
+    case_id TEXT NOT NULL,
+    scope_id TEXT NOT NULL,
+    epoch INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    recipient TEXT NOT NULL,
+    channel TEXT NOT NULL,
+    thread_id TEXT NOT NULL
+);
 """
 
 
@@ -142,6 +190,7 @@ class SQLiteStore:
             "reply_render_error": "TEXT",
             "case_revision": "INTEGER NOT NULL DEFAULT 1",
             "preparation_control_epoch": "INTEGER NOT NULL DEFAULT 0",
+            "processing_consent_epoch": "INTEGER NOT NULL DEFAULT 0",
         }
         with self.connection:
             for column, declaration in additions.items():
@@ -154,6 +203,7 @@ class SQLiteStore:
                 ("deliveries", "case_revision", "INTEGER NOT NULL DEFAULT 1"),
                 ("delivery_versions", "case_revision", "INTEGER NOT NULL DEFAULT 1"),
                 ("review_actions", "action_kind", "TEXT NOT NULL DEFAULT 'retry'"),
+                ("processing_consent", "thread_id", "TEXT NOT NULL DEFAULT ''"),
             ):
                 existing = {row["name"] for row in self.connection.execute(f"PRAGMA table_info({table})")}
                 if column not in existing:
@@ -181,7 +231,9 @@ class SQLiteStore:
         self.connection.executescript(
             """DELETE FROM channel_delivery_receipts; DELETE FROM inbound_failures;
                DELETE FROM delivery_versions; DELETE FROM review_actions; DELETE FROM held_inbound_events; DELETE FROM inbound_queue; DELETE FROM deliveries; DELETE FROM outbox;
-               DELETE FROM processed_events; DELETE FROM cases;"""
+               DELETE FROM processed_events; DELETE FROM cases;
+               DELETE FROM processing_consent; DELETE FROM processing_consent_events;
+               DELETE FROM processing_deferred_events; DELETE FROM processing_control_outbox;"""
         )
         self.connection.commit()
 
@@ -217,7 +269,8 @@ class SQLiteStore:
             """SELECT id, event_id, message_type, payload, channel, recipient,
                       external_thread_id, status, attempt_count, last_error, sent_at,
                       provider_message_id, created_at, reply_render_mode, reply_render_error, case_revision,
-                      preparation_control_epoch
+                      preparation_control_epoch, processing_consent_epoch, reply_subject,
+                      in_reply_to, references_header
                FROM outbox WHERE case_id = ? ORDER BY created_at, id""",
             (case_id,),
         ).fetchall()
@@ -241,11 +294,22 @@ class SQLiteStore:
             "deliveries": [dict(row) for row in deliveries],
             "delivery_versions": [dict(row) for row in self.connection.execute(
                 "SELECT * FROM delivery_versions WHERE case_id=? ORDER BY case_revision, created_at", (case_id,))],
+            "processing_consent": [dict(row) for row in self.connection.execute(
+                "SELECT * FROM processing_consent WHERE case_id=?", (case_id,))],
+            "processing_consent_events": [dict(row) for row in self.connection.execute(
+                "SELECT * FROM processing_consent_events WHERE case_id=? ORDER BY received_at, event_id", (case_id,))],
+            "processing_deferred_events": [dict(row) for row in self.connection.execute(
+                "SELECT * FROM processing_deferred_events WHERE case_id=? ORDER BY received_at, event_id", (case_id,))],
+            "processing_scope": [dict(row) for row in self.connection.execute(
+                "SELECT scope_id,scope_json FROM processing_scope WHERE singleton=1")],
             "data_note": (
                 "Raw processed inbound messages are not retained. The snapshot keeps only "
                 "bounded evidence excerpts and source identifiers needed for audit. "
                 "Exceptions: unprocessed applicant updates held for human review retain their "
-                "event body and attachment references for pending review; case deletion removes them."
+                "event body and attachment references for pending review; case deletion removes them. "
+                "Before processing consent, only routing/receipt identifiers and the subject needed "
+                "for an in-thread notice are retained, not the applicant body or attachments. "
+                "Consent decisions retain a bounded control statement for audit."
             ),
         }
 
@@ -280,6 +344,11 @@ class SQLiteStore:
             )
             self.connection.execute("DELETE FROM outbox WHERE case_id = ?", (case_id,))
             self.connection.execute("DELETE FROM processed_events WHERE case_id = ?", (case_id,))
+            for table in (
+                "processing_consent", "processing_consent_events",
+                "processing_deferred_events", "processing_control_outbox",
+            ):
+                self.connection.execute(f"DELETE FROM {table} WHERE case_id = ?", (case_id,))
             self.connection.execute("DELETE FROM cases WHERE id = ?", (case_id,))
         return case
 
@@ -302,6 +371,10 @@ class SQLiteStore:
         )
         with self.atomic_write():
             self._check_preparation_snapshot(case)
+            consent = self.connection.execute(
+                "SELECT epoch FROM processing_consent WHERE case_id=?", (case.id,)
+            ).fetchone()
+            processing_epoch = 0 if consent is None else int(consent["epoch"])
             self.connection.execute(
                 """
                 INSERT INTO cases(id, thread_id, snapshot_json, updated_at)
@@ -325,8 +398,9 @@ class SQLiteStore:
                 """INSERT OR IGNORE INTO outbox(
                        id, case_id, event_id, message_type, payload, channel, recipient,
                        external_thread_id, send_deadline, reply_subject, in_reply_to,
-                       references_header, case_revision, preparation_control_epoch
-                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                       references_header, case_revision, preparation_control_epoch,
+                       processing_consent_epoch
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     f"out-{event.id}-{message_type}",
                     case.id,
@@ -342,6 +416,7 @@ class SQLiteStore:
                     references,
                     case.delivery_revision,
                     case.preparation_control_epoch,
+                    processing_epoch,
                 ),
             )
 
@@ -560,6 +635,50 @@ class SQLiteStore:
                 (processed_at.isoformat(), event_id),
             )
 
+    def mark_inbound_awaiting_consent(self, event_id: str) -> None:
+        """Retain the source event; waiting for consent is not a failed model attempt."""
+        with self.atomic_write():
+            self.connection.execute(
+                "UPDATE inbound_queue SET status='AWAITING_CONSENT',lease_until=NULL,"
+                "available_at=NULL,last_error='PROCESSING_CONSENT_REQUIRED',"
+                "attempt_count=MAX(0,attempt_count-1) WHERE id=? AND status='PROCESSING'",
+                (event_id,),
+            )
+
+    def consent_resume_candidates(self, channel: str) -> list[dict[str, Any]]:
+        """Do not jump ahead of queued controls or erase the original source IDs."""
+        rows = self.connection.execute(
+            "SELECT q.id,q.channel,q.payload_json,d.case_id,p.epoch FROM inbound_queue q "
+            "JOIN processing_deferred_events d ON d.event_id=q.id AND d.channel=q.channel "
+            "JOIN processing_consent p ON p.case_id=d.case_id "
+            "JOIN processing_scope s ON s.singleton=1 AND s.scope_id=p.scope_id "
+            "WHERE q.channel=? AND q.status='AWAITING_CONSENT' AND d.completed_at IS NULL "
+            "AND p.status='granted' AND NOT EXISTS (SELECT 1 FROM processed_events e WHERE e.event_id=q.id) "
+            "AND NOT EXISTS (SELECT 1 FROM inbound_queue active WHERE active.channel=q.channel "
+            "AND active.status IN ('PENDING','RETRY','PROCESSING')) "
+            "ORDER BY d.received_at,q.created_at,q.id", (channel,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+    def resume_inbound_after_consent(
+        self, event_id: str, *, case_id: str, channel: str, consent_epoch: int,
+        payload_json: str, case_snapshot_json: str,
+    ) -> bool:
+        """CAS the validated event and case while rechecking canonical authorization."""
+        with self.atomic_write():
+            cursor = self.connection.execute(
+                "UPDATE inbound_queue SET status='PENDING',available_at=NULL,lease_until=NULL,last_error=NULL "
+                "WHERE id=? AND channel=? AND status='AWAITING_CONSENT' AND payload_json=? "
+                "AND NOT EXISTS (SELECT 1 FROM processed_events e WHERE e.event_id=inbound_queue.id) "
+                "AND EXISTS (SELECT 1 FROM processing_deferred_events d WHERE d.event_id=inbound_queue.id "
+                "AND d.case_id=? AND d.channel=inbound_queue.channel AND d.completed_at IS NULL) "
+                "AND EXISTS (SELECT 1 FROM cases c WHERE c.id=? AND c.snapshot_json=?) "
+                "AND EXISTS (SELECT 1 FROM processing_consent p JOIN processing_scope s "
+                "ON s.singleton=1 AND s.scope_id=p.scope_id WHERE p.case_id=? AND p.epoch=? AND p.status='granted')",
+                (event_id, channel, payload_json, case_id, case_id, case_snapshot_json, case_id, consent_epoch),
+            )
+            return cursor.rowcount == 1
+
     def mark_inbound_retry(
         self,
         event_id: str,
@@ -604,7 +723,7 @@ class SQLiteStore:
                       external_thread_id, send_deadline, reply_subject, status, attempt_count,
                       next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
                       references_header, created_at, reply_render_mode, reply_render_error, case_revision,
-                      preparation_control_epoch
+                      preparation_control_epoch, processing_consent_epoch
                FROM outbox ORDER BY created_at, id"""
         ).fetchall()
         return [dict(row) for row in rows]
@@ -643,7 +762,8 @@ class SQLiteStore:
                    RETURNING id, case_id, event_id, message_type, payload, channel, recipient,
                              external_thread_id, send_deadline, reply_subject, status, attempt_count,
                              next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
-                             references_header, created_at, case_revision, preparation_control_epoch""",
+                             references_header, created_at, case_revision, preparation_control_epoch,
+                             processing_consent_epoch""",
                 parameters,
             ).fetchall()
         return sorted((dict(row) for row in rows), key=lambda row: (row["created_at"], row["id"]))
@@ -750,7 +870,8 @@ class SQLiteStore:
             f"""SELECT id, case_id, event_id, message_type, payload, channel, recipient,
                       external_thread_id, send_deadline, reply_subject, status, attempt_count,
                       next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
-                      references_header, created_at, case_revision, preparation_control_epoch
+                      references_header, created_at, case_revision, preparation_control_epoch,
+                      processing_consent_epoch
                FROM outbox WHERE status = 'SENDING' {channel_filter}
                ORDER BY created_at, id LIMIT ?""",
             parameters,

@@ -21,6 +21,7 @@ from visa_agent.domain.models import (
     WorkflowStage,
 )
 from visa_agent.domain.rules import resolve_issue, run_consistency_checks
+from visa_agent.privacy.consent import ConsentLedger
 from visa_agent.workflow.review import review_fingerprint
 from visa_agent.workflow.service import WorkflowService
 
@@ -106,6 +107,7 @@ blocker; the original failure stays open. Unexpected transaction errors roll bac
         case = store.get_case(case_id)
         if case is None or review_fingerprint(case) != expected_fingerprint:
             raise ValueError("Case changed or missing; inspect again before document review")
+        ConsentLedger(store).require(case)
         if case.primary_channel != "gmail" or case.status != CaseStatus.DRAFT or case.delivery_path:
             raise ValueError("Only non-finalized draft Gmail cases support document recovery")
         if store.connection.execute(
