@@ -7,7 +7,7 @@ import pytest
 from visa_agent.channels.automatic_reply import AutomaticGmailReplySender
 from visa_agent.channels.gmail import GmailAdapter
 from visa_agent.channels.outbound import OutboxDispatcher
-from visa_agent.domain.models import Case, InboundEvent
+from visa_agent.domain.models import Case, CaseStatus, InboundEvent
 from visa_agent.storage.sqlite import SQLiteStore
 
 
@@ -150,6 +150,69 @@ def test_other_recipient_is_never_automatically_contacted(tmp_path: Path) -> Non
     try:
         dispatcher = OutboxDispatcher(store, AutomaticGmailReplySender(adapter, store, "allowed@example.test"))
         assert dispatcher.dispatch_due(now)[0].status == "FAILED"
+        assert adapter.calls == []
+    finally:
+        store.close()
+
+
+@pytest.mark.parametrize('language', ['zh', 'en'])
+@pytest.mark.parametrize('status', [CaseStatus.READY_FOR_HUMAN_REVIEW, CaseStatus.DELIVERED_AFTER_CONFIRMATION])
+def test_finalized_correction_gets_one_honest_receipt_without_reopening(tmp_path, language, status):
+    from visa_agent.domain.policy import load_policy
+    from visa_agent.llm.offline import OfflineFixtureLLM
+    from visa_agent.workflow.service import WorkflowService
+
+    store = SQLiteStore(tmp_path / 'db')
+    now = datetime.now(UTC)
+    case = Case(id='c', external_thread_id='t', applicant_contact='user@example.test', policy_version='v',
+                customer_language=language, primary_channel='gmail', status=status, delivery_path='old.zip')
+    store.save_case(case)
+    before = case.model_dump_json()
+    event = InboundEvent(id='correction', external_thread_id='t', sender=case.applicant_contact,
+        subject='My plans changed', body='日期改了，请先不要用旧资料。' if language == 'zh'
+        else 'My travel dates changed. Please do not use the previous documents.', channel='gmail',
+        received_at=now, rfc_message_id='<correction@example.test>')
+    workflow = WorkflowService(store, load_policy(Path('knowledge/uk_standard_visitor_2026-02-25.yaml')), OfflineFixtureLLM())
+    adapter = CaptureAdapter()
+    sender = AutomaticGmailReplySender(adapter, store, case.applicant_contact)
+    dispatcher = OutboxDispatcher(store, sender, channel='gmail', allowed_message_types=('held_update_received',))
+    try:
+        assert workflow.process(event)[2] == 'finalized_case_held'
+        assert sender.queue_finalized_update_receipts() == 1
+        assert sender.queue_finalized_update_receipts() == 0
+        assert dispatcher.dispatch_due(now)[0].status == 'SENT'
+        body = adapter.calls[0]['body']
+        assert ('目前还没有生成或发送修订版' if language == 'zh' else 'has not been prepared or sent') in body
+        assert store.get_case(case.id).model_dump_json() == before
+        assert store.has_unreviewed_held_updates(case.id)
+        assert store.list_outbox()[0]['in_reply_to'] == '<correction@example.test>'
+        assert store.list_outbox()[0]['payload'] == body
+        assert workflow.process(event)[1]
+        assert sender.queue_finalized_update_receipts() == 0
+        assert dispatcher.dispatch_due(now) == [] and len(adapter.calls) == 1
+    finally:
+        store.close()
+
+
+def test_finalized_receipt_respects_recipient_scope_and_current_case_state(tmp_path):
+    store = SQLiteStore(tmp_path / 'db')
+    now = datetime.now(UTC)
+    case = Case(id='c', external_thread_id='t', applicant_contact='user@example.test', policy_version='v',
+                primary_channel='gmail', status=CaseStatus.READY_FOR_HUMAN_REVIEW)
+    store.save_case(case)
+    event = InboundEvent(id='e', external_thread_id='t', sender=case.applicant_contact,
+                        subject='Correction', body='Please update the dates', channel='gmail', received_at=now)
+    store.record_rejected_event(event_id='e', case_id='c', thread_id='t', reason_code='FINALIZED_CASE_NEW_EVENT',
+                                detail='Held', held_event=event)
+    adapter = CaptureAdapter()
+    try:
+        assert AutomaticGmailReplySender(adapter, store, 'other@example.test').queue_finalized_update_receipts() == 0
+        sender = AutomaticGmailReplySender(adapter, store, case.applicant_contact)
+        assert sender.queue_finalized_update_receipts() == 1
+        case.status = CaseStatus.DRAFT
+        store.save_case(case)
+        dispatcher = OutboxDispatcher(store, sender, channel='gmail', allowed_message_types=('held_update_received',))
+        assert dispatcher.dispatch_due(now)[0].status == 'FAILED'
         assert adapter.calls == []
     finally:
         store.close()

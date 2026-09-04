@@ -114,7 +114,7 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
 
             automatic_sender = AutomaticGmailReplySender(adapter, store, args.sender)
             dispatcher = OutboxDispatcher(store, automatic_sender, channel="gmail",
-                allowed_message_types=("blocked", "awaiting_profile_confirmation", "awaiting_confirmation"))
+                allowed_message_types=("blocked", "awaiting_profile_confirmation", "awaiting_confirmation", "held_update_received"))
             dispatcher.reconcile_sending(automatic_sender, datetime.now(UTC))
         if args.action in {"prepare", "serve"}:
             key = read_secret(
@@ -204,6 +204,7 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
             if journal is None or not journal.discovery_drained():
                 print("Intake backlog remains; no dispatch")
                 return
+            print("Held-update receipts queued:", automatic_sender.queue_finalized_update_receipts())
             print("Obsolete unsent replies withheld:", automatic_sender.withhold_obsolete_unsent())
             print("Automatic dispatch:", [item.status for item in dispatcher.dispatch_due(datetime.now(UTC), limit=1)])
         elif args.action in {"send-reviewed", "reconcile"}:

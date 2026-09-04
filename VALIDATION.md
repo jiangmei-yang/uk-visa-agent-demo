@@ -17,7 +17,7 @@ explicitly recorded here.
 
 Updated 2026-09-04. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**. The current local suite has
-366 passing tests; this is not a naturalness score or a general accuracy/reliability percentage.
+371 passing tests; this is not a naturalness score or a general accuracy/reliability percentage.
 
 Current owner-directed priority: improve the shared agent and use Gmail as the primary realistic
 test channel. Preserve the existing WhatsApp adapter contracts; defer further channel expansion

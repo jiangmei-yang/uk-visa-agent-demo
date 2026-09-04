@@ -23,7 +23,8 @@ do not switch scope by deleting its database. Use a separate state directory for
 - Auto-Submitted, bulk/list mail and mailing-list headers are ignored to avoid responder loops.
 - Bounded extraction produces case facts; automatic outward wording uses reviewed deterministic
   templates, not an unrestricted model-written reply.
-- Only current blocked/intake and confirmation replies are eligible. Older queued replies are
+- Current blocked/intake, confirmation and retained post-pack update receipts are eligible; receipts
+  do not reopen a case or deliver a revised pack (see `HUMAN_REVIEW_RECOVERY.md`). Older queued replies are
   withheld. Final `ready` replies stay pending for explicit reviewed dispatch; no pack is auto-sent.
 - Existing uncertain-send reconciliation and deduplication remain in force.
 - Uncertain sends are reconciled before inbox listing or model processing. An intake failure

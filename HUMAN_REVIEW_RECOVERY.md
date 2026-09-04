@@ -77,3 +77,19 @@ not approve documents, resolve unsupported routes, retry older out-of-order upda
 already generated/delivered pack. Failed queued retries require investigation; do not erase
 their records or manipulate processed-event IDs to manufacture a successful recovery. A complete
 real-user human-review/resumption journey is still unverified.
+
+## Gmail acknowledgement of post-pack updates
+
+The registered-sender service now queues a durable `held_update_received` receipt for retained
+`FINALIZED_CASE_NEW_EVENT` updates in Gmail cases. It runs after intake discovery drains, respects
+the existing allowed recipient, skips older updates and already actioned review events, and leaves
+the case snapshot and original held record unchanged. Repeated cycles do not create another receipt.
+It says the update was recorded, prior-pack downloading/further sending is paused, and no revised
+pack has been prepared or sent. It does not claim an assigned reviewer, automatic revision or recall
+of an attachment already delivered. The provider-bound wording is regenerated from the held record
+and current case state, then persisted before sending; changed review state withholds a stale receipt.
+
+Five local capture tests cover both languages, generated/delivered statuses, recipient scope,
+threading, replay and changed-state refusal. All 371 tests pass. There is no actual post-delivery
+applicant exchange in this evidence. The pending full revision/versioned-redelivery workflow is
+unchanged: this receipt closes the communication gap, not the revision acceptance requirement.
