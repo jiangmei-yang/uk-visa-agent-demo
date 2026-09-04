@@ -79,6 +79,8 @@ override or confirmation. Undecided dates remain a narrower question deferral.
 | Worker stops after claiming | Leave `SENDING` for provider reconciliation; never silently resend |
 | Reconciliation finds provider copy | Mark `SENT` using the provider message ID without resending |
 | Reconciliation finds no provider copy | Mark `AMBIGUOUS`; require an explicit operator retry decision |
+| Sent-evidence query lacks authorization/access | Keep `SENDING`, restore access and query again; never resend |
+| Token replacement fails before commit | Keep previous token intact; explicit reconnection verifies mailbox before replacement |
 | Inbound email cannot be parsed | Store one redacted failure record by provider ID; do not mutate a case |
 | Webhook worker crashes after claim | Lease expires; replay is safe through provider-event idempotency |
 | Inbound processing repeatedly fails | Finite backoff, then visible `FAILED` queue item |
@@ -108,6 +110,12 @@ the returned bytes to the generated archive. These checks assume a trusted local
 they do not authenticate applicant documents, prove the initial pack is correct, protect against
 simultaneous malicious modification of both registry and file, or recall a previously sent ZIP.
 Downloads now hold the ZIP bytes in memory; large-package resource testing remains separate.
+
+The guided-lab indicator/download now use the same current registry/revision/hash and held-update
+boundaries, including returning already-verified bytes. Twelve isolated regression cases cover
+tampering, missing/mismatched records, path escape, revoked confirmation and read failure. This is
+fixture-lab integrity, not proof of authentic documents. Credential persistence, explicit
+reauthorization and sent-evidence query recovery are documented in [GMAIL_RECOVERY.md](GMAIL_RECOVERY.md).
 
 ## Replay evidence
 

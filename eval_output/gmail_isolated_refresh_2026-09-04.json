@@ -1,0 +1,61 @@
+{
+  "checked_at": "2026-09-04T13:15:32.126075+00:00",
+  "evidence_class": "isolated forced local expiry, real refresh and read-only profile",
+  "state": "finished",
+  "timeout_seconds_per_request": 20,
+  "stages": [
+    {
+      "stage": "forced_expiry_refresh",
+      "forced_local_expiry": true,
+      "mailbox_matches": true,
+      "error_type": null,
+      "passed": true,
+      "token_requests": 1,
+      "token_http_status": 200,
+      "profile_requests": 1,
+      "profile_http_status": 200,
+      "oauth_error": null,
+      "isolated_token_changed": true
+    },
+    {
+      "stage": "invalid_refresh_rejected",
+      "forced_local_expiry": true,
+      "mailbox_matches": false,
+      "error_type": "RefreshError",
+      "passed": true,
+      "token_requests": 1,
+      "token_http_status": 400,
+      "profile_requests": 0,
+      "profile_http_status": null,
+      "oauth_error": "invalid_grant",
+      "isolated_token_changed": false
+    },
+    {
+      "stage": "valid_copy_refresh_recovered",
+      "forced_local_expiry": true,
+      "mailbox_matches": true,
+      "error_type": null,
+      "passed": true,
+      "token_requests": 1,
+      "token_http_status": 200,
+      "profile_requests": 1,
+      "profile_http_status": 200,
+      "oauth_error": null,
+      "isolated_token_changed": true
+    }
+  ],
+  "original_token_unchanged": true,
+  "original_client_unchanged": true,
+  "interactive_consent": false,
+  "revocation_requests": 0,
+  "message_api_calls": 0,
+  "sends": 0,
+  "passed": true,
+  "limitations": [
+    "Local expiry is forced; no naturally expired live-worker credential was exercised.",
+    "Invalid isolated refresh token is not revocation of the authorized account.",
+    "Recovery uses an isolated valid credential copy, not a live worker recovery.",
+    "No mail bodies, dispatch, recipient delivery, live database or permission changes.",
+    "Original-file comparison detects concurrent changes; it does not lock the live worker."
+  ]
+}

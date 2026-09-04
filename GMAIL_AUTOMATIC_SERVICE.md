@@ -1,6 +1,18 @@
 # Controlled automatic Gmail service
 
-Latest reload (2026-09-04): case-aware next-step replies, independent FAQ preservation, concise
+Latest recovery rollout (2026-09-04): atomic token persistence, explicit mailbox-checked
+reauthorization and visible sent-evidence access recovery are loaded by PID 77184. A completed
+idle cycle was observed at 13:17:06 UTC and process liveness verified separately. The first
+bootstrap returned error 5; after checking the old service/process were absent and plist valid,
+the second normal-user bootstrap succeeded. Configuration and the one-case/nine-SENT projection
+are unchanged. No historical mail was replayed or manually sent; final `ready` dispatch is still
+excluded. The Docker UI was also rebuilt without resetting its persistent volume; its existing
+case/reply/delivery projection and ZIP bytes are unchanged, while the outbox schema migrated.
+See [recovery results and limitations](GMAIL_RECOVERY.md) and
+`eval_output/gmail_recovery_rollout_2026-09-04.json`. The separate successful isolated refresh
+probe is not real revocation, live-worker recovery or new recipient-delivery evidence.
+
+Earlier reload (2026-09-04): case-aware next-step replies, independent FAQ preservation, concise
 corrections and post-holdout pause/scope repairs are loaded by PID 74488. The first completed
 idle cycle was at 12:59:46 UTC, with independent process liveness confirmed. The existing
 LaunchAgent configuration and case/outbox projection are unchanged: one case, nine SENT rows.

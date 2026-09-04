@@ -40,6 +40,7 @@ def test_uncertain_sends_reconcile_before_failed_intake(tmp_path, monkeypatch, f
 
         def reconcile_sending(self, *args):
             calls.append("reconcile")
+            return []
 
         def dispatch_due(self, *args, **kwargs):
             pytest.fail("Failed intake must not dispatch potentially stale replies")

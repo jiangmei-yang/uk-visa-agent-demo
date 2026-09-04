@@ -8,7 +8,7 @@ from pathlib import Path
 from urllib.parse import parse_qsl, quote
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse, Response
+from fastapi.responses import HTMLResponse, Response
 
 from visa_agent.case_data import delete_case_artifacts
 from visa_agent.config import Settings
@@ -129,11 +129,14 @@ def lab_reset() -> dict[str, object]:
 
 
 @app.get("/api/lab/pack")
-def lab_pack() -> FileResponse:
-    path = get_lab_pack(settings)
-    if path is None:
+def lab_pack() -> Response:
+    verified = get_lab_pack(settings)
+    if verified is None:
         raise HTTPException(status_code=404, detail="Guided test pack is not available")
-    return FileResponse(path, filename=path.name, media_type="application/zip")
+    return Response(verified.content, media_type="application/zip", headers={
+        "Content-Disposition": "attachment; filename*=UTF-8''" + quote(verified.filename, safe=""),
+        "Cache-Control": "no-store",
+    })
 
 
 @app.get("/api/cases")

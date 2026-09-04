@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 import shutil
 from dataclasses import dataclass
@@ -11,7 +12,7 @@ from visa_agent.config import Settings
 from visa_agent.delivery.pack import generate_pack
 from visa_agent.demo import DEMO_EVALUATION_DATE
 from visa_agent.documents.samples import generate_sample_documents
-from visa_agent.domain.models import Case, InboundEvent
+from visa_agent.domain.models import Case, GateResult, InboundEvent
 from visa_agent.domain.policy import load_policy
 from visa_agent.domain.rules import evaluate_gate
 from visa_agent.llm.offline import OfflineFixtureLLM
@@ -27,6 +28,12 @@ class LabPaths:
     database: Path
     output: Path
     documents: Path
+
+
+@dataclass(frozen=True)
+class VerifiedLabPack:
+    filename: str
+    content: bytes
 
 
 def lab_paths(settings: Settings) -> LabPaths:
@@ -124,7 +131,7 @@ def _snapshot(
             for issue in case.open_blockers()
         ],
         "gate": gate.model_dump(mode="json"),
-        "pack_available": bool(case.delivery_path and gate.allowed),
+        "pack_available": _verified_lab_pack(settings, store, case, gate) is not None,
         "case_id": case.id,
         "stage": case.stage.value,
         "profile": case.profile.model_dump(mode="json"),
@@ -140,7 +147,36 @@ def get_lab_state(settings: Settings) -> dict[str, Any]:
         store.close()
 
 
-def get_lab_pack(settings: Settings) -> Path | None:
+def _verified_lab_pack(
+    settings: Settings, store: SQLiteStore, case: Case, gate: GateResult
+) -> VerifiedLabPack | None:
+    # Match the ordinary case-download boundary, without treating this fixture as live evidence.
+    if not gate.allowed or not case.delivery_path or store.has_unreviewed_held_updates(case.id):
+        return None
+    registered = store.connection.execute(
+        "SELECT path, sha256, case_revision FROM deliveries WHERE case_id=?", (case.id,)
+    ).fetchone()
+    if (
+        registered is None
+        or registered["path"] != case.delivery_path
+        or registered["case_revision"] != case.delivery_revision
+    ):
+        return None
+    try:
+        path = Path(case.delivery_path).resolve()
+        allowed_root = lab_paths(settings).output.resolve()
+        if allowed_root not in path.parents or not path.is_file():
+            return None
+        content = path.read_bytes()
+    except (OSError, RuntimeError):
+        return None
+    if hashlib.sha256(content).hexdigest() != registered["sha256"]:
+        return None
+    # Return the checked bytes, not a path which an HTTP file response would read later.
+    return VerifiedLabPack(filename=path.name, content=content)
+
+
+def get_lab_pack(settings: Settings) -> VerifiedLabPack | None:
     paths = lab_paths(settings)
     store = SQLiteStore(paths.database)
     try:
@@ -149,11 +185,7 @@ def get_lab_pack(settings: Settings) -> Path | None:
             return None
         case = cases[0]
         gate = evaluate_gate(case, load_policy(settings.policy_path), DEMO_EVALUATION_DATE)
-        if not gate.allowed or not case.delivery_path:
-            return None
-        path = Path(case.delivery_path).resolve()
-        allowed_root = paths.output.resolve()
-        return path if allowed_root in path.parents and path.is_file() else None
+        return _verified_lab_pack(settings, store, case, gate)
     finally:
         store.close()
 

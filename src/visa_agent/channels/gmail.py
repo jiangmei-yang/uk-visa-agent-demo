@@ -4,10 +4,12 @@ import base64
 import json
 from dataclasses import dataclass
 from email.message import EmailMessage
+from importlib import import_module
 from typing import Any
 
 from visa_agent.channels.outbound import (
     PermanentChannelError,
+    ReconciliationAccessError,
     ReplyRequest,
     TransientChannelError,
     UncertainDeliveryError,
@@ -280,13 +282,27 @@ class GmailReplySender:
         try:
             return self.adapter.find_sent_message(rfc_message_id)
         except Exception as error:
-            raise _map_gmail_error(error) from error
+            raise _map_gmail_error(error, reconciling=True) from error
 
 
-def _map_gmail_error(error: Exception, *, sending: bool = False) -> Exception:
+def _is_google_refresh_error(error: Exception) -> bool:
+    # Gmail is optional: offline deployments must not need the Google SDK. Match the
+    # actual exception type, never provider text that could misclassify an ordinary bug.
+    try:
+        refresh_error = import_module("google.auth.exceptions").RefreshError
+    except ImportError:
+        return False
+    return isinstance(error, refresh_error)
+
+
+def _map_gmail_error(
+    error: Exception, *, sending: bool = False, reconciling: bool = False,
+) -> Exception:
     if isinstance(error, (TransientChannelError, PermanentChannelError, UncertainDeliveryError)):
         return error
     status = getattr(getattr(error, "resp", None), "status", None)
+    if reconciling and (status == 401 or _is_google_refresh_error(error)):
+        return ReconciliationAccessError("Gmail sent evidence unavailable; restore authorization")
     if sending and (status == 408 or (isinstance(status, int) and 500 <= status < 600)):
         return UncertainDeliveryError(f"Gmail send outcome requires reconciliation (HTTP {status})")
     if status == 403:
@@ -297,6 +313,10 @@ def _map_gmail_error(error: Exception, *, sending: bool = False) -> Exception:
             reasons = set()
         if reasons and reasons <= {"rateLimitExceeded", "userRateLimitExceeded"}:
             return TransientChannelError("Gmail rate limit exceeded (HTTP 403)")
+        if reconciling and reasons and reasons <= {
+            "authError", "insufficientPermissions", "domainPolicy", "forbidden",
+        }:
+            return ReconciliationAccessError("Gmail sent evidence unavailable; restore access (HTTP 403)")
     if status in {408, 429} or (isinstance(status, int) and 500 <= status < 600):
         return TransientChannelError(f"Gmail temporarily unavailable (HTTP {status})")
     if status is not None:

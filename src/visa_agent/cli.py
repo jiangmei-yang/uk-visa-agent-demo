@@ -34,6 +34,13 @@ def main() -> None:
         "--credentials", type=Path, default=Path(".secrets/gmail_credentials.json")
     )
     gmail_parser.add_argument("--token", type=Path, default=Path(".secrets/gmail_token.json"))
+    gmail_parser.add_argument(
+        "--reauthorize", action="store_true",
+        help="Explicitly obtain new consent without first loading or refreshing the saved token",
+    )
+    gmail_parser.add_argument(
+        "--mailbox", help="Verify this mailbox before saving authorization; required with --reauthorize",
+    )
     inbound_parser = subparsers.add_parser(
         "inbound-worker", help="Process one batch from the durable inbound channel queue"
     )
@@ -67,10 +74,21 @@ def main() -> None:
     elif args.command == "gmail-auth":
         from visa_agent.channels.gmail_auth import build_gmail_service
 
-        service = build_gmail_service(args.credentials, args.token, interactive=True)
-        profile = service.users().getProfile(userId="me").execute()
+        if args.reauthorize and not args.mailbox:
+            parser.error("gmail-auth --reauthorize requires --mailbox to prevent an account switch")
+        service = build_gmail_service(
+            args.credentials, args.token, interactive=True, reauthorize=args.reauthorize,
+            expected_mailbox=args.mailbox,
+        )
+        # An expected mailbox was already verified before the credential commit.
+        # Do not add a second network failure after a successful reconnection.
+        mailbox = args.mailbox
+        if mailbox is None:
+            mailbox = service.users().getProfile(userId="me").execute().get(
+                "emailAddress", "address unavailable"
+            )
         print("Gmail sandbox authorization succeeded.")
-        print(f"Mailbox: {profile.get('emailAddress', 'address unavailable')}")
+        print(f"Mailbox: {mailbox}")
         print(f"Token stored privately at: {args.token}")
     elif args.command == "inbound-worker":
         if not args.model:

@@ -16,7 +16,12 @@ from visa_agent.channels.gmail import GmailAdapter, GmailReplySender
 from visa_agent.channels.gmail_auth import build_gmail_service
 from visa_agent.channels.gmail_intake import discover_messages, ordered_candidates, scope_rejection
 from visa_agent.channels.gmail_sync import GmailSyncJournal
-from visa_agent.channels.outbound import OutboxDispatcher, PermanentChannelError, ReplyRequest
+from visa_agent.channels.outbound import (
+    OutboxDispatcher,
+    PermanentChannelError,
+    ReconciliationAccessError,
+    ReplyRequest,
+)
 from visa_agent.channels.runtime_lock import exclusive_state
 from visa_agent.delivery.pack import generate_pack
 from visa_agent.documents.natural import NaturalPDFReader
@@ -118,7 +123,12 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
                 allow_guarded_drafts=getattr(args, 'reply_style', 'reviewed') == 'guarded-draft')
             dispatcher = OutboxDispatcher(store, automatic_sender, channel="gmail",
                 allowed_message_types=("blocked", "awaiting_profile_confirmation", "awaiting_confirmation", "held_update_received"))
-            dispatcher.reconcile_sending(automatic_sender, datetime.now(UTC))
+            reconciled = dispatcher.reconcile_sending(automatic_sender, datetime.now(UTC))
+            if any(item.reason_code == "ACCESS_REQUIRED" for item in reconciled):
+                raise ReconciliationAccessError(
+                    "Gmail sent-message evidence is unavailable; restore authorization or access "
+                    "before intake and dispatch can continue."
+                ) from None
         if args.action in {"prepare", "serve"}:
             key = read_secret(
                 "DEEPSEEK_API_KEY",

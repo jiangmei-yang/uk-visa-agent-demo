@@ -11,11 +11,15 @@ OAuth files.
 3. Create an OAuth Client ID of type **Desktop app**.
 4. Download the file to `.secrets/gmail_credentials.json`.
 5. Run `uv sync --extra dev --extra live`.
-6. Run `uv run visa-agent gmail-auth` and approve the two requested scopes in the browser.
+6. Run `uv run visa-agent gmail-auth --mailbox service@example.test` (using your dedicated mailbox)
+   and approve the two requested scopes in the browser.
 
 The application requests Gmail read-only plus send access. The refresh token is written to
 `.secrets/gmail_token.json` with owner-only file permissions. Both locations are ignored by Git.
-Changing scopes requires deleting the local token and authorizing again.
+For changed scopes or unusable saved authorization, stop the worker and use
+`uv run visa-agent gmail-auth --reauthorize --mailbox service@example.test` with the existing
+dedicated mailbox. New consent and the mailbox are verified before the previous token is replaced;
+do not delete the token or reset a case database. See [recovery boundaries](GMAIL_RECOVERY.md).
 
 Google's current testing quickstart requires a Cloud project, Gmail-enabled account, Desktop OAuth
 client, and one interactive consent. The [official Python quickstart](https://developers.google.com/workspace/gmail/api/quickstart/python)
@@ -52,8 +56,10 @@ is optional: include it for one isolated thread, or omit it to accept arbitrary 
 sender. Do not create a second state directory over already-processed mail: that can duplicate
 replies. Changing the scope of an existing bound directory is deliberately rejected.
 
-The current runner is invoked manually (`prepare`, review, `send-reviewed`) and sends at most one
-due reply per invocation. It is **not yet an unattended interviewer-facing inbox service**.
+The manual path (`prepare`, review, `send-reviewed`) sends at most one due reply per invocation.
+The separate supervised `serve --watch` path automatically prepares and sends bounded replies to
+one registered sender; see [its current scope](GMAIL_AUTOMATIC_SERVICE.md). Neither path is an
+open, unattended interviewer-facing inbox, and final ZIP dispatch remains manually reviewed.
 
 Natural final consent is accepted only against the current, unchanged summary; Gmail additionally
 requires that summary's outbox record to be SENT. A receipt such as “收到”, a question, a quoted

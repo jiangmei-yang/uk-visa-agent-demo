@@ -30,6 +30,10 @@ case-aware next step, instead of another full questionnaire. Its first new holdo
 the original failures and post-holdout local repairs are published. See [current acceptance
 gaps](VALIDATION.md), not just the automated-test count.
 
+The [latest reliability work](GMAIL_RECOVERY.md) adds recoverable sent-evidence lookup, safer
+credential replacement and verified lab downloads. A real isolated token-refresh/rejection probe
+passed without sending mail or changing the saved credentials; it is not live revocation recovery.
+
 The live Gmail runner additionally supports bounded ordinary-PDF text extraction and local OCR.
 A real two-turn Gmail experiment received four fictional ordinary PDFs, answered a sourced
 booking question and applied a date correction without re-upload. The identity summary stayed

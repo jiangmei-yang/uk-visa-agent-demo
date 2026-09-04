@@ -17,10 +17,18 @@ explicitly recorded here.
 
 Updated 2026-09-04. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **1,918 passing tests**; see the latest [next-step experiment](NEXT_STEP_ADVICE.md).
+The local suite has **2,040 passing tests**; see the latest [recovery work](GMAIL_RECOVERY.md)
+and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
 
-Latest: case-aware `next_step` answers accompany independent FAQs, choose one relevant item,
+Latest reliability work: private atomic credential replacement, mailbox-checked explicit
+reauthorization, visible query-only recovery after access failure, and guided-lab archive
+integrity passed isolated regressions. A real three-stage **isolated** refresh/profile probe also
+passed with zero sends and original credentials unchanged. Forced local expiry and an invalid
+copied refresh token do not prove natural expiry, actual revocation or live-worker recovery.
+Gmail and the persistent Docker UI have been updated; prior case/reply/ZIP invariants were retained.
+
+Latest adviser experiment: case-aware `next_step` answers accompany independent FAQs, choose one relevant item,
 and preserve date deferrals and customer pacing. The first new holdout is **6/8**, with a missed
 resume expression and wrongly applying a sibling's next-step question to the applicant's case.
 Original reports are retained. Post-holdout repairs are local exposed regressions, not new holdout

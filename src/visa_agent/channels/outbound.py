@@ -17,6 +17,10 @@ class PermanentChannelError(RuntimeError):
     """A provider rejection that must not be retried automatically."""
 
 
+class ReconciliationAccessError(PermanentChannelError):
+    """Evidence lookup needs restored access; its failure says nothing about delivery."""
+
+
 class UncertainDeliveryError(RuntimeError):
     """The provider may have accepted the send; reconcile before any resend."""
 
@@ -48,6 +52,7 @@ class DispatchOutcome:
     status: str
     provider_message_id: str | None = None
     next_attempt_at: datetime | None = None
+    reason_code: str | None = None
 
 
 def _safe_error(error: Exception) -> str:
@@ -126,6 +131,11 @@ class OutboxDispatcher:
             rfc_message_id = f"<{outbox_id}@visa-agent.local>"
             try:
                 provider_message_id = sender.find_sent_message(rfc_message_id)
+            except ReconciliationAccessError:
+                # No evidence was obtained. Keep the original uncertain attempt intact;
+                # a future query may establish acceptance, but this must never permit send.
+                outcomes.append(DispatchOutcome(outbox_id, "SENDING", reason_code="ACCESS_REQUIRED"))
+                continue
             except TransientChannelError:
                 outcomes.append(DispatchOutcome(outbox_id, "SENDING"))
                 continue
