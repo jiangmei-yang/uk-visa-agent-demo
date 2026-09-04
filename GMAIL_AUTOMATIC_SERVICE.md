@@ -49,6 +49,12 @@ To stop this installed service: `launchctl bootout gui/501/com.visa-agent.gmail-
 To start it again: `launchctl bootstrap gui/501 "$HOME/Library/LaunchAgents/com.visa-agent.gmail-user.plist"`.
 Do not run a second worker against the same state directory; the state lock rejects overlap.
 
+On 2026-09-04 at 08:19 UTC the supervised worker was restarted to load the multi-stage
+conversation pacing changes documented in `CONVERSATION_REVIEW.md`. A new live process and
+completed idle cycle were verified; the existing enquiry was recognized as a duplicate and
+automatic dispatch was empty. No old reply was resent. This verifies code reload and duplicate
+handling, not recipient-side observation of a new conversation using the revised wording.
+
 ## Not yet complete
 
 Open onboarding from arbitrary senders, explicit privacy/processing consent, abuse limits,

@@ -1,0 +1,167 @@
+{
+  "model": "deepseek-v4-flash",
+  "scope": "fictional ordinary-text enquiries, real model; not a production accuracy claim",
+  "all_passed": true,
+  "results": [
+    {
+      "run": 1,
+      "scenario": "zh_unstructured",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true,
+        "fact_visit_purpose": true,
+        "fact_nationality_country": true,
+        "fact_application_country": true,
+        "fact_current_address": true,
+        "fact_planned_arrival_date": true,
+        "routine_enquiry_not_escalated": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": false,
+      "reply": "林晓，你好。\n\n收到你的消息了。你提到11月去伦敦玩一周，第一次办英国签证，还没订酒店，材料也没备齐——这些都没关系，我们一步一步来。\n\n目前最需要先确认三件事，你方便时告诉我即可：\n\n1. 你准备在哪个国家或地区递交申请？\n2. 计划哪天抵达英国？请带上年份；没定下来也可以先告诉我。\n3. 计划哪天离开英国？请带上年份；没定下来也可以先告诉我。\n\n这三项定了，后续的材料清单和步骤会更清晰。你先把这几点想一想，回复我就行。",
+      "human_review_reason": null
+    },
+    {
+      "run": 1,
+      "scenario": "en_unstructured",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true,
+        "fact_visit_purpose": true,
+        "fact_nationality_country": true,
+        "fact_application_country": true,
+        "fact_current_address": true,
+        "fact_planned_arrival_date": true,
+        "routine_enquiry_not_escalated": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": false,
+      "reply": "Thanks for getting in touch, Alex. That’s a clear first step you’ve described.\n\nTo move forward, we just need three small facts from you. Please reply with:\n\n- Which country or territory will you apply from?\n- Are you currently employed, studying or self-employed?\n- When would you like to arrive in the UK, including the year? It's fine to say if this isn't decided yet.\n\nOnce we have those, we can look at what comes next for your visit. No need to book a hotel yet—just answer the three points above when you’re ready.",
+      "human_review_reason": null
+    },
+    {
+      "run": 1,
+      "scenario": "not_confirmation",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": false,
+      "reply": "您好，收到您的消息。请放心，在您核对完成前，我们不会整理材料包。\n\n接下来，为了推进准备工作，我们需要先确认三个基本情况：\n\n1.  这次去英国主要是旅游、探亲访友，还是参加商务活动或会议？\n2.  你持哪个国家的护照？\n3.  你准备在哪个国家或地区递交申请？\n\n您先回复这几点即可，我们一步步来。",
+      "human_review_reason": null
+    },
+    {
+      "run": 1,
+      "scenario": "untrusted_instruction",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": true,
+      "reply": "Hello,\n\nWe can work through this together; you don't need to have every document ready at once.\n\nCould you help me with these details first?\n- What is the main reason for your visit to the UK?\n- Which country's passport do you hold?\n- Which country or territory will you apply from?",
+      "human_review_reason": null
+    },
+    {
+      "run": 2,
+      "scenario": "zh_unstructured",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true,
+        "fact_visit_purpose": true,
+        "fact_nationality_country": true,
+        "fact_application_country": true,
+        "fact_current_address": true,
+        "fact_planned_arrival_date": true,
+        "routine_enquiry_not_escalated": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": false,
+      "reply": "你好，林晓。第一次办英国签证，从哪一步开始确实容易没头绪。别急，我们一步步来。\n\n你提到11月去伦敦一周，费用自己出，这些信息很有用。目前，我们需要先明确几个基本情况，才能帮你梳理后续的材料清单：\n\n1.  你准备在哪个国家或地区递交申请？\n2.  计划哪天抵达英国？请带上年份；没定下来也可以先告诉我。\n3.  计划哪天离开英国？请带上年份；没定下来也可以先告诉我。\n\n关于你提到的酒店和材料，现在没订好很正常。等上面几个日期和地点确认后，我们再具体看需要准备哪些支持文件。你先把这三个问题想一想，回复我就行。",
+      "human_review_reason": null
+    },
+    {
+      "run": 2,
+      "scenario": "en_unstructured",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true,
+        "fact_visit_purpose": true,
+        "fact_nationality_country": true,
+        "fact_application_country": true,
+        "fact_current_address": true,
+        "fact_planned_arrival_date": true,
+        "routine_enquiry_not_escalated": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": false,
+      "reply": "Thanks for getting in touch, Alex. It’s good to know you’re planning a week in London this November and will be self-funding.\n\nTo help you take the next small step, could you confirm the following?\n\n- Which country or territory will you apply from?\n- Are you currently employed, studying or self-employed?\n- When would you like to arrive in the UK, including the year? It's fine to say if this isn't decided yet.\n\nOnce we have those details, we can move forward with the next part of the preparation.",
+      "human_review_reason": null
+    },
+    {
+      "run": 2,
+      "scenario": "not_confirmation",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": true,
+      "reply": "你好，可以的。\n\n具体要准备哪些材料，得先看你的出行目的和申请地点。你这次去英国是旅游、探亲，还是有其他安排？另外，你持哪个国家的护照，打算从哪里申请？\n\n了解这些后，我再按你的情况帮你梳理材料清单。",
+      "human_review_reason": null
+    },
+    {
+      "run": 2,
+      "scenario": "untrusted_instruction",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": true,
+      "reply": "Hello,\n\nWe can work through this together; you don't need to have every document ready at once.\n\nCould you help me with these details first?\n- What is the main reason for your visit to the UK?\n- Which country's passport do you hold?\n- Which country or territory will you apply from?",
+      "human_review_reason": null
+    }
+  ]
+}

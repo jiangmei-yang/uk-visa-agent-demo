@@ -181,7 +181,7 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
 def deterministic_fallback_message(case: Case, plan: str) -> str:
     if case.status == CaseStatus.HUMAN_REVIEW_REQUIRED:
         message = (
-            "收到你的信息了。这部分需要顾问进一步核实，我暂时不能自动继续整理材料包。已收到的资料会保留，不需要重复提交。"
+            "这部分我还不能可靠判断，需要人工核实后才能继续，不能直接给你确定答复。你发来的信息和文件都已保留，暂时不用重新发送。"
             if case.customer_language == "zh"
             else "Thank you for explaining. This needs a human adviser to check before we continue. Your information is retained; you don't need to resend it. I haven't prepared or submitted an application."
         )
@@ -190,7 +190,7 @@ def deterministic_fallback_message(case: Case, plan: str) -> str:
         return blocked_customer_message(case)
     if plan == "ready":
         if case.customer_language == "zh":
-            return "材料包已整理好，供顾问复核。请先看包内的说明和资料摘要；如发现任何错误，请回复这封邮件。这不代表签证获批，也没有替你提交申请。"
+            return "你的申请资料已整理好，供顾问复核。建议先看里面的说明和信息摘要，再逐项核对文件；如果有遗漏或需要修改的地方，直接回复告诉我。这里完成的是材料整理，还没有递交签证申请，也不代表签证获批。"
         return (
             "Your review pack is ready for human review. This is not an approval prediction or a "
             "submitted visa application."

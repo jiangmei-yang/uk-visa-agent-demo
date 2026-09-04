@@ -36,6 +36,7 @@ from visa_agent.workflow.conversation import (
     latest_reply_text,
     next_fact_questions,
     summary_fingerprint,
+    update_deferred_questions,
 )
 from visa_agent.workflow.customer_questions import grounded_customer_answers
 
@@ -149,7 +150,12 @@ class WorkflowService:
             if customer_event.known_profile.get(update.field) is not None
             and customer_event.known_profile.get(update.field) != update.value
         }
+        case.latest_received_facts = {
+            update.field: str(update.value) for update in patch.updates
+            if customer_event.known_profile.get(update.field) is None
+        }
         self._apply_patch(case, customer_event, patch.model_dump()["updates"])
+        update_deferred_questions(case, customer_event.body)
         self._ingest_attachments(case, event)
         profile_changed = prior_profile != summary_fingerprint(case, include_documents=False)
         if profile_changed:

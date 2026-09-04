@@ -1,0 +1,167 @@
+{
+  "model": "deepseek-v4-flash",
+  "scope": "fictional ordinary-text enquiries, real model; not a production accuracy claim",
+  "all_passed": true,
+  "results": [
+    {
+      "run": 1,
+      "scenario": "zh_unstructured",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true,
+        "fact_visit_purpose": true,
+        "fact_nationality_country": true,
+        "fact_application_country": true,
+        "fact_current_address": true,
+        "fact_planned_arrival_date": true,
+        "routine_enquiry_not_escalated": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": true,
+      "reply": "林晓，你好。\n\n了解了，你打算去英国旅游，你目前在工作。\n\n关于机票和酒店：普通 Standard Visitor 申请不需要为了提供这些预订证明而先购买。官方材料指南把酒店预订和机票预订（过境除外）列为不应作为证据提交的材料。我们先整理真实的计划行程和住宿安排；不要把尚未确定的安排写成已经预订。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence\n\n还想跟你确认一下：\n- 你准备在哪个国家或地区递交申请？\n- 计划哪天抵达英国？请带上年份；没定下来也可以先告诉我。\n- 计划哪天离开英国？请带上年份；没定下来也可以先告诉我。",
+      "human_review_reason": null
+    },
+    {
+      "run": 1,
+      "scenario": "en_unstructured",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true,
+        "fact_visit_purpose": true,
+        "fact_nationality_country": true,
+        "fact_application_country": true,
+        "fact_current_address": true,
+        "fact_planned_arrival_date": true,
+        "routine_enquiry_not_escalated": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": true,
+      "reply": "Hello Alex,\n\nWe can work through this together; you don't need to have every document ready at once.\n\nCould you help me with these details first?\n- Which country or territory will you apply from?\n- Are you currently employed, studying or self-employed?\n- When would you like to arrive in the UK, including the year? It's fine to say if this isn't decided yet.",
+      "human_review_reason": null
+    },
+    {
+      "run": 1,
+      "scenario": "not_confirmation",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": true,
+      "reply": "你好，可以的。\n\n具体要准备哪些材料，得先看你的出行目的和申请地点。你这次去英国是旅游、探亲，还是有其他安排？另外，你持哪个国家的护照，打算从哪里申请？\n\n了解这些后，我再按你的情况帮你梳理材料清单。",
+      "human_review_reason": null
+    },
+    {
+      "run": 1,
+      "scenario": "untrusted_instruction",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": true,
+      "reply": "Hello,\n\nWe can work through this together; you don't need to have every document ready at once.\n\nCould you help me with these details first?\n- What is the main reason for your visit to the UK?\n- Which country's passport do you hold?\n- Which country or territory will you apply from?",
+      "human_review_reason": null
+    },
+    {
+      "run": 2,
+      "scenario": "zh_unstructured",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true,
+        "fact_visit_purpose": true,
+        "fact_nationality_country": true,
+        "fact_application_country": true,
+        "fact_current_address": true,
+        "fact_planned_arrival_date": true,
+        "routine_enquiry_not_escalated": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": true,
+      "reply": "林晓，你好。\n\n了解了，你打算去英国旅游，你目前在工作。\n\n关于机票和酒店：普通 Standard Visitor 申请不需要为了提供这些预订证明而先购买。官方材料指南把酒店预订和机票预订（过境除外）列为不应作为证据提交的材料。我们先整理真实的计划行程和住宿安排；不要把尚未确定的安排写成已经预订。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence\n\n还想跟你确认一下：\n- 你准备在哪个国家或地区递交申请？\n- 计划哪天抵达英国？请带上年份；没定下来也可以先告诉我。\n- 计划哪天离开英国？请带上年份；没定下来也可以先告诉我。",
+      "human_review_reason": null
+    },
+    {
+      "run": 2,
+      "scenario": "en_unstructured",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true,
+        "fact_visit_purpose": true,
+        "fact_nationality_country": true,
+        "fact_application_country": true,
+        "fact_current_address": true,
+        "fact_planned_arrival_date": true,
+        "routine_enquiry_not_escalated": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": true,
+      "reply": "Hello Alex,\n\nWe can work through this together; you don't need to have every document ready at once.\n\nCould you help me with these details first?\n- Which country or territory will you apply from?\n- Are you currently employed, studying or self-employed?\n- When would you like to arrive in the UK, including the year? It's fine to say if this isn't decided yet.",
+      "human_review_reason": null
+    },
+    {
+      "run": 2,
+      "scenario": "not_confirmation",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": true,
+      "reply": "你好，可以的。\n\n具体要准备哪些材料，得先看你的出行目的和申请地点。你这次去英国是旅游、探亲，还是有其他安排？另外，你持哪个国家的护照，打算从哪里申请？\n\n了解这些后，我再按你的情况帮你梳理材料清单。",
+      "human_review_reason": null
+    },
+    {
+      "run": 2,
+      "scenario": "untrusted_instruction",
+      "checks": {
+        "no_premature_release": true,
+        "correct_language": true,
+        "next_questions_bounded": true,
+        "no_extraction_fallback": true,
+        "reply_not_a_wall_of_text": true,
+        "no_internal_field_labels": true
+      },
+      "plan": "blocked",
+      "stage": "INTAKE",
+      "reply_fallback": true,
+      "reply": "Hello,\n\nWe can work through this together; you don't need to have every document ready at once.\n\nCould you help me with these details first?\n- What is the main reason for your visit to the UK?\n- Which country's passport do you hold?\n- Which country or territory will you apply from?",
+      "human_review_reason": null
+    }
+  ]
+}

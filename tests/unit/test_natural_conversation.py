@@ -245,6 +245,6 @@ def test_reply_acknowledges_correction_instead_of_restarting_onboarding() -> Non
     )
     case.latest_changes = {"planned_departure_date": "2026-11-13"}
     message = deterministic_fallback_message(case, "blocked")
-    assert "收到更正" in message
+    assert "已按你说的改为" in message
     assert "2026-11-13" in message
     assert "可以先聊" not in message

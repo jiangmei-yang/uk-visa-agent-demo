@@ -9,8 +9,15 @@ REVIEW_AFTER = date(2026, 10, 4)
 
 
 def grounded_customer_answers(body: str, language: str, today: date) -> list[str]:
-    booking = re.search(r"机票|酒店|flight|hotel|book(?:ing)?", body, re.I)
-    question = re.search(r"[?？]|必须|要先|先买|need|should|have to", body, re.I)
+    booking = re.search(r"机票|酒店|住宿|flight|hotel|accommodation", body, re.I)
+    question = re.search(
+        r"(?:需要|必须|要不要|是否|能否|可以|要先).{0,12}(?:买|订|预订).{0,4}(?:机票|酒店|住宿)|"
+        r"(?:机票|酒店|住宿|预订).{0,8}(?:必须|需要|要先|要不要|证明|材料|证据).{0,12}(?:[?？]|吗)|"
+        r"(?:必须|需要|要不要|是否).{0,5}(?:买|订)(?:吗|[?？])|"
+        r"(?:do i|must i|should i|have to|need to).{0,25}(?:book|buy|reserve|flight|hotel)|"
+        r"(?:flight|hotel|booking).{0,20}(?:required|necessary|evidence|proof).{0,12}\?",
+        body, re.I,
+    )
     if not booking or not question:
         return []
     if not CHECKED_AT <= today <= REVIEW_AFTER:

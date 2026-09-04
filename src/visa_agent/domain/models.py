@@ -173,6 +173,9 @@ class Case(BaseModel):
     customer_language: str = "en"
     customer_answers: list[str] = Field(default_factory=list)
     latest_changes: dict[str, str] = Field(default_factory=dict)
+    latest_received_facts: dict[str, str] = Field(default_factory=dict)
+    deferred_fields: list[str] = Field(default_factory=list)
+    latest_deferred_fields: list[str] = Field(default_factory=list)
     latest_customer_message: str = ""
     latest_document_names: list[str] = Field(default_factory=list)
     last_requested_fields: list[str] = Field(default_factory=list)

@@ -46,7 +46,7 @@ def clear_natural_confirmation(body: str) -> bool:
         len(line) <= 180
         and bool(
             re.fullmatch(
-                r"(?:(?:我)?(?:确认)?(?:以上|上述|这些|所有|全部|最终)?(?:的)?(?:资料|信息|摘要|材料清单|内容)?(?:都)?(?:正确|无误|没问题|核对无误)[，,。.!！\s]*(?:(?:请|可以|麻烦)(?:帮我)?(?:继续|整理|准备|发给我|生成材料包)[，,。.!！\s]*)?"
+                r"(?:(?:我)?(?:已)?(?:确认)?(?:以上|上述|这些|所有|全部|最终)?(?:的)?(?:资料|信息|摘要|材料清单|内容)?(?:都)?(?:正确|无误|没问题|核对无误)[，,。.!！\s]*(?:(?:请|可以|麻烦)(?:帮我)?(?:继续|整理|准备|发给我|生成材料包)[，,。.!！\s]*)?"
                 r"|(?:I (?:have )?(?:reviewed and )?confirm (?:that )?(?:the )?(?:details|summary|information)(?: (?:is|are) (?:correct|accurate))?)"
                 r"|(?:(?:Yes[,，]?\s+)?(?:Everything|All (?:the )?(?:details|information)) (?:is|are|looks) (?:correct|accurate|good)(?:[,.;] (?:please )?(?:proceed|prepare the pack|go ahead))?))[.!\s]*",
                 line,
@@ -121,12 +121,12 @@ def next_fact_questions(case: Case) -> list[str]:
         "visit_purpose",
         "nationality_country",
         "application_country",
+        "occupation_status",
+        "funding_source",
         "planned_arrival_date",
         "planned_departure_date",
         "full_name",
         "date_of_birth",
-        "occupation_status",
-        "funding_source",
         "uk_accommodation",
         "estimated_trip_cost_gbp",
         "annual_income_gbp",
@@ -136,7 +136,7 @@ def next_fact_questions(case: Case) -> list[str]:
     ]
     required = required_profile_facts(case)
     ordered = priority + sorted(required - set(priority))
-    return [
+    missing = [
         field
         for field in ordered
         if field in required
@@ -144,7 +144,45 @@ def next_fact_questions(case: Case) -> list[str]:
             getattr(case.profile, field) is None
             or (field == "route_confirmed_standard_visitor" and not getattr(case.profile, field))
         )
-    ][: max(0, 3 - len(case.open_blockers()))]
+    ]
+    actionable = [field for field in missing if field not in case.deferred_fields]
+    return (actionable or missing)[: max(0, 3 - len(case.open_blockers()))]
+
+
+def update_deferred_questions(case: Case, body: str) -> None:
+    """Defer unanswered dates, not requirements or previously supplied facts."""
+    case.latest_deferred_fields = []
+    if re.search(
+        r"(?:日期|时间|行程).{0,8}(?:还没|尚未|未|没有)(?:定|确定|决定)|"
+        r"(?:haven't|have not).{0,15}(?:decided|fixed).{0,15}dates|"
+        r"dates.{0,12}(?:not|aren't).{0,8}(?:set|fixed|decided)", body, re.I
+    ):
+        for field in ("planned_arrival_date", "planned_departure_date"):
+            if getattr(case.profile, field) is None:
+                case.latest_deferred_fields.append(field)
+                if field not in case.deferred_fields:
+                    case.deferred_fields.append(field)
+    case.deferred_fields = [field for field in case.deferred_fields if getattr(case.profile, field) is None]
+
+
+def received_context(case: Case) -> str:
+    if case.customer_language != "zh":
+        return ""
+    facts = case.latest_received_facts
+    parts = []
+    purposes = {"tourism": "你打算去英国旅游", "conference": "你准备去英国参加会议",
+                "family_or_friends": "你打算去英国探亲访友", "business": "这次是商务访问"}
+    occupations = {"employed": "你目前在工作", "student": "你目前在读书",
+                   "self_employed": "你目前自己经营业务"}
+    if facts.get("visit_purpose") in purposes:
+        parts.append(purposes[facts["visit_purpose"]])
+    if facts.get("occupation_status") in occupations:
+        parts.append(occupations[facts["occupation_status"]])
+    funding = {"self": "费用由你自己承担", "employer_or_school": "费用由雇主或学校承担",
+               "personal_sponsor": "这次有个人资助"}
+    if facts.get("funding_source") in funding:
+        parts.append(funding[facts["funding_source"]])
+    return "了解了，" + "，".join(parts[:2]) + "。" if parts else ""
 
 
 DOCUMENT_LABELS_ZH = {
@@ -213,7 +251,7 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
                 doc.filename for doc in case.documents if doc.id in issue.related_document_ids
             )
             issues.append(
-                f"需要顾问核对的材料：{names or '目前的信息有冲突'}。我还不能可靠确认其中的内容，暂时不会把它计为已完成。"
+                f"{names or '目前这些信息'}还需要人工核对，我暂时不能确认其中的内容。已收到的文件会保留，不用重新发。"
             )
         else:
             issues.append(f"{issue.title}: {issue.detail}")
@@ -250,7 +288,7 @@ def change_acknowledgement(case: Case) -> str | None:
         f"{fact_label(case, key)}：{value}" for key, value in case.latest_changes.items()
     )
     if case.customer_language == "zh":
-        return f"收到更正，我已更新：{changes}。下面只列仍需处理的事项。"
+        return f"好的，已按你说的改为：{changes}。"
     return f"Thanks for the correction. I've updated: {changes}. The remaining points are below."
 
 
@@ -283,6 +321,8 @@ def blocked_customer_message(case: Case) -> str:
             if zh
             else f"Thanks for the {len(case.latest_document_names)} documents you've sent."
         )
+    elif context := received_context(case):
+        intro = context
     else:
         intro = (
             "收到，我再了解一下你的情况。"
@@ -290,6 +330,11 @@ def blocked_customer_message(case: Case) -> str:
             else "We can work through this together; you don't need to have every document ready at once."
         )
     sections = [greeting, intro]
+    if case.latest_deferred_fields:
+        sections.append(
+            "日期先留空，等你确定后再补。我们先整理其他信息。"
+            if zh else "We can leave the dates open for now and collect the other details first."
+        )
     sections.extend(case.customer_answers)
     if issues:
         sections.append(
@@ -348,7 +393,7 @@ def confirmation_message(case: Case, *, profile_only: bool = False) -> str:
             if doc.status == DocumentStatus.ACCEPTED_FOR_REVIEW
         )
     text += (
-        "\n\n如果都正确，直接回复“资料都正确，可以继续”就好；有变动的话，告诉我具体改哪一项。"
+        "\n\n麻烦核对一下，尤其是姓名和日期。都准确的话，告诉我已核对无误；有哪项不对，直接告诉我怎么改。"
         if zh
         else "\n\nIf everything is correct, you can simply reply 'Everything is correct, please proceed.' Otherwise, tell me what needs changing."
     )
@@ -360,7 +405,7 @@ def confirmation_message(case: Case, *, profile_only: bool = False) -> str:
         )
     else:
         text += (
-            "\n收到你的确认后，我再整理材料包供顾问复核；这不代表签证获批，也不会替你提交申请。"
+            "\n确认后，我再把这些资料整理好供顾问复核。这里是申请材料准备，不会替你递交签证申请，也不代表签证获批。"
             if zh
             else "\nAfter your confirmation, I'll assemble the pack for human review. It is not an approval prediction or a submitted application."
         )
