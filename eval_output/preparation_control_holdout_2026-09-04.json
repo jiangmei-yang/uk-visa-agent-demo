@@ -1,0 +1,1839 @@
+{
+  "scope": "Single production-default extraction and guarded preparation-control workflow on fictional mail",
+  "evaluation_mode": "provider_run",
+  "new_provider_result": true,
+  "not_proven": [
+    "real email delivery",
+    "general legal accuracy",
+    "all natural-language control requests"
+  ],
+  "split": "holdout",
+  "holdout_authorized": true,
+  "model": "deepseek-v4-flash",
+  "operation": "extract_case_patch",
+  "no_provider_retries": true,
+  "calls_per_case": 1,
+  "workflow_uses_captured_patch": true,
+  "external_sends": 0,
+  "reviewed_as_of": "2026-09-04",
+  "corpus_id": "/Users/nu/Documents/ChatGPT/签证/evals/preparation_control_cases.json",
+  "corpus_sha256": "dee83ff18493a22a7ef354b81b999e89686dbd63a28987bfde4fe8c8c1986106",
+  "source_sha256": {
+    "src/visa_agent/__init__.py": "a3350ee5bcd581ebdb734128829da5e6772eae8346faaa85e2bf608d27d95149",
+    "src/visa_agent/case_data.py": "06dcf00b0073b70b25468b7a0da891942a3ef45bcbd52e141194628b4823951c",
+    "src/visa_agent/channels/__init__.py": "4a9e7ea09deca6b1c25e049b68a2c34aadbd57475fc072d0e198086255ba173e",
+    "src/visa_agent/channels/automatic_reply.py": "11955299404cb1dcbf327bbe6cca152b851c22f2279f1759fed4fa0ac8a05322",
+    "src/visa_agent/channels/email_fixture.py": "8e821355c373927d6ac9e27e5d0d59b0f01d061c98503a22a7d5ff3d1413a618",
+    "src/visa_agent/channels/email_ingestion.py": "43987616a31738554a2cc39ccaecd56e5dabe9bb7db111c0523e15c2b0a80e61",
+    "src/visa_agent/channels/gmail.py": "1555d53e005c952257c3d19d1964e6ed0bb34264df2585c985f59a2188c1574a",
+    "src/visa_agent/channels/gmail_auth.py": "fb252a09de4850646a48c107281ed961a66314a70a9c22fa33feee5b209d21fd",
+    "src/visa_agent/channels/gmail_intake.py": "93e4bbef617ef08fa91e870d15fc49d85c8c825c6eeeaa0966310af87b4a26f8",
+    "src/visa_agent/channels/gmail_pipeline.py": "3ec2aaf045a78046f59c98b1491ed806a4fc24c39007255c4c0ed02ea16f41c3",
+    "src/visa_agent/channels/gmail_sync.py": "475629da5b066f26cf0e27df5d60ded8fbbeaefe990f31a887011989231a071f",
+    "src/visa_agent/channels/inbound_worker.py": "395097242533a1c810a485778e220587b5393be78e7d853cba51a77b35565b06",
+    "src/visa_agent/channels/outbound.py": "c62245e9bb3a925f34d80c24bbfea9c9fff1fdfe5d90bacdc8b958af7a79467a",
+    "src/visa_agent/channels/outbound_fixture.py": "f83c59dfe9013d59d3fc336061931c8ac5b9d5dae6c87a84a3200bc2edfa2d82",
+    "src/visa_agent/channels/runtime_lock.py": "c03396b333e6627731f8a61b6b14438ff3d6c55370759fdd39af46a45bd26fb5",
+    "src/visa_agent/channels/twilio_receiver.py": "a4267a306c01d2757657d73d0dff1f1c9f06237e8df4e9fb1f028fc705b13600",
+    "src/visa_agent/channels/twilio_status.py": "f75351716055ba4a5c001d00e76c64187589eb462c05684f7c73dc96c4f80271",
+    "src/visa_agent/channels/twilio_whatsapp.py": "5666e8ce33b3bc454b5dd41b56a87846d005a06c541bc28f27c1dd069ecfdf89",
+    "src/visa_agent/channels/whatsapp_service.py": "abe8ffa7cb2ddc50cb95f8500c5f06a0dc375c4cbd7db17d644bba910b54933b",
+    "src/visa_agent/cli.py": "593b65cde7fcefd04f798b9ba19ad2fc9c08831747a6f5e9effecdf35c153a8e",
+    "src/visa_agent/config.py": "a00bd6949e4c747ba19f9b00e28fdf3efdcca1eb237e6f0b1f0f05b92d094516",
+    "src/visa_agent/delivery/__init__.py": "c228e85c7a38888d18198814f142ac9a6262de6ee17ccc377066e308c1df9735",
+    "src/visa_agent/delivery/pack.py": "c63901661baa26fdfb44380044472c55dcab915ece51a036504f1a1503709fb4",
+    "src/visa_agent/demo.py": "6b09553b1dc0a716833e6bf62753c865dc912fc6e45c5e8aa91f96b8022d6402",
+    "src/visa_agent/documents/__init__.py": "dae296ed7a7312a7792c2dc59d13be7b6905c5daf4b728d5ca37c80224fed7b1",
+    "src/visa_agent/documents/natural.py": "e172f18885518ed67df02c5d4a43a35414626d6e882b203b16c9b3b508598a51",
+    "src/visa_agent/documents/processor.py": "e5230265b42a9073f4264d2056e35ae8eca0bdecf55da2d99bebfcddce92efdc",
+    "src/visa_agent/documents/samples.py": "76e605d508fd6b51fbee95d4cd6ad23cad6e731fcc316ecbe5c14f018c885fba",
+    "src/visa_agent/domain/__init__.py": "d5cd2e4964d34671b4b71a2c0796c5985b105b0fc0a9b5c72082c90e3625cecd",
+    "src/visa_agent/domain/date_evidence.py": "0683e9c2325794df3f22c1e38ff9bd722176f69ecd3d42090417035bc8d36fe2",
+    "src/visa_agent/domain/locations.py": "2e831bd608afd399ac648b4bca05a7c5e009f7266666e22bdd9312bcf3651f00",
+    "src/visa_agent/domain/models.py": "af9eb3a11ca5329b1815d00ce6d634aa2db26c31bbadf62578cbf4dccf1cef9f",
+    "src/visa_agent/domain/policy.py": "98103fa5d39e67df9e50a7364e43a11f96b98be1bc04e4ffc40e98422f331e5b",
+    "src/visa_agent/domain/rules.py": "fc5fe693f8e82f3a92ed180ffdb6827fb43302e8fa7504ff92b99fd75eef994e",
+    "src/visa_agent/lab.py": "e1da55ae16317aab88d6b65e4b7bf1711614d7b006b9094b4401c655fff70f26",
+    "src/visa_agent/llm/__init__.py": "5607d3f7ccee9ab958fec329b1f27093830199ec9c38a45446c93e4537fa7c42",
+    "src/visa_agent/llm/deepseek_client.py": "ea4325f0f1b0e3f037c3a3448715d8a7570455103c3fea54be1ba1eafdb923bb",
+    "src/visa_agent/llm/evaluation.py": "6393a9f5bc43f43ae5c5bad4e8e813a5aafe87acd1ff0cd454de6f59972a9f26",
+    "src/visa_agent/llm/guarded.py": "fdc932111fcc01cd6c06b36bc1f8bbe6abe2ce2f738cf9caaa84217c4a573039",
+    "src/visa_agent/llm/offline.py": "679238783757f0536a8da805ceff88242cee0174aa70e6f62113adaacf344c27",
+    "src/visa_agent/llm/openai_client.py": "3c5f3ac67fc87d1b895bc269ef68344c8a9b1fa9e7cad6ab9fcde3ab646e5c9d",
+    "src/visa_agent/llm/ports.py": "b8d4749dfdbb1ed95b54bbd9e0aced7cc2b64fced06ec03683d8f0960b5eb785",
+    "src/visa_agent/llm/question_understanding.py": "52c39213eb3130b701abcf0699669344527da2b1fe3ecf23842544f5bdbd85df",
+    "src/visa_agent/public_webhook.py": "c51893541eb5923847a057b4bfc896b20a7360c19b3462b6a130a0611ebc5c3d",
+    "src/visa_agent/review_ui.py": "9ef689b0ce0886610cb165d11b40341bc686c52aee9c2b9a60fcd38001d41c52",
+    "src/visa_agent/secrets.py": "5a7f15fb96b1a544209a6380c57a3e39f9ac5c8c93cbd54cf2f50ded7b4fbd36",
+    "src/visa_agent/startup.py": "c6e9d3a83701715286d23ed66241feb00db6375eda63efb5a7737fffc74f8846",
+    "src/visa_agent/storage/__init__.py": "7296f379f4b997d52f354cdd5e6ce5314187146e117f02f04b6fa86f39bf6cd6",
+    "src/visa_agent/storage/sqlite.py": "1daed02fb1f1507f159f13b59f05828c58f9bfbddf2452082a37a29c7fe504bf",
+    "src/visa_agent/web.py": "7ba99a3c231238dd9e871ce42c4e7d4d95cf943b99ccb238f9ae84d8c77db8f6",
+    "src/visa_agent/workflow/__init__.py": "a273d6ddf1c05279ae2d32d46583ba5b9e94e145f4f5f816d131a723896dac7e",
+    "src/visa_agent/workflow/adviser_guidance.py": "81c4565545981ca68854a708a84e53c4c6d9ea0ea07122cb37381b6dceeba3db",
+    "src/visa_agent/workflow/conversation.py": "5057f5e256e66d2e14947d2f1d6c8df1861a7ae8ecfff4ab6b390e704dd8f5c4",
+    "src/visa_agent/workflow/customer_questions.py": "a129b97e8892552eed548c326e900fda196349aad33d21a9fd4db13dbe5ace3a",
+    "src/visa_agent/workflow/funding_wording.py": "f393622327a03fddf6f02e9c7633e9b90e5e415269f6c548a9d09438ad70c714",
+    "src/visa_agent/workflow/preparation_control.py": "364798c11aa6bd849b9b3a76fdd05e9baa6153c58b7f842c6f3bc10d828ca7ea",
+    "src/visa_agent/workflow/review.py": "bce98b1a3e7f14bd0cc03ec01207db453ed90464881473ab9e027443bb0aa797",
+    "src/visa_agent/workflow/service.py": "63e4f9ac564d3a19abfe630389f068d57ffd94ffa43637ba2a52cb4b0b02ff11",
+    "knowledge/uk_standard_visitor_2026-02-25.yaml": "cf7991fe8dad5101910654ad6484f099c4637c7d14b0529c68e4d57818e51d84",
+    "scripts/preparation_control_probe.py": "c10b04d588b1572e652d2dc4ef6149d27300b59ff7244bade65ff889fedb4105"
+  },
+  "source_bundle_sha256": "3a02aa5ba248fc041e8474c6b3f76f9cffe18cc3433608ae9275cca61d6ecc68",
+  "started_at": "2026-09-04T12:28:33.234684+00:00",
+  "expected_case_count": 8,
+  "completed_case_count": 8,
+  "model_calls": 8,
+  "completed": true,
+  "results": [
+    {
+      "id": "pc_zh_hold_001",
+      "language": "zh",
+      "body": "上午还想着英国签证先别弄了，但我刚重新安排好时间，最后决定是现在恢复整套材料准备，麻烦接着往下做。旅行日期还未知，预算则请更正为2200英镑，替换原来的1500。",
+      "initially_paused": true,
+      "expected_action": "resume",
+      "expected_profile_updates": {
+        "estimated_trip_cost_gbp": 2200
+      },
+      "rationale": "The final explicit present decision is to resume, superseding the earlier pause idea. Unknown dates do not override it, and the budget correction remains valid.",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-pc_zh_hold_001",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-pc_zh_hold_001",
+        "sender": "fictional-preparation@example.test",
+        "subject": "英国签证材料准备",
+        "body": "上午还想着英国签证先别弄了，但我刚重新安排好时间，最后决定是现在恢复整套材料准备，麻烦接着往下做。旅行日期还未知，预算则请更正为2200英镑，替换原来的1500。",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-pc_zh_hold_001@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:28:33.494474Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:28:33.494776+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3178,
+          "output_tokens": 212,
+          "total_tokens": 3390
+        }
+      ],
+      "raw_patch": {
+        "updates": [
+          {
+            "field": "estimated_trip_cost_gbp",
+            "value": 2200,
+            "source_excerpt": "预算则请更正为2200英镑，替换原来的1500",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [
+          {
+            "field": "planned_arrival_date",
+            "source_excerpt": "旅行日期还未知",
+            "confidence": 1.0
+          },
+          {
+            "field": "planned_departure_date",
+            "source_excerpt": "旅行日期还未知",
+            "confidence": 1.0
+          }
+        ],
+        "customer_questions": [],
+        "preparation_intent": {
+          "action": "resume",
+          "source_excerpt": "最后决定是现在恢复整套材料准备",
+          "confidence": 1.0
+        }
+      },
+      "raw_checks": {
+        "action_exact": true,
+        "expected_profile_update:estimated_trip_cost_gbp": true
+      },
+      "extraction_latency_seconds": 1.736345,
+      "raw_response_content": "{\n  \"updates\": [\n    {\n      \"field\": \"estimated_trip_cost_gbp\",\n      \"value\": 2200,\n      \"source_excerpt\": \"预算则请更正为2200英镑，替换原来的1500\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [\n    {\n      \"field\": \"planned_arrival_date\",\n      \"source_excerpt\": \"旅行日期还未知\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"planned_departure_date\",\n      \"source_excerpt\": \"旅行日期还未知\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"customer_questions\": [],\n  \"preparation_intent\": {\n    \"action\": \"resume\",\n    \"source_excerpt\": \"最后决定是现在恢复整套材料准备\",\n    \"confidence\": 1.0\n  }\n}",
+      "guarded_patch": {
+        "updates": [
+          {
+            "field": "estimated_trip_cost_gbp",
+            "value": 2200,
+            "source_excerpt": "预算则请更正为2200英镑，替换原来的1500",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [
+          {
+            "field": "planned_arrival_date",
+            "source_excerpt": "旅行日期还未知",
+            "confidence": 1.0
+          },
+          {
+            "field": "planned_departure_date",
+            "source_excerpt": "旅行日期还未知",
+            "confidence": 1.0
+          }
+        ],
+        "customer_questions": [],
+        "preparation_intent": {
+          "action": "resume",
+          "source_excerpt": "最后决定是现在恢复整套材料准备",
+          "confidence": 1.0
+        }
+      },
+      "guarded_checks": {
+        "action_exact": true,
+        "expected_profile_update:estimated_trip_cost_gbp": true
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "profile_matches_expected": true,
+          "workflow_preserves_guarded_question_topics": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case": true,
+          "no_provider_delivery": true,
+          "expected_profile_update:estimated_trip_cost_gbp": true,
+          "control_state_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 2200,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": true,
+          "preparation_control_epoch": 1,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": "seed-pause-pc_zh_hold_001"
+        },
+        "control_after": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 2,
+          "latest_preparation_action": "resume",
+          "preparation_control_event_id": "inbound-pc_zh_hold_001"
+        },
+        "expected_paused": false,
+        "expected_transition": "resume",
+        "expected_epoch": 2,
+        "question_plan": [],
+        "workflow_topics": [],
+        "customer_answers": [
+          "先给你申请入口：GOV.UK 页面里的 Apply now 可以开始在线填表，未填完的表格可以保存。如果需要 Standard Visitor 签证，流程是在线申请、预约签证申请中心，再按要求完成身份核验和交材料。我们这里帮你梳理信息、核对材料并整理材料包；正式递交由你在官网完成。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+          "材料方面，可以先准备学校的在读证明，以及能说明资金来源和可用资金的银行流水。前者帮助说明学习情况，后者用于核对旅行费用如何承担；预算数字本身不能代替资金证明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances"
+        ],
+        "human_review_reason": null,
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "可以，我们接着准备，之前发过的信息和文件不用重发。定稿前，我会把整理后的摘要再发给你核对。\n\n好的，已按你说的改为：旅行预算（英镑）：2200。\n\n日期先留空，等你确定后再补。\n\n先给你申请入口：GOV.UK 页面里的 Apply now 可以开始在线填表，未填完的表格可以保存。如果需要 Standard Visitor 签证，流程是在线申请、预约签证申请中心，再按要求完成身份核验和交材料。我们这里帮你梳理信息、核对材料并整理材料包；正式递交由你在官网完成。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\n\n材料方面，可以先准备学校的在读证明，以及能说明资金来源和可用资金的银行流水。前者帮助说明学习情况，后者用于核对旅行费用如何承担；预算数字本身不能代替资金证明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances"
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0
+      },
+      "raw_passed": true,
+      "guarded_passed": true,
+      "workflow_passed": true,
+      "passed": true,
+      "elapsed_seconds": 1.771461,
+      "finished_at": "2026-09-04T12:28:35.265897+00:00"
+    },
+    {
+      "id": "pc_zh_hold_002",
+      "language": "zh",
+      "body": "这周先把英国签证申请和所有材料准备一起暂停。等我把下学期的安排确认好，再恢复办理，现在还没有确认。另想先了解普通访客签证通常要多久出结果？",
+      "initially_paused": false,
+      "expected_action": "pause",
+      "expected_profile_updates": {},
+      "rationale": "The whole process is paused now, with restoration conditional on an unmet future event. The usual-decision-time FAQ is still a current question.",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-pc_zh_hold_002",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-pc_zh_hold_002",
+        "sender": "fictional-preparation@example.test",
+        "subject": "英国签证材料准备",
+        "body": "这周先把英国签证申请和所有材料准备一起暂停。等我把下学期的安排确认好，再恢复办理，现在还没有确认。另想先了解普通访客签证通常要多久出结果？",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-pc_zh_hold_002@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:28:35.266660Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:28:35.266702+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3172,
+          "output_tokens": 138,
+          "total_tokens": 3310
+        }
+      ],
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "timing",
+            "source_excerpt": "普通访客签证通常要多久出结果？",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": {
+          "action": "pause",
+          "source_excerpt": "这周先把英国签证申请和所有材料准备一起暂停。等我把下学期的安排确认好，再恢复办理",
+          "confidence": 1.0
+        }
+      },
+      "raw_checks": {
+        "action_exact": true
+      },
+      "extraction_latency_seconds": 1.30979,
+      "raw_response_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"timing\",\n      \"source_excerpt\": \"普通访客签证通常要多久出结果？\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"preparation_intent\": {\n    \"action\": \"pause\",\n    \"source_excerpt\": \"这周先把英国签证申请和所有材料准备一起暂停。等我把下学期的安排确认好，再恢复办理\",\n    \"confidence\": 1.0\n  }\n}",
+      "guarded_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "timing",
+            "source_excerpt": "普通访客签证通常要多久出结果？",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": {
+          "action": "pause",
+          "source_excerpt": "这周先把英国签证申请和所有材料准备一起暂停。等我把下学期的安排确认好，再恢复办理",
+          "confidence": 1.0
+        }
+      },
+      "guarded_checks": {
+        "action_exact": true
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "profile_matches_expected": true,
+          "workflow_preserves_guarded_question_topics": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case": true,
+          "no_provider_delivery": true,
+          "paused_no_question_plan": true,
+          "paused_no_requested_fields": true,
+          "paused_no_confirmation_request": true,
+          "paused_no_confirmation_metadata": true,
+          "control_state_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "control_after": {
+          "preparation_paused": true,
+          "preparation_control_epoch": 1,
+          "latest_preparation_action": "pause",
+          "preparation_control_event_id": "inbound-pc_zh_hold_002"
+        },
+        "expected_paused": true,
+        "expected_transition": "pause",
+        "expected_epoch": 1,
+        "question_plan": [],
+        "workflow_topics": [
+          "timing"
+        ],
+        "customer_answers": [
+          "如果你需要申请 Standard Visitor，最早可在出发前 3 个月申请。在线申请、身份核验和材料提交都完成后，通常在 3 周内收到决定；不是从开始准备材料那天起算，也不保证按时出结果或一定获批。这说的是签证决定时间，不是护照返还日期。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+        ],
+        "human_review_reason": null,
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "如果你需要申请 Standard Visitor，最早可在出发前 3 个月申请。在线申请、身份核验和材料提交都完成后，通常在 3 周内收到决定；不是从开始准备材料那天起算，也不保证按时出结果或一定获批。这说的是签证决定时间，不是护照返还日期。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\n\n可以，材料准备先暂停，已经收到的信息和文件会保留。等你想继续时，直接回复我就好。"
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0
+      },
+      "raw_passed": true,
+      "guarded_passed": true,
+      "workflow_passed": true,
+      "passed": true,
+      "elapsed_seconds": 1.340897,
+      "finished_at": "2026-09-04T12:28:36.607533+00:00"
+    },
+    {
+      "id": "pc_zh_hold_003",
+      "language": "zh",
+      "body": "先更正我的出生日期，应为1998年5月21日。关于英国签证，我一方面希望今天重启准备，另一方面又想整套申请再停一阵，这两个决定现在还没选定。还有，普通六个月访客签证费是多少？",
+      "initially_paused": true,
+      "expected_action": null,
+      "expected_profile_updates": {
+        "date_of_birth": "1998-05-21"
+      },
+      "rationale": "Unresolved opposing control intentions do not authorize resumption; the explicit birth-date correction and fee question remain actionable independently.",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-pc_zh_hold_003",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-pc_zh_hold_003",
+        "sender": "fictional-preparation@example.test",
+        "subject": "英国签证材料准备",
+        "body": "先更正我的出生日期，应为1998年5月21日。关于英国签证，我一方面希望今天重启准备，另一方面又想整套申请再停一阵，这两个决定现在还没选定。还有，普通六个月访客签证费是多少？",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-pc_zh_hold_003@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:28:36.608594Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:28:36.608635+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3179,
+          "output_tokens": 140,
+          "total_tokens": 3319
+        }
+      ],
+      "raw_patch": {
+        "updates": [
+          {
+            "field": "date_of_birth",
+            "value": "1998-05-21",
+            "source_excerpt": "应为1998年5月21日",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "fees",
+            "source_excerpt": "普通六个月访客签证费是多少？",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": null
+      },
+      "raw_checks": {
+        "action_exact": true,
+        "expected_profile_update:date_of_birth": true
+      },
+      "extraction_latency_seconds": 1.18014,
+      "raw_response_content": "{\n  \"updates\": [\n    {\n      \"field\": \"date_of_birth\",\n      \"value\": \"1998-05-21\",\n      \"source_excerpt\": \"应为1998年5月21日\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"fees\",\n      \"source_excerpt\": \"普通六个月访客签证费是多少？\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "guarded_patch": {
+        "updates": [
+          {
+            "field": "date_of_birth",
+            "value": "1998-05-21",
+            "source_excerpt": "应为1998年5月21日",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "fees",
+            "source_excerpt": "普通六个月访客签证费是多少？",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": null
+      },
+      "guarded_checks": {
+        "action_exact": true,
+        "expected_profile_update:date_of_birth": true
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "profile_matches_expected": true,
+          "workflow_preserves_guarded_question_topics": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case": true,
+          "no_provider_delivery": true,
+          "expected_profile_update:date_of_birth": true,
+          "paused_no_question_plan": true,
+          "paused_no_requested_fields": true,
+          "paused_no_confirmation_request": true,
+          "paused_no_confirmation_metadata": true,
+          "control_state_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-21",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": true,
+          "preparation_control_epoch": 1,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": "seed-pause-pc_zh_hold_003"
+        },
+        "control_after": {
+          "preparation_paused": true,
+          "preparation_control_epoch": 1,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": "seed-pause-pc_zh_hold_003"
+        },
+        "expected_paused": true,
+        "expected_transition": null,
+        "expected_epoch": 1,
+        "question_plan": [],
+        "workflow_topics": [
+          "fees"
+        ],
+        "customer_answers": [
+          "如果你申请的是 6 个月 Standard Visitor，GOV.UK 当前列出的签证申请费是 £135。额外购买的签证中心服务或加急服务不包含在这笔申请费内；付款时以官网显示为准。其他签证路线或有效期的费用不能直接套用这个数字。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+        ],
+        "human_review_reason": null,
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "好的，已按你说的改为：出生日期：1998-05-21。\n\n如果你申请的是 6 个月 Standard Visitor，GOV.UK 当前列出的签证申请费是 £135。额外购买的签证中心服务或加急服务不包含在这笔申请费内；付款时以官网显示为准。其他签证路线或有效期的费用不能直接套用这个数字。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\n\n我们先保持暂停，之前的资料都在。等你确定要继续时，再告诉我就好。"
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0
+      },
+      "raw_passed": true,
+      "guarded_passed": true,
+      "workflow_passed": true,
+      "passed": true,
+      "elapsed_seconds": 1.212896,
+      "finished_at": "2026-09-04T12:28:37.821467+00:00"
+    },
+    {
+      "id": "pc_zh_hold_004",
+      "language": "zh",
+      "body": "出发日期目前还是空着的，学校的在读证明要下周才能取到，我拿到后再交这一份。英国访客签证的在线表格应该从哪个官方页面进入？",
+      "initially_paused": false,
+      "expected_action": null,
+      "expected_profile_updates": {},
+      "rationale": "Unknown dates and delayed delivery of one document do not imply a whole-process pause. The active request is for the official application entry point.",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-pc_zh_hold_004",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-pc_zh_hold_004",
+        "sender": "fictional-preparation@example.test",
+        "subject": "英国签证材料准备",
+        "body": "出发日期目前还是空着的，学校的在读证明要下周才能取到，我拿到后再交这一份。英国访客签证的在线表格应该从哪个官方页面进入？",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-pc_zh_hold_004@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:28:37.822892Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:28:37.822937+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3166,
+          "output_tokens": 170,
+          "total_tokens": 3336
+        }
+      ],
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [
+          {
+            "field": "planned_arrival_date",
+            "source_excerpt": "出发日期目前还是空着的",
+            "confidence": 0.9
+          },
+          {
+            "field": "planned_departure_date",
+            "source_excerpt": "出发日期目前还是空着的",
+            "confidence": 0.9
+          }
+        ],
+        "customer_questions": [
+          {
+            "topic": "application",
+            "source_excerpt": "英国访客签证的在线表格应该从哪个官方页面进入？",
+            "confidence": 0.95
+          }
+        ],
+        "preparation_intent": null
+      },
+      "raw_checks": {
+        "action_exact": true
+      },
+      "extraction_latency_seconds": 1.453481,
+      "raw_response_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [\n    {\n      \"field\": \"planned_arrival_date\",\n      \"source_excerpt\": \"出发日期目前还是空着的\",\n      \"confidence\": 0.9\n    },\n    {\n      \"field\": \"planned_departure_date\",\n      \"source_excerpt\": \"出发日期目前还是空着的\",\n      \"confidence\": 0.9\n    }\n  ],\n  \"customer_questions\": [\n    {\n      \"topic\": \"application\",\n      \"source_excerpt\": \"英国访客签证的在线表格应该从哪个官方页面进入？\",\n      \"confidence\": 0.95\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "guarded_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [
+          {
+            "field": "planned_arrival_date",
+            "source_excerpt": "出发日期目前还是空着的",
+            "confidence": 0.9
+          },
+          {
+            "field": "planned_departure_date",
+            "source_excerpt": "出发日期目前还是空着的",
+            "confidence": 0.9
+          }
+        ],
+        "customer_questions": [
+          {
+            "topic": "application",
+            "source_excerpt": "英国访客签证的在线表格应该从哪个官方页面进入？",
+            "confidence": 0.95
+          }
+        ],
+        "preparation_intent": null
+      },
+      "guarded_checks": {
+        "action_exact": true
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "profile_matches_expected": true,
+          "workflow_preserves_guarded_question_topics": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case": true,
+          "no_provider_delivery": true,
+          "control_state_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "control_after": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "expected_paused": false,
+        "expected_transition": null,
+        "expected_epoch": 0,
+        "question_plan": [],
+        "workflow_topics": [
+          "application"
+        ],
+        "customer_answers": [
+          "如果你需要申请 Standard Visitor，可以从下面的 GOV.UK 页面点 Apply now 开始。流程是出发前在线填写申请，再预约签证中心完成身份核验并提供材料；表格可以保存，之后继续填写。这是申请入口说明，不代表你的签证路线已经确认。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+        ],
+        "human_review_reason": null,
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "如果你需要申请 Standard Visitor，可以从下面的 GOV.UK 页面点 Apply now 开始。流程是出发前在线填写申请，再预约签证中心完成身份核验并提供材料；表格可以保存，之后继续填写。这是申请入口说明，不代表你的签证路线已经确认。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0
+      },
+      "raw_passed": true,
+      "guarded_passed": true,
+      "workflow_passed": true,
+      "passed": true,
+      "elapsed_seconds": 1.479444,
+      "finished_at": "2026-09-04T12:28:39.302312+00:00"
+    },
+    {
+      "id": "pc_en_hold_001",
+      "language": "en",
+      "body": "Please keep my UK holiday visa preparation moving today and help me with the next document step. I still cannot commit to travel dates, and I am not ready to buy any tickets. Is purchasing a flight actually necessary before applying?",
+      "initially_paused": false,
+      "expected_action": "resume",
+      "expected_profile_updates": {},
+      "rationale": "The sender explicitly requests current continuation, despite unknown travel dates and no ticket purchase; the booking question is also live.",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-pc_en_hold_001",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-pc_en_hold_001",
+        "sender": "fictional-preparation@example.test",
+        "subject": "UK visa preparation",
+        "body": "Please keep my UK holiday visa preparation moving today and help me with the next document step. I still cannot commit to travel dates, and I am not ready to buy any tickets. Is purchasing a flight actually necessary before applying?",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-pc_en_hold_001@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:28:39.303570Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:28:39.303606+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3173,
+          "output_tokens": 167,
+          "total_tokens": 3340
+        }
+      ],
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [
+          {
+            "field": "planned_arrival_date",
+            "source_excerpt": "I still cannot commit to travel dates",
+            "confidence": 0.95
+          },
+          {
+            "field": "planned_departure_date",
+            "source_excerpt": "I still cannot commit to travel dates",
+            "confidence": 0.95
+          }
+        ],
+        "customer_questions": [
+          {
+            "topic": "booking",
+            "source_excerpt": "Is purchasing a flight actually necessary before applying?",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": null
+      },
+      "raw_checks": {
+        "action_exact": false
+      },
+      "extraction_latency_seconds": 1.500898,
+      "raw_response_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [\n    {\n      \"field\": \"planned_arrival_date\",\n      \"source_excerpt\": \"I still cannot commit to travel dates\",\n      \"confidence\": 0.95\n    },\n    {\n      \"field\": \"planned_departure_date\",\n      \"source_excerpt\": \"I still cannot commit to travel dates\",\n      \"confidence\": 0.95\n    }\n  ],\n  \"customer_questions\": [\n    {\n      \"topic\": \"booking\",\n      \"source_excerpt\": \"Is purchasing a flight actually necessary before applying?\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "guarded_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [
+          {
+            "field": "planned_arrival_date",
+            "source_excerpt": "I still cannot commit to travel dates",
+            "confidence": 0.95
+          },
+          {
+            "field": "planned_departure_date",
+            "source_excerpt": "I still cannot commit to travel dates",
+            "confidence": 0.95
+          }
+        ],
+        "customer_questions": [
+          {
+            "topic": "booking",
+            "source_excerpt": "Is purchasing a flight actually necessary before applying?",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": null
+      },
+      "guarded_checks": {
+        "action_exact": false
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "profile_matches_expected": true,
+          "workflow_preserves_guarded_question_topics": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case": true,
+          "no_provider_delivery": true,
+          "control_state_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "control_after": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "expected_paused": false,
+        "expected_transition": null,
+        "expected_epoch": 0,
+        "question_plan": [],
+        "workflow_topics": [
+          "booking"
+        ],
+        "customer_answers": [
+          "For an ordinary Standard Visitor application, you do not need to buy flights or book a hotel just to supply booking evidence. The official guide describes hotel bookings and flight bookings (except transit) as less useful evidence. Intended arrangements should be described accurately, without presenting unbooked plans as confirmed bookings.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence"
+        ],
+        "human_review_reason": null,
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "For an ordinary Standard Visitor application, you do not need to buy flights or book a hotel just to supply booking evidence. The official guide describes hotel bookings and flight bookings (except transit) as less useful evidence. Intended arrangements should be described accurately, without presenting unbooked plans as confirmed bookings.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence"
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0
+      },
+      "raw_passed": false,
+      "guarded_passed": false,
+      "workflow_passed": true,
+      "passed": false,
+      "elapsed_seconds": 1.529078,
+      "finished_at": "2026-09-04T12:28:40.832627+00:00"
+    },
+    {
+      "id": "pc_en_hold_002",
+      "language": "en",
+      "body": "The university letter has arrived, but please keep the entire UK visa preparation on hold. Its arrival does not change my decision; I will tell you when I am ready to start again. For completeness, I previously had a UK visitor application refused over insufficient explanation of my finances.",
+      "initially_paused": true,
+      "expected_action": "pause",
+      "expected_profile_updates": {
+        "has_serious_history": true
+      },
+      "expected_human_review": true,
+      "rationale": "The sender explicitly maintains the whole-process pause even after a document arrives, while newly disclosed refusal history remains substantive information.",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-pc_en_hold_002",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-pc_en_hold_002",
+        "sender": "fictional-preparation@example.test",
+        "subject": "UK visa preparation",
+        "body": "The university letter has arrived, but please keep the entire UK visa preparation on hold. Its arrival does not change my decision; I will tell you when I am ready to start again. For completeness, I previously had a UK visitor application refused over insufficient explanation of my finances.",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-pc_en_hold_002@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:28:40.834156Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:28:40.834190+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3183,
+          "output_tokens": 136,
+          "total_tokens": 3319
+        }
+      ],
+      "raw_patch": {
+        "updates": [
+          {
+            "field": "has_serious_history",
+            "value": true,
+            "source_excerpt": "I previously had a UK visitor application refused over insufficient explanation of my finances.",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": true,
+        "question_deferrals": [],
+        "customer_questions": [],
+        "preparation_intent": {
+          "action": "pause",
+          "source_excerpt": "please keep the entire UK visa preparation on hold",
+          "confidence": 1.0
+        }
+      },
+      "raw_checks": {
+        "action_exact": true,
+        "expected_profile_update:has_serious_history": true,
+        "expected_human_review": true
+      },
+      "extraction_latency_seconds": 1.13253,
+      "raw_response_content": "{\n  \"updates\": [\n    {\n      \"field\": \"has_serious_history\",\n      \"value\": true,\n      \"source_excerpt\": \"I previously had a UK visitor application refused over insufficient explanation of my finances.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"ambiguities\": [],\n  \"requires_human_review\": true,\n  \"question_deferrals\": [],\n  \"customer_questions\": [],\n  \"preparation_intent\": {\n    \"action\": \"pause\",\n    \"source_excerpt\": \"please keep the entire UK visa preparation on hold\",\n    \"confidence\": 1.0\n  }\n}",
+      "guarded_patch": {
+        "updates": [
+          {
+            "field": "has_serious_history",
+            "value": true,
+            "source_excerpt": "I previously had a UK visitor application refused over insufficient explanation of my finances.",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": true,
+        "question_deferrals": [],
+        "customer_questions": [],
+        "preparation_intent": {
+          "action": "pause",
+          "source_excerpt": "please keep the entire UK visa preparation on hold",
+          "confidence": 1.0
+        }
+      },
+      "guarded_checks": {
+        "action_exact": true,
+        "expected_profile_update:has_serious_history": true,
+        "expected_human_review": true
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "profile_matches_expected": true,
+          "workflow_preserves_guarded_question_topics": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case": true,
+          "no_provider_delivery": true,
+          "expected_profile_update:has_serious_history": true,
+          "expected_human_review": true,
+          "paused_no_question_plan": true,
+          "paused_no_requested_fields": true,
+          "paused_no_confirmation_request": true,
+          "paused_no_confirmation_metadata": true,
+          "control_state_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "HUMAN_REVIEW_REQUIRED",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": true,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": true,
+          "preparation_control_epoch": 1,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": "seed-pause-pc_en_hold_002"
+        },
+        "control_after": {
+          "preparation_paused": true,
+          "preparation_control_epoch": 1,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": "seed-pause-pc_en_hold_002"
+        },
+        "expected_paused": true,
+        "expected_transition": null,
+        "expected_epoch": 1,
+        "question_plan": [],
+        "workflow_topics": [],
+        "customer_answers": [],
+        "human_review_reason": "Bounded extractor requested human review.",
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "We'll keep the preparation on hold and retain your earlier details. Let me know when you've decided you'd like to continue.\n\nI've recorded the refusal or other significant history you've disclosed. A human adviser needs to check the relevant records before assessing its implications for this application. We won't finalise the pack yet; you don't need to resend the details already received."
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0
+      },
+      "raw_passed": true,
+      "guarded_passed": true,
+      "workflow_passed": true,
+      "passed": true,
+      "elapsed_seconds": 1.164111,
+      "finished_at": "2026-09-04T12:28:41.998249+00:00"
+    },
+    {
+      "id": "pc_en_hold_003",
+      "language": "en",
+      "body": "Earlier in this email I was going to say that everything should stay paused. Please disregard that idea: my decision now is to resume the UK visitor visa preparation immediately. One correction as well: my birthday is 21 May 1998, not 12 May 1998.",
+      "initially_paused": true,
+      "expected_action": "resume",
+      "expected_profile_updates": {
+        "date_of_birth": "1998-05-21"
+      },
+      "rationale": "A clear final present instruction to resume supersedes the earlier pause idea, and an explicit birth-date correction must still be applied.",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-pc_en_hold_003",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-pc_en_hold_003",
+        "sender": "fictional-preparation@example.test",
+        "subject": "UK visa preparation",
+        "body": "Earlier in this email I was going to say that everything should stay paused. Please disregard that idea: my decision now is to resume the UK visitor visa preparation immediately. One correction as well: my birthday is 21 May 1998, not 12 May 1998.",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-pc_en_hold_003@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:28:42.000275Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:28:42.000317+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3184,
+          "output_tokens": 148,
+          "total_tokens": 3332
+        }
+      ],
+      "raw_patch": {
+        "updates": [
+          {
+            "field": "date_of_birth",
+            "value": "1998-05-21",
+            "source_excerpt": "my birthday is 21 May 1998, not 12 May 1998",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [],
+        "preparation_intent": {
+          "action": "resume",
+          "source_excerpt": "my decision now is to resume the UK visitor visa preparation immediately",
+          "confidence": 1.0
+        }
+      },
+      "raw_checks": {
+        "action_exact": true,
+        "expected_profile_update:date_of_birth": true
+      },
+      "extraction_latency_seconds": 1.393431,
+      "raw_response_content": "{\n  \"updates\": [\n    {\n      \"field\": \"date_of_birth\",\n      \"value\": \"1998-05-21\",\n      \"source_excerpt\": \"my birthday is 21 May 1998, not 12 May 1998\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [],\n  \"preparation_intent\": {\n    \"action\": \"resume\",\n    \"source_excerpt\": \"my decision now is to resume the UK visitor visa preparation immediately\",\n    \"confidence\": 1.0\n  }\n}",
+      "guarded_patch": {
+        "updates": [
+          {
+            "field": "date_of_birth",
+            "value": "1998-05-21",
+            "source_excerpt": "my birthday is 21 May 1998, not 12 May 1998",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [],
+        "preparation_intent": {
+          "action": "resume",
+          "source_excerpt": "my decision now is to resume the UK visitor visa preparation immediately",
+          "confidence": 1.0
+        }
+      },
+      "guarded_checks": {
+        "action_exact": true,
+        "expected_profile_update:date_of_birth": true
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "profile_matches_expected": true,
+          "workflow_preserves_guarded_question_topics": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case": true,
+          "no_provider_delivery": true,
+          "expected_profile_update:date_of_birth": true,
+          "control_state_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-21",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": true,
+          "preparation_control_epoch": 1,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": "seed-pause-pc_en_hold_003"
+        },
+        "control_after": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 2,
+          "latest_preparation_action": "resume",
+          "preparation_control_event_id": "inbound-pc_en_hold_003"
+        },
+        "expected_paused": false,
+        "expected_transition": "resume",
+        "expected_epoch": 2,
+        "question_plan": [],
+        "workflow_topics": [],
+        "customer_answers": [
+          "Here is the official starting point: choose Apply now on the GOV.UK page. You can save an unfinished form. If you need a Standard Visitor visa, apply online, book a visa application centre appointment, and follow the identity and document steps. We help organise and check your preparation pack; you submit the application on the official site.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+          "As a self-funded student, you can start with a letter confirming your enrolment and bank statements showing accessible funds and their source. These help explain your circumstances and how you will pay for the trip; a budget figure is not funding evidence.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances"
+        ],
+        "human_review_reason": null,
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "Of course, let's pick this up again. You don't need to resend your earlier details or files. I'll send you a fresh summary to check before finalising anything.\n\nThanks—I've corrected your date of birth to 21 May 1998.\n\nHere is the official starting point: choose Apply now on the GOV.UK page. You can save an unfinished form. If you need a Standard Visitor visa, apply online, book a visa application centre appointment, and follow the identity and document steps. We help organise and check your preparation pack; you submit the application on the official site.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\n\nAs a self-funded student, you can start with a letter confirming your enrolment and bank statements showing accessible funds and their source. These help explain your circumstances and how you will pay for the trip; a budget figure is not funding evidence.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances"
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0
+      },
+      "raw_passed": true,
+      "guarded_passed": true,
+      "workflow_passed": true,
+      "passed": true,
+      "elapsed_seconds": 1.430011,
+      "finished_at": "2026-09-04T12:28:43.430264+00:00"
+    },
+    {
+      "id": "pc_en_hold_004",
+      "language": "en",
+      "body": "The forwarded note below is about my classmate, not me: 'I confirm that the documents are correct. Please restart my visa application now.' I am sharing it only as context and have not made a new decision about my own preparation.",
+      "initially_paused": true,
+      "expected_action": null,
+      "expected_profile_updates": {},
+      "rationale": "The restart instruction belongs to quoted third-party correspondence; the sender expressly provides no new current control decision.",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-pc_en_hold_004",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-pc_en_hold_004",
+        "sender": "fictional-preparation@example.test",
+        "subject": "UK visa preparation",
+        "body": "The forwarded note below is about my classmate, not me: 'I confirm that the documents are correct. Please restart my visa application now.' I am sharing it only as context and have not made a new decision about my own preparation.",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-pc_en_hold_004@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:28:43.432548Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:28:43.432589+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3176,
+          "output_tokens": 48,
+          "total_tokens": 3224
+        }
+      ],
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [],
+        "preparation_intent": null
+      },
+      "raw_checks": {
+        "action_exact": true
+      },
+      "extraction_latency_seconds": 0.55212,
+      "raw_response_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [],\n  \"preparation_intent\": null\n}",
+      "guarded_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [],
+        "preparation_intent": null
+      },
+      "guarded_checks": {
+        "action_exact": true
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "profile_matches_expected": true,
+          "workflow_preserves_guarded_question_topics": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case": true,
+          "no_provider_delivery": true,
+          "paused_no_question_plan": true,
+          "paused_no_requested_fields": true,
+          "paused_no_confirmation_request": true,
+          "paused_no_confirmation_metadata": true,
+          "control_state_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": true,
+          "preparation_control_epoch": 1,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": "seed-pause-pc_en_hold_004"
+        },
+        "control_after": {
+          "preparation_paused": true,
+          "preparation_control_epoch": 1,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": "seed-pause-pc_en_hold_004"
+        },
+        "expected_paused": true,
+        "expected_transition": null,
+        "expected_epoch": 1,
+        "question_plan": [],
+        "workflow_topics": [],
+        "customer_answers": [],
+        "human_review_reason": null,
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "We'll keep the preparation on hold and retain your earlier details. Let me know when you've decided you'd like to continue."
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0
+      },
+      "raw_passed": true,
+      "guarded_passed": true,
+      "workflow_passed": true,
+      "passed": true,
+      "elapsed_seconds": 0.583242,
+      "finished_at": "2026-09-04T12:28:44.015768+00:00"
+    }
+  ],
+  "corrected_usage_metrics": true,
+  "usage_metric_correction": "Sum only observed numeric token keys, including input_tokens/output_tokens; never invent absent prompt/completion zeros",
+  "checkpoint_at": "2026-09-04T12:28:44.015925+00:00",
+  "finished_at": "2026-09-04T12:28:44.018244+00:00",
+  "source_unchanged_during_run": true,
+  "corpus_unchanged_during_run": true,
+  "metrics": {
+    "cases": 8,
+    "model_calls": 8,
+    "completed_cases": 8,
+    "extraction_errors": 0,
+    "usage_records": 8,
+    "tokens": {
+      "input_tokens": 25411,
+      "output_tokens": 1159,
+      "total_tokens": 26570
+    },
+    "token_key_record_counts": {
+      "input_tokens": 8,
+      "output_tokens": 8,
+      "total_tokens": 8
+    },
+    "usage_unavailable_cases": 0,
+    "usage_metric_method": "observed_numeric_token_keys_only_v2",
+    "mean_extraction_latency_seconds": 1.282341875,
+    "raw_passed_cases": 7,
+    "raw_accuracy_including_errors": 0.875,
+    "guarded_passed_cases": 7,
+    "guarded_accuracy_including_errors": 0.875,
+    "workflow_passed_cases": 8,
+    "workflow_accuracy_including_errors": 1.0,
+    "raw_action_accuracy_including_errors": 0.875,
+    "guarded_action_accuracy_including_errors": 0.875,
+    "passed_cases": 7
+  },
+  "all_passed": false
+}

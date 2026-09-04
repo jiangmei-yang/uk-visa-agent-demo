@@ -23,6 +23,7 @@ def test_case_patch_schema_contains_no_state_field() -> None:
     properties = CasePatch.model_json_schema()["properties"]
     assert set(properties) == {
         "updates", "ambiguities", "requires_human_review", "question_deferrals", "customer_questions",
+        "preparation_intent",
     }
     intent = CasePatch.model_json_schema()['$defs']['QuestionDeferral']['properties']
     assert set(intent) == {'field', 'source_excerpt', 'confidence'}

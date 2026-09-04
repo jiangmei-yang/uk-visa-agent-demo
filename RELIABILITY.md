@@ -26,6 +26,10 @@ are evaluated separately. Reviewed wording can still be irrelevant if a model mi
 
 ## Invariants
 
+Customer-requested preparation pause/restart now has a separate persisted control and outbox
+epoch; see [the contract and evaluation plan](PREPARATION_CONTROL.md). It is not a human-review
+override or confirmation. Undecided dates remain a narrower question deferral.
+
 - An inbound provider message ID is an idempotency key.
 - Attachments are deduplicated by SHA-256.
 - Corrected documents and evidence are marked superseded rather than erased.

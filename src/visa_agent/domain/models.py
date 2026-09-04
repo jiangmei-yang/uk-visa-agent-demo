@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
@@ -170,6 +170,11 @@ class Case(BaseModel):
     profile: CaseProfile = Field(default_factory=CaseProfile)
     profile_confirmed: bool = False
     final_summary_confirmed: bool = False
+    # Customer pacing is independent of eligibility, document validity and human review.
+    preparation_paused: bool = False
+    preparation_control_epoch: int = Field(default=0, ge=0)
+    preparation_control_event_id: str | None = None
+    latest_preparation_action: Literal["pause", "resume"] | None = None
     customer_language: str = "en"
     customer_answers: list[str] = Field(default_factory=list)
     # Topics from this turn only; not applicant facts or permission to progress.

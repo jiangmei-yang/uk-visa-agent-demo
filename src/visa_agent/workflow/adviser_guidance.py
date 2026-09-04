@@ -24,7 +24,7 @@ def preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> list
     Topic IDs are versioned. Only topics in actually sent replies count as already shared.
     These suggestions cannot change requirements, evidence acceptance, facts or consent.
     """
-    if (not CHECKED_AT <= today <= REVIEW_AFTER or case.customer_answers or case.customer_question_topics
+    if (case.preparation_paused or not CHECKED_AT <= today <= REVIEW_AFTER or case.customer_answers or case.customer_question_topics
             or case.open_blockers()
             or case.latest_document_names or case.status != CaseStatus.DRAFT):
         return []

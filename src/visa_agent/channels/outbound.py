@@ -151,6 +151,12 @@ class OutboxDispatcher:
         case = self.store.get_case(str(row["case_id"]))
         if case is None:
             raise PermanentChannelError("Outbox case no longer exists")
+        if int(str(row.get("preparation_control_epoch", 0))) != case.preparation_control_epoch:
+            raise PermanentChannelError("Outbox reply belongs to a superseded preparation control epoch")
+        if case.preparation_paused and str(row["message_type"]) not in {
+            "blocked", "held_update_received",
+        }:
+            raise PermanentChannelError("Preparation is paused; only a safe receipt or FAQ reply may be sent")
         if int(str(row.get("case_revision", 1))) != case.delivery_revision:
             raise PermanentChannelError("Outbox reply belongs to a superseded delivery revision")
         if str(row["message_type"]) == "ready" and self.store.has_unreviewed_held_updates(case.id):

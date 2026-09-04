@@ -6,6 +6,11 @@ mechanical. Passing safety checks did not establish naturalness.
 
 ## Changes now covered
 
+The [preparation pause/restart contract](PREPARATION_CONTROL.md) adds a persisted distinction
+between “I do not know the dates yet” and “put the whole preparation on hold.” Paused customers
+can still ask for information without triggering more intake questions. Its provider evaluation
+and real-mail acceptance must be reported separately from the older tone experiments below.
+
 - First enquiry: explains why context is needed and asks purpose, passport country and application
   location in ordinary prose, without mentioning internal pack-release rules.
 - Continuing intake: work/study and funding questions precede name/DOB, since these determine the

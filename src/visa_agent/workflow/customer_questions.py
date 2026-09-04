@@ -60,12 +60,12 @@ def _booking_guidance(language: str, today: date, *, transit: bool = False,
     answer = (
         "关于机票和酒店：普通 Standard Visitor 申请不需要为了提供这些预订证明而先购买。"
         "官方材料指南把酒店预订和机票预订（过境除外）列为证明价值较低的材料。"
-        "我们先整理真实的计划行程和住宿安排；不要把尚未确定的安排写成已经预订。"
+        "计划行程和住宿安排应如实描述，尚未确定的安排不应写成已经预订。"
         if language == "zh"
         else "For an ordinary Standard Visitor application, you do not need to buy flights or book "
         "a hotel just to supply booking evidence. The official guide describes hotel bookings and "
-        "flight bookings (except transit) as less useful evidence. We can first "
-        "record your intended arrangements without describing unbooked plans as confirmed bookings."
+        "flight bookings (except transit) as less useful evidence. Intended arrangements "
+        "should be described accurately, without presenting unbooked plans as confirmed bookings."
     )
     return [answer + "\nGOV.UK: " + SOURCE + "#documents-you-should-not-use-as-evidence"]
 
@@ -486,6 +486,11 @@ def grounded_customer_answers(
                           and not any(_overlapping_excerpt(excerpt, clause) for excerpt in other_question_excerpts)
                           and (any(_overlapping_excerpt(excerpt, clause) for excerpt in bank_excerpts)
                                or re.search(r"银行|流水|对账单|网银|账户|存款|\bbank(?:ing)?\b|\b(?:statements?|accounts?|savings)\b", clause, re.I)))
+    translation_excerpts = [item.source_excerpt for item in semantic if item.topic == "translation"]
+    translation_text = "\n".join(clause for clause in _active_clauses(current, split_commas=False)
+        if not any(_overlapping_excerpt(excerpt, clause) for excerpt in unsupported_excerpts + off_topic_excerpts)
+        and (re.search(patterns["translation"], clause, re.I)
+             or any(_overlapping_excerpt(excerpt, clause) for excerpt in translation_excerpts)))
     booking = _booking_answer(booking_text, language, today)
     if not booking and "booking" in semantic_topics:
         # The model chooses a topic, never supplies the legal answer or a URL.
@@ -505,7 +510,8 @@ def grounded_customer_answers(
             requested = [topic for topic in requested if topic == "translation"]
         answers.extend((topic, _reviewed_answer(
             "application_link" if topic == "application" and previous_link_requested else topic,
-            language, body=bank_text if topic == "bank_period" else active_text,
+            language, body=bank_text if topic == "bank_period" else
+            translation_text if topic == "translation" else active_text,
         )) for topic in requested)
     if "unsupported" in semantic_topics and include_unsupported:
         boundaries = dict.fromkeys(_unsupported_answer(

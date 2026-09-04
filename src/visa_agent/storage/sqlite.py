@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -38,6 +40,7 @@ CREATE TABLE IF NOT EXISTS outbox (
     provider_message_id TEXT,
     in_reply_to TEXT,
     references_header TEXT,
+    preparation_control_epoch INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(event_id, message_type)
 );
@@ -111,6 +114,7 @@ class SQLiteStore:
         self.path = path
         self.connection = sqlite3.connect(path)
         self.connection.row_factory = sqlite3.Row
+        self._atomic_write_depth = 0
         self.connection.executescript(SCHEMA)
         self._migrate_outbox()
         self._migrate_revisions()
@@ -137,6 +141,7 @@ class SQLiteStore:
             "reply_render_mode": "TEXT",
             "reply_render_error": "TEXT",
             "case_revision": "INTEGER NOT NULL DEFAULT 1",
+            "preparation_control_epoch": "INTEGER NOT NULL DEFAULT 0",
         }
         with self.connection:
             for column, declaration in additions.items():
@@ -156,6 +161,21 @@ class SQLiteStore:
 
     def close(self) -> None:
         self.connection.close()
+
+    @contextmanager
+    def atomic_write(self) -> Iterator[None]:
+        """Keep nested case/delivery writes in one serialized transaction."""
+        if self._atomic_write_depth:
+            yield
+            return
+        with self.connection:
+            if not self.connection.in_transaction:
+                self.connection.execute("BEGIN IMMEDIATE")
+            self._atomic_write_depth += 1
+            try:
+                yield
+            finally:
+                self._atomic_write_depth -= 1
 
     def reset(self) -> None:
         self.connection.executescript(
@@ -196,7 +216,8 @@ class SQLiteStore:
         outbox = self.connection.execute(
             """SELECT id, event_id, message_type, payload, channel, recipient,
                       external_thread_id, status, attempt_count, last_error, sent_at,
-                      provider_message_id, created_at, reply_render_mode, reply_render_error, case_revision
+                      provider_message_id, created_at, reply_render_mode, reply_render_error, case_revision,
+                      preparation_control_epoch
                FROM outbox WHERE case_id = ? ORDER BY created_at, id""",
             (case_id,),
         ).fetchall()
@@ -279,7 +300,8 @@ class SQLiteStore:
             if event.channel == "whatsapp_twilio"
             else None
         )
-        with self.connection:
+        with self.atomic_write():
+            self._check_preparation_snapshot(case)
             self.connection.execute(
                 """
                 INSERT INTO cases(id, thread_id, snapshot_json, updated_at)
@@ -303,8 +325,8 @@ class SQLiteStore:
                 """INSERT OR IGNORE INTO outbox(
                        id, case_id, event_id, message_type, payload, channel, recipient,
                        external_thread_id, send_deadline, reply_subject, in_reply_to,
-                       references_header, case_revision
-                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                       references_header, case_revision, preparation_control_epoch
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     f"out-{event.id}-{message_type}",
                     case.id,
@@ -319,11 +341,23 @@ class SQLiteStore:
                     in_reply_to,
                     references,
                     case.delivery_revision,
+                    case.preparation_control_epoch,
                 ),
             )
 
+    def _check_preparation_snapshot(self, case: Case) -> None:
+        current = self.get_case(case.id)
+        if current is None:
+            return
+        if case.preparation_control_epoch < current.preparation_control_epoch:
+            raise ValueError("Cannot overwrite a newer preparation control epoch")
+        if (case.preparation_control_epoch == current.preparation_control_epoch
+                and case.preparation_paused != current.preparation_paused):
+            raise ValueError("A preparation state change requires a new preparation control epoch")
+
     def save_case(self, case: Case) -> None:
-        with self.connection:
+        with self.atomic_write():
+            self._check_preparation_snapshot(case)
             self.connection.execute(
                 """
                 INSERT INTO cases(id, thread_id, snapshot_json, updated_at)
@@ -341,8 +375,10 @@ class SQLiteStore:
             )
 
     def save_delivery(self, case_id: str, path: str, sha256: str, *, case_revision: int | None = None) -> None:
-        with self.connection:
+        with self.atomic_write():
             case = self.get_case(case_id)
+            if case is not None and case.preparation_paused:
+                raise ValueError("Preparation is paused; delivery registration is not allowed")
             revision = case_revision if case_revision is not None else (case.delivery_revision if case else 1)
             if revision < 1 or (case is not None and revision != case.delivery_revision):
                 raise ValueError("Delivery revision must match the current case")
@@ -567,7 +603,8 @@ class SQLiteStore:
             """SELECT id, case_id, event_id, message_type, payload, channel, recipient,
                       external_thread_id, send_deadline, reply_subject, status, attempt_count,
                       next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
-                      references_header, created_at, reply_render_mode, reply_render_error, case_revision
+                      references_header, created_at, reply_render_mode, reply_render_error, case_revision,
+                      preparation_control_epoch
                FROM outbox ORDER BY created_at, id"""
         ).fetchall()
         return [dict(row) for row in rows]
@@ -606,7 +643,7 @@ class SQLiteStore:
                    RETURNING id, case_id, event_id, message_type, payload, channel, recipient,
                              external_thread_id, send_deadline, reply_subject, status, attempt_count,
                              next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
-                             references_header, created_at, case_revision""",
+                             references_header, created_at, case_revision, preparation_control_epoch""",
                 parameters,
             ).fetchall()
         return sorted((dict(row) for row in rows), key=lambda row: (row["created_at"], row["id"]))
@@ -713,7 +750,7 @@ class SQLiteStore:
             f"""SELECT id, case_id, event_id, message_type, payload, channel, recipient,
                       external_thread_id, send_deadline, reply_subject, status, attempt_count,
                       next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
-                      references_header, created_at, case_revision
+                      references_header, created_at, case_revision, preparation_control_epoch
                FROM outbox WHERE status = 'SENDING' {channel_filter}
                ORDER BY created_at, id LIMIT ?""",
             parameters,
@@ -729,7 +766,18 @@ class SQLiteStore:
             )
 
     def retry_ambiguous_outbox(self, outbox_id: str, next_attempt_at: datetime) -> None:
-        with self.connection:
+        with self.atomic_write():
+            row = self.connection.execute(
+                "SELECT case_id, status, preparation_control_epoch FROM outbox WHERE id=?",
+                (outbox_id,),
+            ).fetchone()
+            if row is None or row["status"] != "AMBIGUOUS":
+                raise ValueError("Only an AMBIGUOUS outbox row can be manually retried")
+            case = self.get_case(str(row["case_id"]))
+            if case is None or case.preparation_paused:
+                raise ValueError("Preparation is paused or unavailable; manual resend is not allowed")
+            if row["preparation_control_epoch"] != case.preparation_control_epoch:
+                raise ValueError("Outbox reply belongs to a superseded preparation control epoch")
             cursor = self.connection.execute(
                 """UPDATE outbox
                    SET status = 'RETRY', next_attempt_at = ?, last_error = NULL

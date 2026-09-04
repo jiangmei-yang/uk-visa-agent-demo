@@ -1,5 +1,10 @@
 # Agent evaluation contract
 
+The independent [preparation-control experiment](../PREPARATION_CONTROL.md) evaluates one bounded
+workflow feature on the already-selected DeepSeek model. It separates a 24-case development run,
+zero-call saved-patch replays, and an explicit first 8-case holdout. This does not replace the
+broader model-selection thresholds or repeated-run evaluation contract below.
+
 The corpus contains synthetic applicant email only. It is run against each candidate model at least
 three times with the same prompt, schema, and settings. The report keeps quality, safety, latency,
 and usage separate; it never collapses them into one score.

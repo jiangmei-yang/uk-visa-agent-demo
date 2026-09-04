@@ -277,6 +277,33 @@ def generate_pack(
     output_root: Path,
     today: date,
 ) -> tuple[Path | None, list[str]]:
+    # Serialize materialization and registration with persisted pause/resume changes.
+    # Nested save_delivery/save_case calls must not commit this transaction early.
+    with store.atomic_write():
+        rejection = _preparation_control_rejection(case, store)
+        if rejection:
+            return None, [rejection]
+        return _generate_pack(case, policy, store, output_root, today)
+
+
+def _preparation_control_rejection(case: Case, store: SQLiteStore) -> str | None:
+    current = store.get_case(case.id)
+    if case.preparation_paused or (current is not None and current.preparation_paused):
+        return "Preparation is paused; pack generation and access are withheld."
+    if current is not None and case.preparation_control_epoch != current.preparation_control_epoch:
+        return "Preparation control changed; reload the current case before generating a pack."
+    if current is not None and case.delivery_revision != current.delivery_revision:
+        return "Delivery revision changed; reload the current case before generating a pack."
+    return None
+
+
+def _generate_pack(
+    case: Case,
+    policy: Policy,
+    store: SQLiteStore,
+    output_root: Path,
+    today: date,
+) -> tuple[Path | None, list[str]]:
     if store.has_unreviewed_held_updates(case.id):
         return None, ["Retained applicant updates still require review before pack generation."]
     gate = evaluate_gate(case, policy, today)
@@ -440,9 +467,12 @@ def generate_pack(
 
     _write_zip(pack_dir, zip_path)
     digest = hashlib.sha256(zip_path.read_bytes()).hexdigest()
+    rejection = _preparation_control_rejection(case, store)
+    if rejection:
+        return None, [rejection]
     store.save_delivery(case.id, str(zip_path), digest, case_revision=case.delivery_revision)
+    store.save_case(prepared_case)
     case.status = prepared_case.status
     case.stage = prepared_case.stage
     case.delivery_path = prepared_case.delivery_path
-    store.save_case(case)
     return zip_path, []

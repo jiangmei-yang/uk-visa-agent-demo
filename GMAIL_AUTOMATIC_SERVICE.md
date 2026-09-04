@@ -1,6 +1,15 @@
 # Controlled automatic Gmail service
 
-Latest reload (2026-09-04): the tested neutral single-call DeepSeek input and financial/quiet-correction
+Latest reload (2026-09-04): persisted preparation pause/restart, stale-outbox protection and
+reply-reading fixes are loaded by PID 71285, with a completed idle cycle at 12:30:06 UTC.
+The LaunchAgent configuration and the checked case/outbox projection are unchanged: one case,
+nine SENT rows, no manual sends or historical replay. The schema adds an epoch column with zero
+for all nine existing rows. Evidence: `eval_output/gmail_preparation_control_reload_2026-09-04.json`.
+The [feature report](PREPARATION_CONTROL.md) retains the first holdout's **7/8 intent** result and
+the missing next-step request; deployment does not turn that known gap into a pass. This remains
+a restricted test service, not public intake or automatic final-pack delivery.
+
+Previous reload (2026-09-04): the tested neutral single-call DeepSeek input and financial/quiet-correction
 reply changes are loaded by PID 68387. A completed idle cycle at 12:07:03 UTC and separate process
 liveness were observed. The one case, nine SENT outbox rows and full cases/outbox hash were unchanged;
 the LaunchAgent configuration hash also remained identical. No mail was manually sent or replayed.

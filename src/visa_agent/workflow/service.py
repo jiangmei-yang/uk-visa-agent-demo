@@ -167,6 +167,22 @@ class WorkflowService:
             if row["case_id"] == case.id
         )
         patch = self.llm.extract_case_patch(customer_event)
+        was_paused = case.preparation_paused
+        case.latest_preparation_action = None
+        if patch.preparation_intent is not None:
+            paused = patch.preparation_intent.action == "pause"
+            if paused != case.preparation_paused:
+                case.preparation_paused = paused
+                case.preparation_control_epoch += 1
+                case.preparation_control_event_id = event.id
+                case.latest_preparation_action = patch.preparation_intent.action
+                case.profile_confirmed = False
+                case.final_summary_confirmed = False
+                case.confirmation_fingerprint = None
+                case.confirmation_kind = None
+                case.confirmation_request_event_id = None
+        # A restart of preparation is not consent to a previously sent summary.
+        may_confirm = not was_paused and not case.preparation_paused
         case.proactive_guidance_offered = False
         case.customer_question_topics = [item.topic for item in patch.customer_questions]
         case.customer_question_exclusions = [item.source_excerpt for item in patch.customer_questions
@@ -198,6 +214,7 @@ class WorkflowService:
         update_deferred_questions(case, customer_event.body)
         if (set(case.customer_question_topics) == {"off_topic"}
                 and not patch.updates and not patch.question_deferrals and not event.attachment_paths
+                and patch.preparation_intent is None and not case.preparation_paused
                 and not case.latest_deferred_fields
                 and not has_explicit_confirmation_line(
                     customer_event.body, PROFILE_CONFIRMATION_LINES | FINAL_CONFIRMATION_LINES,
@@ -242,6 +259,7 @@ class WorkflowService:
             prior_confirmation
             and unchanged_summary
             and request_delivered
+            and may_confirm
             and case.status != CaseStatus.HUMAN_REVIEW_REQUIRED
         )
         if (
@@ -250,7 +268,7 @@ class WorkflowService:
                 and not confirmation_has_caveat(customer_event.body)
             )
             or (contextual_confirmation and prior_kind == "profile" and natural_confirmation)
-        ) and case.status != CaseStatus.HUMAN_REVIEW_REQUIRED:
+        ) and may_confirm and case.status != CaseStatus.HUMAN_REVIEW_REQUIRED:
             case.profile_confirmed = True
             for evidence in case.evidence:
                 if evidence.source_document_id is None:
@@ -300,6 +318,7 @@ class WorkflowService:
             plan = "awaiting_confirmation"
         elif (
             case.status != CaseStatus.HUMAN_REVIEW_REQUIRED
+            and not case.preparation_paused
             and gate.checks["required_profile_facts_complete"]
             and gate.checks["route_in_scope"]
             and not case.open_blockers()
@@ -315,7 +334,7 @@ class WorkflowService:
                 case, include_documents=case.confirmation_kind == "final"
             )
             case.confirmation_request_event_id = event.id
-        if plan == "blocked" and not waiting_acknowledgement(case):
+        if plan == "blocked" and not case.preparation_paused and not waiting_acknowledgement(case):
             sent_topics = {topic for topic, source_event in case.guidance_events.items()
                            if source_event in sent_events}
             guidance = preparation_guidance(case, self.today_provider(), sent_topics)
@@ -332,7 +351,7 @@ class WorkflowService:
                     getattr(case.profile, field) is None
                     or (field == "route_confirmed_standard_visitor" and not getattr(case.profile, field)))]
             answered_fields = set(case.latest_received_facts) | set(case.latest_changes)
-            if waiting_acknowledgement(case):
+            if case.preparation_paused or waiting_acknowledgement(case):
                 # This renderer emits only a receipt. Never record unseen candidate questions
                 # against that receipt's SENT event, even when an older draft was never sent.
                 case.question_plan = []
@@ -341,7 +360,9 @@ class WorkflowService:
                     and not customer_requests_next_step(customer_event.body)):
                 # A scope reply is not permission to start or restart intake questions.
                 case.question_plan = []
-            elif case.pending_question_fields and customer_requests_next_step(customer_event.body):
+            elif case.pending_question_fields and (
+                customer_requests_next_step(customer_event.body) or case.latest_preparation_action == "resume"
+            ):
                 case.question_plan = candidates[:1]
             elif case.pending_question_fields and not answered_fields.intersection(prior_pending):
                 # Address a correction/question/later-reply instead of repeating the unanswered form.

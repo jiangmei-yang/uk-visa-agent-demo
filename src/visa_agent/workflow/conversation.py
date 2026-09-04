@@ -146,6 +146,8 @@ def fact_label(case: Case, field: str) -> str:
 
 
 def next_fact_questions(case: Case) -> list[str]:
+    if case.preparation_paused:
+        return []
     priority = [
         "visit_purpose",
         "nationality_country",
@@ -207,7 +209,7 @@ def customer_requests_next_step(body: str) -> bool:
 
 def preparation_context_progress(case: Case) -> bool:
     """A contact/identity correction alone is not a request for a fresh preparation guide."""
-    return bool(case.latest_received_facts or set(case.latest_changes) - {
+    return case.latest_preparation_action == "resume" or bool(case.latest_received_facts or set(case.latest_changes) - {
         "full_name", "date_of_birth", "current_address",
     })
 
@@ -451,6 +453,8 @@ def document_list_requested(case: Case) -> bool:
 
 def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
     """Only the next few questions; completeness remains enforced by the delivery gate."""
+    if case.preparation_paused:
+        return [], [], []
     zh = case.customer_language == "zh"
     issues = []
     for issue in case.open_blockers():
@@ -533,6 +537,10 @@ def change_acknowledgement(case: Case) -> str | None:
     if not case.latest_changes:
         return None
     zh = case.customer_language == "zh"
+    if not zh and set(case.latest_changes) == {"estimated_trip_cost_gbp"}:
+        value = case.latest_changes["estimated_trip_cost_gbp"]
+        if value.isdecimal():
+            return f"Thanks—I've updated your total trip budget to £{int(value):,}."
     if not zh and set(case.latest_changes) == {"date_of_birth"}:
         try:
             corrected = date.fromisoformat(case.latest_changes["date_of_birth"])
@@ -576,7 +584,69 @@ def waiting_acknowledgement(case: Case) -> str | None:
     return None
 
 
+def preparation_control_receipt(case: Case) -> str | None:
+    if case.preparation_paused:
+        if case.latest_preparation_action != "pause":
+            return (
+                "我们先保持暂停，之前的资料都在。等你确定要继续时，再告诉我就好。"
+                if case.customer_language == "zh" else
+                "We'll keep the preparation on hold and retain your earlier details. "
+                "Let me know when you've decided you'd like to continue."
+            )
+        return (
+            "可以，材料准备先暂停，已经收到的信息和文件会保留。等你想继续时，直接回复我就好。"
+            if case.customer_language == "zh" else
+            "Of course—we can put the preparation on hold. I'll keep the details and files you've sent; "
+            "just reply when you'd like to pick this up again."
+        )
+    if case.latest_preparation_action == "resume":
+        return (
+            "可以，我们接着准备，之前发过的信息和文件不用重发。定稿前，我会把整理后的摘要再发给你核对。"
+            if case.customer_language == "zh" else
+            "Of course, let's pick this up again. You don't need to resend your earlier details or files. "
+            "I'll send you a fresh summary to check before finalising anything."
+        )
+    return None
+
+
+def paused_customer_message(case: Case) -> str:
+    """A receipt and requested information, never a new intake/document demand."""
+    zh = case.customer_language == "zh"
+    sections = []
+    if acknowledgement := change_acknowledgement(case):
+        sections.append(acknowledgement)
+    if case.latest_document_names:
+        names = ("、" if zh else ", ").join(case.latest_document_names)
+        sections.append(f"收到 {names} 了，先保存在你的档案里。" if zh
+                        else f"I've received {names} and kept it with your case.")
+    if context := received_context(case):
+        sections.append(context)
+    sections.extend(case.customer_answers)
+    if document_list_requested(case):
+        documents = [explained_document_label(case, item) for item in case.requirements
+                     if item.applicable and item.blocker and not item.satisfied]
+        if documents:
+            sections.append(
+                ("如果之后继续准备，按你目前的情况可以参考这份材料清单，现在不用急着提交：\n" if zh else
+                 "For when you decide to continue, this is a preparation list for your current circumstances; "
+                 "there's no need to send these now:\n")
+                + "\n".join(f"- {item}" for item in documents)
+            )
+            sources = list(dict.fromkeys(source for item in case.requirements
+                                        if item.applicable and item.blocker and not item.satisfied
+                                        for source in item.source_urls))
+            sections.append("\n".join(f"GOV.UK: {source}" for source in sources))
+    if case.open_blockers():
+        sections.append("现有资料里还有待核对的地方，先保留记录，恢复准备后再处理。" if zh else
+                        "Some existing details still need checking. Those checks remain on file for when we resume.")
+    if receipt := preparation_control_receipt(case):
+        sections.append(receipt)
+    return "\n\n".join(sections)
+
+
 def blocked_customer_message(case: Case) -> str:
+    if case.preparation_paused:
+        return paused_customer_message(case)
     if acknowledgement := waiting_acknowledgement(case):
         return acknowledgement
     zh = case.customer_language == "zh"
@@ -666,6 +736,8 @@ def blocked_customer_message(case: Case) -> str:
             if zh else "Let me know when your dates are decided; the details you've already provided are retained. "
             "The final check will remain on hold until the dates are supplied."
         )
+    if case.latest_preparation_action == "resume" and (receipt := preparation_control_receipt(case)):
+        sections.insert(0, receipt)
     sections.extend(case.customer_answers)
     if issues:
         sections.append(
@@ -714,6 +786,8 @@ def blocked_customer_message(case: Case) -> str:
 
 
 def confirmation_message(case: Case, *, profile_only: bool = False) -> str:
+    if case.preparation_paused:
+        return paused_customer_message(case)
     zh = case.customer_language == "zh"
     intro = (
         "我把目前的信息整理在下面，请看看有没有记错或遗漏。"
@@ -738,6 +812,8 @@ def confirmation_message(case: Case, *, profile_only: bool = False) -> str:
                 else f"- {fact_label(case, field)}: {display}"
             )
     text = ("\n\n".join(case.customer_answers) + "\n\n" if case.customer_answers else "")
+    if case.latest_preparation_action == "resume" and (receipt := preparation_control_receipt(case)):
+        text = receipt + "\n\n" + text
     text += intro + "\n\n" + ("资料摘要\n" if zh else "FACTS SUMMARY\n") + "\n".join(rows)
     if not profile_only:
         text += "\n\n" + ("这次整理使用的材料\n" if zh else "CURRENT DOCUMENTS\n")

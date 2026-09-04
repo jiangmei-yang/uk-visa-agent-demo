@@ -14,10 +14,12 @@ from visa_agent.workflow.conversation import (
     change_acknowledgement,
     confirmation_message,
     latest_reply_text,
+    preparation_control_receipt,
     reply_items,
     waiting_acknowledgement,
 )
 from visa_agent.workflow.customer_questions import validated_customer_questions
+from visa_agent.workflow.preparation_control import validated_preparation_intent
 
 MIN_ACCEPTED_CONFIDENCE = 0.8
 MAX_MODEL_ATTEMPTS = 2
@@ -198,6 +200,7 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
             and item.source_excerpt.strip()
             and _normalise_evidence(item.source_excerpt) in _normalise_evidence(latest_reply_text(event.body))],
         customer_questions=validated_customer_questions(event.body, proposed.customer_questions),
+        preparation_intent=validated_preparation_intent(event.body, proposed.preparation_intent),
     )
 
 
@@ -208,7 +211,23 @@ def deterministic_fallback_message(case: Case, plan: str) -> str:
             if case.customer_language == "zh"
             else "Thank you for explaining. This needs a human adviser to check before we continue. Your information is retained; you don't need to resend it. I haven't prepared or submitted an application."
         )
-        return "\n\n".join([message, *case.customer_answers])
+        history_reported = (case.profile.has_serious_history is True and "has_serious_history" in
+                            (set(case.latest_changes) | set(case.latest_received_facts)))
+        if history_reported:
+            message = (
+                "你补充的拒签或其他重要经历已记下，需要人工顾问结合相关记录复核，才能判断对这次申请的影响。"
+                "目前先不定稿，已经收到的资料不用重发。"
+                if case.customer_language == "zh" else
+                "I've recorded the refusal or other significant history you've disclosed. "
+                "A human adviser needs to check the relevant records before assessing its implications "
+                "for this application. We won't finalise the pack yet; you don't need to resend the details already received."
+            )
+        acknowledgement = change_acknowledgement(case.model_copy(update={"latest_changes": {
+            key: value for key, value in case.latest_changes.items() if key != "has_serious_history"
+        }}))
+        receipt = preparation_control_receipt(case)
+        return "\n\n".join([*([acknowledgement] if acknowledgement else []),
+                            *([receipt] if receipt else []), message, *case.customer_answers])
     if plan == "blocked":
         return blocked_customer_message(case)
     if plan == "ready":
@@ -283,6 +302,11 @@ class GuardedLLM:
             self.last_render_fallback = True
             self.last_render_error = "case_requires_human_review"
             return deterministic_fallback_message(case, plan)
+        if case.preparation_paused:
+            # The drafting model cannot restart intake or confirmation while paused.
+            self.last_render_fallback = False
+            self.last_render_error = None
+            return blocked_customer_message(case)
         if plan == "blocked" and (acknowledgement := waiting_acknowledgement(case)):
             self.last_render_fallback = False
             self.last_render_error = None

@@ -43,6 +43,16 @@ class CustomerQuestionBatch(BaseModel):
     customer_questions: list[CustomerQuestion] = Field(max_length=4)
 
 
+class PreparationIntent(BaseModel):
+    """A customer preference proposal, never consent or direct workflow authority."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    action: Literal["pause", "resume"]
+    source_excerpt: str = Field(min_length=1, max_length=320)
+    confidence: float = Field(ge=0, le=1)
+
+
 class CasePatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -51,6 +61,7 @@ class CasePatch(BaseModel):
     requires_human_review: bool = False
     question_deferrals: list[QuestionDeferral] = Field(default_factory=list, max_length=2)
     customer_questions: list[CustomerQuestion] = Field(default_factory=list, max_length=4)
+    preparation_intent: PreparationIntent | None = None
 
 
 class LLMClient(Protocol):

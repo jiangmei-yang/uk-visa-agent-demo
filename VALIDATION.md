@@ -17,7 +17,14 @@ explicitly recorded here.
 
 Updated 2026-09-04. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**. The current local suite has
-1,339 passing tests; this is not a naturalness score or a general accuracy/reliability percentage.
+1,665 passing tests; this is not a naturalness score or a general accuracy/reliability percentage.
+
+Latest: [persisted preparation pause/restart](PREPARATION_CONTROL.md) separates customer pacing
+from human review and consent, blocks obsolete queued replies and retains independent facts/FAQs.
+The first development run found two application-guard errors (raw 24/24, guarded 22/24); the
+zero-call saved-output replay after repairs is 24/24. The first eight-case holdout is **7/8 intent,
+8/8 state safety**. A mixed “continue with the next document + booking FAQ” request still loses
+the next-step request. That remains open; neither the green local suite nor state safety hides it.
 
 The latest [three-arm question-understanding experiment](QUESTION_UNDERSTANDING_EXPERIMENT.md)
 selects a corrected single-call input wrapper, not multi-agent orchestration. Its neutral arm
