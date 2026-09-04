@@ -1,0 +1,20 @@
+{
+  "checked_at": "2026-09-04T08:32:25.747882+00:00",
+  "evidence_class": "real provider read-only requests; isolated deliberately invalid checkpoint",
+  "invalid_checkpoint": "1",
+  "authorized_mailbox_verified": true,
+  "history_404_observed": false,
+  "recovered_to_ready": true,
+  "live_worker_state_changed": false,
+  "raw_bodies_read": 0,
+  "sends": 0,
+  "limitations": [
+    "A deliberately invalid cursor, not a naturally expired live-service cursor.",
+    "No real multi-page backlog, message processing, dispatch or recipient-delivery claim.",
+    "No quota exhaustion, provider 5xx, credential revocation or live journal modification."
+  ],
+  "history_calls": 1,
+  "full_pages": 0,
+  "pending_candidates": 20,
+  "passed": false
+}

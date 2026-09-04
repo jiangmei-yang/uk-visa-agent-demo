@@ -96,6 +96,26 @@ Equal receipt timestamps use message ID as a stable tie-breaker; that does not p
 order for simultaneous conflicting replies. The service remains registered-sender only, local
 to an awake/online Mac, and does not auto-send final packs.
 
+## Real negative-probe evidence — not a recovery pass
+
+`scripts/gmail_history_recovery_probe.py` creates a temporary journal, never changes the live
+journal, and only reads Gmail profile/list/history endpoints. It refuses to overwrite a report
+and requires an observed history 404 plus successful resync before reporting a recovery pass.
+
+Two real requests on 2026-09-04 did **not** satisfy that criterion:
+
+- `eval_output/gmail_history_recovery_2026-09-04.json`: cursor `1` unexpectedly returned normal
+  history (20 candidate IDs), without a full sync. Its initial `invalid_checkpoint` label reflects
+  the disproven test assumption, not an observed provider judgment. The report is preserved.
+- `eval_output/gmail_history_recovery_2026-09-04-out-of-range.json`: an explicit unsigned-64-bit
+  maximum cursor produced `PermanentChannelError`, not the expected history-expired recovery.
+  The initial report captured the error class but not the HTTP status, so no specific HTTP code
+  is claimed. The script now records a sanitized numeric cause status when available.
+
+Both reports have `passed: false`. No bodies were fetched and no emails sent. An operator-selected
+cursor is not evidence of natural expiry, and changing cursors until one happens to pass would
+not establish live-service recovery. Real expired-history recovery remains unverified.
+
 ## Provider contract
 
 Checked 2026-09-04 against Google's official [synchronization guide](https://developers.google.com/workspace/gmail/api/guides/sync),

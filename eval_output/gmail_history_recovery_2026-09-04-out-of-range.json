@@ -1,0 +1,18 @@
+{
+  "checked_at": "2026-09-04T08:32:51.090052+00:00",
+  "evidence_class": "real provider read-only requests; isolated operator-selected checkpoint",
+  "requested_checkpoint": "18446744073709551615",
+  "authorized_mailbox_verified": true,
+  "history_404_observed": false,
+  "recovered_to_ready": false,
+  "live_worker_state_changed": false,
+  "raw_bodies_read": 0,
+  "sends": 0,
+  "limitations": [
+    "An operator-selected probe cursor, not a naturally expired live-service cursor.",
+    "No real multi-page backlog, message processing, dispatch or recipient-delivery claim.",
+    "No quota exhaustion, provider 5xx, credential revocation or live journal modification."
+  ],
+  "error_type": "PermanentChannelError",
+  "passed": false
+}
