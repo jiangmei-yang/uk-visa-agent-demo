@@ -97,7 +97,12 @@ def index() -> HTMLResponse:
         return HTMLResponse(render_empty_page())
     case = cases[0]
     gate = evaluate_gate(case, policy, date.today())
-    return HTMLResponse(render_page(case, gate))
+    try:
+        get_pack(case.id)
+        pack_available = True
+    except HTTPException:
+        pack_available = False
+    return HTMLResponse(render_page(case, gate, pack_available=pack_available))
 
 
 @app.get("/try", response_class=HTMLResponse)

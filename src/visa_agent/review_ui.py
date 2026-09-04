@@ -35,6 +35,7 @@ GATE_LABELS = {
     "every_critical_fact_has_provenance": "Key facts linked to evidence",
     "applicant_explicitly_confirmed_final_summary": "Final summary confirmed",
     "policy_snapshot_is_current": "Policy snapshot current",
+    "passport_valid_through_stay": "Passport valid through the stay",
 }
 
 DOCUMENT_LABELS = {
@@ -93,9 +94,11 @@ def _document_rows(case: Case, technical: bool = False) -> str:
         if doc.status.value == "SUPERSEDED":
             state, tone, note = "Superseded", "neutral", "Original retained in audit trail"
         elif doc.status.value == "NEEDS_CERTIFIED_TRANSLATION":
-            state, tone, note = "Original", "neutral", "Certified translation linked separately"
-        else:
+            state, tone, note = "Translation needed", "warning", "Certified translation not yet accepted"
+        elif doc.status.value == "ACCEPTED_FOR_REVIEW":
             state, tone, note = "Active", "success", pages
+        else:
+            state, tone, note = humanise(doc.status.value), "warning", "Not accepted for review"
         rows.append(
             f"<tr><td><strong>{esc(DOCUMENT_LABELS.get(doc.kind, humanise(doc.kind)))}</strong>"
             f"<small>{esc(doc.filename)}</small></td><td>{badge(state, tone)}</td><td>{esc(note)}</td></tr>"
@@ -114,7 +117,7 @@ def _corrections(case: Case) -> str:
 
 def _requirements(case: Case) -> str:
     return "".join(
-        f'<li><span class="check" aria-hidden="true">&check;</span><span>{esc(item.title)}</span><strong>Complete</strong></li>'
+        f'<li><span class="check" aria-hidden="true">{"&check;" if item.satisfied else "!"}</span><span>{esc(item.title)}</span><strong>{"Complete" if item.satisfied else "Still needed"}</strong></li>'
         for item in case.requirements
         if item.applicable
     )
@@ -125,8 +128,8 @@ def _walkthrough() -> str:
         """
     <section class="walkthrough" id="walkthrough" aria-labelledby="walkthrough-title">
       <div class="section-heading"><div><span class="section-number">01</span>
-      <h2 id="walkthrough-title">See how the adviser handled the case</h2></div>
-      <p>Open each message to follow the client’s documents, the adviser’s response, and the safety decision.</p></div>
+      <h2 id="walkthrough-title">Recorded sample walkthrough</h2></div>
+      <p>This separate fixture illustrates three steps, not the current case’s message history. Its exact wording is not required in real emails.</p></div>
       <div class="tabs" role="tablist" aria-label="Three-email case walkthrough">
         <button id="tab-intake" role="tab" aria-selected="true" aria-controls="panel-intake" data-panel="intake"><b>1</b><span><strong>Initial email</strong><small>Paused safely</small></span></button>
         <button id="tab-correction" role="tab" aria-selected="false" aria-controls="panel-correction" data-panel="correction" tabindex="-1"><b>2</b><span><strong>Corrections</strong><small>Awaiting confirmation</small></span></button>
@@ -153,10 +156,10 @@ def _walkthrough() -> str:
       <div id="panel-confirmation" class="panel" role="tabpanel" aria-labelledby="tab-confirmation" hidden>
         <article class="email"><header><span>LC</span><div><strong>Lin Chen</strong><small>To: Visa preparation · 1 Sep, 13:00</small></div></header><h3>Re: Standard Visitor documents for London conference</h3>
         <blockquote>“I reviewed the final facts summary and the listed source documents. I CONFIRM THE FINAL SUMMARY.”</blockquote><p class="attachments"><strong>No attachments</strong> Explicit confirmation recorded</p></article>
-        <article class="decision success"><header><div><p class="decision-label">Adviser’s decision</p><h3>All ten checks passed — pack released</h3></div>"""
+        <article class="decision success"><header><div><p class="decision-label">Adviser’s decision</p><h3>Sample checks passed — pack prepared</h3></div>"""
         + badge("Released", "success")
         + """</header>
-        <ul class="proof-list"><li><b>10/10</b> delivery checks</li><li><b>0</b> open blockers</li><li><b>1</b> human confirmation</li></ul>
+        <ul class="proof-list"><li>Evidence linked</li><li>Blockers resolved</li><li>Applicant confirmed</li></ul>
         <div class="reply"><strong>Service response:</strong><p>“Your review pack has been prepared for human review. This is not an approval prediction.”</p></div><a class="text-link" href="#pack">See the released pack and proof ↓</a></article>
       </div>
       <noscript><p class="notice">Enable JavaScript to switch between the three recorded emails. The initial safe stop remains visible.</p></noscript>
@@ -164,9 +167,12 @@ def _walkthrough() -> str:
     )
 
 
-def render_case(case: Case, gate: GateResult) -> str:
+def render_case(case: Case, gate: GateResult, *, pack_available: bool = False) -> str:
     profile = case.profile
-    ready = gate.allowed and bool(case.delivery_path)
+    ready = gate.allowed and pack_available
+    fixture = case.primary_channel == "email_fixture"
+    mode = "Offline example · no email sent here" if fixture else "Local case review · not a live inbox"
+    budget = "Not confirmed" if profile.estimated_trip_cost_gbp is None else f"£{profile.estimated_trip_cost_gbp:,.0f}"
     active_docs = sum(doc.status.value != "SUPERSEDED" for doc in case.documents)
     superseded = len(case.documents) - active_docs
     pack_size, pack_hash = _pack_meta(case)
@@ -178,7 +184,7 @@ def render_case(case: Case, gate: GateResult) -> str:
     outcome = (
         "The application pack is ready for adviser review"
         if ready
-        else "Delivery is paused until every safety check passes"
+        else "The review pack is not available for download"
     )
     manifest = "".join(
         f'<li><span aria-hidden="true">&check;</span>{label}</li>'
@@ -192,25 +198,27 @@ def render_case(case: Case, gate: GateResult) -> str:
             "Open-issues report",
         )
     )
+    pack_contents = f'<ul class="manifest">{manifest}<li>{active_docs} active supporting documents</li></ul>' if ready else '<p>Pack contents are shown only when a verified archive is available.</p>'
     return f"""
     <a class="skip-link" href="#main-content">Skip to case</a>
-    <header class="topbar"><a class="brand" href="/"><i aria-hidden="true">VP</i>Visa preparation</a><div class="topbar-actions"><span>Demonstration case · not legal advice</span><a href="/try">Try the workflow</a></div></header>
+    <header class="topbar"><a class="brand" href="/"><i aria-hidden="true">VP</i>Visa preparation</a><div class="topbar-actions"><span>{mode}</span><a href="/try">Try the offline workflow</a></div></header>
     <main id="main-content">
+      <p class="notice">{'This is a synthetic offline example. The guided workflow does not send email or WhatsApp messages.' if fixture else 'This page reads a local case record. It does not show whether the Gmail or WhatsApp worker is connected or running.'}</p>
       <section class="hero" aria-labelledby="case-title"><div><p class="case-label">Application review</p><div class="title"><h1 id="case-title">{esc(profile.full_name or case.id)}</h1>{badge("Ready for adviser review", "success") if ready else badge("Action required", "warning")}</div>
       <p>Standard Visitor · {esc(humanise(profile.visit_purpose or "visit"))} · applying from {esc(profile.application_country or "Unknown")}</p></div><div class="hero-action">{download}<small id="download-status" aria-live="polite"></small></div></section>
-      <section class="outcome" aria-labelledby="outcome-title"><div class="adviser-mark" aria-hidden="true">A</div><div class="outcome-copy"><p class="case-label">Current outcome</p><h2 id="outcome-title">{outcome}</h2><p>The adviser stopped on two evidence problems, accepted corrected files, and waited for Lin’s exact confirmation before releasing the pack.</p></div>
-      <aside class="next-step"><strong>What happens next</strong><p>A human adviser reviews the organised evidence before anything is submitted.</p><a href="#walkthrough">Follow the three-message journey</a></aside></section>
-      {_walkthrough()}
-      <section class="pack-section" id="pack" aria-labelledby="pack-title"><div class="section-heading"><div><h2 id="pack-title">Open the final review pack</h2></div><p>Built only from confirmed, source-linked case data. It organises evidence; it does not submit or decide the application.</p></div>
-      <div class="pack-layout"><div class="pack-card"><b>ZIP</b><div><h3>Application review pack</h3><p>{pack_size} · SHA-256 <code>{pack_hash}</code></p></div>{download}</div><ul class="manifest">{manifest}<li><span aria-hidden="true">&check;</span>{active_docs} active supporting documents</li></ul></div></section>
-      <section class="details" aria-labelledby="details-title"><div class="section-heading"><div><h2 id="details-title">Review the prepared case</h2></div><p>Corrections, confirmed trip facts, and the original replaced evidence remain visible.</p></div>
-      <div class="details-grid"><div><h3>Corrections handled</h3><ul class="corrections">{_corrections(case)}</ul></div><aside class="snapshot"><h3>Confirmed trip</h3><dl>
-      <div><dt>Travel dates</dt><dd>{format_date(profile.planned_arrival_date)} – {format_date(profile.planned_departure_date)}</dd></div><div><dt>Purpose</dt><dd>{esc(humanise(profile.visit_purpose or "Not confirmed"))}</dd></div><div><dt>Accommodation</dt><dd>{esc(profile.uk_accommodation or "Not confirmed")}</dd></div><div><dt>Estimated cost</dt><dd>£{profile.estimated_trip_cost_gbp or 0:,.0f}</dd></div><div><dt>Funding</dt><dd>{esc(humanise(profile.funding_source or "Not confirmed"))}</dd></div></dl></aside></div>
+      <section class="outcome" aria-labelledby="outcome-title"><div class="adviser-mark" aria-hidden="true">A</div><div class="outcome-copy"><p class="case-label">Current outcome</p><h2 id="outcome-title">{outcome}</h2><p>{'Current checks pass and the local archive is verified. This does not establish that a recipient received it.' if ready else 'Review the outstanding checks below. A missing or changed archive, or a newer applicant update, can also prevent download.'}</p></div>
+      <aside class="next-step"><strong>What happens next</strong><p>{'Download and review the organised evidence before any application is submitted.' if ready else 'Resolve missing information or ask the operator to review the case before attempting delivery.'}</p><a href="#audit">Review current checks</a></aside></section>
+      {_walkthrough() if fixture else ''}
+      <section class="pack-section" id="pack" aria-labelledby="pack-title"><div class="section-heading"><div><h2 id="pack-title">{'Open the final review pack' if ready else 'Review pack availability'}</h2></div><p>The pack organises source-linked evidence. It does not submit or decide the application.</p></div>
+      <div class="pack-layout"><div class="pack-card"><b>ZIP</b><div><h3>Application review pack</h3><p>{pack_size} · SHA-256 <code>{pack_hash}</code></p></div>{download}</div>{pack_contents}</div></section>
+      <section class="details" aria-labelledby="details-title"><div class="section-heading"><div><h2 id="details-title">Review the case record</h2></div><p>Recorded facts, resolved corrections and replaced documents remain visible.</p></div>
+      <div class="details-grid"><div><h3>Corrections handled</h3><ul class="corrections">{_corrections(case)}</ul></div><aside class="snapshot"><h3>Recorded trip details</h3><dl>
+      <div><dt>Travel dates</dt><dd>{format_date(profile.planned_arrival_date)} – {format_date(profile.planned_departure_date)}</dd></div><div><dt>Purpose</dt><dd>{esc(humanise(profile.visit_purpose or "Not confirmed"))}</dd></div><div><dt>Accommodation</dt><dd>{esc(profile.uk_accommodation or "Not confirmed")}</dd></div><div><dt>Estimated cost</dt><dd>{budget}</dd></div><div><dt>Funding</dt><dd>{esc(humanise(profile.funding_source or "Not confirmed"))}</dd></div></dl></aside></div>
       <div class="checklist"><h3>Application checklist</h3><ul>{_requirements(case)}</ul></div><div class="documents"><div class="subheading"><h3>Document register</h3><span>{active_docs} active · {superseded} superseded</span></div><div class="table-wrap" role="region" aria-label="Document register; scroll horizontally for all columns" tabindex="0"><table class="doc-table"><thead><tr><th>Document</th><th>Status</th><th>Note</th></tr></thead><tbody>{_document_rows(case)}</tbody></table></div></div></section>
-      <section class="audit" id="audit"><details><summary><span><span class="case-label">For technical reviewers</span><strong>See why the system allowed delivery</strong></span><b aria-hidden="true">⌄</b></summary><div class="audit-body"><p>Ten deterministic checks—not model confidence—control delivery. Synthetic data, policy, provenance, lifecycle, and hashes are preserved here.</p><dl class="audit-meta"><div><dt>Case ID</dt><dd><code>{esc(case.id)}</code></dd></div><div><dt>Policy</dt><dd>{esc(case.policy_version)}</dd></div><div><dt>Workflow</dt><dd>{esc(humanise(case.stage.value))}</dd></div></dl>
+      <section class="audit" id="audit"><details><summary><span><span class="case-label">For technical reviewers</span><strong>Inspect current delivery checks</strong></span><b aria-hidden="true">⌄</b></summary><div class="audit-body"><p>{len(gate.checks)} deterministic case checks are shown below. Archive integrity and held applicant updates are checked separately before download.</p><dl class="audit-meta"><div><dt>Case ID</dt><dd><code>{esc(case.id)}</code></dd></div><div><dt>Policy</dt><dd>{esc(case.policy_version)}</dd></div><div><dt>Workflow</dt><dd>{esc(humanise(case.stage.value))}</dd></div></dl>
       <div class="audit-grid"><div class="gate"><h3>Delivery gate</h3><ul>{_gate_audit(gate)}</ul></div><div class="audit-panel"><h3>Active evidence ledger</h3><div class="table-wrap" role="region" aria-label="Evidence ledger; scroll horizontally for all columns" tabindex="0"><table><thead><tr><th>Fact</th><th>Value</th><th>Source</th><th>Page</th><th>Confidence</th></tr></thead><tbody>{_evidence_audit(case)}</tbody></table></div></div></div><div class="audit-panel"><h3>Technical document register</h3><div class="table-wrap" role="region" aria-label="Technical document register; scroll horizontally for all columns" tabindex="0"><table><thead><tr><th>File</th><th>Lifecycle</th><th>Language</th><th>SHA-256</th></tr></thead><tbody>{_document_rows(case, True)}</tbody></table></div></div></div></details></section>
-      <div class="data-controls"><div><strong>Synthetic case data</strong><p>Export the auditable snapshot or delete this case and its generated pack from the local Demo.</p></div><a class="button secondary" href="/api/cases/{esc(case.id)}/export">Export JSON</a><button class="button danger-button" type="button" data-delete-case="{esc(case.id)}">Delete case</button><small id="case-data-status" role="status"></small></div>
-      <footer>This synthetic service prepares materials for a human adviser. It does not give legal advice, decide eligibility, submit an application, or predict an outcome.</footer>
+      <div class="data-controls"><div><strong>Local case data</strong><p>Export the auditable snapshot or delete this case and its generated pack from the local Demo.</p></div><a class="button secondary" href="/api/cases/{esc(case.id)}/export">Export JSON</a><button class="button danger-button" type="button" data-delete-case="{esc(case.id)}">Delete case</button><small id="case-data-status" role="status"></small></div>
+      <footer>This service prepares materials for a human adviser. It does not give legal advice, decide eligibility, submit an application, or predict an outcome.</footer>
     </main>"""
 
 
@@ -533,13 +541,13 @@ def page(body: str, *, extra_css: str = "", extra_js: str = "") -> str:
     return f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Visa preparation Demo</title><style>{BASE_CSS}{extra_css}</style></head><body>{body}<script>{INTERACTION_JS}{extra_js}</script></body></html>'
 
 
-def render_page(case: Case, gate: GateResult) -> str:
-    return page(render_case(case, gate))
+def render_page(case: Case, gate: GateResult, *, pack_available: bool = False) -> str:
+    return page(render_case(case, gate, pack_available=pack_available))
 
 
 def render_empty_page() -> str:
     return page(
-        """<a class="skip-link" href="#main-content">Skip to case</a><header class="topbar"><a class="brand" href="/"><i aria-hidden="true">VP</i>Visa preparation Demo</a></header><main id="main-content"><section class="hero"><div><p class="kicker">Assessment mode</p><h1>No demo case is loaded</h1><p>The synthetic case normally prepares itself when the Demo starts.</p></div></section><section class="outcome"><div><p class="kicker">Try this first</p><h2>Refresh in a few seconds</h2><p>If this remains, close the tab and double-click START_DEMO again. It will rebuild the case and reopen this page.</p></div><a class="button primary" href="/">Refresh case</a></section></main>"""
+        """<a class="skip-link" href="#main-content">Skip to case</a><header class="topbar"><a class="brand" href="/"><i aria-hidden="true">VP</i>Visa preparation Demo</a></header><main id="main-content"><section class="hero"><div><p class="kicker">Local review</p><h1>No case is loaded</h1><p>This local database has no case to review. Restarting does not restore a deleted case.</p></div></section><section class="outcome"><div><h2>Try the guided example</h2><p>Follow a separate synthetic case through intake, corrections and confirmation. No email or WhatsApp messages will be sent.</p></div><a class="button primary" href="/try">Start offline walkthrough</a></section></main>"""
     )
 
 

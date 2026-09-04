@@ -58,10 +58,12 @@ def test_review_console_and_pack_download(tmp_path: Path) -> None:
     assert page.status_code == 200
     body = page.body.decode("utf-8")
     assert "The application pack is ready for adviser review" in body
-    assert "See how the adviser handled the case" in body
+    assert "Recorded sample walkthrough" in body
     assert "Service response:" in body
     assert "Event ends 16 Sep" in body
-    assert "All ten checks passed" in body
+    assert "11 deterministic case checks" in body
+    assert "no email sent here" in body
+    assert "not the current case’s message history" in body
     assert body.index("Current outcome") < body.index("Delivery gate")
     assert "<details>" in body
     assert "Delivery gate" in body
@@ -159,6 +161,7 @@ def test_pack_download_is_withheld_after_a_new_held_update(tmp_path: Path) -> No
         web.get_pack(case.id)
     assert error.value.status_code == 409
     assert Path(case.delivery_path).exists()  # Retain the historical artifact; do not destroy it.
+    assert 'data-download href=' not in web.index().body.decode()
 
 
 @pytest.mark.parametrize("change", ["modified_bytes", "missing_registry", "different_path"])
@@ -180,6 +183,7 @@ def test_pack_download_rejects_unverified_archive(tmp_path: Path, change: str) -
     with pytest.raises(HTTPException) as error:
         web.get_pack(result.case.id)
     assert error.value.status_code == 409
+    assert 'data-download href=' not in web.index().body.decode()
 
 
 def test_case_can_be_exported_and_exactly_confirmed_for_local_deletion(tmp_path: Path) -> None:

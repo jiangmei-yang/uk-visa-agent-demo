@@ -11,10 +11,12 @@ an optional live adapter. The application is a modular monolith divided into pla
 application workflow, domain, and infrastructure modules. SQLite stores a canonical Pydantic case
 snapshot plus idempotency, outbox, and delivery records. Generated PDFs/JSON/ZIP are derived outputs.
 
-The MVP excludes visa/ETA advice, other routes, minors, application submission, legal conclusions,
-approval prediction, real-person data, WhatsApp, production OCR, and document authenticity decisions.
+The product excludes visa/ETA advice, other routes, minors, application submission, legal conclusions,
+approval prediction and document authenticity decisions. The default review UI uses synthetic
+offline data. Gmail integration exists separately; WhatsApp and realistic-material end-to-end
+acceptance remain incomplete. See VALIDATION.md for the current evidence and privacy boundaries.
 
-The primary completion event is one pack generated after all ten gate checks pass. Guardrails are
+The primary completion event is one pack generated after all current gate checks pass. Guardrails are
 zero unsupported-route finalisations, zero packs with an open blocker, zero duplicate side effects on
 replay, and zero unprovenanced critical facts.
 
@@ -66,7 +68,11 @@ preserve deliberate overflow and accessible full text.
 ## Interaction model
 
 - The application-pack download is the only primary action and is present only while the current
-  delivery gate passes.
+  delivery gate, held-update check and registered archive-integrity verification pass.
+- The offline mode notice remains in main content, not only in a responsive header. A local case
+  record is not presented as evidence that a live channel worker is connected or a recipient received a pack.
+- The static three-email walkthrough is explicitly a separate recorded fixture and appears only
+  for fixture-channel cases. Real cases never inherit Lin's sample story.
 - Three keyboard-operable tabs replay the initial pause, correction, and confirmation states.
 - A separate **Try the workflow** route lets an evaluator send the three synthetic messages through
   the actual workflow one at a time, with current blockers, passed checks, replies, and pack release
