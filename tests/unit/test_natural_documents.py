@@ -13,6 +13,23 @@ from visa_agent.documents.natural import (
 TEXT = "Conference invitation for Lin Chen. The event begins on 2026-11-10 and ends on 2026-11-12."
 
 
+@pytest.mark.parametrize("warning", [
+    "SAMPLE PASSPORT — NOT VALID FOR TRAVEL", "SPECIMEN", "For demonstration purposes only",
+    "ＤＵＭＭＹ ＰＡＳＳＰＯＲＴ", "护照样张，仅供演示", "仅供测试，不可用于旅行",
+])
+def test_explicit_identity_specimens_cannot_satisfy_document_requirements(warning):
+    text = ("Passport. Name: Lin Chen. Born: 1995-02-03. Expiry: 2030-12-31.\n" + warning)
+    candidate = DocumentProposal(kind="passport", language="en", classification_page=1,
+        classification_excerpt="Passport.", confidence=0.99, facts=[
+            DocumentFact(field="full_name", value="Lin Chen", page=1, excerpt="Name: Lin Chen", confidence=0.99),
+            DocumentFact(field="date_of_birth", value="1995-02-03", page=1, excerpt="Born: 1995-02-03", confidence=0.99),
+            DocumentFact(field="passport_expiry_date", value="2030-12-31", page=1, excerpt="Expiry: 2030-12-31", confidence=0.99),
+        ])
+    result = validate_document(candidate, [text], method="text", version="fake-high-confidence")
+    assert result.requires_review
+    assert result.review_reason == "Specimen is not an identity document"
+
+
 def proposal() -> DocumentProposal:
     return DocumentProposal(
         kind="conference_invitation",

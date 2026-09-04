@@ -6,7 +6,7 @@ an unsafe workflow releases an incomplete pack. This repository reports both lay
 
 ## Latest measured result (2026-09-04, ordinary Gmail hardening)
 
-- Local suite: 258 tests; lint and strict typing pass. Deterministic stability: 20 identical
+- Local suite: 264 tests; lint and strict typing pass. Deterministic stability: 20 identical
   complete ZIP runs and 100 successful concurrent reads.
 - Ordinary four-PDF/OCR intake plus natural date correction: 3 repeated journeys,
   48/48 checks (`eval_output/natural_journey_2026-09-04-v4.json`). The same two-turn

@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Protocol
@@ -140,10 +141,16 @@ def validate_document(
         "bank_statement": {"full_name"},
     }.get(proposal.kind, set())
     missing = required - facts.keys()
-    specimen_identity = proposal.kind in {"passport", "travel_document"} and any(
-        phrase in _normalise("\n".join(pages))
-        for phrase in ("not an identity document", "fictional specimen", "非身份证件")
-    )
+    # This is a negative evidence check, not authentication. Normalize compatibility
+    # characters only for warning detection; source-quotation grounding remains unchanged.
+    identity_text = _normalise(unicodedata.normalize("NFKC", "\n".join(pages)))
+    specimen_identity = proposal.kind in {"passport", "travel_document"} and bool(re.search(
+        r"\bspecimen\b|\b(?:sample|dummy|fictional) (?:passport|travel document)\b|"
+        r"\bnot (?:an identity document|valid for travel)\b|"
+        r"\bfor (?:demonstration|testing|test) purposes only\b|"
+        r"非身份证件|护照样[本张]|旅行证件样[本张]|仅供(?:演示|测试)|不可用于旅行",
+        identity_text,
+    ))
     return DocumentReadResult(
         proposal.kind,
         proposal.language,

@@ -176,6 +176,19 @@ running Gmail worker, not the outstanding production and consent requirements.
 
 ### Outstanding scope
 
+- Identity-warning regression, 2026-09-04: six text-level examples (`SAMPLE PASSPORT / NOT VALID
+  FOR TRAVEL`, `SPECIMEN`, demonstration-only wording, full-width dummy-passport wording and
+  two Chinese warnings) initially bypassed the review flag even with grounded facts. Six
+  regression tests reproduced that failure before the fix. Negative-warning detection now
+  covers those phrases and Unicode compatibility forms; quotation grounding is unchanged.
+  This is a local validator fix, not OCR coverage, document authentication or a live final-pack
+  journey. Unmarked forged documents are not proven detectable by this check.
+- The ordinary-document final-pack journey needs an authorized volunteer and explicit consent
+  for local/DeepSeek processing of their materials. That participation has been requested;
+  no real identity documents have been solicited for immediate upload or processed by this
+  regression. The existing expressly non-identity summary remains blocked, not relabelled as
+  a valid passport to obtain a passing final delivery.
+
 - Unstructured conversation requires broader multi-turn testing: deferring unknown dates,
   answering policy questions with current sources, difficult corrections and language switching.
 - Natural confirmation currently recognises a conservative set of clear expressions with
