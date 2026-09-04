@@ -63,6 +63,7 @@ class OutboxDispatcher:
         max_attempts: int = 3,
         base_backoff_seconds: int = 60,
         channel: str | None = None,
+        allowed_message_types: tuple[str, ...] | None = None,
     ) -> None:
         if max_attempts < 1:
             raise ValueError("max_attempts must be at least 1")
@@ -71,10 +72,11 @@ class OutboxDispatcher:
         self.max_attempts = max_attempts
         self.base_backoff_seconds = base_backoff_seconds
         self.channel = channel
+        self.allowed_message_types = allowed_message_types
 
     def dispatch_due(self, now: datetime, limit: int = 20) -> list[DispatchOutcome]:
         outcomes: list[DispatchOutcome] = []
-        for row in self.store.claim_pending_outbox(now, limit, self.channel):
+        for row in self.store.claim_pending_outbox(now, limit, self.channel, self.allowed_message_types):
             outbox_id = str(row["id"])
             attempt = int(row["attempt_count"]) + 1
             try:

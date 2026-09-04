@@ -27,7 +27,8 @@ from visa_agent.workflow.service import WorkflowService
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("prepare", "send-reviewed", "reconcile", "status"))
+    parser.add_argument("action", choices=("prepare", "serve", "send-reviewed", "reconcile", "status"))
+    parser.add_argument("--after", type=int, help="Required activation Unix timestamp for automatic service")
     parser.add_argument("--sender", required=True)
     parser.add_argument("--mailbox", required=True)
     parser.add_argument(
@@ -59,11 +60,25 @@ def main() -> None:
         for address in (args.sender, args.mailbox)
     ):
         parser.error("Supply one plain mailbox address for sender and mailbox")
-    if args.watch and (args.action != "prepare" or args.interval < 30):
-        parser.error("Watch requires prepare and an interval of at least 30 seconds")
+    if args.action == "serve" and (args.after is None or args.after <= 0):
+        parser.error("Automatic service requires an explicit positive --after activation timestamp")
+    if args.watch and (args.action not in {"prepare", "serve"} or args.interval < 30):
+        parser.error("Watch requires prepare/serve and an interval of at least 30 seconds")
     while True:
         with exclusive_state(args.state_dir):
-            run_once(args, parser)
+            heartbeat = args.state_dir / "worker_status.json"
+            try:
+                heartbeat.write_text(json.dumps({"pid": os.getpid(), "phase": "polling",
+                    "at": datetime.now(UTC).isoformat(), "action": args.action}))
+                run_once(args, parser)
+                heartbeat.write_text(json.dumps({"pid": os.getpid(), "phase": "idle",
+                    "at": datetime.now(UTC).isoformat(), "action": args.action}))
+            except Exception as error:
+                heartbeat.write_text(json.dumps({"pid": os.getpid(), "phase": "error",
+                    "at": datetime.now(UTC).isoformat(), "error_type": type(error).__name__}))
+                if not args.watch:
+                    raise
+                print("Worker iteration failed:", type(error).__name__, flush=True)
         if not args.watch:
             return
         time.sleep(args.interval)
@@ -71,6 +86,8 @@ def main() -> None:
 
 def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     binding = {"sender": args.sender, "mailbox": args.mailbox, "subject": args.subject}
+    if args.after is not None:
+        binding["after"] = args.after
     binding_path = args.state_dir / "binding.json"
     if binding_path.exists():
         if json.loads(binding_path.read_text()) != binding:
@@ -87,7 +104,7 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     adapter = GmailAdapter(service)
     store = SQLiteStore(args.state_dir / "sandbox.db")
     try:
-        if args.action == "prepare":
+        if args.action in {"prepare", "serve"}:
             key = read_secret(
                 "DEEPSEEK_API_KEY",
                 file_environment_name="DEEPSEEK_API_KEY_FILE",
@@ -104,6 +121,8 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
             )
             ingestion = EmailIngestionBoundary(store, args.state_dir / "attachments")
             query = f"from:{args.sender} to:{args.mailbox}"
+            if args.after is not None:
+                query += f" after:{args.after}"
             if args.subject:
                 query += f' subject:"{args.subject}"'
             ids = adapter.list_complete_message_ids(query, limit=100)
@@ -111,6 +130,9 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
             for identifier in ids:
                 raw = adapter.get_raw_message(identifier)
                 mime = message_from_bytes(raw.raw, policy=policy.default)
+                if (str(mime.get("Auto-Submitted", "no")).casefold() != "no"
+                        or mime.get("List-Id") or str(mime.get("Precedence", "")).casefold() in {"bulk", "list", "junk"}):
+                    continue
                 subject = str(mime.get("Subject", ""))
                 if args.subject is not None and subject.removeprefix("Re: ") != args.subject:
                     continue
@@ -149,6 +171,14 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
                         }
                     )
                 )
+        if args.action == "serve":
+            from visa_agent.channels.automatic_reply import AutomaticGmailReplySender
+
+            automatic_sender = AutomaticGmailReplySender(adapter, store, args.sender)
+            dispatcher = OutboxDispatcher(store, automatic_sender, channel="gmail",
+                allowed_message_types=("blocked", "awaiting_profile_confirmation", "awaiting_confirmation"))
+            dispatcher.reconcile_sending(automatic_sender, datetime.now(UTC))
+            print("Automatic dispatch:", [item.status for item in dispatcher.dispatch_due(datetime.now(UTC), limit=1)])
         elif args.action in {"send-reviewed", "reconcile"}:
 
             class ScopedSender(GmailReplySender):

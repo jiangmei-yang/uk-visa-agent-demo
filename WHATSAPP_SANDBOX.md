@@ -21,8 +21,10 @@ exchange are still required before E-05 is complete.
    the launcher exposes only the provider webhook application, not the review console.
 4. Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`, and the exact public
    `TWILIO_WEBHOOK_PUBLIC_URL` outside Git.
-5. Configure that exact URL as **When a message comes in**. Do not configure a status callback
-   to this inbound endpoint: a signed delivery-status callback handler is not implemented yet.
+5. Configure that exact URL as **When a message comes in**. Set
+   `TWILIO_STATUS_CALLBACK_PUBLIC_URL` to the same public host plus
+   `/webhooks/twilio/whatsapp/status`. The sender adds a per-outbox correlation query and passes
+   this status callback URL on each message creation request. It must not point to the intake endpoint.
 6. Send synthetic text and one synthetic PDF; never use real applicant data.
 7. Process one durable inbound batch with, for example,
    `uv run visa-agent inbound-worker --channel whatsapp_twilio --provider deepseek --model deepseek-v4-flash`.
@@ -69,4 +71,9 @@ checked 2026-09-04). The local suite covers error classification and the dispatc
 to investigation without a second send. These are simulated faults, not live WhatsApp evidence.
 
 Provider acceptance (a returned SID) is not proof of device delivery. Signed delivery-status
-callbacks and an operator-visible delivered/failed state remain unfinished acceptance work.
+callbacks are now persisted separately with duplicate suppression, account/address/SID checks and
+order-independent status reduction. Conflicting successful/failed receipts are marked `conflict`.
+The private review server exposes `GET /api/outbox/delivery-receipts`; the public gateway does not.
+Raw form bodies and channel error text are not retained. Case deletion removes linked receipts.
+SDK-signed local request tests pass; actual provider callbacks, operator UI presentation and
+lost-SID automatic reconciliation remain unfinished acceptance work.

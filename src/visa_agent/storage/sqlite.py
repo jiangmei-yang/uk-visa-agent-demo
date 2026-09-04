@@ -48,6 +48,14 @@ CREATE TABLE IF NOT EXISTS deliveries (
     sha256 TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS channel_delivery_receipts (
+    outbox_id TEXT NOT NULL,
+    provider_message_id TEXT NOT NULL,
+    delivery_status TEXT NOT NULL,
+    error_code TEXT NOT NULL DEFAULT '',
+    received_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(outbox_id, provider_message_id, delivery_status, error_code)
+);
 CREATE TABLE IF NOT EXISTS inbound_failures (
     id TEXT PRIMARY KEY,
     case_id TEXT,
@@ -201,6 +209,10 @@ class SQLiteStore:
                 )
             self.connection.execute("DELETE FROM inbound_failures WHERE case_id = ?", (case_id,))
             self.connection.execute("DELETE FROM deliveries WHERE case_id = ?", (case_id,))
+            self.connection.execute(
+                "DELETE FROM channel_delivery_receipts WHERE outbox_id IN "
+                "(SELECT id FROM outbox WHERE case_id = ?)", (case_id,),
+            )
             self.connection.execute("DELETE FROM outbox WHERE case_id = ?", (case_id,))
             self.connection.execute("DELETE FROM processed_events WHERE case_id = ?", (case_id,))
             self.connection.execute("DELETE FROM cases WHERE id = ?", (case_id,))
@@ -462,20 +474,27 @@ class SQLiteStore:
         now: datetime,
         limit: int = 20,
         channel: str | None = None,
+        allowed_message_types: tuple[str, ...] | None = None,
     ) -> list[dict[str, Any]]:
         with self.connection:
             channel_filter = " AND channel = ?" if channel is not None else ""
-            parameters: tuple[object, ...] = (
-                (now.isoformat(), channel, limit)
-                if channel is not None
-                else (now.isoformat(), limit)
-            )
+            type_filter = ""
+            values: list[object] = [now.isoformat()]
+            if channel is not None:
+                values.append(channel)
+            if allowed_message_types is not None:
+                if not allowed_message_types:
+                    return []
+                type_filter = " AND message_type IN (" + ",".join("?" for _ in allowed_message_types) + ")"
+                values.extend(allowed_message_types)
+            parameters = (*values, limit)
             rows = self.connection.execute(
                 f"""WITH due AS (
                        SELECT id FROM outbox
                        WHERE status IN ('PENDING', 'RETRY')
                          AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
                          {channel_filter}
+                         {type_filter}
                        ORDER BY created_at, id
                        LIMIT ?
                    )
@@ -488,6 +507,50 @@ class SQLiteStore:
                 parameters,
             ).fetchall()
         return sorted((dict(row) for row in rows), key=lambda row: (row["created_at"], row["id"]))
+
+    def record_delivery_receipt(
+        self, outbox_id: str, provider_id: str, status: str, error_code: str, recipient: str,
+    ) -> None:
+        with self.connection:
+            self.connection.execute("BEGIN IMMEDIATE")
+            row = self.connection.execute(
+                "SELECT channel, recipient, status, provider_message_id FROM outbox WHERE id = ?",
+                (outbox_id,),
+            ).fetchone()
+            if (row is None or row["channel"] != "whatsapp_twilio"
+                    or row["recipient"] != recipient or row["status"] not in {"SENDING", "SENT", "AMBIGUOUS"}):
+                raise ValueError("Receipt does not match an attempted WhatsApp send")
+            if row["provider_message_id"] and row["provider_message_id"] != provider_id:
+                raise ValueError("Receipt provider identifier mismatch")
+            self.connection.execute(
+                "INSERT OR IGNORE INTO channel_delivery_receipts "
+                "(outbox_id, provider_message_id, delivery_status, error_code) VALUES (?, ?, ?, ?)",
+                (outbox_id, provider_id, status, error_code),
+            )
+
+    def delivery_receipt_status(self, outbox_id: str) -> str:
+        rows = self.connection.execute(
+            "SELECT provider_message_id, delivery_status FROM channel_delivery_receipts WHERE outbox_id = ?",
+            (outbox_id,),
+        ).fetchall()
+        if not rows:
+            return "unconfirmed"
+        statuses = {row["delivery_status"] for row in rows}
+        outbound = self.connection.execute(
+            "SELECT provider_message_id FROM outbox WHERE id = ?", (outbox_id,)
+        ).fetchone()
+        if outbound and outbound["provider_message_id"] and any(
+            row["provider_message_id"] != outbound["provider_message_id"] for row in rows
+        ):
+            return "conflict"
+        if len({row["provider_message_id"] for row in rows}) > 1:
+            return "conflict"
+        failed = statuses & {"failed", "undelivered", "canceled"}
+        if failed and statuses & {"delivered", "read"}:
+            return "conflict"
+        if failed:
+            return "failed"
+        return next(s for s in ("read", "delivered", "sent", "sending", "queued") if s in statuses)
 
     def mark_outbox_sent(
         self,

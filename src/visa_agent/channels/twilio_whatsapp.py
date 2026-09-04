@@ -118,11 +118,12 @@ class TwilioWhatsAppWebhook:
 
 
 class TwilioWhatsAppSender:
-    def __init__(self, client: Any, service_address: str) -> None:
+    def __init__(self, client: Any, service_address: str, callback_url: str | None = None) -> None:
         if not service_address.startswith("whatsapp:+"):
             raise ValueError("Twilio WhatsApp service address is invalid")
         self.client = client
         self.service_address = service_address
+        self.callback_url = callback_url
 
     def send(self, request: ReplyRequest) -> str:
         if request.attachment is not None:
@@ -130,10 +131,16 @@ class TwilioWhatsAppSender:
                 "WhatsApp ZIP delivery is disabled; use the secure email/review handoff"
             )
         try:
+            options = {}
+            if self.callback_url:
+                from visa_agent.channels.twilio_status import status_callback_url
+
+                options["status_callback"] = status_callback_url(self.callback_url, request.outbox_id)
             result = self.client.messages.create(
                 body=request.body,
                 from_=self.service_address,
                 to=request.recipient,
+                **options,
             )
         except Exception as error:
             raise _map_twilio_error(error) from error

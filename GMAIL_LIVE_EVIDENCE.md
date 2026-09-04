@@ -149,6 +149,12 @@ and raw messages are deliberately excluded from this report.
 
 ## Remaining acceptance work
 
+The registered-sender automatic rollout is documented in `GMAIL_AUTOMATIC_SERVICE.md`. It resolved
+the owner's unprocessed ordinary university-mailbox enquiry and now runs as a local supervised
+60-second service. Provider-side reply acceptance was checked; arbitrary-sender/public intake and
+recipient-inbox delivery observation are not claimed. This supersedes the earlier absence of any
+running Gmail worker, not the outstanding production and consent requirements.
+
 ### Send uncertainty and provider-auth rejection follow-up
 
 - Found and corrected a duplicate-delivery risk: a Gmail send timeout or HTTP 5xx previously

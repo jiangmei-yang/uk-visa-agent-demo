@@ -120,8 +120,11 @@ def main() -> None:
         account_sid = os.getenv("TWILIO_ACCOUNT_SID", "")
         auth_token = os.getenv("TWILIO_AUTH_TOKEN", "")
         service_address = os.getenv("TWILIO_WHATSAPP_FROM", "")
+        callback_url = os.getenv("TWILIO_STATUS_CALLBACK_PUBLIC_URL", "")
         if not account_sid or not auth_token or not service_address:
             raise SystemExit("Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_WHATSAPP_FROM.")
+        if not callback_url:
+            raise SystemExit("Set TWILIO_STATUS_CALLBACK_PUBLIC_URL to track delivery receipts.")
         from visa_agent.channels.outbound import OutboxDispatcher
         from visa_agent.channels.twilio_whatsapp import TwilioWhatsAppSender
         from visa_agent.storage.sqlite import SQLiteStore
@@ -129,7 +132,7 @@ def main() -> None:
         client_type = import_module("twilio.rest").Client
         store = SQLiteStore(settings.database_path)
         try:
-            sender = TwilioWhatsAppSender(client_type(account_sid, auth_token), service_address)
+            sender = TwilioWhatsAppSender(client_type(account_sid, auth_token), service_address, callback_url)
             dispatch_outcomes = OutboxDispatcher(
                 store, sender, channel="whatsapp_twilio"
             ).dispatch_due(datetime.now(UTC), limit=args.limit)

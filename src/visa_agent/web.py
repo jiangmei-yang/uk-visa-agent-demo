@@ -27,6 +27,52 @@ policy = load_policy(settings.policy_path)
 app = FastAPI(title="UK Visa Agent Review Console")
 
 
+@app.get("/api/outbox/delivery-receipts")
+def delivery_receipts() -> list[dict[str, str]]:
+    store = SQLiteStore(settings.database_path)
+    try:
+        return [{"outbox_id": str(row["id"]), "send_status": str(row["status"]),
+                 "delivery_status": store.delivery_receipt_status(str(row["id"]))}
+                for row in store.list_outbox() if row["channel"] == "whatsapp_twilio"]
+    finally:
+        store.close()
+
+
+@app.post("/webhooks/twilio/whatsapp/status", status_code=204)
+async def twilio_status_webhook(request: Request) -> Response:
+    from visa_agent.channels.twilio_status import receive_status
+
+    names = ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_WHATSAPP_FROM",
+             "TWILIO_STATUS_CALLBACK_PUBLIC_URL")
+    account, token, sender, url = (os.getenv(name, "") for name in names)
+    if not all((account, token, sender, url)):
+        raise HTTPException(status_code=503, detail="Status callbacks are not configured")
+    query = list(request.query_params.multi_items())
+    if len(query) != 1 or query[0][0] != "outbox_id":
+        raise HTTPException(status_code=400, detail="Invalid callback correlation")
+    raw = await request.body()
+    if len(raw) > MAX_WEBHOOK_BODY_BYTES:
+        raise HTTPException(status_code=413, detail="Status callback is too large")
+    try:
+        pairs = parse_qsl(raw.decode("utf-8"), keep_blank_values=True, strict_parsing=True)
+        if len({key for key, _ in pairs}) != len(pairs):
+            raise ValueError("Duplicate field")
+    except (ValueError, UnicodeDecodeError) as error:
+        raise HTTPException(status_code=400, detail="Invalid callback form") from error
+    store = SQLiteStore(settings.database_path)
+    try:
+        receive_status(store, base_url=url, outbox_id=query[0][1], account_sid=account,
+                       service_address=sender, auth_token=token, form=dict(pairs),
+                       signature=request.headers.get("X-Twilio-Signature", ""))
+    except PermissionError as error:
+        raise HTTPException(status_code=403, detail="Callback authentication failed") from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail="Callback does not match an outbound send") from error
+    finally:
+        store.close()
+    return Response(status_code=204)
+
+
 def load_cases() -> list[Case]:
     request_store = SQLiteStore(settings.database_path)
     try:

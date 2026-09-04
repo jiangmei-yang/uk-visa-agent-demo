@@ -1810,6 +1810,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
+    { name = "twilio" },
     { name = "types-pyyaml" },
     { name = "types-reportlab" },
 ]
@@ -1835,6 +1836,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0,<7" },
     { name = "reportlab", specifier = ">=4.4,<5" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.12,<1" },
+    { name = "twilio", marker = "extra == 'dev'", specifier = ">=9.11,<10" },
     { name = "twilio", marker = "extra == 'live'", specifier = ">=9.11,<10" },
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0,<7" },
     { name = "types-reportlab", marker = "extra == 'dev'", specifier = ">=4.4,<5" },

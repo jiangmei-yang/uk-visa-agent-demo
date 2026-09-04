@@ -153,6 +153,7 @@ class GmailAdapter:
         message["References"] = references
         message["Message-ID"] = message_id
         message["X-Visa-Agent-Message-ID"] = message_id
+        message["Auto-Submitted"] = "auto-replied"
         message.set_content(body)
         if attachment:
             filename, content = attachment
