@@ -6,7 +6,7 @@ an unsafe workflow releases an incomplete pack. This repository reports both lay
 
 ## Latest measured result (2026-09-04, ordinary Gmail hardening)
 
-- Local suite: 193 tests; lint and strict typing pass. Deterministic stability: 20 identical
+- Local suite: 200 tests; lint and strict typing pass. Deterministic stability: 20 identical
   complete ZIP runs and 100 successful concurrent reads.
 - Ordinary four-PDF/OCR intake plus natural date correction: 3 repeated journeys,
   48/48 checks (`eval_output/natural_journey_2026-09-04-v4.json`). The same two-turn
@@ -45,6 +45,11 @@ Separately, a real Gmail GET with deliberately invalid credentials returned 401
 (`eval_output/gmail_invalid_auth_2026-09-04.json`). This is a narrow external rejection check,
 not a revocation/recovery experiment. Local send fault injection now verifies timeout/5xx
 uncertainty is reconciled before any resend; these simulated failures are not live outages.
+
+The Twilio adapter now likewise withholds automatic resend after uncertain transport/5xx outcomes.
+Its missing automatic correlation capability is explicit rather than represented as a successful
+negative search. Contract and dispatcher fault-injection tests pass; no live Twilio exchange or
+automatic lost-SID recovery is claimed. See `WHATSAPP_SANDBOX.md` for the remaining operator step.
 
 ## Earlier baseline (2026-09-04; retained, not the current release score)
 

@@ -15,6 +15,7 @@ from visa_agent.channels.outbound import (
     PermanentChannelError,
     ReplyRequest,
     TransientChannelError,
+    UncertainDeliveryError,
 )
 from visa_agent.domain.models import InboundEvent
 
@@ -138,12 +139,14 @@ class TwilioWhatsAppSender:
             raise _map_twilio_error(error) from error
         provider_id = getattr(result, "sid", None)
         if not provider_id:
-            raise PermanentChannelError("Twilio send response had no message SID")
+            raise UncertainDeliveryError("Twilio send response had no message SID")
         return str(provider_id)
 
     def find_sent_message(self, rfc_message_id: str) -> str | None:
         del rfc_message_id
-        return None
+        raise PermanentChannelError(
+            "Automatic Twilio send reconciliation is unavailable; inspect provider logs before any retry"
+        )
 
 
 class _NoRedirect(urllib_request.HTTPRedirectHandler):
@@ -205,13 +208,13 @@ def _validate_twilio_media_url(url: str) -> None:
 
 
 def _map_twilio_error(error: Exception) -> Exception:
-    if isinstance(error, (TransientChannelError, PermanentChannelError)):
+    if isinstance(error, (TransientChannelError, PermanentChannelError, UncertainDeliveryError)):
         return error
     status = getattr(error, "status", None)
-    if status in {408, 429} or (isinstance(status, int) and 500 <= status < 600):
+    if status == 408 or (isinstance(status, int) and 500 <= status < 600):
+        return UncertainDeliveryError(f"Twilio send outcome requires investigation (HTTP {status})")
+    if status == 429:
         return TransientChannelError(f"Twilio temporarily unavailable (HTTP {status})")
     if status is not None:
         return PermanentChannelError(f"Twilio rejected the operation (HTTP {status})")
-    if isinstance(error, (TimeoutError, ConnectionError)):
-        return TransientChannelError(f"Twilio transport failure: {type(error).__name__}")
-    return PermanentChannelError(f"Unclassified Twilio failure: {type(error).__name__}")
+    return UncertainDeliveryError("Twilio send outcome requires provider-log investigation")

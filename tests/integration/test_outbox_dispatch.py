@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from threading import Barrier
+from types import SimpleNamespace
 
 from visa_agent.channels.outbound import (
     OutboxDispatcher,
@@ -12,6 +13,7 @@ from visa_agent.channels.outbound import (
     TransientChannelError,
     UncertainDeliveryError,
 )
+from visa_agent.channels.twilio_whatsapp import TwilioWhatsAppSender
 from visa_agent.config import Settings
 from visa_agent.demo import run_demo
 from visa_agent.storage.sqlite import SQLiteStore
@@ -169,6 +171,34 @@ def test_accepted_send_with_lost_response_is_reconciled_without_resend(tmp_path:
         assert dispatcher.reconcile_sending(sender, now)[0].status == "SENT"
         assert len(sender.requests) == 1
         assert dispatcher.dispatch_due(now + timedelta(days=2)) == []
+    finally:
+        store.close()
+
+
+def test_twilio_timeout_reaches_manual_investigation_without_second_send(tmp_path: Path) -> None:
+    store = _demo_store(tmp_path)
+    calls = []
+
+    def create(**kwargs: str) -> None:
+        calls.append(kwargs)
+        raise TimeoutError("response lost")
+
+    sender = TwilioWhatsAppSender(
+        SimpleNamespace(messages=SimpleNamespace(create=create)), "whatsapp:+14155238886"
+    )
+    dispatcher = OutboxDispatcher(store, sender)
+    now = datetime(2026, 9, 2, 9, tzinfo=UTC)
+    try:
+        outcome = dispatcher.dispatch_due(now, limit=1)[0]
+        assert outcome.status == "SENDING"
+        for other in store.claim_pending_outbox(now, limit=20):
+            store.mark_outbox_sent(str(other["id"]), "already-sent", now)
+        assert dispatcher.dispatch_due(now + timedelta(days=1)) == []
+        assert dispatcher.reconcile_sending(sender, now)[0].status == "AMBIGUOUS"
+        row = next(r for r in store.list_outbox() if r["id"] == outcome.outbox_id)
+        assert "unavailable" in str(row["last_error"])
+        assert dispatcher.dispatch_due(now + timedelta(days=2)) == []
+        assert len(calls) == 1
     finally:
         store.close()
 

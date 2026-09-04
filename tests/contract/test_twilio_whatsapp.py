@@ -11,6 +11,7 @@ from visa_agent.channels.outbound import (
     PermanentChannelError,
     ReplyRequest,
     TransientChannelError,
+    UncertainDeliveryError,
 )
 from visa_agent.channels.twilio_whatsapp import (
     TwilioMediaDownloader,
@@ -178,7 +179,8 @@ def test_twilio_sender_sends_text_and_returns_message_sid() -> None:
 
 @pytest.mark.parametrize(
     ("status", "expected"),
-    [(503, TransientChannelError), (429, TransientChannelError), (400, PermanentChannelError)],
+    [(503, UncertainDeliveryError), (408, UncertainDeliveryError),
+     (429, TransientChannelError), (400, PermanentChannelError)],
 )
 def test_twilio_send_errors_map_to_finite_channel_semantics(
     status: int,
@@ -196,6 +198,29 @@ def test_twilio_send_errors_map_to_finite_channel_semantics(
 
     with pytest.raises(expected, match=f"HTTP {status}"):
         sender.send(_request())
+
+
+@pytest.mark.parametrize("error", [TimeoutError(), ConnectionError(), OSError(), ValueError()])
+def test_twilio_unknown_send_outcome_never_allows_automatic_retry(error: Exception) -> None:
+    def create(**kwargs: str) -> None:
+        raise error
+
+    sender = TwilioWhatsAppSender(
+        SimpleNamespace(messages=SimpleNamespace(create=create)), "whatsapp:+14155238886"
+    )
+    with pytest.raises(UncertainDeliveryError):
+        sender.send(_request())
+
+
+def test_twilio_missing_sid_and_unavailable_reconciliation_are_explicit() -> None:
+    sender = TwilioWhatsAppSender(
+        SimpleNamespace(messages=SimpleNamespace(create=lambda **kwargs: SimpleNamespace())),
+        "whatsapp:+14155238886",
+    )
+    with pytest.raises(UncertainDeliveryError, match="no message SID"):
+        sender.send(_request())
+    with pytest.raises(PermanentChannelError, match="unavailable"):
+        sender.find_sent_message("<out-test@visa-agent.local>")
 
 
 def test_authenticated_media_downloader_is_bounded_and_does_not_follow_redirects(
