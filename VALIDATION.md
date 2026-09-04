@@ -17,11 +17,23 @@ explicitly recorded here.
 
 Updated 2026-09-04. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **2,410 passing tests**; see the latest [cold-start conversation work](docs/COLD_START_CONVERSATIONS.md),
+The local suite has **2,484 passing tests**; see the latest [adviser-pacing repair](docs/ADVISER_PACING.md),
+[cold-start conversation work](docs/COLD_START_CONVERSATIONS.md),
 [pack/intake recovery work](PACK_RECOVERY.md),
 [credential recovery](GMAIL_RECOVERY.md)
 and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
+
+Latest exposed-defect repair: a current FAQ plus a supplied fact no longer appends an
+intake questionnaire, while explicit next steps and plain fact replies still advance.
+Only actually SENT, unanswered questions provide short-answer context; quiet resumes
+cannot record hidden questions. Country/city-only residence remains background evidence
+but no longer completes the address gate. Incomplete address corrections replace the old
+value and invalidate confirmation; replies explain the residential detail still needed.
+These are isolated synthetic sender/dispatcher tests, not new model or Gmail-network
+experiments. Original provider failures remain unchanged. Gmail and persistent Docker
+were reloaded with unchanged prior case/outbox/ZIP projections; one transient bootstrap
+error and its successful retry are retained in [the rollout record](eval_output/adviser_pacing_rollout_2026-09-04.json).
 
 Latest adviser experiment: new fictional six-email journeys begin with empty profiles and
 reconstruct the runtime/SQLite connections each turn. Real DeepSeek extraction feeds actual

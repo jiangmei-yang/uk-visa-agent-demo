@@ -133,7 +133,9 @@ def seed_case(item: dict[str, Any], policy_version: str) -> Case:
             full_name="Example Applicant", date_of_birth=date(1998, 5, 12),
             nationality="Chinese", nationality_country="China", application_country="Hong Kong",
             visit_purpose="tourism", uk_accommodation="Planned stay in London; no booking made",
-            estimated_trip_cost_gbp=1500, current_address="Fictional campus address, Hong Kong",
+            # New synthetic seed has residential detail; historical reports retain
+            # their original incomplete seed and are not retroactively replayed.
+            estimated_trip_cost_gbp=1500, current_address="Room 4, Example Hall, 88 Synthetic Road, Hong Kong",
             occupation_status="student", annual_income_gbp=0, funding_source="self",
             has_serious_history=False, route_confirmed_standard_visitor=True,
         ),

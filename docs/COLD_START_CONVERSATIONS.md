@@ -136,6 +136,9 @@ to proceed; and support the exposed individual-document purpose paraphrases. No 
 rerun or revised first score is claimed.
 
 The implementation still uses bounded reviewed replies, not unrestricted model-generated
-advice. Unsupported expressions, repeated unanswered intake questions, overly formal
-correction receipts and address completeness need more work. Independent user evaluation,
-ordinary documents and recipient-side delivery remain outside this experiment.
+advice. Subsequent [pacing and residential-detail repairs](ADVISER_PACING.md) address
+FAQ-plus-fact turns and country-only address completeness with isolated regressions;
+they do not revise these provider results or constitute another holdout run. Unsupported
+expressions, overly formal correction receipts and broader conversation/address coverage
+need more work. Independent user evaluation, ordinary documents and recipient-side delivery
+remain outside this experiment.

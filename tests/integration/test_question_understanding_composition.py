@@ -99,7 +99,7 @@ class Conversation:
             profile.date_of_birth = date(1992, 4, 16)
             profile.uk_accommodation = "Intended London stay; no booking made"
             profile.estimated_trip_cost_gbp = 2300
-            profile.current_address = "Fictional address, Hong Kong"
+            profile.current_address = "Room 4, Example Hall, 88 Synthetic Road, Hong Kong"
             profile.has_serious_history = False
             profile.route_confirmed_standard_visitor = True
             profile.planned_arrival_date = date(2026, 11, 1)

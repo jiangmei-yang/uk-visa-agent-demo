@@ -1,0 +1,67 @@
+{
+  "observed_at": "2026-09-04T14:31:49Z",
+  "prior_commit": "18d93e494a558d87df72b19d5dd57cf39c746503",
+  "evidence_class": "isolated synthetic sent-aware regressions and supervised local rollout",
+  "tests_passed": 2484,
+  "tests_duration_seconds": 35.83,
+  "warnings": [
+    "Existing Starlette/httpx deprecation warning",
+    "Buildx unavailable; classic Docker build succeeded",
+    "First launchctl bootstrap returned 5; service was absent and prior PID exited; one retry succeeded"
+  ],
+  "lint_passed": true,
+  "mypy_source_files_passed": 61,
+  "stability": {
+    "clean_runs": 5,
+    "distinct_zip_hashes": 1,
+    "zip_sha256": "7e27fe057a2643dd892bd41e94ed47245a225ff716bb99a7a4802bb0447b641f",
+    "concurrent_reads_passed": "100/100"
+  },
+  "new_provider_calls": 0,
+  "gmail_network_test_sends": 0,
+  "original_provider_reports_modified": false,
+  "gmail": {
+    "service": "com.visa-agent.gmail-user",
+    "previous_pid": 83973,
+    "new_pid": 85714,
+    "new_idle_at": "2026-09-04T14:31:49.688013+00:00",
+    "bootout_exit_code": 0,
+    "bootstrap_exit_codes": [
+      5,
+      0
+    ],
+    "configuration_changed": false,
+    "configuration_sha256_before_and_after": "a82564de8ab818088e5afb363de951b1a7ad6a93459e21ae4a645aa487587d7e",
+    "state_projection_sha256_before_and_after": "8b0981ef621c1b3216a51dfe25a849671b73c86b6bcc3d27c19cfa07b0670b55",
+    "historical_mail_replayed": false,
+    "registered_sender_scope_changed": false,
+    "automatic_final_pack_dispatch_enabled": false
+  },
+  "docker": {
+    "container": "edc361f7e375c313667655112e4a54aa01ca585d1b77ce5d15bddd753d382d12",
+    "image": "sha256:510d8cfd351e02aaa3f66ee9eb4a9129c23fab3e90d597d84ed96e782c99e4d3",
+    "health": "healthy",
+    "volume": "uk-visa-agent-demo_review-runtime",
+    "volume_reset": false,
+    "projection_sha256_before_and_after": "b39a038ff629bbd348a046f0fd8cc513b770ef587c7cdf5685cbe0a4ead569ce",
+    "logical_database_sha256_before_and_after": "2accd9d4ba132434310c22a1b51369268956299684ffbd61fedfa327ac5b3c5f",
+    "existing_zip_and_download_sha256": "8bc0681a837437d30675da7650cd9c61e1ecc69532ea969c77ceb383c458f724",
+    "download_status": 200,
+    "download_cache_control": "no-store",
+    "changed_source_matches_workspace": true
+  },
+  "source_hashes": {
+    "src/visa_agent/domain/address_evidence.py": "f4989295eebd670c5925637098b67f3f7006b4ac016537543ea16681cee30792",
+    "src/visa_agent/domain/rules.py": "91a7d2ed9c6aaf9b4f6f8e0509923955536592940de9d4a77422726cf68c4e26",
+    "src/visa_agent/llm/guarded.py": "71d63ab6201133a6252e273a2b72c6bda711c3cf893511b9b00f9fcab1cd1d17",
+    "src/visa_agent/workflow/conversation.py": "506a876bbf6723394f9288914d974a2b80a9d878b76c7ffedf4e929f74c4dc3e",
+    "src/visa_agent/workflow/service.py": "051b162d33c88dc793dca7e5b39a7f2bb50ea69d78f5456b5edbe5f52bcb31e3"
+  },
+  "not_proven": [
+    "Universal naturalness or accuracy",
+    "Independent unscripted user acceptance",
+    "New recipient-side Gmail or ordinary-document final ZIP delivery",
+    "Universal international address validation",
+    "New blind-model conversation result"
+  ]
+}

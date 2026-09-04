@@ -98,7 +98,7 @@ class Conversation:
             self.initial.profile.funding_source = "self"
             self.initial.profile.uk_accommodation = "Intended London stay; no booking made"
             self.initial.profile.estimated_trip_cost_gbp = 2300
-            self.initial.profile.current_address = "Fictional address, Hong Kong"
+            self.initial.profile.current_address = "Room 4, Example Hall, 88 Synthetic Road, Hong Kong"
             self.initial.profile.has_serious_history = False
             self.initial.profile.route_confirmed_standard_visitor = True
         if complete_profile:

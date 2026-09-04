@@ -54,7 +54,7 @@ def _seed(*, paused: bool = False) -> Case:
         profile=CaseProfile(full_name="Sample Applicant", date_of_birth=date(1998, 5, 12),
             nationality_country="China", application_country="Hong Kong", visit_purpose="tourism",
             occupation_status="student", funding_source="self", uk_accommodation="London",
-            estimated_trip_cost_gbp=1500, current_address="Fictional Hong Kong campus address",
+            estimated_trip_cost_gbp=1500, current_address="Room 4, Example Hall, 88 Synthetic Road, Hong Kong",
             has_serious_history=False, route_confirmed_standard_visitor=True),
         deferred_fields=["planned_arrival_date", "planned_departure_date"],
         preparation_paused=paused, preparation_control_epoch=2 if paused else 0,

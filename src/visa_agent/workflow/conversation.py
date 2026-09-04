@@ -8,7 +8,7 @@ import re
 from datetime import date
 
 from visa_agent.domain.models import Case, DocumentStatus, Requirement
-from visa_agent.domain.rules import required_profile_facts
+from visa_agent.domain.rules import profile_fact_complete, required_profile_facts
 from visa_agent.workflow.document_purpose import is_document_purpose_question
 from visa_agent.workflow.funding_wording import funding_label, funding_wording
 
@@ -178,10 +178,7 @@ def next_fact_questions(case: Case) -> list[str]:
         field
         for field in ordered
         if field in required
-        and (
-            getattr(case.profile, field) is None
-            or (field == "route_confirmed_standard_visitor" and not getattr(case.profile, field))
-        )
+        and not profile_fact_complete(case, field)
     ]
     actionable = [field for field in missing if field not in case.deferred_fields]
     if case.question_plan is not None:
@@ -593,6 +590,14 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
         else QUESTION_TEXT_EN.get(key, f"Could you tell me your {fact_label(case, key).lower()}?")
         for key in question_fields
     ]
+    if "current_address" in question_fields and case.profile.current_address:
+        questions[question_fields.index("current_address")] = (
+            "居住地区已经记下了，还需要能定位到你住处的细节，比如街道、楼栋或宿舍名称，以及适用的门牌、房号。"
+            "方便补充一下吗？按当地实际地址写就好。" if zh else
+            "Thanks, I've noted the location. Could you add the details that identify your home, "
+            "such as the street, building or residence name and any applicable house or room number? "
+            "Use the address as it is written locally."
+        )
     if {"planned_arrival_date", "planned_departure_date"} <= set(question_fields):
         arrival_index = question_fields.index("planned_arrival_date")
         questions[arrival_index] = (

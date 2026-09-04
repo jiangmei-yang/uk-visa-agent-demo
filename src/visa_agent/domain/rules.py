@@ -3,6 +3,7 @@ from __future__ import annotations
 import calendar
 from datetime import UTC, date, datetime
 
+from visa_agent.domain.address_evidence import address_detail_is_sufficient
 from visa_agent.domain.locations import location_key
 from visa_agent.domain.models import (
     Case,
@@ -59,6 +60,16 @@ def required_profile_facts(case: Case) -> set[str]:
     if case.profile.funding_source == "personal_sponsor":
         required.update({"sponsor_name", "sponsor_relationship", "sponsor_is_in_uk"})
     return required
+
+
+def profile_fact_complete(case: Case, field: str) -> bool:
+    """Field completeness shared by the delivery gate and missing-question plan."""
+    value = getattr(case.profile, field)
+    if field == "current_address":
+        return address_detail_is_sufficient(value)
+    if field == "route_confirmed_standard_visitor":
+        return bool(value)
+    return value is not None
 
 
 def _add_calendar_months(value: date, months: int) -> date:
@@ -316,7 +327,7 @@ def evaluate_gate(case: Case, policy: Policy, today: date) -> GateResult:
     in_scope, scope_reason = route_in_scope(case, policy, today)
     case.requirements = build_requirements(case, policy)
     required_facts = required_profile_facts(case)
-    complete_profile = all(getattr(case.profile, key) is not None for key in required_facts)
+    complete_profile = all(profile_fact_complete(case, key) for key in required_facts)
     critical_with_provenance = all(case.active_evidence(key) for key in required_facts)
     checks = {
         "preparation_active": not case.preparation_paused,

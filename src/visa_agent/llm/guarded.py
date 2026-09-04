@@ -6,6 +6,10 @@ from collections.abc import Callable
 
 from pydantic import TypeAdapter, ValidationError
 
+from visa_agent.domain.address_evidence import (
+    address_excerpt_is_other_location,
+    address_value_is_grounded,
+)
 from visa_agent.domain.date_evidence import (
     ENGLISH_COMPLETE_DATE,
     canonical_date_value,
@@ -141,6 +145,11 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
 
     for update in proposed.updates:
         update = update.model_copy(update={"value": _canonical_value(update.field, update.value)})
+        if (update.field == "current_address" and isinstance(update.value, str)
+                and address_excerpt_is_other_location(update.source_excerpt, update.value)):
+            # Other people's or workplace details are not a home-address update.
+            # An ordinary unrelated location mention leaves intake open, not held.
+            continue
         if update.field == "sponsor_name" and re.fullmatch(
             r"(?:(?:my|the|our)\s+)?(?:mother|father|sister|brother|spouse|partner|friend|"
             r"employer|parent|sponsor|wife|husband)|(?:我的?|我们的?)?(?:母亲|父亲|妈妈|爸爸|"
@@ -198,6 +207,9 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
             reason = f"Evidence excerpt for {update.field} was not found in the inbound message."
         elif update.confidence < MIN_ACCEPTED_CONFIDENCE:
             reason = f"Low-confidence value proposed for {update.field}."
+        elif (update.field == "current_address" and isinstance(update.value, str)
+              and not address_value_is_grounded(update.value, update.source_excerpt)):
+            reason = "Home address details were not grounded in the customer's excerpt."
         elif is_date and not date_is_grounded(
             str(update.value), update.source_excerpt, allow_shared_year=allow_shared_year
         ):

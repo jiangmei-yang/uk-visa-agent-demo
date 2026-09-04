@@ -29,6 +29,7 @@ from visa_agent.domain.policy import Policy
 from visa_agent.domain.rules import (
     advance_stage,
     evaluate_gate,
+    profile_fact_complete,
     required_profile_facts,
     run_consistency_checks,
 )
@@ -40,8 +41,10 @@ from visa_agent.workflow.conversation import (
     clear_natural_confirmation,
     confirmation_has_caveat,
     customer_requests_next_step,
+    document_list_requested,
     latest_reply_text,
     next_fact_questions,
+    quiet_preparation_resume,
     summary_fingerprint,
     update_deferred_questions,
     waiting_acknowledgement,
@@ -136,8 +139,7 @@ class WorkflowService:
                             if any(event_id in sent_events for event_id in event_ids)]
         prior_pending = [field for field in previously_asked
                          if field not in case.deferred_fields and hasattr(case.profile, field)
-                         and (getattr(case.profile, field) is None
-                              or (field == "route_confirmed_standard_visitor" and not getattr(case.profile, field)))]
+                         and not profile_fact_complete(case, field)]
         case.question_plan = None
         case.pending_question_fields = []
         case.next_step_advice = None
@@ -149,7 +151,7 @@ class WorkflowService:
         customer_event = event.model_copy(
             update={
                 "body": latest_reply_text(event.body),
-                "requested_fields": [field for field in (case.last_requested_fields or prior_pending)
+                "requested_fields": [field for field in prior_pending
                                      if field not in case.deferred_fields],
                 "known_profile": case.profile.model_dump(mode="json"),
             }
@@ -341,6 +343,10 @@ class WorkflowService:
             # Asking for a step is not resume, profile consent or final consent.
             case.next_step_advice = select_next_step(case, self.policy, gate)
             case.customer_answers.append(case.next_step_advice.message)
+        # Separate answers to the customer's current question from proactive
+        # guidance below. Supplying one fact alongside a FAQ does not ask us to
+        # resume the rest of the intake form.
+        has_information_answer = bool(case.customer_answers) or document_list_requested(case)
         if plan == "blocked" and not case.preparation_paused and not waiting_acknowledgement(case):
             sent_topics = {topic for topic, source_event in case.guidance_events.items()
                            if source_event in sent_events}
@@ -354,9 +360,8 @@ class WorkflowService:
         if plan == "blocked":
             candidates = next_fact_questions(case)
             case.pending_question_fields = [field for field in prior_pending
-                if field in required_profile_facts(case) and field not in case.deferred_fields and (
-                    getattr(case.profile, field) is None
-                    or (field == "route_confirmed_standard_visitor" and not getattr(case.profile, field)))]
+                if field in required_profile_facts(case) and field not in case.deferred_fields
+                and not profile_fact_complete(case, field)]
             answered_fields = set(case.latest_received_facts) | set(case.latest_changes)
             if case.preparation_paused or waiting_acknowledgement(case):
                 # This renderer emits only a receipt. Never record unseen candidate questions
@@ -365,11 +370,27 @@ class WorkflowService:
             elif case.next_step_advice is not None:
                 field = case.next_step_advice.question_field
                 case.question_plan = [field] if field in candidates else []
+            elif quiet_preparation_resume(case):
+                # A resume with "that's all for now" is a receipt, even when
+                # a newly enforced completeness check finds another missing fact.
+                case.question_plan = []
             elif ("off_topic" in case.customer_question_topics and not answered_fields
                     and not case.latest_document_names and not case.open_blockers()
                     and not customer_requests_next_step(customer_event.body)):
                 # A scope reply is not permission to start or restart intake questions.
                 case.question_plan = []
+            elif (has_information_answer and not customer_requests_next_step(customer_event.body)
+                    and case.latest_preparation_action != "resume"):
+                # Answer the actual FAQ/checklist without repeating unanswered
+                # intake questions or silently adding new ones. Persisted pending
+                # fields remain available for a later explicit next step.
+                case.question_plan = []
+            elif ("current_address" in case.pending_question_fields
+                    and any(update.field == "current_address" for update in patch.updates)):
+                # A same-valued city reply is still an answer to our SENT address
+                # question, not silence. Explain the missing residential detail
+                # instead of telling the customer to wait for new plans.
+                case.question_plan = ["current_address"]
             elif case.pending_question_fields and (
                 customer_requests_next_step(customer_event.body) or case.latest_preparation_action == "resume"
             ):

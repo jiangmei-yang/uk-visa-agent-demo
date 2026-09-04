@@ -358,7 +358,7 @@ def seed_only_dates_missing(store: SQLiteStore, language: str) -> Case:
     case.profile.full_name = "Fictional Applicant"
     case.profile.uk_accommodation = "Planned stay in London; booking not made"
     case.profile.estimated_trip_cost_gbp = 2500
-    case.profile.current_address = "Fictional address, Hong Kong"
+    case.profile.current_address = "Room 4, Example Hall, 88 Synthetic Road, Hong Kong"
     case.profile.has_serious_history = False
     case.profile.route_confirmed_standard_visitor = True
     evaluate_gate(case, load_policy(POLICY_PATH), TODAY)
