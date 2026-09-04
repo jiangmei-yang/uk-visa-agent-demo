@@ -173,3 +173,25 @@ baseline distinct. The focused architecture needs both baseline facts and its qu
 its reported cost includes both. All captured sends remain local. The 180 calls across new
 development, exposed scope regression and first holdout used 410,568 tokens; raw failures and
 all original replies are retained. Full request-equivalence tests cover the default promotion.
+
+## Case-aware next-step requests
+
+`next_step_cases.json` contains 24 independently authored development cases and eight initially
+reserved cases. All eight are now exposed after their first run. Its frozen SHA-256 is
+`c6ed70c1ff8387618127e383d7d220e86382d78c68cbc702948b77004ccaeead`.
+The first holdout result remains 6/8; subsequent fixes are local regressions, not a new holdout score.
+See [the full analysis, label disputes and retained failures](../NEXT_STEP_ADVICE.md).
+
+```bash
+uv run python scripts/next_step_probe.py --corpus evals/next_step_cases.json \
+  --split development --output NEW_NEXT_STEP_REPORT.json
+uv run python scripts/next_step_probe.py --corpus evals/next_step_cases.json \
+  --split development --replay-from eval_output/next_step_development_2026-09-04.json \
+  --output NEW_NEXT_STEP_REPLAY.json
+```
+
+The default path makes one extraction call per fictional email, with no provider retry, then uses
+the captured result in an isolated real SQLite workflow with network calls disabled. Replay makes
+zero API calls and verifies original hashes, labels, input and seed. No real email is sent. Checklist
+coverage is checked item by item in the actual outbox, independently of canned FAQ strings. Raw,
+guard and workflow metrics are distinct; none is a naturalness or user-satisfaction score.

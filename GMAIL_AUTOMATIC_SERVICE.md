@@ -1,6 +1,16 @@
 # Controlled automatic Gmail service
 
-Latest reload (2026-09-04): persisted preparation pause/restart, stale-outbox protection and
+Latest reload (2026-09-04): case-aware next-step replies, independent FAQ preservation, concise
+corrections and post-holdout pause/scope repairs are loaded by PID 74488. The first completed
+idle cycle was at 12:59:46 UTC, with independent process liveness confirmed. The existing
+LaunchAgent configuration and case/outbox projection are unchanged: one case, nine SENT rows.
+There were no manual sends, historical replay, state resets or registration-scope changes.
+Automatic final-pack dispatch remains excluded. See
+`eval_output/gmail_next_step_reload_2026-09-04.json` and the
+[experiment, retained 6/8 first holdout and later local repairs](NEXT_STEP_ADVICE.md).
+Reloading this Gmail worker does not update the Docker UI or prove a new recipient-side outcome.
+
+Earlier reload (2026-09-04): persisted preparation pause/restart, stale-outbox protection and
 reply-reading fixes are loaded by PID 71285, with a completed idle cycle at 12:30:06 UTC.
 The LaunchAgent configuration and the checked case/outbox projection are unchanged: one case,
 nine SENT rows, no manual sends or historical replay. The schema adds an epoch column with zero

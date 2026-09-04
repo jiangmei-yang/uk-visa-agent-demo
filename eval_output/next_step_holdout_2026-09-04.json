@@ -1,0 +1,2811 @@
+{
+  "probe_type": "next_step",
+  "scope": "Fictional next-step and independent FAQ/control understanding",
+  "evaluation_mode": "provider_run",
+  "new_provider_result": true,
+  "split": "holdout",
+  "holdout_authorized": true,
+  "model": "deepseek-v4-flash",
+  "operation": "extract_case_patch",
+  "calls_per_case": 1,
+  "no_provider_retries": true,
+  "workflow_uses_captured_patch": true,
+  "external_sends": 0,
+  "reviewed_as_of": "2026-09-04",
+  "corpus_id": "/Users/nu/Documents/ChatGPT/签证/evals/next_step_cases.json",
+  "corpus_sha256": "c6ed70c1ff8387618127e383d7d220e86382d78c68cbc702948b77004ccaeead",
+  "source_sha256": {
+    "src/visa_agent/__init__.py": "a3350ee5bcd581ebdb734128829da5e6772eae8346faaa85e2bf608d27d95149",
+    "src/visa_agent/case_data.py": "06dcf00b0073b70b25468b7a0da891942a3ef45bcbd52e141194628b4823951c",
+    "src/visa_agent/channels/__init__.py": "4a9e7ea09deca6b1c25e049b68a2c34aadbd57475fc072d0e198086255ba173e",
+    "src/visa_agent/channels/automatic_reply.py": "11955299404cb1dcbf327bbe6cca152b851c22f2279f1759fed4fa0ac8a05322",
+    "src/visa_agent/channels/email_fixture.py": "8e821355c373927d6ac9e27e5d0d59b0f01d061c98503a22a7d5ff3d1413a618",
+    "src/visa_agent/channels/email_ingestion.py": "43987616a31738554a2cc39ccaecd56e5dabe9bb7db111c0523e15c2b0a80e61",
+    "src/visa_agent/channels/gmail.py": "1555d53e005c952257c3d19d1964e6ed0bb34264df2585c985f59a2188c1574a",
+    "src/visa_agent/channels/gmail_auth.py": "fb252a09de4850646a48c107281ed961a66314a70a9c22fa33feee5b209d21fd",
+    "src/visa_agent/channels/gmail_intake.py": "93e4bbef617ef08fa91e870d15fc49d85c8c825c6eeeaa0966310af87b4a26f8",
+    "src/visa_agent/channels/gmail_pipeline.py": "3ec2aaf045a78046f59c98b1491ed806a4fc24c39007255c4c0ed02ea16f41c3",
+    "src/visa_agent/channels/gmail_sync.py": "475629da5b066f26cf0e27df5d60ded8fbbeaefe990f31a887011989231a071f",
+    "src/visa_agent/channels/inbound_worker.py": "395097242533a1c810a485778e220587b5393be78e7d853cba51a77b35565b06",
+    "src/visa_agent/channels/outbound.py": "c62245e9bb3a925f34d80c24bbfea9c9fff1fdfe5d90bacdc8b958af7a79467a",
+    "src/visa_agent/channels/outbound_fixture.py": "f83c59dfe9013d59d3fc336061931c8ac5b9d5dae6c87a84a3200bc2edfa2d82",
+    "src/visa_agent/channels/runtime_lock.py": "c03396b333e6627731f8a61b6b14438ff3d6c55370759fdd39af46a45bd26fb5",
+    "src/visa_agent/channels/twilio_receiver.py": "a4267a306c01d2757657d73d0dff1f1c9f06237e8df4e9fb1f028fc705b13600",
+    "src/visa_agent/channels/twilio_status.py": "f75351716055ba4a5c001d00e76c64187589eb462c05684f7c73dc96c4f80271",
+    "src/visa_agent/channels/twilio_whatsapp.py": "5666e8ce33b3bc454b5dd41b56a87846d005a06c541bc28f27c1dd069ecfdf89",
+    "src/visa_agent/channels/whatsapp_service.py": "abe8ffa7cb2ddc50cb95f8500c5f06a0dc375c4cbd7db17d644bba910b54933b",
+    "src/visa_agent/cli.py": "593b65cde7fcefd04f798b9ba19ad2fc9c08831747a6f5e9effecdf35c153a8e",
+    "src/visa_agent/config.py": "a00bd6949e4c747ba19f9b00e28fdf3efdcca1eb237e6f0b1f0f05b92d094516",
+    "src/visa_agent/delivery/__init__.py": "c228e85c7a38888d18198814f142ac9a6262de6ee17ccc377066e308c1df9735",
+    "src/visa_agent/delivery/pack.py": "c63901661baa26fdfb44380044472c55dcab915ece51a036504f1a1503709fb4",
+    "src/visa_agent/demo.py": "6b09553b1dc0a716833e6bf62753c865dc912fc6e45c5e8aa91f96b8022d6402",
+    "src/visa_agent/documents/__init__.py": "dae296ed7a7312a7792c2dc59d13be7b6905c5daf4b728d5ca37c80224fed7b1",
+    "src/visa_agent/documents/natural.py": "e172f18885518ed67df02c5d4a43a35414626d6e882b203b16c9b3b508598a51",
+    "src/visa_agent/documents/processor.py": "e5230265b42a9073f4264d2056e35ae8eca0bdecf55da2d99bebfcddce92efdc",
+    "src/visa_agent/documents/samples.py": "76e605d508fd6b51fbee95d4cd6ad23cad6e731fcc316ecbe5c14f018c885fba",
+    "src/visa_agent/domain/__init__.py": "d5cd2e4964d34671b4b71a2c0796c5985b105b0fc0a9b5c72082c90e3625cecd",
+    "src/visa_agent/domain/date_evidence.py": "0683e9c2325794df3f22c1e38ff9bd722176f69ecd3d42090417035bc8d36fe2",
+    "src/visa_agent/domain/locations.py": "2e831bd608afd399ac648b4bca05a7c5e009f7266666e22bdd9312bcf3651f00",
+    "src/visa_agent/domain/models.py": "42b0b56cdabbf7341a35b1c510a9a039026358584d5c3dd41c571322cab35672",
+    "src/visa_agent/domain/policy.py": "98103fa5d39e67df9e50a7364e43a11f96b98be1bc04e4ffc40e98422f331e5b",
+    "src/visa_agent/domain/rules.py": "fc5fe693f8e82f3a92ed180ffdb6827fb43302e8fa7504ff92b99fd75eef994e",
+    "src/visa_agent/lab.py": "e1da55ae16317aab88d6b65e4b7bf1711614d7b006b9094b4401c655fff70f26",
+    "src/visa_agent/llm/__init__.py": "5607d3f7ccee9ab958fec329b1f27093830199ec9c38a45446c93e4537fa7c42",
+    "src/visa_agent/llm/deepseek_client.py": "ea4325f0f1b0e3f037c3a3448715d8a7570455103c3fea54be1ba1eafdb923bb",
+    "src/visa_agent/llm/evaluation.py": "6393a9f5bc43f43ae5c5bad4e8e813a5aafe87acd1ff0cd454de6f59972a9f26",
+    "src/visa_agent/llm/guarded.py": "1cb260a1321b04b1f1475e61f5a39a24f7149b1487b54e4a1ea6ffa564edb63b",
+    "src/visa_agent/llm/offline.py": "679238783757f0536a8da805ceff88242cee0174aa70e6f62113adaacf344c27",
+    "src/visa_agent/llm/openai_client.py": "950c01549d5feb44fb5a7be720c89318d6c112c2e2837ba152883e41ece13ecf",
+    "src/visa_agent/llm/ports.py": "d1e0f13952b0ab4a0bdaff6c519fbaad9b042b8e64e91cbfe843dfff4a848275",
+    "src/visa_agent/llm/question_understanding.py": "ff3e921e56ae7f3571e3b2fc10c8ac5733779ccf1bcc7c386d631ffc36264a88",
+    "src/visa_agent/public_webhook.py": "c51893541eb5923847a057b4bfc896b20a7360c19b3462b6a130a0611ebc5c3d",
+    "src/visa_agent/review_ui.py": "9ef689b0ce0886610cb165d11b40341bc686c52aee9c2b9a60fcd38001d41c52",
+    "src/visa_agent/secrets.py": "5a7f15fb96b1a544209a6380c57a3e39f9ac5c8c93cbd54cf2f50ded7b4fbd36",
+    "src/visa_agent/startup.py": "c6e9d3a83701715286d23ed66241feb00db6375eda63efb5a7737fffc74f8846",
+    "src/visa_agent/storage/__init__.py": "7296f379f4b997d52f354cdd5e6ce5314187146e117f02f04b6fa86f39bf6cd6",
+    "src/visa_agent/storage/sqlite.py": "1daed02fb1f1507f159f13b59f05828c58f9bfbddf2452082a37a29c7fe504bf",
+    "src/visa_agent/web.py": "7ba99a3c231238dd9e871ce42c4e7d4d95cf943b99ccb238f9ae84d8c77db8f6",
+    "src/visa_agent/workflow/__init__.py": "a273d6ddf1c05279ae2d32d46583ba5b9e94e145f4f5f816d131a723896dac7e",
+    "src/visa_agent/workflow/adviser_guidance.py": "81c4565545981ca68854a708a84e53c4c6d9ea0ea07122cb37381b6dceeba3db",
+    "src/visa_agent/workflow/conversation.py": "5cd74297b4345e84e1a07d6f8f5473f26a86ec47b209d0545ab26e5f64b4ebd9",
+    "src/visa_agent/workflow/customer_questions.py": "fdca43f41892f813fbba1b17625d7f6f639337acd89f29b2ac1737da40e24644",
+    "src/visa_agent/workflow/funding_wording.py": "f393622327a03fddf6f02e9c7633e9b90e5e415269f6c548a9d09438ad70c714",
+    "src/visa_agent/workflow/next_step.py": "3eb3eb682c4e6d47be6247571df4ad5cc6430047fe287ed033beac44ec07c355",
+    "src/visa_agent/workflow/preparation_control.py": "b5dfb87208ba9e7fc8ced37249d8444a79ed8fbcef6c11dbbab737437f25c321",
+    "src/visa_agent/workflow/review.py": "bce98b1a3e7f14bd0cc03ec01207db453ed90464881473ab9e027443bb0aa797",
+    "src/visa_agent/workflow/service.py": "8eff13703632910aaf3aa74cfe7708b1bcdaef42800f4e8552dba97d18e1d86d",
+    "knowledge/uk_standard_visitor_2026-02-25.yaml": "cf7991fe8dad5101910654ad6484f099c4637c7d14b0529c68e4d57818e51d84",
+    "scripts/preparation_control_probe.py": "c10b04d588b1572e652d2dc4ef6149d27300b59ff7244bade65ff889fedb4105",
+    "scripts/next_step_probe.py": "6663389f561083fee6c3865d7c3d05cfbdbd94e304304dcb8a02367bb5bdd5fe"
+  },
+  "source_bundle_sha256": "6131156fd1818c2d7a31b1dfea64546257d2f8afdcc20c67c6855c492ec9c1d1",
+  "started_at": "2026-09-04T12:51:36.158438+00:00",
+  "expected_case_count": 8,
+  "completed_case_count": 8,
+  "model_calls": 8,
+  "completed": true,
+  "results": [
+    {
+      "id": "ns_holdout_01",
+      "language": "zh",
+      "body": "还没到恢复准备的时候，先照之前说的暂停。我想提前心里有数：等我有空，英国旅游这份材料下一项该弄什么？还有，中文材料的译文需要译者注明哪些信息？现在先答疑就好。",
+      "initially_paused": true,
+      "expected_topics": [
+        "next_step",
+        "translation"
+      ],
+      "expected_preparation_action": null,
+      "rationale": "当前本案的条件式下一项准备问题和翻译规范问题均明确存在，用户同时明确不恢复既有暂停。",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-ns_holdout_01",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-ns_holdout_01",
+        "sender": "fictional-preparation@example.test",
+        "subject": "英国签证材料准备",
+        "body": "还没到恢复准备的时候，先照之前说的暂停。我想提前心里有数：等我有空，英国旅游这份材料下一项该弄什么？还有，中文材料的译文需要译者注明哪些信息？现在先答疑就好。",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-ns_holdout_01@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:51:36.386869Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:51:36.387116+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3380,
+          "output_tokens": 168,
+          "total_tokens": 3548
+        }
+      ],
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "next_step",
+            "source_excerpt": "等我有空，英国旅游这份材料下一项该弄什么？",
+            "confidence": 0.95
+          },
+          {
+            "topic": "translation",
+            "source_excerpt": "中文材料的译文需要译者注明哪些信息？",
+            "confidence": 0.95
+          }
+        ],
+        "preparation_intent": {
+          "action": "pause",
+          "source_excerpt": "还没到恢复准备的时候，先照之前说的暂停。",
+          "confidence": 0.95
+        }
+      },
+      "raw_checks": {
+        "topics_exact": true,
+        "preparation_action_exact": false
+      },
+      "extraction_latency_seconds": 1.774112,
+      "raw_response_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"next_step\",\n      \"source_excerpt\": \"等我有空，英国旅游这份材料下一项该弄什么？\",\n      \"confidence\": 0.95\n    },\n    {\n      \"topic\": \"translation\",\n      \"source_excerpt\": \"中文材料的译文需要译者注明哪些信息？\",\n      \"confidence\": 0.95\n    }\n  ],\n  \"preparation_intent\": {\n    \"action\": \"pause\",\n    \"source_excerpt\": \"还没到恢复准备的时候，先照之前说的暂停。\",\n    \"confidence\": 0.95\n  }\n}",
+      "guarded_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "next_step",
+            "source_excerpt": "等我有空，英国旅游这份材料下一项该弄什么？",
+            "confidence": 0.95
+          },
+          {
+            "topic": "translation",
+            "source_excerpt": "中文材料的译文需要译者注明哪些信息？",
+            "confidence": 0.95
+          }
+        ],
+        "preparation_intent": null
+      },
+      "guarded_checks": {
+        "topics_exact": true,
+        "preparation_action_exact": true
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "workflow_topics_exact": true,
+          "profile_matches_expected": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case_and_outbox": true,
+          "no_provider_delivery": true,
+          "all_customer_answers_delivered_verbatim": true,
+          "independent_faq_answers_retained": true,
+          "faq_request_has_reviewed_answer": true,
+          "next_step_advice_presence_exact": true,
+          "next_step_advice_message_delivered_verbatim": true,
+          "next_step_advice_not_empty_label": true,
+          "next_step_paused_is_conditional_not_resume": true,
+          "next_step_paused_preserves_information_only": true,
+          "paused_no_questions_or_confirmation": true,
+          "control_and_advice_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": true,
+          "preparation_control_epoch": 1,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": "seed-pause-ns_holdout_01"
+        },
+        "control_after": {
+          "preparation_paused": true,
+          "preparation_control_epoch": 1,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": "seed-pause-ns_holdout_01"
+        },
+        "workflow_topics": [
+          "next_step",
+          "translation"
+        ],
+        "question_plan": [],
+        "last_requested_fields": [],
+        "next_step_advice": {
+          "message": "如果之后决定继续，可以先参考这一项：有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间。这只是之后准备的说明，现在不用提交，准备仍保持暂停。",
+          "kind": "paused",
+          "question_field": null,
+          "requirement_id": "passport"
+        },
+        "consent_before": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "consent_after": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "human_review_reason": null,
+        "customer_answers": [
+          "提交的文件如果不是英语或威尔士语，需要附上可由 Home Office 独立核验的完整翻译。译文要包含译者的准确性声明、翻译日期、译者全名和签名，以及联系方式。只翻译摘要或没有这些信息的译文，不符合这份官方说明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk",
+          "如果之后决定继续，可以先参考这一项：有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间。这只是之后准备的说明，现在不用提交，准备仍保持暂停。"
+        ],
+        "expected_reviewed_faq_answers": [
+          "提交的文件如果不是英语或威尔士语，需要附上可由 Home Office 独立核验的完整翻译。译文要包含译者的准确性声明、翻译日期、译者全名和签名，以及联系方式。只翻译摘要或没有这些信息的译文，不符合这份官方说明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+        ],
+        "expected_case_aware_checklist_items": [],
+        "requirements": [
+          {
+            "id": "passport",
+            "title": "Valid passport or travel document",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "status_evidence",
+            "title": "Evidence of employment, study, or self-employment",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "purpose_evidence",
+            "title": "Evidence of the purpose of the visit",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "funding_evidence",
+            "title": "Evidence of available funds and their source",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "sponsor_evidence",
+            "title": "Sponsor support, ability, relationship, and UK status where applicable",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "certified_translation",
+            "title": "Complete certified translation for documents not in English or Welsh",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "legal_residence",
+            "title": "Evidence of legal residence when applying outside the country of nationality",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          }
+        ],
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "提交的文件如果不是英语或威尔士语，需要附上可由 Home Office 独立核验的完整翻译。译文要包含译者的准确性声明、翻译日期、译者全名和签名，以及联系方式。只翻译摘要或没有这些信息的译文，不符合这份官方说明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk\n\n如果之后决定继续，可以先参考这一项：有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间。这只是之后准备的说明，现在不用提交，准备仍保持暂停。\n\n如果之后继续准备，按你目前的情况可以参考这份材料清单，现在不用急着提交：\n- 有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间\n- 在读证明 — 可向学校索取抬头纸证明，说明在读及准假情况，用来支持你的学习情况说明\n- 访问目的的证明材料 — 说明这次去做什么；旅游可以先整理真实的计划行程，不把未定安排写成已预订\n- 可用资金及来源证明，例如银行流水 — 说明谁承担费用、资金从哪里来，以及你是否能使用这些钱；预算金额本身不是证明\n- 在申请所在地合法居留的证明 — 说明你在递交申请的国家或地区的合法居留身份\n\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk\n\n我们先保持暂停，之前的资料都在。等你确定要继续时，再告诉我就好。"
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0,
+        "naturalness_scored": false,
+        "manual_reply_review_still_required": true
+      },
+      "raw_passed": false,
+      "guarded_passed": true,
+      "workflow_passed": true,
+      "passed": true,
+      "elapsed_seconds": 1.809157,
+      "finished_at": "2026-09-04T12:51:38.195999+00:00"
+    },
+    {
+      "id": "ns_holdout_02",
+      "language": "en",
+      "body": "Quick correction for my UK holiday file: I was born on 8 November 1997, and my estimated total trip cost is now £1,800. Please replace the earlier details. While I'm emailing, what's the visa fee for a six-month visit?",
+      "initially_paused": false,
+      "expected_topics": [
+        "fees"
+      ],
+      "expected_profile_updates": {
+        "date_of_birth": "1997-11-08",
+        "estimated_trip_cost_gbp": 1800
+      },
+      "expected_preparation_action": null,
+      "rationale": "Explicit applicant DOB and total trip-budget corrections plus a fee FAQ, without any request for a next preparation task.",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-ns_holdout_02",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-ns_holdout_02",
+        "sender": "fictional-preparation@example.test",
+        "subject": "UK visa preparation",
+        "body": "Quick correction for my UK holiday file: I was born on 8 November 1997, and my estimated total trip cost is now £1,800. Please replace the earlier details. While I'm emailing, what's the visa fee for a six-month visit?",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-ns_holdout_02@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:51:38.197016Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:51:38.197062+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3386,
+          "output_tokens": 197,
+          "total_tokens": 3583
+        }
+      ],
+      "raw_patch": {
+        "updates": [
+          {
+            "field": "date_of_birth",
+            "value": "1997-11-08",
+            "source_excerpt": "I was born on 8 November 1997",
+            "confidence": 1.0
+          },
+          {
+            "field": "estimated_trip_cost_gbp",
+            "value": 1800,
+            "source_excerpt": "my estimated total trip cost is now £1,800",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "fees",
+            "source_excerpt": "what's the visa fee for a six-month visit?",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": null
+      },
+      "raw_checks": {
+        "topics_exact": true,
+        "preparation_action_exact": true,
+        "expected_profile_update:date_of_birth": true,
+        "expected_profile_update:estimated_trip_cost_gbp": true
+      },
+      "extraction_latency_seconds": 1.272987,
+      "raw_response_content": "{\n  \"updates\": [\n    {\n      \"field\": \"date_of_birth\",\n      \"value\": \"1997-11-08\",\n      \"source_excerpt\": \"I was born on 8 November 1997\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"estimated_trip_cost_gbp\",\n      \"value\": 1800,\n      \"source_excerpt\": \"my estimated total trip cost is now £1,800\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"fees\",\n      \"source_excerpt\": \"what's the visa fee for a six-month visit?\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "guarded_patch": {
+        "updates": [
+          {
+            "field": "date_of_birth",
+            "value": "1997-11-08",
+            "source_excerpt": "I was born on 8 November 1997",
+            "confidence": 1.0
+          },
+          {
+            "field": "estimated_trip_cost_gbp",
+            "value": 1800,
+            "source_excerpt": "my estimated total trip cost is now £1,800",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "fees",
+            "source_excerpt": "what's the visa fee for a six-month visit?",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": null
+      },
+      "guarded_checks": {
+        "topics_exact": true,
+        "preparation_action_exact": true,
+        "expected_profile_update:date_of_birth": true,
+        "expected_profile_update:estimated_trip_cost_gbp": true
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "workflow_topics_exact": true,
+          "profile_matches_expected": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case_and_outbox": true,
+          "no_provider_delivery": true,
+          "all_customer_answers_delivered_verbatim": true,
+          "independent_faq_answers_retained": true,
+          "faq_request_has_reviewed_answer": true,
+          "next_step_advice_presence_exact": true,
+          "control_and_advice_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1997-11-08",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1800,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "control_after": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "workflow_topics": [
+          "fees"
+        ],
+        "question_plan": [],
+        "last_requested_fields": [],
+        "next_step_advice": null,
+        "consent_before": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "consent_after": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "human_review_reason": null,
+        "customer_answers": [
+          "For a 6-month Standard Visitor visa, GOV.UK currently lists the application fee as £135. Optional visa application centre or priority services cost extra; check the official price when paying. Other visa routes or validity periods may have different fees.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+        ],
+        "expected_reviewed_faq_answers": [
+          "For a 6-month Standard Visitor visa, GOV.UK currently lists the application fee as £135. Optional visa application centre or priority services cost extra; check the official price when paying. Other visa routes or validity periods may have different fees.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+        ],
+        "expected_case_aware_checklist_items": [],
+        "requirements": [
+          {
+            "id": "passport",
+            "title": "Valid passport or travel document",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "status_evidence",
+            "title": "Evidence of employment, study, or self-employment",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "purpose_evidence",
+            "title": "Evidence of the purpose of the visit",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "funding_evidence",
+            "title": "Evidence of available funds and their source",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "sponsor_evidence",
+            "title": "Sponsor support, ability, relationship, and UK status where applicable",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "certified_translation",
+            "title": "Complete certified translation for documents not in English or Welsh",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "legal_residence",
+            "title": "Evidence of legal residence when applying outside the country of nationality",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          }
+        ],
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "Thanks—I've corrected your date of birth to 8 November 1997 and your total trip budget to £1,800.\n\nFor a 6-month Standard Visitor visa, GOV.UK currently lists the application fee as £135. Optional visa application centre or priority services cost extra; check the official price when paying. Other visa routes or validity periods may have different fees.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0,
+        "naturalness_scored": false,
+        "manual_reply_review_still_required": true
+      },
+      "raw_passed": true,
+      "guarded_passed": true,
+      "workflow_passed": true,
+      "passed": true,
+      "elapsed_seconds": 1.310956,
+      "finished_at": "2026-09-04T12:51:39.507950+00:00"
+    },
+    {
+      "id": "ns_holdout_03",
+      "language": "zh",
+      "body": "我重新算过，英国这趟旅行预计一共花1850英镑，请把之前的1500改掉。银行流水通常要往前拉几个月？然后就我自己的进度，能不能给我一个现在先做的材料任务，我想一项一项处理。",
+      "initially_paused": false,
+      "expected_topics": [
+        "bank_period",
+        "next_step"
+      ],
+      "expected_profile_updates": {
+        "estimated_trip_cost_gbp": 1850
+      },
+      "expected_preparation_action": null,
+      "rationale": "清晰更新当前总旅行预算，同时问流水月数和本案当前单项准备任务，无状态切换要求。",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-ns_holdout_03",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-ns_holdout_03",
+        "sender": "fictional-preparation@example.test",
+        "subject": "英国签证材料准备",
+        "body": "我重新算过，英国这趟旅行预计一共花1850英镑，请把之前的1500改掉。银行流水通常要往前拉几个月？然后就我自己的进度，能不能给我一个现在先做的材料任务，我想一项一项处理。",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-ns_holdout_03@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:51:39.509464Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:51:39.509511+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3383,
+          "output_tokens": 180,
+          "total_tokens": 3563
+        }
+      ],
+      "raw_patch": {
+        "updates": [
+          {
+            "field": "estimated_trip_cost_gbp",
+            "value": 1850,
+            "source_excerpt": "预计一共花1850英镑",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "bank_period",
+            "source_excerpt": "银行流水通常要往前拉几个月？",
+            "confidence": 1.0
+          },
+          {
+            "topic": "next_step",
+            "source_excerpt": "能不能给我一个现在先做的材料任务，我想一项一项处理。",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": null
+      },
+      "raw_checks": {
+        "topics_exact": true,
+        "preparation_action_exact": true,
+        "expected_profile_update:estimated_trip_cost_gbp": true
+      },
+      "extraction_latency_seconds": 1.229988,
+      "raw_response_content": "{\n  \"updates\": [\n    {\n      \"field\": \"estimated_trip_cost_gbp\",\n      \"value\": 1850,\n      \"source_excerpt\": \"预计一共花1850英镑\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"bank_period\",\n      \"source_excerpt\": \"银行流水通常要往前拉几个月？\",\n      \"confidence\": 1.0\n    },\n    {\n      \"topic\": \"next_step\",\n      \"source_excerpt\": \"能不能给我一个现在先做的材料任务，我想一项一项处理。\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "guarded_patch": {
+        "updates": [
+          {
+            "field": "estimated_trip_cost_gbp",
+            "value": 1850,
+            "source_excerpt": "预计一共花1850英镑",
+            "confidence": 1.0
+          }
+        ],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "bank_period",
+            "source_excerpt": "银行流水通常要往前拉几个月？",
+            "confidence": 1.0
+          },
+          {
+            "topic": "next_step",
+            "source_excerpt": "能不能给我一个现在先做的材料任务，我想一项一项处理。",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": null
+      },
+      "guarded_checks": {
+        "topics_exact": true,
+        "preparation_action_exact": true,
+        "expected_profile_update:estimated_trip_cost_gbp": true
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "workflow_topics_exact": true,
+          "profile_matches_expected": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case_and_outbox": true,
+          "no_provider_delivery": true,
+          "all_customer_answers_delivered_verbatim": true,
+          "independent_faq_answers_retained": true,
+          "faq_request_has_reviewed_answer": true,
+          "next_step_advice_presence_exact": true,
+          "next_step_advice_message_delivered_verbatim": true,
+          "next_step_advice_not_empty_label": true,
+          "next_step_document_is_one_current_unsatisfied_requirement": true,
+          "next_step_document_has_collection_action": true,
+          "next_step_passport_named_explicitly": true,
+          "control_and_advice_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1850,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "control_after": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "workflow_topics": [
+          "bank_period",
+          "next_step"
+        ],
+        "question_plan": [],
+        "last_requested_fields": [],
+        "next_step_advice": {
+          "message": "下一步可以先准备这一份：有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间。把护照资料页扫描成清晰、完整的 PDF，确保文字和页边没有被裁掉。拿到后可以直接回复这封邮件，附上清晰可读的 PDF；我会先核对内容，再告诉你是否需要补充。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+          "kind": "document",
+          "question_field": null,
+          "requirement_id": "passport"
+        },
+        "consent_before": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "consent_after": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "human_review_reason": null,
+        "customer_answers": [
+          "普通 Standard Visitor 的这份官方材料指南没有统一规定银行流水必须提供几个月。不能只凭月份数量判断材料是否足够。可以先整理相关账户的正式对账单，让账户持有人、资金来源和资金进出记录看得清楚。还要说明你是否可以使用这些钱，结合旅行支出核对；余额本身不能说明全部情况。这些是整理材料的建议，实际文件还需要核对。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances",
+          "下一步可以先准备这一份：有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间。把护照资料页扫描成清晰、完整的 PDF，确保文字和页边没有被裁掉。拿到后可以直接回复这封邮件，附上清晰可读的 PDF；我会先核对内容，再告诉你是否需要补充。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+        ],
+        "expected_reviewed_faq_answers": [
+          "普通 Standard Visitor 的这份官方材料指南没有统一规定银行流水必须提供几个月。不能只凭月份数量判断材料是否足够。可以先整理相关账户的正式对账单，让账户持有人、资金来源和资金进出记录看得清楚。还要说明你是否可以使用这些钱，结合旅行支出核对；余额本身不能说明全部情况。这些是整理材料的建议，实际文件还需要核对。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances"
+        ],
+        "expected_case_aware_checklist_items": [],
+        "requirements": [
+          {
+            "id": "passport",
+            "title": "Valid passport or travel document",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "status_evidence",
+            "title": "Evidence of employment, study, or self-employment",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "purpose_evidence",
+            "title": "Evidence of the purpose of the visit",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "funding_evidence",
+            "title": "Evidence of available funds and their source",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "sponsor_evidence",
+            "title": "Sponsor support, ability, relationship, and UK status where applicable",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "certified_translation",
+            "title": "Complete certified translation for documents not in English or Welsh",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "legal_residence",
+            "title": "Evidence of legal residence when applying outside the country of nationality",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          }
+        ],
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "好的，已按你说的改为：旅行预算（英镑）：1850。\n\n普通 Standard Visitor 的这份官方材料指南没有统一规定银行流水必须提供几个月。不能只凭月份数量判断材料是否足够。可以先整理相关账户的正式对账单，让账户持有人、资金来源和资金进出记录看得清楚。还要说明你是否可以使用这些钱，结合旅行支出核对；余额本身不能说明全部情况。这些是整理材料的建议，实际文件还需要核对。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances\n\n下一步可以先准备这一份：有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间。把护照资料页扫描成清晰、完整的 PDF，确保文字和页边没有被裁掉。拿到后可以直接回复这封邮件，附上清晰可读的 PDF；我会先核对内容，再告诉你是否需要补充。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0,
+        "naturalness_scored": false,
+        "manual_reply_review_still_required": true
+      },
+      "raw_passed": true,
+      "guarded_passed": true,
+      "workflow_passed": true,
+      "passed": true,
+      "elapsed_seconds": 1.26765,
+      "finished_at": "2026-09-04T12:51:40.777092+00:00"
+    },
+    {
+      "id": "ns_holdout_04",
+      "language": "en",
+      "body": "Let's take my UK visa preparation off hold now, please. What should I get ready first as we start again? One other thing: do I need paid flight and hotel bookings before submitting the visitor application? I haven't booked either.",
+      "initially_paused": true,
+      "expected_topics": [
+        "next_step",
+        "booking"
+      ],
+      "expected_preparation_action": "resume",
+      "rationale": "Explicitly resumes preparation, asks for the next task in this case, and asks a separate booking-requirements FAQ; no bookings are claimed.",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-ns_holdout_04",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-ns_holdout_04",
+        "sender": "fictional-preparation@example.test",
+        "subject": "UK visa preparation",
+        "body": "Let's take my UK visa preparation off hold now, please. What should I get ready first as we start again? One other thing: do I need paid flight and hotel bookings before submitting the visitor application? I haven't booked either.",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-ns_holdout_04@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:51:40.779011Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:51:40.779053+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3379,
+          "output_tokens": 170,
+          "total_tokens": 3549
+        }
+      ],
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "next_step",
+            "source_excerpt": "What should I get ready first as we start again?",
+            "confidence": 1.0
+          },
+          {
+            "topic": "booking",
+            "source_excerpt": "do I need paid flight and hotel bookings before submitting the visitor application?",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": {
+          "action": "resume",
+          "source_excerpt": "Let's take my UK visa preparation off hold now, please.",
+          "confidence": 1.0
+        }
+      },
+      "raw_checks": {
+        "topics_exact": true,
+        "preparation_action_exact": true
+      },
+      "extraction_latency_seconds": 1.326764,
+      "raw_response_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"next_step\",\n      \"source_excerpt\": \"What should I get ready first as we start again?\",\n      \"confidence\": 1.0\n    },\n    {\n      \"topic\": \"booking\",\n      \"source_excerpt\": \"do I need paid flight and hotel bookings before submitting the visitor application?\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"preparation_intent\": {\n    \"action\": \"resume\",\n    \"source_excerpt\": \"Let's take my UK visa preparation off hold now, please.\",\n    \"confidence\": 1.0\n  }\n}",
+      "guarded_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "next_step",
+            "source_excerpt": "What should I get ready first as we start again?",
+            "confidence": 1.0
+          },
+          {
+            "topic": "booking",
+            "source_excerpt": "do I need paid flight and hotel bookings before submitting the visitor application?",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": null
+      },
+      "guarded_checks": {
+        "topics_exact": true,
+        "preparation_action_exact": false
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "workflow_topics_exact": true,
+          "profile_matches_expected": true,
+          "paused_state_exact": false,
+          "control_epoch_exact": false,
+          "transition_action_exact": false,
+          "transition_event_exact": false,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case_and_outbox": true,
+          "no_provider_delivery": true,
+          "all_customer_answers_delivered_verbatim": true,
+          "independent_faq_answers_retained": true,
+          "faq_request_has_reviewed_answer": true,
+          "next_step_advice_presence_exact": true,
+          "next_step_advice_message_delivered_verbatim": true,
+          "next_step_advice_not_empty_label": true,
+          "next_step_paused_is_conditional_not_resume": true,
+          "next_step_paused_preserves_information_only": true,
+          "control_and_advice_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": true,
+          "preparation_control_epoch": 1,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": "seed-pause-ns_holdout_04"
+        },
+        "control_after": {
+          "preparation_paused": true,
+          "preparation_control_epoch": 1,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": "seed-pause-ns_holdout_04"
+        },
+        "workflow_topics": [
+          "next_step",
+          "booking"
+        ],
+        "question_plan": [],
+        "last_requested_fields": [],
+        "next_step_advice": {
+          "message": "For a later restart, the next item would be Valid passport or travel document — to check your identity and validity throughout the planned stay. This is information for later, not a request to send it now; preparation remains on hold.",
+          "kind": "paused",
+          "question_field": null,
+          "requirement_id": "passport"
+        },
+        "consent_before": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "consent_after": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "human_review_reason": null,
+        "customer_answers": [
+          "For an ordinary Standard Visitor application, you do not need to buy flights or book a hotel just to supply booking evidence. The official guide describes hotel bookings and flight bookings (except transit) as less useful evidence. Intended arrangements should be described accurately, without presenting unbooked plans as confirmed bookings.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence",
+          "For a later restart, the next item would be Valid passport or travel document — to check your identity and validity throughout the planned stay. This is information for later, not a request to send it now; preparation remains on hold."
+        ],
+        "expected_reviewed_faq_answers": [
+          "For an ordinary Standard Visitor application, you do not need to buy flights or book a hotel just to supply booking evidence. The official guide describes hotel bookings and flight bookings (except transit) as less useful evidence. Intended arrangements should be described accurately, without presenting unbooked plans as confirmed bookings.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence"
+        ],
+        "expected_case_aware_checklist_items": [],
+        "requirements": [
+          {
+            "id": "passport",
+            "title": "Valid passport or travel document",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "status_evidence",
+            "title": "Evidence of employment, study, or self-employment",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "purpose_evidence",
+            "title": "Evidence of the purpose of the visit",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "funding_evidence",
+            "title": "Evidence of available funds and their source",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "sponsor_evidence",
+            "title": "Sponsor support, ability, relationship, and UK status where applicable",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "certified_translation",
+            "title": "Complete certified translation for documents not in English or Welsh",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "legal_residence",
+            "title": "Evidence of legal residence when applying outside the country of nationality",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          }
+        ],
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "For an ordinary Standard Visitor application, you do not need to buy flights or book a hotel just to supply booking evidence. The official guide describes hotel bookings and flight bookings (except transit) as less useful evidence. Intended arrangements should be described accurately, without presenting unbooked plans as confirmed bookings.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#documents-you-should-not-use-as-evidence\n\nFor a later restart, the next item would be Valid passport or travel document — to check your identity and validity throughout the planned stay. This is information for later, not a request to send it now; preparation remains on hold.\n\nWe'll keep the preparation on hold and retain your earlier details. Let me know when you've decided you'd like to continue."
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0,
+        "naturalness_scored": false,
+        "manual_reply_review_still_required": true
+      },
+      "raw_passed": true,
+      "guarded_passed": false,
+      "workflow_passed": false,
+      "passed": false,
+      "elapsed_seconds": 1.365719,
+      "finished_at": "2026-09-04T12:51:42.144703+00:00"
+    },
+    {
+      "id": "ns_holdout_05",
+      "language": "zh",
+      "body": "表姐给我的邮件里有一句“接下来我该准备哪份材料？”，那是她在问她自己的顾问，不用套到我的申请上。我这次只想要英国旅游签证的通用材料清单，方便先了解整体要求。",
+      "initially_paused": false,
+      "expected_topics": [
+        "document_checklist"
+      ],
+      "expected_preparation_action": null,
+      "rationale": "第三者引文中的下一步问题被明确排除于当前本案；当前仅索取通用材料清单。",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-ns_holdout_05",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-ns_holdout_05",
+        "sender": "fictional-preparation@example.test",
+        "subject": "英国签证材料准备",
+        "body": "表姐给我的邮件里有一句“接下来我该准备哪份材料？”，那是她在问她自己的顾问，不用套到我的申请上。我这次只想要英国旅游签证的通用材料清单，方便先了解整体要求。",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-ns_holdout_05@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:51:42.146929Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:51:42.146972+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3380,
+          "output_tokens": 98,
+          "total_tokens": 3478
+        }
+      ],
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "document_checklist",
+            "source_excerpt": "我这次只想要英国旅游签证的通用材料清单，方便先了解整体要求。",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": null
+      },
+      "raw_checks": {
+        "topics_exact": true,
+        "preparation_action_exact": true
+      },
+      "extraction_latency_seconds": 0.958856,
+      "raw_response_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"document_checklist\",\n      \"source_excerpt\": \"我这次只想要英国旅游签证的通用材料清单，方便先了解整体要求。\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "guarded_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "document_checklist",
+            "source_excerpt": "我这次只想要英国旅游签证的通用材料清单，方便先了解整体要求。",
+            "confidence": 1.0
+          }
+        ],
+        "preparation_intent": null
+      },
+      "guarded_checks": {
+        "topics_exact": true,
+        "preparation_action_exact": true
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "workflow_topics_exact": true,
+          "profile_matches_expected": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case_and_outbox": true,
+          "no_provider_delivery": true,
+          "all_customer_answers_delivered_verbatim": true,
+          "independent_faq_answers_retained": true,
+          "faq_request_has_reviewed_answer": true,
+          "checklist_request_has_case_aware_items": true,
+          "all_requested_checklist_items_delivered_verbatim": true,
+          "next_step_advice_presence_exact": true,
+          "control_and_advice_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "control_after": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "workflow_topics": [
+          "document_checklist"
+        ],
+        "question_plan": [],
+        "last_requested_fields": [],
+        "next_step_advice": null,
+        "consent_before": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "consent_after": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "human_review_reason": null,
+        "customer_answers": [],
+        "expected_reviewed_faq_answers": [],
+        "expected_case_aware_checklist_items": [
+          {
+            "requirement_id": "passport",
+            "label": "有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间"
+          },
+          {
+            "requirement_id": "status_evidence",
+            "label": "在读证明 — 可向学校索取抬头纸证明，说明在读及准假情况，用来支持你的学习情况说明"
+          },
+          {
+            "requirement_id": "purpose_evidence",
+            "label": "访问目的的证明材料 — 说明这次去做什么；旅游可以先整理真实的计划行程，不把未定安排写成已预订"
+          },
+          {
+            "requirement_id": "funding_evidence",
+            "label": "可用资金及来源证明，例如银行流水 — 说明谁承担费用、资金从哪里来，以及你是否能使用这些钱；预算金额本身不是证明"
+          },
+          {
+            "requirement_id": "legal_residence",
+            "label": "在申请所在地合法居留的证明 — 说明你在递交申请的国家或地区的合法居留身份"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "passport",
+            "title": "Valid passport or travel document",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "status_evidence",
+            "title": "Evidence of employment, study, or self-employment",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "purpose_evidence",
+            "title": "Evidence of the purpose of the visit",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "funding_evidence",
+            "title": "Evidence of available funds and their source",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "sponsor_evidence",
+            "title": "Sponsor support, ability, relationship, and UK status where applicable",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "certified_translation",
+            "title": "Complete certified translation for documents not in English or Welsh",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "legal_residence",
+            "title": "Evidence of legal residence when applying outside the country of nationality",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          }
+        ],
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "接下来还需要这些材料；有哪份暂时拿不到，也可以直接告诉我：\n- 有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间\n- 在读证明 — 可向学校索取抬头纸证明，说明在读及准假情况，用来支持你的学习情况说明\n- 访问目的的证明材料 — 说明这次去做什么；旅游可以先整理真实的计划行程，不把未定安排写成已预订\n- 可用资金及来源证明，例如银行流水 — 说明谁承担费用、资金从哪里来，以及你是否能使用这些钱；预算金额本身不是证明\n- 在申请所在地合法居留的证明 — 说明你在递交申请的国家或地区的合法居留身份\n\n这是按你的情况列出的待补材料，不是所有申请人通用的强制清单。如果行程或资助情况有变化，我会再调整。\n\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0,
+        "naturalness_scored": false,
+        "manual_reply_review_still_required": true
+      },
+      "raw_passed": true,
+      "guarded_passed": true,
+      "workflow_passed": true,
+      "passed": true,
+      "elapsed_seconds": 0.994692,
+      "finished_at": "2026-09-04T12:51:43.141601+00:00"
+    },
+    {
+      "id": "ns_holdout_06",
+      "language": "en",
+      "body": "Please pause my UK visitor preparation from today while I sort out my coursework. Before we leave it there, could you just tell me what my next preparation item would be when I return? I'd like to note it down, not start it now.",
+      "initially_paused": false,
+      "expected_topics": [
+        "next_step"
+      ],
+      "expected_preparation_action": "pause",
+      "rationale": "Explicit new pause instruction coexists with an informational request for the current case's future next item. Asking that question does not negate the pause or authorize resume.",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-ns_holdout_06",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-ns_holdout_06",
+        "sender": "fictional-preparation@example.test",
+        "subject": "UK visa preparation",
+        "body": "Please pause my UK visitor preparation from today while I sort out my coursework. Before we leave it there, could you just tell me what my next preparation item would be when I return? I'd like to note it down, not start it now.",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-ns_holdout_06@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:51:43.144131Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:51:43.144172+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3381,
+          "output_tokens": 134,
+          "total_tokens": 3515
+        }
+      ],
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "next_step",
+            "source_excerpt": "could you just tell me what my next preparation item would be when I return?",
+            "confidence": 0.95
+          }
+        ],
+        "preparation_intent": {
+          "action": "pause",
+          "source_excerpt": "Please pause my UK visitor preparation from today while I sort out my coursework.",
+          "confidence": 0.98
+        }
+      },
+      "raw_checks": {
+        "topics_exact": true,
+        "preparation_action_exact": true
+      },
+      "extraction_latency_seconds": 1.102972,
+      "raw_response_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"next_step\",\n      \"source_excerpt\": \"could you just tell me what my next preparation item would be when I return?\",\n      \"confidence\": 0.95\n    }\n  ],\n  \"preparation_intent\": {\n    \"action\": \"pause\",\n    \"source_excerpt\": \"Please pause my UK visitor preparation from today while I sort out my coursework.\",\n    \"confidence\": 0.98\n  }\n}",
+      "guarded_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "next_step",
+            "source_excerpt": "could you just tell me what my next preparation item would be when I return?",
+            "confidence": 0.95
+          }
+        ],
+        "preparation_intent": {
+          "action": "pause",
+          "source_excerpt": "Please pause my UK visitor preparation from today while I sort out my coursework.",
+          "confidence": 0.98
+        }
+      },
+      "guarded_checks": {
+        "topics_exact": true,
+        "preparation_action_exact": true
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "workflow_topics_exact": true,
+          "profile_matches_expected": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case_and_outbox": true,
+          "no_provider_delivery": true,
+          "all_customer_answers_delivered_verbatim": true,
+          "independent_faq_answers_retained": true,
+          "faq_request_has_reviewed_answer": true,
+          "next_step_advice_presence_exact": true,
+          "next_step_advice_message_delivered_verbatim": true,
+          "next_step_advice_not_empty_label": true,
+          "next_step_paused_is_conditional_not_resume": true,
+          "next_step_paused_preserves_information_only": true,
+          "paused_no_questions_or_confirmation": true,
+          "control_and_advice_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "control_after": {
+          "preparation_paused": true,
+          "preparation_control_epoch": 1,
+          "latest_preparation_action": "pause",
+          "preparation_control_event_id": "inbound-ns_holdout_06"
+        },
+        "workflow_topics": [
+          "next_step"
+        ],
+        "question_plan": [],
+        "last_requested_fields": [],
+        "next_step_advice": {
+          "message": "For a later restart, the next item would be Valid passport or travel document — to check your identity and validity throughout the planned stay. This is information for later, not a request to send it now; preparation remains on hold.",
+          "kind": "paused",
+          "question_field": null,
+          "requirement_id": "passport"
+        },
+        "consent_before": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "consent_after": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "human_review_reason": null,
+        "customer_answers": [
+          "For a later restart, the next item would be Valid passport or travel document — to check your identity and validity throughout the planned stay. This is information for later, not a request to send it now; preparation remains on hold."
+        ],
+        "expected_reviewed_faq_answers": [],
+        "expected_case_aware_checklist_items": [],
+        "requirements": [
+          {
+            "id": "passport",
+            "title": "Valid passport or travel document",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "status_evidence",
+            "title": "Evidence of employment, study, or self-employment",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "purpose_evidence",
+            "title": "Evidence of the purpose of the visit",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "funding_evidence",
+            "title": "Evidence of available funds and their source",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "sponsor_evidence",
+            "title": "Sponsor support, ability, relationship, and UK status where applicable",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "certified_translation",
+            "title": "Complete certified translation for documents not in English or Welsh",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "legal_residence",
+            "title": "Evidence of legal residence when applying outside the country of nationality",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          }
+        ],
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "For a later restart, the next item would be Valid passport or travel document — to check your identity and validity throughout the planned stay. This is information for later, not a request to send it now; preparation remains on hold.\n\nOf course—we can put the preparation on hold. I'll keep the details you've sent; just reply when you'd like to pick this up again."
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0,
+        "naturalness_scored": false,
+        "manual_reply_review_still_required": true
+      },
+      "raw_passed": true,
+      "guarded_passed": true,
+      "workflow_passed": true,
+      "passed": true,
+      "elapsed_seconds": 1.14139,
+      "finished_at": "2026-09-04T12:51:44.285501+00:00"
+    },
+    {
+      "id": "ns_holdout_07",
+      "language": "zh",
+      "body": "这封先不讨论我自己的旅游申请。我替弟弟问一下：他想读英国博士，需要办学生签证，你们能做这类申请吗？如果能做，他下一步要怎么准备？",
+      "initially_paused": false,
+      "expected_topics": [
+        "unsupported"
+      ],
+      "expected_preparation_action": null,
+      "rationale": "当前问题明确涉及第三者的英国学生签证服务范围及准备，不属于本案访问签证的 next_step，也未要求暂停本案。",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-ns_holdout_07",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-ns_holdout_07",
+        "sender": "fictional-preparation@example.test",
+        "subject": "英国签证材料准备",
+        "body": "这封先不讨论我自己的旅游申请。我替弟弟问一下：他想读英国博士，需要办学生签证，你们能做这类申请吗？如果能做，他下一步要怎么准备？",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-ns_holdout_07@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:51:44.288383Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:51:44.288423+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3372,
+          "output_tokens": 132,
+          "total_tokens": 3504
+        }
+      ],
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "unsupported",
+            "source_excerpt": "他想读英国博士，需要办学生签证，你们能做这类申请吗？",
+            "confidence": 1.0
+          },
+          {
+            "topic": "next_step",
+            "source_excerpt": "如果能做，他下一步要怎么准备？",
+            "confidence": 0.9
+          }
+        ],
+        "preparation_intent": null
+      },
+      "raw_checks": {
+        "topics_exact": false,
+        "preparation_action_exact": true
+      },
+      "extraction_latency_seconds": 1.01909,
+      "raw_response_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"unsupported\",\n      \"source_excerpt\": \"他想读英国博士，需要办学生签证，你们能做这类申请吗？\",\n      \"confidence\": 1.0\n    },\n    {\n      \"topic\": \"next_step\",\n      \"source_excerpt\": \"如果能做，他下一步要怎么准备？\",\n      \"confidence\": 0.9\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "guarded_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "unsupported",
+            "source_excerpt": "他想读英国博士，需要办学生签证，你们能做这类申请吗？",
+            "confidence": 1.0
+          },
+          {
+            "topic": "next_step",
+            "source_excerpt": "如果能做，他下一步要怎么准备？",
+            "confidence": 0.9
+          }
+        ],
+        "preparation_intent": null
+      },
+      "guarded_checks": {
+        "topics_exact": false,
+        "preparation_action_exact": true
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "workflow_topics_exact": false,
+          "profile_matches_expected": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case_and_outbox": true,
+          "no_provider_delivery": true,
+          "all_customer_answers_delivered_verbatim": true,
+          "independent_faq_answers_retained": true,
+          "faq_request_has_reviewed_answer": true,
+          "next_step_advice_presence_exact": false,
+          "control_and_advice_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "control_after": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "workflow_topics": [
+          "unsupported",
+          "next_step"
+        ],
+        "question_plan": [],
+        "last_requested_fields": [],
+        "next_step_advice": {
+          "message": "下一步可以先准备这一份：有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间。把护照资料页扫描成清晰、完整的 PDF，确保文字和页边没有被裁掉。拿到后可以直接回复这封邮件，附上清晰可读的 PDF；我会先核对内容，再告诉你是否需要补充。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+          "kind": "document",
+          "question_field": null,
+          "requirement_id": "passport"
+        },
+        "consent_before": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "consent_after": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "human_review_reason": null,
+        "customer_answers": [
+          "你问的这点，我目前没有核验过的依据，不能直接给你确定答复。这项需要另行核实，不能把还没确认的结论写进申请材料；已确定的信息可以继续整理。",
+          "下一步可以先准备这一份：有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间。把护照资料页扫描成清晰、完整的 PDF，确保文字和页边没有被裁掉。拿到后可以直接回复这封邮件，附上清晰可读的 PDF；我会先核对内容，再告诉你是否需要补充。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+        ],
+        "expected_reviewed_faq_answers": [
+          "你问的这点，我目前没有核验过的依据，不能直接给你确定答复。这项需要另行核实，不能把还没确认的结论写进申请材料；已确定的信息可以继续整理。"
+        ],
+        "expected_case_aware_checklist_items": [],
+        "requirements": [
+          {
+            "id": "passport",
+            "title": "Valid passport or travel document",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "status_evidence",
+            "title": "Evidence of employment, study, or self-employment",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "purpose_evidence",
+            "title": "Evidence of the purpose of the visit",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "funding_evidence",
+            "title": "Evidence of available funds and their source",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "sponsor_evidence",
+            "title": "Sponsor support, ability, relationship, and UK status where applicable",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "certified_translation",
+            "title": "Complete certified translation for documents not in English or Welsh",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "legal_residence",
+            "title": "Evidence of legal residence when applying outside the country of nationality",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          }
+        ],
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "你问的这点，我目前没有核验过的依据，不能直接给你确定答复。这项需要另行核实，不能把还没确认的结论写进申请材料；已确定的信息可以继续整理。\n\n下一步可以先准备这一份：有效护照或旅行证件 — 核对身份，以及有效期是否覆盖整个计划停留期间。把护照资料页扫描成清晰、完整的 PDF，确保文字和页边没有被裁掉。拿到后可以直接回复这封邮件，附上清晰可读的 PDF；我会先核对内容，再告诉你是否需要补充。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0,
+        "naturalness_scored": false,
+        "manual_reply_review_still_required": true
+      },
+      "raw_passed": false,
+      "guarded_passed": false,
+      "workflow_passed": false,
+      "passed": false,
+      "elapsed_seconds": 1.05594,
+      "finished_at": "2026-09-04T12:51:45.344303+00:00"
+    },
+    {
+      "id": "ns_holdout_08",
+      "language": "en",
+      "body": "Back to my UK holiday paperwork — all the personal details we discussed still stand. Could you put one concrete item at the top of my to-do list and explain how I should prepare it? A single task would help me get organised.",
+      "initially_paused": false,
+      "expected_topics": [
+        "next_step"
+      ],
+      "expected_preparation_action": null,
+      "rationale": "Implicitly phrased but clear case-specific next-task request, without a generic checklist question, changed profile fact, or explicit state transition.",
+      "holdout": true,
+      "input_event": {
+        "id": "inbound-ns_holdout_08",
+        "channel": "gmail",
+        "external_thread_id": "preparation-probe-thread-ns_holdout_08",
+        "sender": "fictional-preparation@example.test",
+        "subject": "UK visa preparation",
+        "body": "Back to my UK holiday paperwork — all the personal details we discussed still stand. Could you put one concrete item at the top of my to-do list and explain how I should prepare it? A single task would help me get organised.",
+        "requested_fields": [],
+        "known_profile": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "attachment_paths": [],
+        "rfc_message_id": "<preparation-ns_holdout_08@example.test>",
+        "references": null,
+        "received_at": "2026-09-04T12:51:45.347501Z"
+      },
+      "operation": "extract_case_patch",
+      "model": "deepseek-v4-flash",
+      "model_calls": 1,
+      "completed": true,
+      "extraction_available": true,
+      "guarded_available": true,
+      "workflow_available": true,
+      "started_at": "2026-09-04T12:51:45.347538+00:00",
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3378,
+          "output_tokens": 101,
+          "total_tokens": 3479
+        }
+      ],
+      "raw_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "next_step",
+            "source_excerpt": "Could you put one concrete item at the top of my to-do list and explain how I should prepare it?",
+            "confidence": 0.95
+          }
+        ],
+        "preparation_intent": null
+      },
+      "raw_checks": {
+        "topics_exact": true,
+        "preparation_action_exact": true
+      },
+      "extraction_latency_seconds": 1.190396,
+      "raw_response_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"next_step\",\n      \"source_excerpt\": \"Could you put one concrete item at the top of my to-do list and explain how I should prepare it?\",\n      \"confidence\": 0.95\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "guarded_patch": {
+        "updates": [],
+        "ambiguities": [],
+        "requires_human_review": false,
+        "question_deferrals": [],
+        "customer_questions": [
+          {
+            "topic": "next_step",
+            "source_excerpt": "Could you put one concrete item at the top of my to-do list and explain how I should prepare it?",
+            "confidence": 0.95
+          }
+        ],
+        "preparation_intent": null
+      },
+      "guarded_checks": {
+        "topics_exact": true,
+        "preparation_action_exact": true
+      },
+      "workflow": {
+        "checks": {
+          "workflow_first_processing_not_duplicate": true,
+          "workflow_no_extraction_fallback": true,
+          "workflow_topics_exact": true,
+          "profile_matches_expected": true,
+          "paused_state_exact": true,
+          "control_epoch_exact": true,
+          "transition_action_exact": true,
+          "transition_event_exact": true,
+          "no_profile_or_final_confirmation": true,
+          "no_pack_or_release": true,
+          "single_isolated_case_and_outbox": true,
+          "no_provider_delivery": true,
+          "all_customer_answers_delivered_verbatim": true,
+          "independent_faq_answers_retained": true,
+          "faq_request_has_reviewed_answer": true,
+          "next_step_advice_presence_exact": true,
+          "next_step_advice_message_delivered_verbatim": true,
+          "next_step_advice_not_empty_label": true,
+          "next_step_document_is_one_current_unsatisfied_requirement": true,
+          "next_step_document_has_collection_action": true,
+          "next_step_passport_named_explicitly": true,
+          "control_and_advice_persisted": true,
+          "duplicate_no_new_outbox_or_extraction": true
+        },
+        "plan": "blocked",
+        "case_status": "DRAFT",
+        "profile_before": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "profile_after": {
+          "full_name": "Example Applicant",
+          "date_of_birth": "1998-05-12",
+          "nationality": "Chinese",
+          "nationality_country": "China",
+          "application_country": "Hong Kong",
+          "planned_arrival_date": null,
+          "planned_departure_date": null,
+          "visit_purpose": "tourism",
+          "uk_accommodation": "Planned stay in London; no booking made",
+          "estimated_trip_cost_gbp": 1500,
+          "current_address": "Fictional campus address, Hong Kong",
+          "occupation_status": "student",
+          "annual_income_gbp": 0,
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null,
+          "sponsor_is_in_uk": null,
+          "has_serious_history": false,
+          "route_confirmed_standard_visitor": true
+        },
+        "control_before": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "control_after": {
+          "preparation_paused": false,
+          "preparation_control_epoch": 0,
+          "latest_preparation_action": null,
+          "preparation_control_event_id": null
+        },
+        "workflow_topics": [
+          "next_step"
+        ],
+        "question_plan": [],
+        "last_requested_fields": [],
+        "next_step_advice": {
+          "message": "For the next item, start with Valid passport or travel document — to check your identity and validity throughout the planned stay. Scan the passport details page into a clear, complete PDF without cropping its text or edges. When you have it, reply with a clear, readable PDF attachment. I'll check its contents and let you know if anything else is needed.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+          "kind": "document",
+          "question_field": null,
+          "requirement_id": "passport"
+        },
+        "consent_before": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "consent_after": {
+          "profile_confirmed": false,
+          "final_summary_confirmed": false
+        },
+        "human_review_reason": null,
+        "customer_answers": [
+          "For the next item, start with Valid passport or travel document — to check your identity and validity throughout the planned stay. Scan the passport details page into a clear, complete PDF without cropping its text or edges. When you have it, reply with a clear, readable PDF attachment. I'll check its contents and let you know if anything else is needed.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+        ],
+        "expected_reviewed_faq_answers": [],
+        "expected_case_aware_checklist_items": [],
+        "requirements": [
+          {
+            "id": "passport",
+            "title": "Valid passport or travel document",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "status_evidence",
+            "title": "Evidence of employment, study, or self-employment",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "purpose_evidence",
+            "title": "Evidence of the purpose of the visit",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "funding_evidence",
+            "title": "Evidence of available funds and their source",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "sponsor_evidence",
+            "title": "Sponsor support, ability, relationship, and UK status where applicable",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "certified_translation",
+            "title": "Complete certified translation for documents not in English or Welsh",
+            "blocker": true,
+            "applicable": false,
+            "satisfied": true,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          },
+          {
+            "id": "legal_residence",
+            "title": "Evidence of legal residence when applying outside the country of nationality",
+            "blocker": true,
+            "applicable": true,
+            "satisfied": false,
+            "document_ids": [],
+            "rule_version": "2026-02-25",
+            "source_urls": [
+              "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+              "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
+            ]
+          }
+        ],
+        "outbox": [
+          {
+            "message_type": "blocked",
+            "status": "PENDING",
+            "body": "For the next item, start with Valid passport or travel document — to check your identity and validity throughout the planned stay. Scan the passport details page into a clear, complete PDF without cropping its text or edges. When you have it, reply with a clear, readable PDF attachment. I'll check its contents and let you know if anything else is needed.\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+          }
+        ],
+        "captured_extraction_calls": 1,
+        "simulation_network_disabled": true,
+        "external_sends": 0,
+        "naturalness_scored": false,
+        "manual_reply_review_still_required": true
+      },
+      "raw_passed": true,
+      "guarded_passed": true,
+      "workflow_passed": true,
+      "passed": true,
+      "elapsed_seconds": 1.225314,
+      "finished_at": "2026-09-04T12:51:46.572795+00:00"
+    }
+  ],
+  "not_proven": [
+    "real email delivery",
+    "general legal accuracy",
+    "subjective naturalness",
+    "all unstructured requests"
+  ],
+  "manual_reply_review_still_required": true,
+  "checkpoint_at": "2026-09-04T12:51:46.573016+00:00",
+  "finished_at": "2026-09-04T12:51:46.576153+00:00",
+  "source_unchanged_during_run": true,
+  "corpus_unchanged_during_run": true,
+  "metrics": {
+    "cases": 8,
+    "model_calls": 8,
+    "completed_cases": 8,
+    "extraction_errors": 0,
+    "usage_records": 8,
+    "tokens": {
+      "input_tokens": 27039,
+      "output_tokens": 1180,
+      "total_tokens": 28219
+    },
+    "token_key_record_counts": {
+      "input_tokens": 8,
+      "output_tokens": 8,
+      "total_tokens": 8
+    },
+    "usage_unavailable_cases": 0,
+    "usage_metric_method": "observed_numeric_token_keys_only_v2",
+    "mean_extraction_latency_seconds": 1.234395625,
+    "raw_passed_cases": 6,
+    "raw_accuracy_including_errors": 0.75,
+    "guarded_passed_cases": 6,
+    "guarded_accuracy_including_errors": 0.75,
+    "workflow_passed_cases": 6,
+    "workflow_accuracy_including_errors": 0.75,
+    "passed_cases": 6,
+    "raw_topics_exact_accuracy_including_errors": 0.875,
+    "raw_preparation_action_exact_accuracy_including_errors": 0.875,
+    "guarded_topics_exact_accuracy_including_errors": 0.875,
+    "guarded_preparation_action_exact_accuracy_including_errors": 0.875,
+    "naturalness_scored": false,
+    "manual_reply_review_still_required": true
+  },
+  "all_passed": false
+}

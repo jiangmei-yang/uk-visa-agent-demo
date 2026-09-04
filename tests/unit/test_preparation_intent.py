@@ -253,6 +253,130 @@ def test_continuing_actual_preparation_still_means_resume(body: str) -> None:
     assert validated_preparation_intent(body, proposal(body)) is None
 
 
+@pytest.mark.parametrize(("body", "excerpt"), [
+    ("I have time again, please resume the visa paperwork we put on hold.",
+     "please resume the visa paperwork we put on hold"),
+    ("Please restart the application that we had previously suspended.",
+     "Please restart the application that we had previously suspended"),
+    ("Can we continue the preparation which I earlier postponed?",
+     "continue the preparation which I earlier postponed"),
+    ("Let's resume my previously paused visa application now.",
+     "resume my previously paused visa application now"),
+    ("现在请恢复之前暂缓的签证材料准备。", "现在请恢复之前暂缓的签证材料准备"),
+    ("终于忙完了，继续先前搁置的英国签证申请吧。", "继续先前搁置的英国签证申请吧"),
+    ("请重新开始上次暂停过的材料准备。", "请重新开始上次暂停过的材料准备"),
+])
+def test_current_resume_of_previously_paused_preparation_is_not_a_conflict(
+    body: str, excerpt: str,
+) -> None:
+    item = proposal(excerpt, "resume")
+    assert validated_preparation_intent(body, item) == item
+    assert validated_preparation_intent(body, proposal(body, "pause")) is None
+
+
+@pytest.mark.parametrize("body", [
+    "If I have time, please resume the visa paperwork we put on hold.",
+    "Please resume the preparation we put on hold next week.",
+    "Once I approve the dates, restart the application that we previously suspended.",
+    "My sister wants to resume the preparation we put on hold.",
+    "Yesterday I asked you to restart the preparation we put on hold.",
+    "Please explain how to resume the visa paperwork we put on hold.",
+    "如果我有空了，就继续之前暂停的签证准备。",
+    "下周再恢复之前暂缓的材料准备。",
+    "我同学说想恢复之前暂停的英国签证准备。",
+    "上次我说请恢复之前暂停的材料准备。",
+    "解释一下恢复之前暂停的签证准备是什么意思。",
+    "Please resume the preparation we put on hold. Also pause my visa application.",
+    "请恢复之前暂停的签证准备，同时请暂停整个申请。",
+])
+@pytest.mark.parametrize("action", ["pause", "resume"])
+def test_past_modifier_does_not_remove_current_authority_qualifiers(
+    body: str, action: Literal["pause", "resume"],
+) -> None:
+    assert validated_preparation_intent(body, proposal(body, action)) is None
+
+
+@pytest.mark.parametrize("body", [
+    "Do not resume the preparation we put on hold.",
+    "I am not ready to restart my previously paused visa application.",
+    "现在不要继续先前搁置的签证申请。",
+])
+def test_negated_current_resume_keeps_pause_semantics_with_a_past_modifier(body: str) -> None:
+    assert validated_preparation_intent(body, proposal(body, "resume")) is None
+    item = proposal(body, "pause")
+    assert validated_preparation_intent(body, item) == item
+
+
+@pytest.mark.parametrize(("prefix", "excerpt"), [
+    ("If my timetable permits, ", "please resume the preparation we put on hold"),
+    ("My friend wants you to ", "restart the application that we had suspended"),
+    ("不要", "恢复之前暂停的签证准备"),
+    ("如果有时间，就", "恢复之前暂停的签证准备"),
+])
+def test_past_modifier_cannot_make_a_narrow_excerpt_escape_outer_context(prefix: str, excerpt: str) -> None:
+    assert validated_preparation_intent(prefix + excerpt, proposal(excerpt, "resume")) is None
+
+
+def test_history_modifier_alone_is_not_a_new_request_and_quoted_resume_stays_history() -> None:
+    body = "This is the visa preparation we put on hold."
+    assert validated_preparation_intent(body, proposal(body, "pause")) is None
+    assert validated_preparation_intent(body, proposal(body, "resume")) is None
+    quoted = 'The old message said "Please resume the preparation we put on hold". No change today.'
+    assert validated_preparation_intent(quoted, proposal("Please resume the preparation we put on hold", "resume")) is None
+
+
+@pytest.mark.parametrize("body", [
+    "Please take my visa preparation off hold today.",
+    "Can we take the application off hold now?",
+    "Let's take our UK visitor visa paperwork off hold.",
+    "Please take the whole preparation off hold.",
+    "Please take the preparation we put on hold off hold now.",
+])
+def test_post_holdout_local_repair_accepts_current_take_off_hold(body: str) -> None:
+    """Synthetic variants added after first holdout exposure; not unseen evidence."""
+    item = proposal(body, "resume")
+    assert validated_preparation_intent(body, item) == item
+    assert validated_preparation_intent(body, proposal(body, "pause")) is None
+
+
+@pytest.mark.parametrize("body", [
+    "Please do not take my visa preparation off hold.",
+    "I'm not ready to take my application off hold.",
+    "If I decide to travel, take my visa paperwork off hold.",
+    "Please take my preparation off hold after I contact you.",
+    "Tomorrow, please take the application off hold.",
+    "My sister wants to take her application off hold.",
+    "Please take my sister's visa preparation off hold.",
+    "Please take the visa application off hold for my sister.",
+    "She asked me to take the application off hold.",
+    "Yesterday I asked you to take my visa preparation off hold.",
+    "Please explain how to take my application off hold.",
+    "Please take only my bank statement off hold for the visa application.",
+    "Please take my mortgage application off hold.",
+    "Please take my visa preparation on hold.",
+    "Please hold off on taking up my visa preparation.",
+    "Please take my visa preparation off hold. Also pause my application.",
+])
+def test_post_holdout_take_off_hold_keeps_noncurrent_and_scope_boundaries(body: str) -> None:
+    assert validated_preparation_intent(body, proposal(body, "resume")) is None
+
+
+@pytest.mark.parametrize(("prefix", "excerpt"), [
+    ("If my plans change, please ", "take my visa preparation off hold"),
+    ("Do not ", "take the application off hold"),
+    ("My friend asked me to ", "take the application off hold"),
+    ("Please explain how to ", "take my visa preparation off hold"),
+])
+def test_post_holdout_take_off_hold_excerpt_cannot_discard_qualifiers(prefix: str, excerpt: str) -> None:
+    assert validated_preparation_intent(prefix + excerpt, proposal(excerpt, "resume")) is None
+
+
+def test_post_holdout_quoted_take_off_hold_does_not_resume() -> None:
+    excerpt = "Please take my visa preparation off hold"
+    body = f'You wrote "{excerpt}". I have not decided.'
+    assert validated_preparation_intent(body, proposal(excerpt, "resume")) is None
+
+
 @pytest.mark.parametrize("body", [
     "继续暂停签证准备并继续申请。",
     "Please continue the pause in visa preparation and resume the application.",

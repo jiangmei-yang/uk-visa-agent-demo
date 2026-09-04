@@ -20,8 +20,15 @@ but it cannot select requirements, mutate workflow stages, clear issues, or auth
 Its PDF extraction primarily uses labelled fixtures; arbitrary PDFs and scans are not yet fully
 supported and unclassified PDFs are held for manual review. The real Gmail trial now accepts
 ordinary, unmarked enquiries, follows Chinese/English, asks a few questions at a time, and supports
-context-bound natural confirmation. It is still a manually operated trial, not an unattended
-production service. See [live successes, failures and remaining work](GMAIL_LIVE_EVIDENCE.md).
+context-bound natural confirmation. A supervised service automatically replies to one registered
+test sender; final-pack dispatch still requires explicit reviewed sending. This is not public
+intake or unattended production. See [service boundaries](GMAIL_AUTOMATIC_SERVICE.md) and
+[live successes, failures and remaining work](GMAIL_LIVE_EVIDENCE.md).
+
+The latest [adviser reply experiment](NEXT_STEP_ADVICE.md) combines sourced answers with one
+case-aware next step, instead of another full questionnaire. Its first new holdout is **6/8**;
+the original failures and post-holdout local repairs are published. See [current acceptance
+gaps](VALIDATION.md), not just the automated-test count.
 
 The live Gmail runner additionally supports bounded ordinary-PDF text extraction and local OCR.
 A real two-turn Gmail experiment received four fictional ordinary PDFs, answered a sourced

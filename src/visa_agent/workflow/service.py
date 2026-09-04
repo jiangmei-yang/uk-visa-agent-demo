@@ -47,6 +47,7 @@ from visa_agent.workflow.conversation import (
     waiting_acknowledgement,
 )
 from visa_agent.workflow.customer_questions import grounded_customer_answers
+from visa_agent.workflow.next_step import select_next_step
 
 PROFILE_CONFIRMATION_LINES = {
     "profile confirmed",
@@ -139,6 +140,7 @@ class WorkflowService:
                               or (field == "route_confirmed_standard_visitor" and not getattr(case.profile, field)))]
         case.question_plan = None
         case.pending_question_fields = []
+        case.next_step_advice = None
 
         # Quoted messages are history, never a new instruction or fresh consent.
         # Recover a previously missed deferral from the saved latest customer turn.
@@ -186,7 +188,7 @@ class WorkflowService:
         case.proactive_guidance_offered = False
         case.customer_question_topics = [item.topic for item in patch.customer_questions]
         case.customer_question_exclusions = [item.source_excerpt for item in patch.customer_questions
-                                             if item.topic in {"off_topic", "unsupported"}]
+                                             if item.topic in {"off_topic", "unsupported", "next_step"}]
         case.customer_answers = grounded_customer_answers(
             customer_event.body, case.customer_language, self.today_provider(),
             sent_application_guidance=case.guidance_events.get("application_overview_v1") in sent_events,
@@ -334,6 +336,11 @@ class WorkflowService:
                 case, include_documents=case.confirmation_kind == "final"
             )
             case.confirmation_request_event_id = event.id
+        if "next_step" in case.customer_question_topics:
+            # Advice sees this event's validated facts/documents and current gate.
+            # Asking for a step is not resume, profile consent or final consent.
+            case.next_step_advice = select_next_step(case, self.policy, gate)
+            case.customer_answers.append(case.next_step_advice.message)
         if plan == "blocked" and not case.preparation_paused and not waiting_acknowledgement(case):
             sent_topics = {topic for topic, source_event in case.guidance_events.items()
                            if source_event in sent_events}
@@ -355,6 +362,9 @@ class WorkflowService:
                 # This renderer emits only a receipt. Never record unseen candidate questions
                 # against that receipt's SENT event, even when an older draft was never sent.
                 case.question_plan = []
+            elif case.next_step_advice is not None:
+                field = case.next_step_advice.question_field
+                case.question_plan = [field] if field in candidates else []
             elif ("off_topic" in case.customer_question_topics and not answered_fields
                     and not case.latest_document_names and not case.open_blockers()
                     and not customer_requests_next_step(customer_event.body)):

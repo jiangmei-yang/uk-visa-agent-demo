@@ -2,6 +2,7 @@ from datetime import date
 
 import pytest
 
+from visa_agent.llm.ports import CustomerQuestion
 from visa_agent.workflow.customer_questions import (
     APPLICATION_SOURCE,
     SOURCE,
@@ -51,6 +52,38 @@ def test_application_question_links_to_official_entry_with_conditional_route(bod
         assert all(part in answer for part in ["如果", "在线", "签证中心", "保存", "不代表"])
     else:
         assert all(part in answer for part in ["If you need", "online", "visa application centre", "save", "does not yet confirm"])
+
+
+@pytest.mark.parametrize(("body", "language"), [
+    ("英国访问签证官方申请表在哪里打开，是先注册账户再填吗？", "zh"),
+    ("Where is the official visitor form, and must I register an account before filling it in?", "en"),
+])
+def test_registration_subquestion_is_not_silently_omitted_or_guessed(body, language) -> None:
+    answers = grounded_customer_answers(body, language, date(2026, 9, 4), semantic_questions=[
+        CustomerQuestion(topic="application", source_excerpt=body, confidence=.99),
+    ])
+    assert len(answers) == 1
+    assert ("没有核验" if language == "zh" else "haven't verified") in answers[0]
+    assert ("答案必须用英文" if language == "zh" else "answers must be in English") in answers[0]
+    assert "https://visas-immigration.service.gov.uk/apply-visa-type/visit" in answers[0]
+
+
+def test_registration_in_unrelated_bank_question_does_not_leak_into_application_answer() -> None:
+    answers = grounded_customer_answers(
+        "Where is the official visitor application form? My bank asked me to register an account.", "en", date(2026, 9, 4),
+        semantic_questions=[CustomerQuestion(topic="application", source_excerpt="Where is the official visitor application form?", confidence=.99)])
+    assert len(answers) == 1
+    assert all("haven't verified the account-registration" not in answer for answer in answers)
+
+
+def test_declining_a_step_does_not_cancel_a_separate_registration_subquestion() -> None:
+    question = "英国访问签证的官方申请表在哪里打开，是先注册账户再填吗？"
+    answers = grounded_customer_answers(
+        "这次不用告诉我下一步怎么准备，我想先弄清网上申请的操作：" + question,
+        "zh", date(2026, 9, 4), semantic_questions=[
+            CustomerQuestion(topic="application", source_excerpt=question, confidence=.99),
+        ])
+    assert len(answers) == 1 and "注册顺序" in answers[0] and "没有核验" in answers[0]
 
 
 @pytest.mark.parametrize(("body", "language"), [

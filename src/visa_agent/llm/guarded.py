@@ -231,6 +231,9 @@ def deterministic_fallback_message(case: Case, plan: str) -> str:
     if plan == "blocked":
         return blocked_customer_message(case)
     if plan == "ready":
+        if case.next_step_advice is not None:
+            receipt_case = case.model_copy(update={"next_step_advice": None, "customer_answers": []})
+            return "\n\n".join([*case.customer_answers, deterministic_fallback_message(receipt_case, plan)])
         if case.delivery_revision > 1:
             return (
                 f"已按你重新确认的信息整理成第 {case.delivery_revision} 版材料包，供顾问复核。"
@@ -307,6 +310,11 @@ class GuardedLLM:
             self.last_render_fallback = False
             self.last_render_error = None
             return blocked_customer_message(case)
+        if case.next_step_advice is not None:
+            # Case-aware next steps and accompanying FAQs must survive wording.
+            self.last_render_fallback = False
+            self.last_render_error = None
+            return deterministic_fallback_message(case, plan)
         if plan == "blocked" and (acknowledgement := waiting_acknowledgement(case)):
             self.last_render_fallback = False
             self.last_render_error = None

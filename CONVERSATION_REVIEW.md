@@ -6,6 +6,11 @@ mechanical. Passing safety checks did not establish naturalness.
 
 ## Changes now covered
 
+The latest [case-aware next-step iteration](NEXT_STEP_ADVICE.md) reads complete replies, not only
+topic scores. It adds a specific next item beside FAQs, avoids repeating a full checklist or unknown
+dates, and keeps concise combined DOB/budget corrections. The first new holdout still fails 2/8
+cases; its errors and subsequent local repairs are recorded without claiming universal naturalness.
+
 The [preparation pause/restart contract](PREPARATION_CONTROL.md) adds a persisted distinction
 between “I do not know the dates yet” and “put the whole preparation on hold.” Paused customers
 can still ask for information without triggering more intake questions. Its provider evaluation

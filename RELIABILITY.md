@@ -164,3 +164,17 @@ sources and existing output paths before replay. Saved neutral errors remain una
 than borrowing another arm's output. Replay uses no key or model, captures Gmail with network
 disabled, records original/current fingerprints and does not report fresh classifier accuracy.
 See [the experiment](QUESTION_UNDERSTANDING_EXPERIMENT.md) for retained failures and limitations.
+
+### Case-aware informational steps
+
+`Case.next_step_advice` is a reviewed presentation plan, not a model-provided permission. The
+selector runs after validated changes and current gate evaluation. It neither changes facts nor
+waives missing dates/documents, pause, review, current-summary consent or delivery requirements.
+Only its actual missing question enters the existing SENT question ledger. A paused preview
+never starts intake. Current summary checking precedes further document requests.
+
+One next-item request cannot expand into a whole checklist by legacy keywords, while independent
+checklist/FAQ requests remain visible. Guarded wording and the automatic Gmail sender retain the
+selected step with the other answers. Captured sends, restarts and duplicates are tested locally;
+the first real-model holdout still exposes semantic/scope failures. See
+[the exact evidence and limitations](NEXT_STEP_ADVICE.md), not a general reliability percentage.

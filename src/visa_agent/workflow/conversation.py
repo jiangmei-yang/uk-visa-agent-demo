@@ -210,7 +210,7 @@ def customer_requests_next_step(body: str) -> bool:
 def preparation_context_progress(case: Case) -> bool:
     """A contact/identity correction alone is not a request for a fresh preparation guide."""
     return case.latest_preparation_action == "resume" or bool(case.latest_received_facts or set(case.latest_changes) - {
-        "full_name", "date_of_birth", "current_address",
+        "full_name", "date_of_birth", "current_address", "estimated_trip_cost_gbp",
     })
 
 
@@ -426,9 +426,10 @@ def document_list_requested(case: Case) -> bool:
     if re.search(r"(?:不用|不需要|不要).{0,20}(?:清单|材料|资料)|"
                  r"(?:don't|do not|no need).{0,30}(?:checklist|documents|list)", text, re.I):
         return False
-    if {"off_topic", "unsupported"}.intersection(case.customer_question_topics):
+    if {"off_topic", "unsupported", "next_step"}.intersection(case.customer_question_topics):
         # A separate visa question still gets keyword fallback. Exclude only clauses
-        # covered by validated scope excerpts, never the whole mixed customer message.
+        # covered by validated scope/one-step excerpts, never the whole mixed message.
+        # Asking for one next item must not trigger the entire checklist by keywords.
         if "document_checklist" in case.customer_question_topics:
             return True
         if not case.customer_question_exclusions:
@@ -530,6 +531,10 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
         ]
     if not requested_list:
         documents = documents[: max(0, 3 - len(issues) - len(questions))]
+    if case.next_step_advice is not None and not requested_list:
+        # The requested next step is already specific to the current case. Do not
+        # append the automatic whole checklist; preserve an explicitly requested list.
+        documents = []
     return issues, questions, documents
 
 
@@ -548,6 +553,15 @@ def change_acknowledgement(case: Case) -> str | None:
             pass  # Defensive formatting only; never repair or change a stored fact.
         else:
             return f"Thanks—I've corrected your date of birth to {corrected.day} {corrected:%B %Y}."
+    if not zh and set(case.latest_changes) == {"date_of_birth", "estimated_trip_cost_gbp"}:
+        try:
+            corrected = date.fromisoformat(case.latest_changes["date_of_birth"])
+            budget = int(case.latest_changes["estimated_trip_cost_gbp"])
+        except ValueError:
+            pass
+        else:
+            return (f"Thanks—I've corrected your date of birth to {corrected.day} {corrected:%B %Y} "
+                    f"and your total trip budget to £{budget:,}.")
     if not zh and set(case.latest_changes) == {"occupation_status"}:
         occupation = {
             "employed": "you're employed", "student": "you're studying",
@@ -594,16 +608,16 @@ def preparation_control_receipt(case: Case) -> str | None:
                 "Let me know when you've decided you'd like to continue."
             )
         return (
-            "可以，材料准备先暂停，已经收到的信息和文件会保留。等你想继续时，直接回复我就好。"
+            f"可以，材料准备先暂停，已经收到的{'信息和文件' if case.documents else '信息'}会保留。等你想继续时，直接回复我就好。"
             if case.customer_language == "zh" else
-            "Of course—we can put the preparation on hold. I'll keep the details and files you've sent; "
+            f"Of course—we can put the preparation on hold. I'll keep the {'details and files' if case.documents else 'details'} you've sent; "
             "just reply when you'd like to pick this up again."
         )
     if case.latest_preparation_action == "resume":
         return (
-            "可以，我们接着准备，之前发过的信息和文件不用重发。定稿前，我会把整理后的摘要再发给你核对。"
+            f"可以，我们接着准备，之前发过的{'信息和文件' if case.documents else '信息'}不用重发。定稿前，我会把整理后的摘要再发给你核对。"
             if case.customer_language == "zh" else
-            "Of course, let's pick this up again. You don't need to resend your earlier details or files. "
+            f"Of course, let's pick this up again. You don't need to resend your earlier {'details or files' if case.documents else 'details'}. "
             "I'll send you a fresh summary to check before finalising anything."
         )
     return None
@@ -730,7 +744,7 @@ def blocked_customer_message(case: Case) -> str:
         )
     elif (case.deferred_fields and not questions and not issues and not documents and not case.customer_answers
           and not case.pending_question_fields
-          and (case.latest_received_facts or case.latest_changes or customer_requests_next_step(case.latest_customer_message))):
+          and customer_requests_next_step(case.latest_customer_message)):
         sections.append(
             "日期确定后再告诉我就好，已经提供的信息会保留。具体日期补齐前，还不能完成最终核对。"
             if zh else "Let me know when your dates are decided; the details you've already provided are retained. "

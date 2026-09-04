@@ -137,6 +137,111 @@ def _question_clauses(body: str) -> list[str]:
     return [clause for clause in _active_clauses(body) if re.search(question, clause, re.I)]
 
 
+_OTHER_APPLICANT_FRAME = re.compile(
+    r"\b(?:ask(?:ing)?|enquir(?:e|ing)|inquir(?:e|ing))\s+(?:on\s+behalf\s+of|for|about)\s+"
+    r"(?:(?:my|a|another|the)\s+)?(?:brother|sister|friend|partner|parent|client|applicant|customer)\b|"
+    r"\bon\s+behalf\s+of\b|"
+    r"\b(?:my\s+)?(?:brother|sister|friend|partner|parent|client)(?:'s|’s)\s+"
+    r"(?:(?:UK|British|standard|visitor|tourist|student)\s+)*(?:visa|application|documents|case)\b|"
+    r"\b(?:my\s+)?(?:brother|sister|friend|partner|parent|client)\s+"
+    r"(?:wants?|plans?|needs?|is\s+(?:planning|applying)).{0,25}\b(?:visa|apply|application|visit|travel|study)\b|"
+    r"\b(?:he|she|they)\s+(?:(?:should|can|would|will|needs?\s+to|wants?\s+to)\s+)?"
+    r"(?:prepare|apply|proceed|start|need|want|plan)\b|"
+    r"\b(?:what|which|how|where)\b.{0,20}\b(?:he|she|they)\b|"
+    r"\b(?:his|her|their)\s+(?:visa|application|documents|preparation|case|next\s+step)\b|"
+    r"\b(?:help|prepare|apply|do)\b.{0,25}\b(?:for\s+him|for\s+her|for\s+them|help\s+him|help\s+her)\b|"
+    r"(?:替|代|帮)(?:我的?|一位)?(?:弟弟|妹妹|哥哥|姐姐|朋友|同学|家人|父母|客户|别人).{0,10}(?:问|咨询|了解|申请|准备)|"
+    r"(?:弟弟|妹妹|哥哥|姐姐|朋友|同学|家人|父母|客户|别人)(?:的)?(?:英国)?(?:签证|申请)|"
+    r"(?:弟弟|妹妹|哥哥|姐姐|朋友|同学|家人|父母|客户|别人)"
+    r"(?:(?:想|要|打算)(?:去|到|申请|办理)|需要.{0,6}签证)|"
+    r"(?:他|她|他们|她们)(?:的|现在|接下来|下一步|需要|应该|要|该|想|打算).{0,14}(?:申请|签证|准备|材料|办|做)|"
+    r"(?:帮|替)(?:他|她|他们|她们).{0,12}(?:准备|申请|办|做)", re.I,
+)
+_OTHER_APPLICATION_FRAME = re.compile(
+    OTHER_ROUTE + r"|\b(?:transit|French|Canadian|Australian|US|American)\s+visa\b|"
+    r"\bvisa\s+(?:for|to)\s+(?:France|Canada|Australia|the\s+US)\b|"
+    r"(?:法国|加拿大|澳洲|澳大利亚|美国|过境)(?:的)?(?:签证|申请)|"
+    r"\b(?:university|college|mortgage|loan|job)\s+application\b|(?:大学|学校|贷款|工作)申请", re.I,
+)
+_OWN_APPLICATION_FRAME = re.compile(
+    r"\b(?:my|our)\s+(?:(?:own|current|existing|UK|visitor|tourist|standard)\s+)*"
+    r"(?:visa|application|documents|preparation|case)\b|\b(?:as\s+for\s+me|back\s+to\s+my)\b|"
+    r"(?:我(?:自己)?的|本人的|我的这份)(?:英国|旅游|访问|访客|当前|这次|现在的){0,3}(?:签证|申请|材料|情况)|"
+    r"(?:回到|说回|至于|再说)(?:我(?:自己)?|本人)(?:的)?(?:申请|情况|材料)?", re.I,
+)
+_CURRENT_VISITOR_ROUTE = re.compile(
+    r"\b(?:UK|British)\s+(?:standard\s+)?(?:visitor|tourist)(?:\s+visa|\s+application)?\b|"
+    r"\bStandard\s+Visitor\b|英国(?:的)?(?:旅游|访问|访客)(?:签证|申请)?", re.I,
+)
+_OWN_VISIT_FRAME = re.compile(
+    r"\bmy\s+(?:own\s+)?(?:UK|British)\s+(?:holiday|visit|trip)\b|"
+    r"\bI\s+(?:am\s+visiting|will\s+visit|plan\s+to\s+visit|am\s+going\s+to)\s+"
+    r"(?:Britain|the\s+UK)\b.{0,30}\b(?:holiday|visit|family|friends)\b|"
+    r"我(?:这次|本人|自己)?(?:是|要|想|打算|计划|准备)?去英国(?:旅游|探亲|访友|访问)", re.I,
+)
+_OWN_SCOPE_DECLINED = re.compile(
+    r"\bnot\s+(?:(?:about|discussing|asking\s+about)\s+)?(?:my|our)\s+"
+    r"(?:(?:own|current|UK|visitor|tourist)\s+)*(?:visa|application|case)\b|"
+    r"(?:不讨论|不谈|不问|不是问|先不说).{0,8}(?:我|本人).{0,12}(?:签证|申请|情况)", re.I,
+)
+
+
+def _affirmative_scope(pattern: re.Pattern[str], clause: str) -> bool:
+    """A declined/negated subject is context, not a switch to that subject."""
+    for match in pattern.finditer(clause):
+        prefix, suffix = clause[:match.start()], clause[match.end():]
+        if re.search(
+            r"\b(?:not|don't|do\s+not|no\s+need\s+to)\s+"
+            r"(?:(?:asking|applying|about|for|discuss|discussing|on|behalf|of|a|the)\s+){0,5}$|"
+            r"(?:不是|并非|不要|不用|不问|不谈|不讨论|不申请|不办理)(?:在|要|想|说|为了|替|帮|问|讨论|关于|针对){0,4}$",
+            prefix, re.I,
+        ) or re.match(r"\s*(?:(?:is|are)\s+)?(?:not\s+relevant|isn't\s+relevant)|(?:的事)?(?:先不谈|不用讨论|不问)", suffix, re.I):
+            continue
+        return True
+    return False
+
+
+def _next_step_targets_current_case(body: str, excerpt: str) -> bool:
+    """Keep this case's suggestion separate from another applicant or application.
+
+    This narrow scope guard is not a general coreference parser. Explicit other-
+    case context persists through dependent questions until an affirmative own-
+    case anchor restores scope. Ambiguous repeated excerpts are not bound to a
+    convenient occurrence. Quotes do not establish a current subject, and a mere
+    family/sponsor mention does not change whose application is being discussed.
+    """
+    current = latest_reply_text(body)
+    current = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"', "", current)
+    current = re.sub(r"(?<!\w)'[^'\n]+'(?!\w)|`[^`\n]+`", "", current)
+    text, source = _normalised_excerpt(current), _normalised_excerpt(excerpt)
+    locations = list(re.finditer(re.escape(source), text)) if source else []
+    if not locations:
+        return False
+    for location in locations:
+        scope = "current"
+        for segment in re.finditer(r"[^。.!?？；;，,:：]+", text[:location.end()]):
+            clause = segment[0].strip()
+            other_person = _affirmative_scope(_OTHER_APPLICANT_FRAME, clause)
+            other_application = _affirmative_scope(_OTHER_APPLICATION_FRAME, clause)
+            own = _affirmative_scope(_OWN_APPLICATION_FRAME, clause)
+            own_visit = _affirmative_scope(_OWN_VISIT_FRAME, clause)
+            if _OWN_SCOPE_DECLINED.search(clause):
+                scope = "unknown"
+            if other_person:
+                scope = "other_person"
+            elif own_visit:
+                # A host's student/work status can be background to the sender's
+                # explicitly stated UK holiday; it is not necessarily a new case.
+                scope = "current"
+            elif other_application:
+                scope = "other_application"
+            elif own and (scope != "other_application" or _affirmative_scope(_CURRENT_VISITOR_ROUTE, clause)):
+                scope = "current"
+        if scope != "current":
+            return False
+    return True
+
+
 def validated_customer_questions(body: str, proposals: list[CustomerQuestion]) -> list[CustomerQuestion]:
     """Keep only source-grounded current intents, without treating topics as facts.
 
@@ -156,6 +261,8 @@ def validated_customer_questions(body: str, proposals: list[CustomerQuestion]) -
                 and (excerpt in _normalised_excerpt("\n".join(active)) or all(
                     any(fragment in _normalised_excerpt(clause) for clause in active) for fragment in fragments
                 ))):
+            if proposal.topic == "next_step" and not _next_step_targets_current_case(body, proposal.source_excerpt):
+                continue
             scope_key = excerpt if proposal.topic in {"off_topic", "unsupported"} else ""
             accepted.setdefault((proposal.topic, scope_key), proposal)
     # Resolve contradictory interpretations before exposing current topics to other
@@ -310,6 +417,20 @@ def _reviewed_answer(topic: str, language: str, *, body: str = "") -> str:
             "The usual 3-week decision time cannot establish your individual passport-return date."
         )
         extra_source = PROCESSING_SOURCE
+    elif topic in {"application", "application_link"} and re.search(
+        r"注册|创建.{0,5}(?:账号|账户)|(?:账号|账户).{0,10}(?:先|后|填)|"
+        r"\b(?:register|registration|sign up)\b|\b(?:create|set up).{0,20}account\b", body, re.I,
+    ):
+        answer += (
+            "\n你问的账户注册顺序，我还没有核验到那一步，不能确定是否必须先注册再填表。"
+            "目前官方入口先显示语言选择页：可以用中文查看问题，但答案必须用英文填写。"
+            "账户设置请以随后官网显示的步骤为准。"
+            if language == "zh" else
+            "\nI haven't verified the account-registration step, so I can't confirm whether registration must come before filling in the form. "
+            "The current entry page first asks you to select a language; questions can be shown in another language, but answers must be in English. "
+            "Follow the account steps shown on the official site as you continue."
+        )
+        extra_source = "https://visas-immigration.service.gov.uk/apply-visa-type/visit"
     elif topic == "translation" and re.search(r"朋友|自己|\b(?:friend|myself|self[- ]translate)\b", body, re.I):
         answer += (
             "\n仅凭是朋友或自己翻译，不能判断译件是否合格；还要检查实际完整译件及其可核验性。"
@@ -468,7 +589,7 @@ def grounded_customer_answers(
                  ) for clause in clauses)]
     semantic_topics = {item.topic for item in semantic}
     for item in semantic:
-        if item.topic not in {"booking", "document_checklist", "unsupported", "off_topic"} and item.topic not in requested:
+        if item.topic not in {"booking", "document_checklist", "next_step", "unsupported", "off_topic"} and item.topic not in requested:
             requested.append(item.topic)
     previous_link_requested = (not off_topic_excerpts and sent_application_guidance
                                and _requests_previous_application_link(current))
@@ -491,6 +612,11 @@ def grounded_customer_answers(
         if not any(_overlapping_excerpt(excerpt, clause) for excerpt in unsupported_excerpts + off_topic_excerpts)
         and (re.search(patterns["translation"], clause, re.I)
              or any(_overlapping_excerpt(excerpt, clause) for excerpt in translation_excerpts)))
+    application_excerpts = [item.source_excerpt for item in semantic if item.topic == "application"]
+    application_text = "\n".join(clause for clause in _active_clauses(current)
+        if not any(_overlapping_excerpt(excerpt, clause) for excerpt in unsupported_excerpts + off_topic_excerpts)
+        and (re.search(patterns["application"], clause, re.I)
+             or any(_overlapping_excerpt(excerpt, clause) for excerpt in application_excerpts)))
     booking = _booking_answer(booking_text, language, today)
     if not booking and "booking" in semantic_topics:
         # The model chooses a topic, never supplies the legal answer or a URL.
@@ -511,7 +637,8 @@ def grounded_customer_answers(
         answers.extend((topic, _reviewed_answer(
             "application_link" if topic == "application" and previous_link_requested else topic,
             language, body=bank_text if topic == "bank_period" else
-            translation_text if topic == "translation" else active_text,
+            translation_text if topic == "translation" else
+            application_text if topic == "application" else active_text,
         )) for topic in requested)
     if "unsupported" in semantic_topics and include_unsupported:
         boundaries = dict.fromkeys(_unsupported_answer(

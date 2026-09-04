@@ -154,6 +154,17 @@ class CaseProfile(BaseModel):
     route_confirmed_standard_visitor: bool = False
 
 
+class NextStepAdvice(BaseModel):
+    """Reviewed case-aware reply plan, never a model-supplied permission or fact."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    message: str
+    kind: Literal["question", "document", "paused", "review", "waiting"]
+    question_field: str | None = None
+    requirement_id: str | None = None
+
+
 class Case(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
@@ -180,6 +191,7 @@ class Case(BaseModel):
     # Topics from this turn only; not applicant facts or permission to progress.
     customer_question_topics: list[str] = Field(default_factory=list)
     customer_question_exclusions: list[str] = Field(default_factory=list)
+    next_step_advice: NextStepAdvice | None = None
     proactive_guidance_offered: bool = False
     # Advice topic -> most recent event whose reply offered it; a SENT outbox row
     # is required before subsequent turns suppress it as already communicated.

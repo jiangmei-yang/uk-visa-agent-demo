@@ -30,6 +30,11 @@ _RESUME = (
     r"go\s+ahead\s+with|move\s+forward\s+with)\b|继续|恢复|重新开始|接着)"
 )
 _BETWEEN = r"[^。.!?？；;\n，,]{0,64}?"
+_TAKE_OFF_HOLD = (
+    r"\btake\s+(?:(?:my|our|the|this|all|whole|entire)\s+){0,3}"
+    rf"(?:(?:UK|visitor)\s+){{0,2}}{_SCOPE}"
+    r"(?:\s+(?:preparation|paperwork|documents))?\s+off\s+hold\b"
+)
 _NEGATED_CONTINUATION = (
     rf"(?:\b(?:do\s+not|don't|don’t|not\s+(?:ready|able)|no\s+longer\s+want)"
     rf"\s+(?:(?:want|wish|plan)\s+to\s+|to\s+)?{_RESUME}{_BETWEEN}{_SCOPE}|"
@@ -47,7 +52,8 @@ _PATTERNS: dict[Literal["pause", "resume"], re.Pattern[str]] = {
     ),
     "resume": re.compile(
         rf"{_RESUME}{_BETWEEN}{_SCOPE}|{_SCOPE}{_BETWEEN}{_RESUME}|"
-        rf"\bpick\b{_BETWEEN}{_SCOPE}{_BETWEEN}\b(?:back\s+)?up\b", re.I,
+        rf"\bpick\b{_BETWEEN}{_SCOPE}{_BETWEEN}\b(?:back\s+)?up\b|"
+        rf"{_TAKE_OFF_HOLD}", re.I,
     ),
 }
 _INTERNAL_COMMAND = re.compile(
@@ -103,6 +109,28 @@ _MAINTAINED_CONTINUATION = re.compile(
     r"(?:继续|接着)(?=(?:整体|全部|全面|暂时|先|保持|维持){0,3}(?:暂停|暂缓|搁置))",
     re.I,
 )
+_PAST_PAUSE_MODIFIER = re.compile(
+    # These clauses describe the preparation being resumed, not a second current
+    # instruction. Keep the scope noun and all surrounding authority qualifiers.
+    rf"(?P<scope>{_SCOPE})(?P<relative>\s+(?:(?:that|which)\s+)?(?:I|we)\s+"
+    r"(?:had\s+)?(?:(?:previously|earlier)\s+)?"
+    r"(?:(?:put|placed|set)\s+on\s+hold|paused|suspended|postponed))\b|"
+    r"(?P<adjective>\b(?:previously|earlier)\s+(?:paused|suspended|postponed)\s+)"
+    rf"(?=(?:(?:UK|visitor)\s+){{0,2}}{_SCOPE})|"
+    r"(?P<zh>(?:之前|以前|此前|先前|上次)(?:暂时|整体|全部)?"
+    r"(?:暂停|暂缓|搁置)(?:过|了)?的)(?=[^。.!?？；;\n，,]{0,16}"
+    rf"{_SCOPE})",
+    re.I,
+)
+
+
+def _mask_past_pause_modifiers(text: str) -> str:
+    """Mask only attributive history while preserving exact evidence offsets."""
+    def mask(match: re.Match[str]) -> str:
+        scope = match.group("scope") or ""
+        return scope + " " * (len(match[0]) - len(scope))
+
+    return _PAST_PAUSE_MODIFIER.sub(mask, text)
 
 
 @dataclass(frozen=True)
@@ -126,7 +154,7 @@ def _clauses(sentence: str) -> Iterator[tuple[int, str]]:
 def _current_controls(text: str) -> list[_Control]:
     controls: list[_Control] = []
     # Keep offsets: replacing quoted text cannot manufacture new adjacent words.
-    unquoted = _QUOTES.sub(lambda match: " " * len(match[0]), text)
+    unquoted = _mask_past_pause_modifiers(_QUOTES.sub(lambda match: " " * len(match[0]), text))
     for sentence in re.finditer(r"[^。.!?？；;\n]+", unquoted):
         previous_context = ""
         pending_change = False
@@ -149,6 +177,11 @@ def _current_controls(text: str) -> list[_Control]:
             # real resume request; negating it cannot become a new pause either.
             resume_text = _MAINTAINED_CONTINUATION.sub(lambda item: " " * len(item[0]), raw)
             resume = _PATTERNS["resume"].search(resume_text)
+            if re.search(_TAKE_OFF_HOLD, resume_text, re.I) and re.search(
+                r"\bfor\s+(?:her|him|them|my\s+(?:friend|sister|brother|mother|father|partner|client))\b",
+                raw, re.I,
+            ):
+                resume = None  # A direct request about someone else's application is not this case's preference.
             negated_continuation = bool(re.search(_NEGATED_CONTINUATION, resume_text, re.I))
             if negated_continuation:
                 resume = None

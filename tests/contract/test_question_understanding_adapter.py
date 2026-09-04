@@ -25,7 +25,7 @@ from visa_agent.workflow.customer_questions import validated_customer_questions
 
 TOPICS = (
     "application", "timing", "translation", "booking", "fees", "bank_period",
-    "document_checklist", "unsupported", "off_topic",
+    "document_checklist", "next_step", "unsupported", "off_topic",
 )
 
 

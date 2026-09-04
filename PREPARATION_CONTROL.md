@@ -88,7 +88,9 @@ with the next document, mixed with date uncertainty and a flight-booking FAQ. Th
 the continue intent and the reply answered only the FAQ. The case was already active, so it did
 not incorrectly pause, confirm or release anything; nevertheless, the requested next step was
 missing. This remains an open conversational completeness issue, not a pass hidden by safety.
-There was no retry or prompt tuning on this holdout and its report remains unchanged.
+There was no retry or prompt tuning on this holdout during that experiment and its report remains
+unchanged. The later [next-step experiment](NEXT_STEP_ADVICE.md) addresses this now-exposed problem
+class with a separate corpus and retains its own failures; it does not change this original score.
 
 The holdout used 25,411 input and 1,159 output tokens (26,570 total); all 32 provider calls together
 used 105,248 tokens. All returned schema-valid output without an API error. Holdout mean extraction
