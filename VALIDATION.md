@@ -17,7 +17,8 @@ explicitly recorded here.
 
 Updated 2026-09-05. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **3,986 passing tests**; see the latest [financial-document evidence repair](docs/FINANCIAL_DOCUMENT_EVIDENCE.md),
+The local suite has **4,457 passing tests**; see the latest [consultant reply acceptance review](docs/CONSULTANT_ACCEPTANCE_REVIEW_2026-09-05.md),
+[financial-document evidence repair](docs/FINANCIAL_DOCUMENT_EVIDENCE.md),
 [application-information priority repair](docs/APPLICATION_INFORMATION_PRIORITY.md),
 [school-record and undecided-date repair](docs/SCHOOL_RECORD_GUIDANCE.md),
 [contextual adviser reply repair](docs/CONSULTANT_CONTEXT_REPAIR_2026-09-05.md),
@@ -35,17 +36,17 @@ The local suite has **3,986 passing tests**; see the latest [financial-document 
 and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
 
-Latest ordinary financial-document repair: **3,986 passed in 60.95s**, Ruff and
-strict Mypy passed (72 source files); the existing test-client warning remains.
+Latest consultant and ordinary financial-document hardening: **4,457 passed in 79.44s**, Ruff and
+strict Mypy passed (79 source files); the existing test-client warning remains.
 The frozen financial/provider-replay/adapter set passed **157 checks in 0.70s**.
 Financial subjects, amounts, original currencies, dates, period/basis and optional
 account references now have separate page/excerpt provenance. Only like-for-like
 values are compared; holder mismatches and comparable contradictions block the
 gate without conversion, summing, sufficiency scoring or profile overwrites.
 Ordinary financial documents lacking valid observations cannot satisfy a requirement,
-and occupation/funding evidence must match the current branch. Nineteen real-model
+and occupation/funding evidence must match the current branch. Twenty-three real-model
 calls over four fictional PDFs retained all v1/v2 failures and the later repairs.
-The fully bound v6 run was 4/4; total provider-reported use was 38,965 tokens.
+The current fully bound v7 run was 4/4; total provider-reported use was 47,550 tokens.
 This is exposed development evidence, not real documents, Gmail delivery, a blind
 holdout or an accuracy score. See [failure history and limits](docs/FINANCIAL_DOCUMENT_EVIDENCE.md)
 and [rollout evidence](eval_output/financial_document_rollout_2026-09-05.json).

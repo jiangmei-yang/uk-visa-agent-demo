@@ -47,7 +47,7 @@ REPORTS = [ROOT / "eval_output" / name for name in (
 )]
 PDFS = ROOT / "output" / "pdf" / "financial-document-eval"
 ROLLOUT = ROOT / "eval_output" / "financial_document_rollout_2026-09-05.json"
-CURRENT_REPORT = ROOT / "eval_output" / "financial_document_deepseek_2026-09-05-v6.json"
+CURRENT_REPORT = ROOT / "eval_output" / "financial_document_deepseek_2026-09-05-v7.json"
 POLICY = load_policy(ROOT / "knowledge" / "uk_standard_visitor_2026-02-25.yaml")
 TODAY = date(2026, 9, 5)
 
@@ -66,7 +66,7 @@ def test_failed_provider_history_is_retained_before_green_replay() -> None:
     assert reports[-1]["all_passed"] is True
 
 
-def test_v6_provider_run_is_bound_to_complete_source_prompt_schema_and_pdf_set() -> None:
+def test_v7_provider_run_is_bound_to_complete_source_prompt_schema_and_pdf_set() -> None:
     report = json.loads(CURRENT_REPORT.read_text())
     rollout = json.loads(ROLLOUT.read_text())
     run_entry = next(item for item in rollout["provider_runs"]
@@ -91,7 +91,7 @@ def test_v6_provider_run_is_bound_to_complete_source_prompt_schema_and_pdf_set()
         name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
         for name in IMPLEMENTATION_FILES
     }
-    assert len(expected_implementation) == 73  # probe plus every one of 72 source files
+    assert len(expected_implementation) == 80  # probe plus every one of 79 source files
     assert report["implementation_files_sha256"] == expected_implementation
     assert report["implementation_bundle_sha256"] == CANONICAL_SHA256(expected_implementation)
     assert report["document_schema_sha256"] == CANONICAL_SHA256(

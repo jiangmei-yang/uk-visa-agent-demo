@@ -39,10 +39,13 @@
 随后先用加固证据契约重测四份材料。v5 为 4/4，但复核发现它的实现 manifest 只含六个
 核心文件、漏掉共享财务语义模块；该报告原样保留并标注限制。探针改为绑定自身加全部
 72 个源文件后，v6 再测四份为 4/4，并绑定提交 `454a3e8`、冻结 PDF、完整源码 manifest、
-schema、实际 prompt、请求参数、run ID 和 provider 返回模型。全程无重试、无 Gmail 调用。
+schema、实际 prompt、请求参数、run ID 和 provider 返回模型。顾问回复与语义守卫改进后，
+v7 又按同一证据契约重测四份并 4/4 通过，绑定提交 `1c2b3ed` 以及探针加当前全部 79 个
+Python 源文件（80 项 manifest）。全程无重试、无 Gmail 调用。
 
-合计 19 次、输入 33,022、输出 5,943，共 **38,965 tokens**；实际费用以 DeepSeek
-账单为准。v1/v2 失败和 v5 证据缺口均未删除或覆盖。当前四个提案可以在禁止网络的
+合计 23 次、输入 40,227、输出 7,323，共 **47,550 tokens**；实际费用以 DeepSeek
+账单为准。其中 v7 恰好 4 次、8,585 tokens、0 真实材料。v1/v2 失败和 v5 证据缺口
+均未删除或覆盖。当前四个提案可以在禁止网络的
 测试中重新验证，并会从两份同账户、同日期、同币种、不同金额的账单生成一个脱敏
 blocker。
 
@@ -56,9 +59,9 @@ Git 修订、run ID 和 provider 返回模型绑定；现在的离线哈希核�
 
 ## 自动验证和未完成范围
 
-最终本地全套 **3,986 passed、1 warning、60.95 秒**；现有 test-client 弃用警告
-仍保留。财务、保存重放和 adapter 相关的冻结集合 **157 passed、0.70 秒**；Ruff、
-严格 Mypy（72 个源文件）及 diff check 均通过。
+当前最终本地全套 **4,457 passed、1 warning、79.44 秒**；现有 test-client 弃用警告
+仍保留。v6 时财务、保存重放和 adapter 相关的冻结集合 **157 passed、0.70 秒**；Ruff、
+严格 Mypy（79 个源文件）及 diff check 均通过。
 
 测试覆盖普通 PDF 文本读取、审核式 Gmail 捕获发送、SQLite 重开后冲突 issue 与
 `evaluate_gate` 依然阻断、源 PDF 字节 SHA-256、来源页码／摘录、
@@ -75,8 +78,8 @@ Git 修订、run ID 和 provider 返回模型绑定；现在的离线哈希核�
 提供方式、资助人能力、双方关系以及适用时的英国合法身份。本实现没有从这些原则推导
 固定余额、固定流水月数或获批保证。
 
-部署后 Gmail worker 为 PID 14344，2026-09-04 18:28:26 UTC 观察到 idle；配置、
-一份已有档案、九封 SENT、零交付和 unknown 处理许可均未改变。Docker healthy，
-72 个 Python 源文件的本地与容器组合哈希一致；原持久卷、已有 ZIP 和 network-none
-合成 ZIP 均未改变。完整观测和哈希见
+下方 rollout 记录中的 Gmail PID、Docker 镜像及 72 文件哈希属于 v6 当时的历史观测，
+不能自动外推到当前 79 文件版本；当前版本的重建、健康检查与 worker 重启结果会在部署
+复验后另行更新。原持久卷、已有 ZIP 和 network-none 合成 ZIP 未因 v7 模型评测改变。
+完整观测和哈希见
 [rollout record](../eval_output/financial_document_rollout_2026-09-05.json)。
