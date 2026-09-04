@@ -257,6 +257,19 @@ def change_acknowledgement(case: Case) -> str | None:
 def blocked_customer_message(case: Case) -> str:
     zh = case.customer_language == "zh"
     name = case.profile.full_name
+    issues, questions, documents = reply_items(case)
+    if (zh and not issues and not documents and not case.customer_answers
+            and not case.latest_document_names and not case.latest_changes
+            and set(next_fact_questions(case)) == {
+                "visit_purpose", "nationality_country", "application_country"
+            }):
+        return (
+            (f"{name}，你好，可以的。" if name else "你好，可以的。")
+            + "\n\n具体要准备哪些材料，得先看你的出行目的和申请地点。"
+            "你这次去英国是旅游、探亲，还是有其他安排？"
+            "另外，你持哪个国家的护照，打算从哪里申请？"
+            "\n\n了解这些后，我再按你的情况帮你梳理材料清单。"
+        )
     greeting = (
         (f"{name}，你好。" if name else "你好。")
         if zh
@@ -272,11 +285,10 @@ def blocked_customer_message(case: Case) -> str:
         )
     else:
         intro = (
-            "可以先聊，我们一步步准备，不需要一次把所有资料凑齐。"
+            "收到，我再了解一下你的情况。"
             if zh
             else "We can work through this together; you don't need to have every document ready at once."
         )
-    issues, questions, documents = reply_items(case)
     sections = [greeting, intro]
     sections.extend(case.customer_answers)
     if issues:
@@ -290,7 +302,7 @@ def blocked_customer_message(case: Case) -> str:
         )
     if questions:
         sections.append(
-            ("先帮我确认这几项就好：\n" if zh else "Could you help me with these details first?\n")
+            ("还想跟你确认一下：\n" if zh else "Could you help me with these details first?\n")
             + "\n".join(f"- {item}" for item in questions)
         )
     if documents:
@@ -302,11 +314,6 @@ def blocked_customer_message(case: Case) -> str:
             )
             + "\n".join(f"- {item}" for item in documents)
         )
-    sections.append(
-        "你直接回复这封邮件就可以。我会先核对信息，资料确认之前不会交付最终材料包。"
-        if zh
-        else "You can reply here in your own words. I'll check the details before assembling the final pack."
-    )
     return "\n\n".join(sections)
 
 

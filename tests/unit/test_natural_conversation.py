@@ -93,11 +93,26 @@ def test_chinese_first_turn_asks_only_next_three_questions_without_internal_code
     message = deterministic_fallback_message(case, "blocked")
     assert len(next_fact_questions(case)) == 3
     assert message.count("\n- ") == 3
-    assert "不需要一次把所有资料凑齐" in message
+    assert "收到，我再了解一下你的情况" in message
     assert "planned_arrival_date" not in message
     assert "Date Of Birth" not in message
     assert "测试" not in message
     assert "PROFILE CONFIRMED" not in message
+
+
+def test_general_enquiry_reads_like_a_reply_not_an_internal_process_notice() -> None:
+    case = Case(id="c", external_thread_id="t", applicant_contact="a@example.test",
+                policy_version="v", customer_language="zh")
+    message = deterministic_fallback_message(case, "blocked")
+    assert "具体要准备哪些材料" in message
+    assert "出行目的和申请地点" in message
+    assert "护照" in message and "打算从哪里申请" in message
+    assert "有其他安排" in message  # do not assume the user wants a visitor route
+    assert "\n- " not in message
+    assert "材料包" not in message
+    assert "可以先聊" not in message
+    assert "不会交付" not in message
+    assert len(message) < 180
 
 
 def test_chinese_summary_is_readable_and_does_not_demand_a_magic_phrase() -> None:
