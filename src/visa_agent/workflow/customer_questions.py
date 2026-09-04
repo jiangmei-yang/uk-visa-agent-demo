@@ -5,6 +5,7 @@ from datetime import date
 
 from visa_agent.llm.ports import CustomerQuestion
 from visa_agent.workflow.conversation import latest_reply_text
+from visa_agent.workflow.document_purpose import reviewed_document_purpose
 
 SOURCE = "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
 APPLICATION_SOURCE = "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
@@ -364,6 +365,16 @@ def _reviewed_answer(topic: str, language: str, *, body: str = "") -> str:
             "where the funds come from and the transactions. They also need to explain whether you can "
             "access the money for the trip; a balance alone does not explain all of that."
         )
+        if re.search(r"余额证明|存款证明|\bbalance (?:certificate|confirmation|letter)\b|"
+                     r"\bcertificate of (?:balance|deposit)\b", body, re.I):
+            answer = (
+                "可以这样区分：流水能展示一段时间的资金进出；如果余额证明只写某个时点的金额，"
+                "它本身就不能解释钱从哪里来、平时怎样使用。两份文件不一定能互相替代，要看实际内容。"
+                if language == "zh" else
+                "The distinction is the information shown: a bank statement records transactions over a period. "
+                "If a balance certificate only states an amount at a point in time, it does not by itself explain "
+                "the source or use of the money. The documents are not necessarily interchangeable; check their actual content. "
+            ) + answer
         # The topic covers financial evidence, not only statement periods. Answer
         # the period subquestion when present, rather than leading every funds reply with it.
         if re.search(r"个月|哪几|月份|多久|多长|追溯|时段|跨度|多少.{0,4}(?:月|年)|"
@@ -487,6 +498,7 @@ def _unsupported_answer(requests: str, language: str, today: date, *, other_rout
     """Offer a reviewed verification starting point, never a personal eligibility decision."""
     if (CHECKED_AT <= today <= REVIEW_AFTER and not other_route
             and not _mentions_current_route(requests, OTHER_ROUTE + "|" + TRANSIT_ROUTE)):
+        purpose = reviewed_document_purpose(requests, language)
         if re.search(r"医疗|治疗|\b(?:medical|treatment)\b", requests, re.I):
             return (
                 "你问的医疗访问有专门的要求，不能直接按普通旅游材料来判断。"
@@ -498,8 +510,13 @@ def _unsupported_answer(requests: str, language: str, today: date, *, other_rout
                 "funding and evidence requirements. I cannot reliably confirm whether your particular "
                 "treatment plan qualifies; that still needs a separate check."
             ) + "\nGOV.UK: " + MEDICAL_SOURCE
-        if re.search(r"工作|兼职|打工|\b(?:work|job|employment|self-employed)\b", requests, re.I):
-            return (
+        if re.search(
+            r"(?:在|去|到)英国.{0,24}(?:工作|兼职|打工)|(?:工作|兼职|打工).{0,16}(?:在|去|到)英国|"
+            r"\b(?:work|job|employment|self-employed)\b.{0,45}\b(?:UK|Britain|British|Standard Visitor)\b|"
+            r"\b(?:UK|Britain|British|Standard Visitor)\b.{0,45}\b(?:work|job|employment|self-employed)\b",
+            requests, re.I,
+        ):
+            work_answer = (
                 "关于在英国工作：GOV.UK 说明，Standard Visitor 通常不能为英国公司做有偿或无偿工作，"
                 "也不能自雇；获准的付费活动或活动参与等例外有特定条件。"
                 "不能只凭兼职或短期就判断符合例外。请先对照官网允许活动的说明核对具体工作，"
@@ -511,12 +528,15 @@ def _unsupported_answer(requests: str, language: str, today: date, *, other_rout
                 "permitted-activities guidance against the specific work; I cannot reliably confirm "
                 "that your arrangement is allowed."
             ) + "\nGOV.UK: " + ACTIVITIES_SOURCE
+            return "\n\n".join([purpose, work_answer]) if purpose else work_answer
+        if purpose:
+            return purpose
     return (
         "你问的这点，我目前没有核验过的依据，不能直接给你确定答复。"
-        "这项需要另行核实，不能把还没确认的结论写进申请材料；已确定的信息可以继续整理。"
+        "这项需要另行核实，暂时不能据此判断材料是否符合要求。"
         if language == "zh" else
         "I don't currently have verified guidance to answer that point reliably. "
-        "It needs a separate check before we rely on it in the application; we can still organise the details already established."
+        "That point needs a separate check before using it to assess whether your evidence meets the requirements."
     )
 
 
@@ -628,6 +648,15 @@ def grounded_customer_answers(
         booking = _booking_guidance(language, today, transit=_mentions_current_route(active_text, TRANSIT_ROUTE),
                                     other_route=_mentions_current_route(active_text, OTHER_ROUTE))
     answers = [("booking", answer) for answer in booking]
+    # A source-grounded model topic is only a proposal. An individual document's
+    # purpose is not a request for an entire missing-documents checklist.
+    if (CHECKED_AT <= today <= REVIEW_AFTER
+            and not _mentions_current_route(active_text, OTHER_ROUTE + "|" + TRANSIT_ROUTE)):
+        for item in semantic:
+            if item.topic == "document_checklist":
+                purpose = reviewed_document_purpose(item.source_excerpt, language)
+                if purpose:
+                    answers.append(("document_purpose", purpose))
     if requested and not CHECKED_AT <= today <= REVIEW_AFTER:
         answers.append(("guidance",
             "关于你问的申请安排或材料要求，我需要先复核最新 GOV.UK 说明，暂时不能给你确定答复。"

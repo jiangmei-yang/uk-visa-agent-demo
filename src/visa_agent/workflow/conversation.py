@@ -9,6 +9,7 @@ from datetime import date
 
 from visa_agent.domain.models import Case, DocumentStatus, Requirement
 from visa_agent.domain.rules import required_profile_facts
+from visa_agent.workflow.document_purpose import is_document_purpose_question
 from visa_agent.workflow.funding_wording import funding_label, funding_wording
 
 
@@ -147,6 +148,12 @@ def fact_label(case: Case, field: str) -> str:
 
 def next_fact_questions(case: Case) -> list[str]:
     if case.preparation_paused:
+        return []
+    if (general_document_list_requested(case)
+            and "next_step" not in case.customer_question_topics
+            and not customer_requests_next_step(case.latest_customer_message)):
+        # An overview is useful before personal intake. Apply this at the plan
+        # boundary so the SENT question ledger never records hidden questions.
         return []
     priority = [
         "visit_purpose",
@@ -443,21 +450,20 @@ def _document_list_request_text(body: str) -> str:
 
 
 def document_list_requested(case: Case) -> bool:
-    """A bounded explicit request, after enough context to select material categories."""
-    if not all((case.profile.visit_purpose, case.profile.nationality_country,
-                case.profile.application_country, case.profile.occupation_status,
-                case.profile.funding_source)):
-        return False
+    """General information needs no complete profile; personal missing items do."""
     # A declined general checklist must not veto a separate current personal request.
     text = _document_list_request_text(case.latest_customer_message)
     if not text.strip():
         return False
-    if {"off_topic", "unsupported", "next_step"}.intersection(case.customer_question_topics):
+    if is_document_purpose_question(text) and not _explicit_document_list_request(text):
+        # A model can label an individual document's purpose as document_checklist.
+        # Explain that document without treating the label as a collection request.
+        return False
+    if ({"off_topic", "unsupported", "next_step"}.intersection(case.customer_question_topics)
+            and "document_checklist" not in case.customer_question_topics):
         # A separate visa question still gets keyword fallback. Exclude only clauses
         # covered by validated scope/one-step excerpts, never the whole mixed message.
         # Asking for one next item must not trigger the entire checklist by keywords.
-        if "document_checklist" in case.customer_question_topics:
-            return True
         if not case.customer_question_exclusions:
             return False  # Older snapshots have topics but no excerpt scope.
         excerpts = [re.sub(r"\s+", " ", value).strip().casefold()
@@ -467,25 +473,42 @@ def document_list_requested(case: Case) -> bool:
             excerpt in re.sub(r"\s+", " ", clause).strip().casefold()
             or re.sub(r"\s+", " ", clause).strip().casefold() in excerpt for excerpt in excerpts
         ))
-    if "document_checklist" in case.customer_question_topics:
-        return True
+    if not ("document_checklist" in case.customer_question_topics or _explicit_document_list_request(text)):
+        return False
+    return _general_document_list_request(text) or all((
+        case.profile.visit_purpose, case.profile.nationality_country,
+        case.profile.application_country, case.profile.occupation_status, case.profile.funding_source,
+    ))
+
+
+def _explicit_document_list_request(text: str) -> bool:
     return bool(re.search(
         r"(?:请|麻烦|想要|需要).{0,25}(?:材料清单|资料清单)|"
         r"(?:需要|准备|提供|还缺)(?:什么|哪些)(?:材料|资料)|"
-        r"(?:材料|资料).{0,8}(?:准备|提供|交|要).{0,6}(?:什么|哪些|哪几)|"
+        r"(?:哪些|什么|哪几)(?:类型|类别|种类)(?:的)?(?:材料|资料)|"
+        r"(?:哪些|什么)(?:材料|资料)(?:类型|类别|种类)|"
+        r"(?:材料|资料|文件).{0,8}(?:准备|提供|交|要).{0,6}(?:什么|哪些|哪几)"
+        r"(?=(?:(?:类|种|份)(?:的)?)?(?:材料|资料|文件|清单)|(?:呢|呀|啊)?(?:[?？。.!！]|\s*$))|"
         r"(?:send|share|show|give).{0,30}(?:document checklist|document list|list of documents)|"
+        r"(?:what|which|explain).{0,30}(?:types|kinds|categories) of (?:supporting )?(?:documents|evidence)|"
         r"(?:what|which) documents.{0,20}(?:need|required|prepare)", text, re.I,
     ))
 
 
 def general_document_list_requested(case: Case) -> bool:
     """Only explicitly general/reference questions change the checklist's framing."""
-    if not document_list_requested(case):
-        return False
-    text = _document_list_request_text(case.latest_customer_message)
+    return document_list_requested(case) and _general_document_list_request(
+        _document_list_request_text(case.latest_customer_message),
+    )
+
+
+def _general_document_list_request(text: str) -> bool:
     clauses = re.split(r"[。！!；;\n]|(?<=[?？])\s*|\.(?:\s|$)", text)
     list_clauses = [clause for clause in clauses if re.search(
-        r"清单|哪些材料|什么材料|还缺(?:什么|哪些)|\bchecklist\b|\blist of documents\b|\b(?:what|which) documents\b",
+        # document_list_requested already requires a validated checklist topic or
+        # an explicit list question. Here identify general rather than personal
+        # scope, without requiring a particular word order for material types.
+        r"清单|材料|资料|文件|证明|还缺(?:什么|哪些)|\b(?:checklist|documents?|evidence)\b",
         clause, re.I,
     )]
     if any(re.search(
@@ -494,9 +517,12 @@ def general_document_list_requested(case: Case) -> bool:
         r"\b(?:my|our|own) (?:case|file|application)\b|"
         r"\b(?:I|we) (?:still )?(?:need|am missing|are missing)\b",
         clause, re.I,
-    ) for clause in list_clauses):
+    ) for clause in list_clauses if not re.search(
+        r"下一步|\bnext (?:step|item|document)\b|\b(?:which|what) document.{0,35}\bnext\b",
+        clause, re.I,
+    ) and not (customer_requests_next_step(clause) and not _explicit_document_list_request(clause))):
         return False
-    return any(re.search(r"一般|通常|常见|参考|概览|\b(?:general|usual|typical|normally|reference)\b",
+    return any(re.search(r"一般|通常|常见|参考|概览|概述|\b(?:general|usual|usually|typical|normally|reference|overview)\b",
                          clause, re.I) for clause in list_clauses) or bool(re.search(
         r"(?:只|仅).{0,12}(?:一般信息|一般要求|参考信息)|"
         r"\bonly (?:looking|asking).{0,35}\bgeneral (?:information|requirements)\b", text, re.I,

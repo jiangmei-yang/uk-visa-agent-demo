@@ -1,0 +1,509 @@
+[
+  {
+    "id": "dev_zh_01",
+    "split": "development",
+    "language": "zh",
+    "subject": "想了解英国旅游签证材料",
+    "turns": [
+      {
+        "id": "dev_zh_01_t01",
+        "body": "您好，我叫林知遥，是中国公民，现在住在中国，也会在中国递交申请。我在一家设计公司全职上班，想去英国旅游，主要看看伦敦和爱丁堡。具体出发和回来的日子还没定，等和公司协调好假期后我再告诉您。第一次申请，想先了解通常需要准备哪些类型的材料。谢谢！",
+        "expected_profile": {
+          "full_name": "林知遥",
+          "nationality_country": "China",
+          "application_country": "China",
+          "visit_purpose": "tourism",
+          "occupation_status": "employed"
+        },
+        "deferred_date_expected": true,
+        "preparation_paused_expected": false,
+        "expected_information": ["document_purpose"],
+        "forbidden_reasked_fields": ["full_name", "nationality_country", "application_country", "visit_purpose", "occupation_status", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "普通初询中已明确申请地、国籍和在职情况；日期暂未确定，不应立即追问确定日期。"
+      },
+      {
+        "id": "dev_zh_01_t02",
+        "body": "补充一下，我的出生日期是1994年2月16日。这次旅行由我自己用存款支付，预计总花费2600英镑。请问银行流水主要是让审核人员了解什么？我想先弄清楚它和存款余额证明分别有什么用途。行程日期仍在等公司排假。",
+        "expected_profile": {
+          "full_name": "林知遥",
+          "date_of_birth": "1994-02-16",
+          "nationality_country": "China",
+          "application_country": "China",
+          "visit_purpose": "tourism",
+          "occupation_status": "employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 2600
+        },
+        "deferred_date_expected": true,
+        "preparation_paused_expected": false,
+        "expected_information": ["bank_evidence_purpose"],
+        "forbidden_reasked_fields": ["date_of_birth", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "生日已经用中文完整提供；应解释流水与余额证明的用途，不重复追问生日或未定行程。"
+      },
+      {
+        "id": "dev_zh_01_t03",
+        "body": "刚才把住宿费用少算了一部分，预计总花费应当是3200英镑，不是2600英镑，仍然全部由我自己支付。另外，在职证明是为了说明我有收入，还是也要说明我的工作和假期安排？想了解一下这份材料的作用。",
+        "expected_profile": {
+          "full_name": "林知遥",
+          "date_of_birth": "1994-02-16",
+          "nationality_country": "China",
+          "application_country": "China",
+          "visit_purpose": "tourism",
+          "occupation_status": "employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 3200
+        },
+        "deferred_date_expected": true,
+        "preparation_paused_expected": false,
+        "expected_information": ["corrected_fact_acknowledged", "document_purpose"],
+        "forbidden_reasked_fields": ["date_of_birth", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "预算纠错与在职证明咨询同时出现，需更新预算且回答独立问题，并保留日期待定状态。"
+      },
+      {
+        "id": "dev_zh_01_t04",
+        "body": "假期已经批下来了，计划2026年11月5日抵达英国，11月14日离开英国。我的出生日期按日/月/年写就是16/02/1994，和之前说的是同一天。接下来我想自己看看申请表，请把英国政府官方的访问签证申请入口发给我，并告诉我从哪个按钮进入在线申请。",
+        "expected_profile": {
+          "full_name": "林知遥",
+          "date_of_birth": "1994-02-16",
+          "nationality_country": "China",
+          "application_country": "China",
+          "visit_purpose": "tourism",
+          "occupation_status": "employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 3200,
+          "planned_arrival_date": "2026-11-05",
+          "planned_departure_date": "2026-11-14"
+        },
+        "deferred_date_expected": false,
+        "preparation_paused_expected": false,
+        "expected_information": ["official_application_entry"],
+        "forbidden_reasked_fields": ["date_of_birth", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "新增明确旅行日期后解除日期待定；重复生日只是无歧义的格式转换，重点应回答官方入口。"
+      },
+      {
+        "id": "dev_zh_01_t05",
+        "body": "我这周临时多了一个工作项目，请先暂停帮我整理申请材料。我只是暂停准备工作，前面提供的个人信息和旅行计划没有变化。等我有时间继续时会再联系您，这次先不用安排下一步或列出需要我补交的东西。",
+        "expected_profile": {
+          "full_name": "林知遥",
+          "date_of_birth": "1994-02-16",
+          "nationality_country": "China",
+          "application_country": "China",
+          "visit_purpose": "tourism",
+          "occupation_status": "employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 3200,
+          "planned_arrival_date": "2026-11-05",
+          "planned_departure_date": "2026-11-14"
+        },
+        "deferred_date_expected": false,
+        "preparation_paused_expected": true,
+        "expected_information": ["no_unsolicited_document_request"],
+        "forbidden_reasked_fields": ["full_name", "date_of_birth", "nationality_country", "application_country", "visit_purpose", "occupation_status", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "明确暂停的是材料准备而非取消行程，应保留已有事实且不推进收集材料。"
+      },
+      {
+        "id": "dev_zh_01_t06",
+        "body": "准备工作还先暂停，我今天只是想问个翻译问题：如果将来提交的是中文银行流水，英文翻译一般要包含哪些内容或译者信息？麻烦解释一下要求就好，我还没有准备恢复整理材料。",
+        "expected_profile": {
+          "full_name": "林知遥",
+          "date_of_birth": "1994-02-16",
+          "nationality_country": "China",
+          "application_country": "China",
+          "visit_purpose": "tourism",
+          "occupation_status": "employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 3200,
+          "planned_arrival_date": "2026-11-05",
+          "planned_departure_date": "2026-11-14"
+        },
+        "deferred_date_expected": false,
+        "preparation_paused_expected": true,
+        "expected_information": ["translation_requirements", "no_unsolicited_document_request"],
+        "forbidden_reasked_fields": ["full_name", "date_of_birth", "nationality_country", "application_country", "visit_purpose", "occupation_status", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "暂停后仅咨询翻译要求，不构成恢复准备的授权；应直接答疑而不索要文件。"
+      }
+    ]
+  },
+  {
+    "id": "dev_en_02",
+    "split": "development",
+    "language": "en",
+    "subject": "First UK holiday application questions",
+    "turns": [
+      {
+        "id": "dev_en_02_t01",
+        "body": "Hello, my name is Mira Vale. I am an Indian citizen living in India and will apply from India. My date of birth is 8 July 1992. I am employed as an accountant, and I would like to visit the UK for a holiday. My travel dates are not settled yet; I will send them once I have decided. Could you explain the main types of evidence people normally prepare for a Standard Visitor application? Kind regards, Mira",
+        "expected_profile": {
+          "full_name": "Mira Vale",
+          "date_of_birth": "1992-07-08",
+          "nationality_country": "India",
+          "application_country": "India",
+          "visit_purpose": "tourism",
+          "occupation_status": "employed"
+        },
+        "deferred_date_expected": true,
+        "preparation_paused_expected": false,
+        "expected_information": ["document_purpose"],
+        "forbidden_reasked_fields": ["full_name", "date_of_birth", "nationality_country", "application_country", "visit_purpose", "occupation_status", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "首次英文来信已经完整提供文字月份生日及日期待定意图，应作普通材料介绍。"
+      },
+      {
+        "id": "dev_en_02_t02",
+        "body": "Thank you. I will pay for the whole trip from my own savings, and my estimated total cost is GBP 1,800. What does a bank statement help demonstrate in the application? I am trying to understand why the transactions matter as well as the closing balance.",
+        "expected_profile": {
+          "full_name": "Mira Vale",
+          "date_of_birth": "1992-07-08",
+          "nationality_country": "India",
+          "application_country": "India",
+          "visit_purpose": "tourism",
+          "occupation_status": "employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 1800
+        },
+        "deferred_date_expected": true,
+        "preparation_paused_expected": false,
+        "expected_information": ["bank_evidence_purpose"],
+        "forbidden_reasked_fields": ["date_of_birth", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "新增明确自费和预算信息；即便本轮未再提日期，也需保留此前待定状态并解释流水用途。"
+      },
+      {
+        "id": "dev_en_02_t03",
+        "body": "I need to correct something in my first email: I work for myself as a freelance accountant, so I am self-employed, not an employee of a company. Separately, could you send me the official UK government page where I can start the visitor visa application? I would like to read it before filling anything in.",
+        "expected_profile": {
+          "full_name": "Mira Vale",
+          "date_of_birth": "1992-07-08",
+          "nationality_country": "India",
+          "application_country": "India",
+          "visit_purpose": "tourism",
+          "occupation_status": "self-employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 1800
+        },
+        "deferred_date_expected": true,
+        "preparation_paused_expected": false,
+        "expected_information": ["corrected_fact_acknowledged", "official_application_entry"],
+        "forbidden_reasked_fields": ["date_of_birth", "occupation_status", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "明确更正职业状态并独立索取官方入口，不能仅更新职业后忽略入口咨询。"
+      },
+      {
+        "id": "dev_en_02_t04",
+        "body": "I have now decided on arrival in the UK on 20 November 2026 and departure from the UK on 28 November 2026. For clarity, my birthday in ISO format is 1992-07-08, the same date as in my first email. Could you explain the purpose of a short travel itinerary? I mean a summary of what I plan to do, not bookings.",
+        "expected_profile": {
+          "full_name": "Mira Vale",
+          "date_of_birth": "1992-07-08",
+          "nationality_country": "India",
+          "application_country": "India",
+          "visit_purpose": "tourism",
+          "occupation_status": "self-employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 1800,
+          "planned_arrival_date": "2026-11-20",
+          "planned_departure_date": "2026-11-28"
+        },
+        "deferred_date_expected": false,
+        "preparation_paused_expected": false,
+        "expected_information": ["document_purpose"],
+        "forbidden_reasked_fields": ["date_of_birth", "occupation_status", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "日期明确后解除待定，生日仅换用ISO写法；应解释行程概要用途而非重问已知字段。"
+      },
+      {
+        "id": "dev_en_02_t05",
+        "body": "Please put the application preparation on hold for now. I have a busy deadline to finish, and I will let you know when I want to resume. My details and travel plan have not changed. I do not need a new checklist or any requests for documents while this is paused.",
+        "expected_profile": {
+          "full_name": "Mira Vale",
+          "date_of_birth": "1992-07-08",
+          "nationality_country": "India",
+          "application_country": "India",
+          "visit_purpose": "tourism",
+          "occupation_status": "self-employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 1800,
+          "planned_arrival_date": "2026-11-20",
+          "planned_departure_date": "2026-11-28"
+        },
+        "deferred_date_expected": false,
+        "preparation_paused_expected": true,
+        "expected_information": ["no_unsolicited_document_request"],
+        "forbidden_reasked_fields": ["full_name", "date_of_birth", "nationality_country", "application_country", "visit_purpose", "occupation_status", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "申请人明确暂停准备且说明信息未变，不应将暂停误解成资料缺失或取消旅行。"
+      },
+      {
+        "id": "dev_en_02_t06",
+        "body": "One general question while preparation is still on hold: if a supporting document is in Hindi rather than English, what information should its translation include? This is only a question about the requirements; I am not ready to restart the preparation yet.",
+        "expected_profile": {
+          "full_name": "Mira Vale",
+          "date_of_birth": "1992-07-08",
+          "nationality_country": "India",
+          "application_country": "India",
+          "visit_purpose": "tourism",
+          "occupation_status": "self-employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 1800,
+          "planned_arrival_date": "2026-11-20",
+          "planned_departure_date": "2026-11-28"
+        },
+        "deferred_date_expected": false,
+        "preparation_paused_expected": true,
+        "expected_information": ["translation_requirements", "no_unsolicited_document_request"],
+        "forbidden_reasked_fields": ["full_name", "date_of_birth", "nationality_country", "application_country", "visit_purpose", "occupation_status", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "暂停后纯规则咨询，假设性提及文件语言不新增申请人画像事实，也不授权重启材料流程。"
+      }
+    ]
+  },
+  {
+    "id": "holdout_zh_03",
+    "split": "holdout",
+    "language": "zh",
+    "subject": "英国自由行材料咨询",
+    "turns": [
+      {
+        "id": "holdout_zh_03_t01",
+        "body": "您好，我叫桑予澄，出生于1989年12月3日，中国国籍，住在中国，打算在中国申请英国访问签证。我目前是自雇插画师，想去英国自由行。出发和离开的具体日期暂时没有决定，想先了解材料怎么准备。一般会看哪些方面的证明呢？",
+        "expected_profile": {
+          "full_name": "桑予澄",
+          "date_of_birth": "1989-12-03",
+          "nationality_country": "China",
+          "application_country": "China",
+          "visit_purpose": "tourism",
+          "occupation_status": "self-employed"
+        },
+        "deferred_date_expected": true,
+        "preparation_paused_expected": false,
+        "expected_information": ["document_purpose"],
+        "forbidden_reasked_fields": ["full_name", "date_of_birth", "nationality_country", "application_country", "visit_purpose", "occupation_status", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "自雇申请人普通初询，生日和申请地等信息已明确，日期则明确暂不确定。"
+      },
+      {
+        "id": "holdout_zh_03_t02",
+        "body": "费用全部由我自己的存款承担，预计花费2400英镑。请问银行流水在申请里主要起什么作用？是不是除了账户余额，也需要让人看明白收入和支出的情况？另外，我的生日写成3 December 1989也是同一个日期。",
+        "expected_profile": {
+          "full_name": "桑予澄",
+          "date_of_birth": "1989-12-03",
+          "nationality_country": "China",
+          "application_country": "China",
+          "visit_purpose": "tourism",
+          "occupation_status": "self-employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 2400
+        },
+        "deferred_date_expected": true,
+        "preparation_paused_expected": false,
+        "expected_information": ["bank_evidence_purpose"],
+        "forbidden_reasked_fields": ["date_of_birth", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "新增资金事实，并用英文月份复述既有生日；应回答流水问题且继续尊重日期待定。"
+      },
+      {
+        "id": "holdout_zh_03_t03",
+        "body": "现在计划定下来了：2026年11月9日抵达英国，11月17日离开英国。还有一处需要更正，之前2400英镑是旧预算，现在预计总花费是2800英镑，仍然自费。请问中文材料配的英文翻译需要包括哪些译者声明和联系方式？",
+        "expected_profile": {
+          "full_name": "桑予澄",
+          "date_of_birth": "1989-12-03",
+          "nationality_country": "China",
+          "application_country": "China",
+          "visit_purpose": "tourism",
+          "occupation_status": "self-employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 2800,
+          "planned_arrival_date": "2026-11-09",
+          "planned_departure_date": "2026-11-17"
+        },
+        "deferred_date_expected": false,
+        "preparation_paused_expected": false,
+        "expected_information": ["corrected_fact_acknowledged", "translation_requirements"],
+        "forbidden_reasked_fields": ["date_of_birth", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "同时新增明确日期、更正预算并咨询翻译，三个意图均清楚，不需追问已提供字段。"
+      },
+      {
+        "id": "holdout_zh_03_t04",
+        "body": "家里这几天有事情要处理，请先暂停申请材料的准备。我没有更改旅行计划，只是目前没空继续整理。等我主动说继续时再恢复，这段时间先不用让我补材料。",
+        "expected_profile": {
+          "full_name": "桑予澄",
+          "date_of_birth": "1989-12-03",
+          "nationality_country": "China",
+          "application_country": "China",
+          "visit_purpose": "tourism",
+          "occupation_status": "self-employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 2800,
+          "planned_arrival_date": "2026-11-09",
+          "planned_departure_date": "2026-11-17"
+        },
+        "deferred_date_expected": false,
+        "preparation_paused_expected": true,
+        "expected_information": ["no_unsolicited_document_request"],
+        "forbidden_reasked_fields": ["full_name", "date_of_birth", "nationality_country", "application_country", "visit_purpose", "occupation_status", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "明确暂停并保留旅行计划，应等待申请人主动恢复而非启动下一轮资料收集。"
+      },
+      {
+        "id": "holdout_zh_03_t05",
+        "body": "准备仍然先放着。我今天只想收藏一下官方网页，请发我英国政府办理普通访问签证的在线申请入口，并简单说一下在页面上怎么找到开始申请的位置。这只是查个入口，不是现在开始准备或提交。",
+        "expected_profile": {
+          "full_name": "桑予澄",
+          "date_of_birth": "1989-12-03",
+          "nationality_country": "China",
+          "application_country": "China",
+          "visit_purpose": "tourism",
+          "occupation_status": "self-employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 2800,
+          "planned_arrival_date": "2026-11-09",
+          "planned_departure_date": "2026-11-17"
+        },
+        "deferred_date_expected": false,
+        "preparation_paused_expected": true,
+        "expected_information": ["official_application_entry", "no_unsolicited_document_request"],
+        "forbidden_reasked_fields": ["full_name", "date_of_birth", "nationality_country", "application_country", "visit_purpose", "occupation_status", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "暂停中查阅官方入口不是推进申请的授权，应提供入口并维持暂停状态。"
+      },
+      {
+        "id": "holdout_zh_03_t06",
+        "body": "我还没打算恢复准备。再请教一个概念问题：行程说明主要是解释旅行目的和安排吗？它和已经购买的机票不是一回事吧？我只是想了解这份说明的用途，今天不用帮我写或列需要我提交的材料。",
+        "expected_profile": {
+          "full_name": "桑予澄",
+          "date_of_birth": "1989-12-03",
+          "nationality_country": "China",
+          "application_country": "China",
+          "visit_purpose": "tourism",
+          "occupation_status": "self-employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 2800,
+          "planned_arrival_date": "2026-11-09",
+          "planned_departure_date": "2026-11-17"
+        },
+        "deferred_date_expected": false,
+        "preparation_paused_expected": true,
+        "expected_information": ["document_purpose", "no_unsolicited_document_request"],
+        "forbidden_reasked_fields": ["full_name", "date_of_birth", "nationality_country", "application_country", "visit_purpose", "occupation_status", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "连续暂停后的用途咨询不得触发代写或催交；对机票的概念性提问不代表已购票。"
+      }
+    ]
+  },
+  {
+    "id": "holdout_en_04",
+    "split": "holdout",
+    "language": "en",
+    "subject": "UK visitor evidence and application website",
+    "turns": [
+      {
+        "id": "holdout_en_04_t01",
+        "body": "Hello, I am Rowan Fenley, a South African citizen living in South Africa and applying from here. I was born on 1990-04-21. I work full-time for a manufacturing company and want to take a holiday in the UK. Could you give me an overview of the usual supporting documents? I have not chosen arrival or departure dates yet, so I will come back to those when my plans are settled.",
+        "expected_profile": {
+          "full_name": "Rowan Fenley",
+          "date_of_birth": "1990-04-21",
+          "nationality_country": "South Africa",
+          "application_country": "South Africa",
+          "visit_purpose": "tourism",
+          "occupation_status": "employed"
+        },
+        "deferred_date_expected": true,
+        "preparation_paused_expected": false,
+        "expected_information": ["document_purpose"],
+        "forbidden_reasked_fields": ["full_name", "date_of_birth", "nationality_country", "application_country", "visit_purpose", "occupation_status", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "首次来信已明确国籍、申请地、生日及在职情况，且明确将来再提供旅行日期。"
+      },
+      {
+        "id": "holdout_en_04_t02",
+        "body": "I will cover the trip entirely from my own savings, with an estimated total cost of GBP 2,200. What is an employer's letter intended to show in a visitor application? I am interested in how it relates to my job and leave, rather than asking you to draft one yet.",
+        "expected_profile": {
+          "full_name": "Rowan Fenley",
+          "date_of_birth": "1990-04-21",
+          "nationality_country": "South Africa",
+          "application_country": "South Africa",
+          "visit_purpose": "tourism",
+          "occupation_status": "employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 2200
+        },
+        "deferred_date_expected": true,
+        "preparation_paused_expected": false,
+        "expected_information": ["document_purpose"],
+        "forbidden_reasked_fields": ["date_of_birth", "occupation_status", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "新增自费预算并明确仅询问雇主证明用途，不应改为代写所需信息收集。"
+      },
+      {
+        "id": "holdout_en_04_t03",
+        "body": "The plan is now to arrive in the UK on 12 November 2026 and leave the UK on 22 November 2026. My date of birth written with the month in words is 21 April 1990, as previously given. Could you share the official government visitor visa application page? I only want the official starting point, not an agency's application service.",
+        "expected_profile": {
+          "full_name": "Rowan Fenley",
+          "date_of_birth": "1990-04-21",
+          "nationality_country": "South Africa",
+          "application_country": "South Africa",
+          "visit_purpose": "tourism",
+          "occupation_status": "employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 2200,
+          "planned_arrival_date": "2026-11-12",
+          "planned_departure_date": "2026-11-22"
+        },
+        "deferred_date_expected": false,
+        "preparation_paused_expected": false,
+        "expected_information": ["official_application_entry"],
+        "forbidden_reasked_fields": ["date_of_birth", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "明确日期解除待定，生日格式变化不构成缺失信息；直接提供请求的官方入口。"
+      },
+      {
+        "id": "holdout_en_04_t04",
+        "body": "A correction to the travel plan: I will leave the UK on 24 November 2026, not 22 November. Arrival is still 12 November 2026, and the total budget is still GBP 2,200. Separately, could you explain why bank statements are useful when I am paying for the trip myself?",
+        "expected_profile": {
+          "full_name": "Rowan Fenley",
+          "date_of_birth": "1990-04-21",
+          "nationality_country": "South Africa",
+          "application_country": "South Africa",
+          "visit_purpose": "tourism",
+          "occupation_status": "employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 2200,
+          "planned_arrival_date": "2026-11-12",
+          "planned_departure_date": "2026-11-24"
+        },
+        "deferred_date_expected": false,
+        "preparation_paused_expected": false,
+        "expected_information": ["corrected_fact_acknowledged", "bank_evidence_purpose"],
+        "forbidden_reasked_fields": ["date_of_birth", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "离境日期被明确更正，其余事实明确保持；需同时解释流水用途而非仅复述纠错。"
+      },
+      {
+        "id": "holdout_en_04_t05",
+        "body": "Please pause the preparation now. I have other things to deal with and will write again when I am ready to resume. This does not change the personal details or travel plan I have given you. For now, please do not send a list of documents for me to gather.",
+        "expected_profile": {
+          "full_name": "Rowan Fenley",
+          "date_of_birth": "1990-04-21",
+          "nationality_country": "South Africa",
+          "application_country": "South Africa",
+          "visit_purpose": "tourism",
+          "occupation_status": "employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 2200,
+          "planned_arrival_date": "2026-11-12",
+          "planned_departure_date": "2026-11-24"
+        },
+        "deferred_date_expected": false,
+        "preparation_paused_expected": true,
+        "expected_information": ["no_unsolicited_document_request"],
+        "forbidden_reasked_fields": ["full_name", "date_of_birth", "nationality_country", "application_country", "visit_purpose", "occupation_status", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "明确暂停准备但不修改画像或旅行日期，不应因暂停清空或再次收集已知事实。"
+      },
+      {
+        "id": "holdout_en_04_t06",
+        "body": "Preparation is still paused. I have only a general translation question: if a supporting document is not in English or Welsh, what should accompany the translation so it can be checked? Please just explain the requirements; I am not asking to start collecting or reviewing my documents again.",
+        "expected_profile": {
+          "full_name": "Rowan Fenley",
+          "date_of_birth": "1990-04-21",
+          "nationality_country": "South Africa",
+          "application_country": "South Africa",
+          "visit_purpose": "tourism",
+          "occupation_status": "employed",
+          "funding_source": "self-funded",
+          "estimated_trip_cost_gbp": 2200,
+          "planned_arrival_date": "2026-11-12",
+          "planned_departure_date": "2026-11-24"
+        },
+        "deferred_date_expected": false,
+        "preparation_paused_expected": true,
+        "expected_information": ["translation_requirements", "no_unsolicited_document_request"],
+        "forbidden_reasked_fields": ["full_name", "date_of_birth", "nationality_country", "application_country", "visit_purpose", "occupation_status", "funding_source", "estimated_trip_cost_gbp", "planned_arrival_date", "planned_departure_date"],
+        "rationale": "在持续暂停状态下回答翻译要求，不推断申请人持有何种语言的文件，也不擅自恢复收集或审阅。"
+      }
+    ]
+  }
+]

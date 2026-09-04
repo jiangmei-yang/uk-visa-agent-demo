@@ -17,10 +17,29 @@ explicitly recorded here.
 
 Updated 2026-09-04. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **2,130 passing tests**; see the latest [pack/intake recovery work](PACK_RECOVERY.md),
+The local suite has **2,410 passing tests**; see the latest [cold-start conversation work](docs/COLD_START_CONVERSATIONS.md),
+[pack/intake recovery work](PACK_RECOVERY.md),
 [credential recovery](GMAIL_RECOVERY.md)
 and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
+
+Latest adviser experiment: new fictional six-email journeys begin with empty profiles and
+reconstruct the runtime/SQLite connections each turn. Real DeepSeek extraction feeds actual
+reviewed automatic reply capture, not an unused model draft. First development: **4/12 composite,
+7/12 captured-SENT flow**, with an English month-name birthday rejected by local normalization
+and its next five emails held. First untouched holdout after the initial repair: **6/12 composite,
+12/12 captured-SENT flow**, with ordinary material overview/purpose questions still missed.
+Both original reports and lexical false alarms are retained; manual reading also caught an
+unsolicited checklist that passed the proxies. Subsequent exposed regressions fix broader general
+overview wording, avoid private questionnaires after general overviews, preserve independent
+next-step requests, explain individual-document purposes and balance-record comparisons, and
+prevent translation-detail questions triggering a full checklist. Full English conversation
+replay is not claimed when the original run never made those provider calls.
+See [protocol, full reading and limits](docs/COLD_START_CONVERSATIONS.md).
+No real Gmail sends, new ordinary-document delivery, independent user acceptance, or overall
+naturalness/accuracy percentage were produced by this experiment.
+The supervised Gmail worker and persistent Docker UI have loaded the repairs; existing
+case/outbox and ZIP projections were unchanged. See [rollout evidence](eval_output/cold_start_rollout_2026-09-04.json).
 
 Latest reliability work: isolated staging and accepted-source SHA checks prevent changed or stale
 support files entering a retry; registered history is never silently regenerated. Failed pack work
@@ -38,7 +57,7 @@ passed with zero sends and original credentials unchanged. Forced local expiry a
 copied refresh token do not prove natural expiry, actual revocation or live-worker recovery.
 Gmail and the persistent Docker UI have been updated; prior case/reply/ZIP invariants were retained.
 
-Latest adviser experiment: case-aware `next_step` answers accompany independent FAQs, choose one relevant item,
+Earlier adviser experiment: case-aware `next_step` answers accompany independent FAQs, choose one relevant item,
 and preserve date deferrals and customer pacing. The first new holdout is **6/8**, with a missed
 resume expression and wrongly applying a sibling's next-step question to the applicant's case.
 Original reports are retained. Post-holdout repairs are local exposed regressions, not new holdout

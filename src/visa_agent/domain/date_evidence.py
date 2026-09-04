@@ -7,6 +7,26 @@ from datetime import date
 YEAR_FIRST_DATE = re.compile(
     r"(?<![\d./-])(\d{4})([-/.])(\d{1,2})\2(\d{1,2})(?!\d|[./-]\d)"
 )
+_MONTH_NAMES = (
+    "january", "february", "march", "april", "may", "june", "july", "august",
+    "september", "october", "november", "december",
+)
+_MONTH_NUMBERS = {name: index for index, full in enumerate(_MONTH_NAMES, 1) for name in (full, full[:3])}
+_NAMED_MONTH = "(?:" + "|".join(sorted(_MONTH_NUMBERS, key=len, reverse=True)) + ")"
+ENGLISH_COMPLETE_DATE = re.compile(
+    rf"(?<![\w./-])(?:(?P<day_first>\d{{1,2}})\s+(?P<month_second>{_NAMED_MONTH})\s+"
+    rf"(?P<year_last>\d{{4}})|(?P<month_first>{_NAMED_MONTH})\s+(?P<day_second>\d{{1,2}}),?\s+"
+    r"(?P<year_second>\d{4}))(?!\w|[./-]\d)", re.I,
+)
+
+
+def _named_month_value(match: re.Match[str]) -> date | None:
+    try:
+        return date(int(match["year_last"] or match["year_second"]),
+                    _MONTH_NUMBERS[(match["month_second"] or match["month_first"]).casefold()],
+                    int(match["day_first"] or match["day_second"]))
+    except ValueError:
+        return None
 
 
 def _compact_date_text(excerpt: str) -> str:
@@ -14,7 +34,7 @@ def _compact_date_text(excerpt: str) -> str:
 
 
 def canonical_date_value(value: str) -> str:
-    """Normalize an explicit year-first value, without guessing missing parts or order.
+    """Normalize a complete explicit date without guessing missing parts or numeric order.
 
     Evidence grounding must still run against the original customer excerpt afterwards.
     Invalid or ambiguous values remain unchanged for the caller's validation to reject.
@@ -25,6 +45,10 @@ def canonical_date_value(value: str) -> str:
     parts = ((numeric[1], numeric[3], numeric[4]) if numeric else
              (chinese[1], chinese[2], chinese[3]) if chinese else None)
     if parts is None:
+        named = ENGLISH_COMPLETE_DATE.fullmatch(unicodedata.normalize("NFKC", value).strip())
+        parsed = _named_month_value(named) if named else None
+        if parsed is not None:
+            return parsed.isoformat()
         return value
     try:
         return date(*(int(part) for part in parts)).isoformat()
@@ -51,15 +75,8 @@ def date_is_grounded(value: str, excerpt: str, *, allow_shared_year: bool = True
     if any((int(match[1]), int(match[3]), int(match[4])) == (y, m, d)
            for match in YEAR_FIRST_DATE.finditer(compact)):
         return True
-    normal = re.sub(r"\s+", " ", excerpt).casefold()
-    month = rf"(?:{expected.strftime('%B')}|{expected.strftime('%b')})"
-    return bool(
-        re.search(
-            rf"(?<!\d)(?:0?{d}\s+{month}\s+{y}|{month}\s+0?{d},?\s+{y})(?!\d)",
-            normal,
-            re.I,
-        )
-    )
+    return any(_named_month_value(match) == expected for match in ENGLISH_COMPLETE_DATE.finditer(
+        unicodedata.normalize("NFKC", excerpt)))
 
 
 def has_calendar_day(excerpt: str) -> bool:

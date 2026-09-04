@@ -6,7 +6,12 @@ from collections.abc import Callable
 
 from pydantic import TypeAdapter, ValidationError
 
-from visa_agent.domain.date_evidence import canonical_date_value, date_is_grounded, has_calendar_day
+from visa_agent.domain.date_evidence import (
+    ENGLISH_COMPLETE_DATE,
+    canonical_date_value,
+    date_is_grounded,
+    has_calendar_day,
+)
 from visa_agent.domain.models import Case, CaseProfile, CaseStatus, InboundEvent
 from visa_agent.llm.ports import CasePatch, FactUpdate, LLMClient
 from visa_agent.workflow.conversation import (
@@ -88,6 +93,42 @@ def _canonical_value(field: str, value: str | int | bool) -> str | int | bool:
     return value
 
 
+def _english_birthday_is_applicant_fact(event: InboundEvent, update: FactUpdate) -> bool:
+    """Conservative ownership check for named-month DOB evidence, not general NLP.
+
+    Normalizing an English value must not newly authorize a third person's date,
+    a quoted example, or an uncertain alternative. Bare dates are answers only
+    when the existing workflow actually requested the applicant's date of birth.
+    """
+    latest = unicodedata.normalize("NFKC", latest_reply_text(event.body))
+    excerpt = _normalise_evidence(update.source_excerpt).strip(" .!?;。")
+    if excerpt not in _normalise_evidence(latest):
+        return False
+    if ("date_of_birth" in event.requested_fields
+            and canonical_date_value(latest.strip()) == update.value):
+        return True
+    for clause in re.split(r"[.!?;。\n]", latest):
+        if excerpt not in _normalise_evidence(clause):
+            continue
+        matches = list(ENGLISH_COMPLETE_DATE.finditer(clause))
+        if len(matches) != 1 or canonical_date_value(matches[0].group()) != update.value:
+            continue
+        prefix, suffix = clause[:matches[0].start()].strip(), clause[matches[0].end():]
+        if not re.fullmatch(
+            r"(?:(?:a\s+(?:quick|small)\s+)?correction\s*:\s*)?"
+            r"(?:my\s+(?:date\s+of\s+birth|birth\s*date|birthday)\s*(?:is|was|should\s+be|:|=)?|"
+            r"i\s+was\s+born\s*(?:on)?|(?:date\s+of\s+birth|dob)\s*(?::|=|is)|"
+            r"(?:please\s+)?(?:correct|change|update)\s+my\s+"
+            r"(?:date\s+of\s+birth|birth\s*date|birthday)\s+to)\s*",
+            prefix, re.I,
+        ):
+            continue
+        if re.search(r"\b(?:or|not|maybe|incorrect|wrong|instead|uncertain)\b", suffix, re.I):
+            continue
+        return True
+    return False
+
+
 def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
     """Return only grounded, type-valid, non-conflicting candidate facts."""
 
@@ -161,6 +202,10 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
             str(update.value), update.source_excerpt, allow_shared_year=allow_shared_year
         ):
             reason = f"Date value for {update.field} was not grounded in its excerpt."
+        elif (update.field == "date_of_birth"
+              and ENGLISH_COMPLETE_DATE.search(unicodedata.normalize("NFKC", update.source_excerpt))
+              and not _english_birthday_is_applicant_fact(event, update)):
+            reason = "English birth date was not established as a current applicant fact."
         else:
             try:
                 TypeAdapter(field_info.annotation).validate_python(update.value)

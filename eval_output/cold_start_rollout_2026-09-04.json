@@ -1,0 +1,92 @@
+{
+  "observed_at": "2026-09-04T14:16:12Z",
+  "prior_commit": "fb44985cc81cbe1e6856c08e5db969725ebe22d6",
+  "evidence_class": "fictional real-provider extraction, captured Gmail-path sends, offline exposed regressions, supervised reload",
+  "tests_passed": 2410,
+  "lint_passed": true,
+  "mypy_source_files_passed": 60,
+  "warnings": ["Existing Starlette/httpx deprecation warning", "Buildx unavailable; classic Docker build succeeded"],
+  "provider_experiments": {
+    "development": {
+      "path": "eval_output/cold_start_development_2026-09-04.json",
+      "sha256": "6a401217b4ae18a839f0d3959c5d14b13dc280347017ab3039a1c70272a05555",
+      "composite": "4/12",
+      "captured_sent_flow": "7/12",
+      "provider_attempts": 8,
+      "total_tokens": 29577
+    },
+    "first_holdout": {
+      "path": "eval_output/cold_start_holdout_first_2026-09-04.json",
+      "sha256": "1014c821a928008254b2705d1a5b10dfa97e5a7d48ff0cebc965f711f20eddcc",
+      "composite": "6/12",
+      "captured_sent_flow": "12/12",
+      "provider_attempts": 12,
+      "total_tokens": 43321,
+      "post_holdout_repairs_are_exposed_regressions": true,
+      "rerun": false
+    },
+    "development_replay": {
+      "path": "eval_output/cold_start_development_replay_2026-09-04.json",
+      "sha256": "a827dfefb820e714d39bb4d648479bd19fc06f28e18c86469f0581720494ebac",
+      "new_provider_calls": 0,
+      "complete_english_journey_proven": false,
+      "limitation": "Missing historical provider attempts and changed later inputs are recorded, not invented."
+    },
+    "gmail_network_sends": 0,
+    "full_production_rendering_cost": false,
+    "naturalness_scored": false
+  },
+  "gmail": {
+    "service": "com.visa-agent.gmail-user",
+    "previous_pid": 80687,
+    "new_pid": 83973,
+    "new_idle_at": "2026-09-04T14:15:55.722771+00:00",
+    "bootout_exit_code": 0,
+    "bootstrap_exit_code": 0,
+    "configuration_changed": false,
+    "configuration_sha256_before_and_after": "a82564de8ab818088e5afb363de951b1a7ad6a93459e21ae4a645aa487587d7e",
+    "state_projection_sha256_before_and_after": "8b0981ef621c1b3216a51dfe25a849671b73c86b6bcc3d27c19cfa07b0670b55",
+    "projection": "sqlite3 -readonly -json ordered cases(id,snapshot_json); outbox(id,status,payload,provider_message_id,attempt_count)",
+    "case_count": 1,
+    "processed_event_count": 9,
+    "outbox_count": 9,
+    "delivery_count": 0,
+    "manual_mail_sends": 0,
+    "historical_mail_replayed": false,
+    "registered_sender_scope_changed": false,
+    "automatic_final_pack_dispatch_enabled": false
+  },
+  "docker": {
+    "container": "883676b9f538253a009709d3ed4c8a7e7782292db5dfd705229c11943ddb86e1",
+    "image": "sha256:52fb6f79b6981c1f2caa717f4188a6e2e5b0013c4193b77f84028ef0ca132cec",
+    "health": "healthy",
+    "volume": "uk-visa-agent-demo_review-runtime",
+    "volume_reset": false,
+    "projection_sha256_before_and_after": "b39a038ff629bbd348a046f0fd8cc513b770ef587c7cdf5685cbe0a4ead569ce",
+    "projection": "SHA256 of json.dumps(sorted_keys=True) of ordered cases(id,snapshot_json), outbox(id,status,payload,provider_message_id,attempt_count), deliveries(case_id,path,sha256)",
+    "logical_database_sha256_before_and_after": "2accd9d4ba132434310c22a1b51369268956299684ffbd61fedfa327ac5b3c5f",
+    "case_count": 1,
+    "outbox_count": 3,
+    "delivery_count": 1,
+    "existing_zip_and_download_sha256": "8bc0681a837437d30675da7650cd9c61e1ecc69532ea969c77ceb383c458f724",
+    "download_status": 200,
+    "download_cache_control": "no-store",
+    "changed_source_matches_workspace": true,
+    "existing_guided_lab_reset": false
+  },
+  "source_hashes": {
+    "src/visa_agent/domain/date_evidence.py": "efeae43509fc7985bf6127f855b2cd8c438f76c3759614bb15eef3269f9e9825",
+    "src/visa_agent/llm/guarded.py": "eb97b7b6488e55a63c25682f33d9442ff9b98640ee5b3d9d3ce593644756986a",
+    "src/visa_agent/workflow/conversation.py": "9434eeee13561b404ffe55e73729b4b376c7d4fc64fe6a7349e93a2cf7168615",
+    "src/visa_agent/workflow/customer_questions.py": "0494f07655cf06f5c48d4590a99664a4d1ca9702672c0fb0ffed0369aef9de56",
+    "src/visa_agent/workflow/document_purpose.py": "4f349cd2804843492326e7d7c4f939362ba4cb22fd97a8fa2d30fe1e8e4e6add"
+  },
+  "not_proven": [
+    "Universal accuracy, naturalness or reliability",
+    "Independent unscripted user acceptance",
+    "New recipient-side Gmail or ordinary-document final ZIP delivery",
+    "Complete English development continuation without historical provider responses",
+    "Address completeness from country-only residence statements",
+    "All unsupported paraphrases, intake pacing or informal correction wording"
+  ]
+}
