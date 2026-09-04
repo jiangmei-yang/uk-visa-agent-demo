@@ -70,3 +70,19 @@ full-batch limit. It follows bounded pages per cycle, processes at most 100 bodi
 and withholds dispatch until the backlog is drained. Manual `prepare` still has its bounded
 100-message trial scope. Implementation, migration evidence and remaining limitations are in
 `GMAIL_INCREMENTAL_SYNC.md`; live large-backlog/expired-history tests are still outstanding.
+
+## Authorization interruption and recovery — local runner tests
+
+`tests/integration/test_gmail_auth_recovery.py` invokes the actual `run_once` service path with
+injected authorization failures at credential construction/refresh, profile verification, and
+initial discovery. Each case starts with a persisted applicant and one pending reply. All three
+assert that the failed iteration leaves the case snapshot, outbox payload/status and processed
+event count unchanged, with no sender call. After removing the injected failure, two further
+iterations produce exactly one provider-bound reply and one recorded SENT row.
+
+These are local simulations using an empty fake inbox and a capture sender. They do not revoke,
+refresh, or repair a real token and do not cover a send rejected after its attempt was recorded.
+The separate historical `eval_output/gmail_invalid_auth_2026-09-04.json` is real read-only HTTP
+401 evidence only; it must not be combined with these simulations into a claim of live OAuth
+recovery. Real account reconnection and recipient-side observation remain required. The full
+local regression suite after adding these tests passes 335 tests, with lint and typing passing.
