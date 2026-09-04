@@ -13,6 +13,7 @@ from typing import Literal
 
 from visa_agent.domain.models import Case, CaseStatus, DocumentStatus, GateResult, NextStepAdvice
 from visa_agent.domain.policy import Policy
+from visa_agent.workflow.advice_preferences import wants_no_links
 from visa_agent.workflow.conversation import latest_reply_text
 from visa_agent.workflow.document_purpose import APPLICATION_SOURCE, DOCUMENTS_SOURCE
 
@@ -23,8 +24,11 @@ SOURCE_REVIEW_AFTER = date(2026, 10, 4)
 _UNSAFE_SCOPE = (
     r"如果|假如|假设|除非|假定|\b(?:if|unless|assuming|suppose|hypothetical)\b|"
     r"(?:不要|不用|不想|不需要|别).{0,15}(?:告诉|解释|回答|继续|准备|建议)|"
-    r"不是问|(?:并非|不是|没有说|没说).{0,12}(?:不给|拿不到|未定|没定|没确定|定不下来)|"
-    r"\b(?:not asking|do not suggest|don't suggest|do not tell|don't tell|not true|not the case)\b|"
+    r"不是问|(?:并非|不是|没有说|没说).{0,12}(?:不给|拿不到|未定|没定|没确定|没有确定|尚未确定|定不下来)|"
+    r"\b(?:not asking|do not suggest|don't suggest|do not tell|don't tell|do not answer|don't answer|not true|not the case)\b|"
+    r"(?:模板|示例|例子)(?:里|上)?(?:写着|说|写道)|"
+    r"\b(?:template|example)\b.{0,25}\b(?:says?|said|reads?|wrote)\b|"
+    r"(?:以后|将来|下次).{0,8}(?:会|再)?问|\bI\s+(?:will|may|might)\s+ask\b|"
     r"\b(?:friend|sister|brother|client|customer|applicant)\b.{0,20}\b(?:asks?|asked|said|wrote|needs?|employer|dates)\b|"
     r"\b(?:his|her|their)\s+(?:employer|employment letter|travel dates|application)\b|"
     r"\bon behalf of\b|(?:朋友|同学|客户|姐姐|妹妹|弟弟|哥哥|他|她)(?:说|问|的?.{0,8}(?:公司|日期|申请))|"
@@ -42,6 +46,17 @@ _NEXT_ACTION = (
     r"\bwhat\s+(?:else\s+)?(?:can|should|could|do)\s+I\s+(?:prepare|organise|organize|do|work on)"
     r"(?:\s+\w+){0,6}\s+(?:now|next|first)\b|"
     r"\bwhat\s+(?:else\s+)?(?:can|should|could)\s+I\s+(?:prepare|organise|organize)\b"
+)
+# Date-specific alternatives: an ordinary request to start now need not repeat
+# the word "prepare". Keep the existing employment-letter trigger unchanged.
+_DATE_NEXT_ACTION = (
+    r"有(?:什么|哪些)(?:事|事情)?(?:我)?(?:现在)?(?:可以|能)先(?:做|准备|整理)(?:的)?|"
+    r"有没有(?:什么|哪些)?(?:现在)?(?:可以|能)(?:先)?(?:做|准备|整理)的(?:事|事情)|"
+    r"(?:我)?(?:现在)?(?:可以|能|该|应该)(?:先)?从哪里开始|"
+    r"\b(?:is there anything|are there any tasks?)\s+(?:that\s+)?I\s+(?:can|could)\s+"
+    r"(?:do|prepare|organise|organize|work on)(?:\s+(?:now|first|for now|in the meantime))?\s*(?:[?？.!。]|$)|"
+    r"\bcan I\s+(?:get started|make a start)(?:\s+on anything)?\s+(?:now|in the meantime)\b|"
+    r"\bwhere\s+(?:can|could|should)\s+I\s+(?:start|begin)(?:\s+(?:now|for now))?\s*(?:[?？.!。]|$)"
 )
 _LETTER_UNAVAILABLE = (
     r"(?:公司|雇主|人事).{0,18}(?:不给|不肯|拒绝|暂时不能|暂时无法).{0,8}(?:开|出具|提供).{0,8}(?:在职证明|雇主信)|"
@@ -67,11 +82,11 @@ def preparation_obstacle_kind(text: str) -> Literal["employment_letter", "dates"
         return None
     current = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"|`[^`]*`', "", current)
     current = re.sub(r"(?<!\w)'[^'\n]+'(?!\w)", "", current)
-    if not re.search(_NEXT_ACTION, current, re.I):
-        return None
-    if re.search(_LETTER_UNAVAILABLE, current, re.I):
+    explicit_preparation = bool(re.search(_NEXT_ACTION, current, re.I))
+    if explicit_preparation and re.search(_LETTER_UNAVAILABLE, current, re.I):
         return "employment_letter"
-    if re.search(_DATES_UNDECIDED, current, re.I):
+    if (re.search(_DATES_UNDECIDED, current, re.I)
+            and (explicit_preparation or re.search(_DATE_NEXT_ACTION, current, re.I))):
         return "dates"
     return None
 
@@ -224,9 +239,7 @@ def reviewed_obstacle_next_step(case: Case, policy: Policy, gate: GateResult) ->
         if active:
             action += ("已经收到的文件不用重发。" if zh else " Files already received do not need to be resent.")
     message = intro + "\n" + route_note + action + "\n" + limitation
-    if not re.search(r"(?:不要|不用|无需|别).{0,12}(?:链接|网址|官网)|\bno links?\b|"
-                     r"\b(?:don't|do not|without)\b.{0,15}\b(?:links?|URLs?|websites?)\b",
-                     latest_reply_text(case.latest_customer_message), re.I):
+    if not wants_no_links(case.latest_customer_message):
         message += "\nGOV.UK: " + DOCUMENTS_SOURCE + "#demonstrating-personal-circumstances"
         if obstacle == "dates":
             message += "\nGOV.UK: " + APPLICATION_SOURCE + "#documents-and-information-youll-need-to-apply"

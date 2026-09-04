@@ -17,7 +17,8 @@ explicitly recorded here.
 
 Updated 2026-09-05. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **3,532 passing tests**; see the latest [contextual adviser reply repair](docs/CONSULTANT_CONTEXT_REPAIR_2026-09-05.md),
+The local suite has **3,703 passing tests**; see the latest [school-record and undecided-date repair](docs/SCHOOL_RECORD_GUIDANCE.md),
+[contextual adviser reply repair](docs/CONSULTANT_CONTEXT_REPAIR_2026-09-05.md),
 [separate-email consultation repair](docs/BATCHED_CONSULTATION.md),
 [mixed permission and consultation repair](docs/MIXED_PROCESSING_CONSENT.md),
 [consultation continuation and obstacle repair](docs/ADVICE_CONTINUATION.md),
@@ -32,7 +33,25 @@ The local suite has **3,532 passing tests**; see the latest [contextual adviser 
 and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
 
-Latest contextual adviser reply repair: **3,532 passed in 54.07s**, Ruff and strict
+Latest school-record and undecided-date repair: **3,703 passed in 58.19s**, Ruff and
+strict Mypy passed (70 source files). Three new suites passed **171 checks in 2.41s**.
+School record difficulties now get bounded existing-record checks, not the same
+unavailable-letter request or an identity question. Complete actual SENT discussion
+can support a short follow-up; current affirmative resolution or lost record access
+retires that guidance without changing evidence acceptance. Source expiry, pause,
+mixed facts/files, nearby classifier proposals, quote/negation/ownership and
+independent-question scope are covered. Date-specific next-action paraphrases
+and current no-link scope were also repaired. These are synthetic proposals and
+captured transports, not new paid-model or independent applicant evidence. See
+[failure history and limits](docs/SCHOOL_RECORD_GUIDANCE.md).
+The Gmail worker reloaded as PID 7822 and was observed idle at 2026-09-04
+17:32:24 UTC; configuration, existing case/SENT business projection and unknown
+applicant permission are unchanged. Docker is healthy with all 70 source hashes
+matching and both existing ZIP hashes unchanged. See [rollout evidence](eval_output/school_record_rollout_2026-09-05.json).
+A separate read-only application-complaint probe still has 5 failures out of 8
+synthetic intent combinations; these are explicitly not closed by this repair.
+
+Previous contextual adviser reply repair: **3,532 passed in 54.07s**, Ruff and strict
 Mypy passed (70 source files). The four new suites passed **59 checks in 1.15s**.
 Supplied location/identity now receives a contextual acknowledgement; applicable
 residence evidence gets a bounded preparation action. A no-link preference does

@@ -6,7 +6,11 @@ from datetime import date
 
 from visa_agent.llm.ports import CustomerQuestion
 from visa_agent.workflow.conversation import latest_reply_text
-from visa_agent.workflow.document_preparation import reviewed_document_preparation
+from visa_agent.workflow.document_preparation import (
+    SCHOOL_RECORD_TOPIC,
+    reviewed_document_preparation,
+    school_record_reported,
+)
 from visa_agent.workflow.document_purpose import reviewed_document_purpose
 
 SOURCE = "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
@@ -400,8 +404,14 @@ def validated_customer_questions(body: str, proposals: list[CustomerQuestion]) -
                 and (excerpt in _normalised_excerpt("\n".join(active)) or all(
                     any(fragment in _normalised_excerpt(clause) for clause in active) for fragment in fragments
                 ))):
-            if proposal.topic == "next_step" and not _next_step_targets_current_case(body, proposal.source_excerpt):
+            school_obstacle = (school_record_reported(body)
+                and bool(re.search(r"学校|在读|在学|怎么办|\b(?:university|school|enrol\w*)\b|what should I do",
+                                   proposal.source_excerpt, re.I)))
+            if (proposal.topic == "next_step" and not school_obstacle
+                    and not _next_step_targets_current_case(body, proposal.source_excerpt)):
                 continue
+            if proposal.topic in {"document_checklist", "unsupported", "next_step"} and school_obstacle:
+                proposal = proposal.model_copy(update={"topic": "document_checklist"})
             if proposal.topic == "unsupported" and is_generic_uk_preparation_enquiry(body, proposal.source_excerpt):
                 # Correct only a strictly recognized generic request. Keep the raw
                 # proposal object, confidence and original evidence unchanged.
@@ -890,7 +900,8 @@ def grounded_customer_answer_plan(
                 and not _request_has_other_route(active_text, current)):
             # Reviewed, narrow FAQ fallback also works when extraction omits a
             # question entirely. It does not invent an LLM proposal or case fact.
-            answers.append(("document_preparation", direct_preparation))
+            answers.append((SCHOOL_RECORD_TOPIC if school_record_reported(current) else "document_preparation",
+                            direct_preparation))
         for item in semantic:
             if item.topic == "document_checklist" and not _request_has_other_route(active_text, item.source_excerpt):
                 purpose = (reviewed_document_preparation(item.source_excerpt, language)

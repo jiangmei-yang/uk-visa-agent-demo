@@ -9,6 +9,12 @@ checklist, document acceptance decision, substitute-evidence waiver or letter wr
 from __future__ import annotations
 
 import re
+from datetime import date
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from visa_agent.domain.models import Case, NextStepAdvice
+    from visa_agent.domain.policy import Policy
 
 from visa_agent.workflow.document_purpose import DOCUMENTS_SOURCE
 
@@ -27,16 +33,16 @@ _ACTION = (
 _UNSAFE_OR_OUTSIDE = (
     r"保证|一定能|包过|获批|过签|足够|够不够|能过吗|会被接受|能被接受|"
     r"伪造|编造|造假|虚构|假证明|假公章|倒签|改.{0,5}(?:工资|薪资|收入)|"
-    r"模板|范文|开不出|不给开|拒绝开|"
+    r"模板|范文|"
     r"学生签证|留学签证|工作签证|工签|结婚签证|婚姻签证|配偶签证|永居|过境|医疗|付费演讲|"
     r"(?:美国|加拿大|澳洲|澳大利亚|申根|法国|新西兰).{0,8}签证|"
     r"房贷|贷款|租房申请|学校录取|"
     r"\b(?:guarantee\w*|approv\w*|sufficient|enough|accepted|eligible|qualif\w*|"
     r"fake|forg\w*|fabricat\w*|invent\w*|backdat\w*|template|mortgage|loan)\b|"
-    r"\b(?:cannot|can't|won't|refuses? to)\s+(?:get|issue|provide)\b|"
     r"\b(?:student|work|marriage|spouse|transit|Canadian|American|Australian|Schengen) visa\b|"
     r"\b(?:skilled worker|global talent|graduate visa|permanent residen\w*|medical treatment|paid engagement)\b"
 )
+_UNAVAILABLE = r"开不出|不给开|拒绝开|\b(?:cannot|can't|won't|refuses? to)\s+(?:get|issue|provide)\b"
 _CONDITION_OR_DECLINED = (
     r"如果|假如|假设|除非|假定|不用.{0,16}(?:说|讲|告诉|解释|回答)|"
     r"(?:别|不要|不想|不必).{0,16}(?:说|讲|告诉|解释|回答|问)|"
@@ -60,6 +66,178 @@ _UK_WORK = (
     r"\b(?:run|start|set up)\s+(?:(?:my|a|the|own)\s+)*business\s+in\s+(?:the\s+)?(?:UK|Britain)\b"
 )
 
+SCHOOL_RECORD_TOPIC = "student_online_record_obstacle_v1"
+_SCHOOL = r"学校|校方|大学|\b(?:school|university|college|registry)\b"
+_SCHOOL_UNAVAILABLE = (
+    r"(?:学校|校方|大学).{0,18}(?:不提供|不开|不出具|开不出|不给开|拒绝开).{0,18}(?:在读|在学|证明)|"
+    r"\b(?:school|university|college|registry)\b.{0,30}\b(?:does not|doesn't|cannot|can't|won't|refuses to)\s+"
+    r"(?:issue|provide|write)\b.{0,35}\b(?:enrol\w*|student status)\s+letters?\b"
+)
+_ONLINE_RECORD = (
+    r"(?:只能|只有|仅有|可以)[^。！？；;，,\n]{0,18}(?:网上|线上|在线|电子)"
+    r"[^。！？；;，,\n]{0,18}(?:在读|在学|学籍)(?:记录|证明)|"
+    r"\bI\s+(?:can\s+)?only\s+(?:download|have|obtain|get)\b"
+    r"(?=[^.!?\n]{0,140}\b(?:enrol\w*|student status)\s+record\b)"
+    r"[^.!?\n]{0,140}\b(?:online|electronic|portal)\b"
+)
+
+
+def _school_current(text: str) -> str:
+    from visa_agent.workflow.conversation import latest_reply_text
+
+    if not text or len(text) > 6000:
+        return ""
+    current = latest_reply_text(text)
+    unsafe = (
+        _UNSAFE_OR_OUTSIDE + "|" + _CONDITION_OR_DECLINED + "|" + _THIRD_PARTY_REQUEST + "|" + _UK_WORK
+        + r"|(?:朋友|同学|同事|客户|他|她)(?:的学校|只能)|\b(?:friend's|friend’s|his|her|their)\b"
+        + r"|(?:不是说|并不是|不属实|没有遇到)|\b(?:not true|not the case|have not encountered)\b"
+        + r"|(?:学校|校方|大学).{0,6}(?:没有说|没说过|不是不)|\b(?:has not said|hasn't said|not sure whether)\b"
+        + r"|(?:你的|其他|另一所|别人的)(?:学校|大学)|\b(?:your|another|other)\s+(?:school|university|college)\b"
+        + r"|(?:哥哥|弟弟|姐姐|妹妹|朋友|同学|同事|客户|家人|父母|他|她)的(?:学校|大学)|"
+        r"\b(?:brother|sister|parent|friend|client|partner)['’]s\s+(?:school|university|college)\b"
+        + r"|(?:忽略|跳过|绕过|修改|无视).{0,12}(?:规则|指令|检查|审核)|"
+        r"\b(?:ignore|bypass|override).{0,25}(?:instructions?|rules?|checks?|system|prompt)\b"
+        + r"|customer_questions|source_excerpt|requires_human_review"
+    )
+    if re.search(unsafe, current, re.I):
+        return ""
+    current = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"|`[^`]*`', "", current)
+    return re.sub(r"(?<!\w)'[^'\n]+'(?!\w)", "", current).strip()
+
+
+def school_record_reported(text: str) -> bool:
+    """A current own difficulty, not proof of its truth or evidence acceptance."""
+    current = _school_current(text)
+    return bool(re.search(_SCHOOL_UNAVAILABLE, current, re.I)
+                and re.search(_ONLINE_RECORD, current, re.I))
+
+
+def school_record_guidance(language: str) -> str:
+    # The record checks are practical suggestions, not a list of UKVI-mandated
+    # fields or a claim that a portal export substitutes for a provider's letter.
+    return (
+        "先看看你提到的学校网上在读记录。"
+        "可以核对上面有没有你的姓名、学校名称、当前在读状态，以及记录的出具日期；"
+        "这些是方便核对的内容，不是让你自行补写进文件。\n\n"
+        "再向学校确认：这份下载记录有没有官方核验方式，例如验证链接或可供查询的学籍部门联系方式？"
+        "保留学校下载的原文件和校方回复，不用自己制作一份“学校证明”。"
+        "网上记录能说明多少情况，仍需看具体内容；不能仅凭文件名称认定它可替代学校证明，也不会因此免去其他材料核对。"
+        if language == "zh" else
+        "Let's start with the university's online enrolment record you mentioned. "
+        "Check whether it shows your name, the university, your current enrolment status and its issue date. "
+        "These are useful checks, not details to add to the file yourself.\n\n"
+        "Ask the university how someone can verify the downloaded record, for example through an official verification link "
+        "or a registry contact. Keep the original download and the university's response; do not create your own university letter. "
+        "What the record establishes still needs to be checked. Its title alone does not make it a substitute for a university letter "
+        "or remove the need to check other evidence."
+    )
+
+
+def reviewed_school_record(text: str, language: str) -> str | None:
+    if not school_record_reported(text):
+        return None
+    return school_record_guidance(language) + "\nGOV.UK: " + DOCUMENTS_SOURCE + "#demonstrating-personal-circumstances"
+
+
+def sent_school_record_context(case: Case, outbox: list[dict[str, Any]]) -> bool:
+    """Only a fully delivered discussion is memory; a saved model draft is not."""
+    event = case.guidance_events.get(SCHOOL_RECORD_TOPIC)
+    return bool(event and any(
+        row["case_id"] == case.id and row["event_id"] == event and row["status"] == "SENT"
+        and row.get("provider_message_id") and row.get("sent_at")
+        and any(school_record_guidance(language) in row["payload"] for language in ("zh", "en"))
+        for row in outbox
+    ))
+
+
+def school_record_resolved(text: str) -> bool:
+    current = _school_current(text)
+    return any(re.fullmatch(
+        r"(?:我的?)?(?:学校|校方|大学)(?:现在|已经|终于){1,2}(?:能开|可以开|提供了|出具了)(?:在读|在学)?证明了?|"
+        r"我(?:已经|刚刚|终于)?(?:拿到|收到|取得)了?(?:学校的)?(?:学校|在读|在学)证明了?|"
+        r"(?:my|the)\s+(?:school|university|college)\s+(?:has\s+)?(?:now\s+|finally\s+)?"
+        r"(?:issued|provided|written|can (?:now )?(?:issue|provide))\s+(?:(?:my|an?|the)\s+)?(?:enrol\w*|student status)\s+letter|"
+        r"I\s+(?:have\s+)?(?:now\s+)?(?:received|obtained|got)\s+(?:(?:my|an?|the)\s+)?"
+        r"(?:(?:university|school)['’]s\s+)?(?:enrol\w*|university)\s+letter",
+        clause.strip(), re.I,
+    ) for clause in re.split(r"[。！!；;\n，,]|\.(?:\s|$)", current))
+
+
+def school_record_unavailable(text: str) -> bool:
+    """Retire outdated access advice, without calling the school issue resolved."""
+    current = _school_current(text)
+    return any(re.fullmatch(
+        r"(?:学校的?)?(?:网上|在线|电子)(?:在读)?记录(?:我)?(?:现在|已经)?(?:打不开|无法打开|没有了|不能下载)了?|"
+        r"我(?:现在|已经)?(?:打不开|无法打开|不能下载)(?:学校的?)?(?:网上|在线|电子)(?:在读)?记录了?|"
+        r"I\s+(?:no longer have|can no longer access|cannot open|can't open)\s+(?:my|the)\s+"
+        r"(?:online|electronic)\s+(?:enrolment\s+)?record",
+        clause.strip(), re.I,
+    ) for clause in re.split(r"[。！!；;\n]|(?<=[?？])\s*|\.(?:\s|$)", current))
+
+
+def school_record_followup(text: str) -> bool:
+    current = _school_current(text)
+    if not current or re.search(_SCHOOL + r"|在读|在学|学籍|记录|\b(?:enrol\w*|records?)\b", current, re.I):
+        return False
+    return any(re.fullmatch(
+        r"(?:那|我|现在|接下来|下一步){0,3}(?:应该|该|可以)?(?:怎么办|怎么做|做什么|准备什么)[?？]?|"
+        r"what\s+(?:should|can|do)\s+I\s+(?:do|prepare)\s*(?:next|now)?\s*[?？]?",
+        clause.strip(), re.I,
+    ) for clause in re.split(r"[。！!；;\n]|(?<=[?？])\s*|\.(?:\s|$)", current))
+
+
+def school_record_next_step(case: Case, policy: Policy, *, previously_sent: bool, today: date) -> NextStepAdvice | None:
+    """Read-only follow-up after the selector's existing review/confirmation gates."""
+    from visa_agent.domain.models import DocumentStatus, NextStepAdvice
+    from visa_agent.workflow.advice_preferences import wants_no_links
+
+    if (not school_record_followup(case.latest_customer_message) or not previously_sent
+            or case.profile.occupation_status != "student"):
+        return None
+    # A fresh school statement needs its own interpretation. Never continue an
+    # older obstacle across a correction, report about a different record or FAQ.
+    if (not date(2026, 9, 4) <= today <= date(2026, 10, 4)
+            or policy.version != "2026-02-25" or case.policy_version != policy.version
+            or DOCUMENTS_SOURCE not in policy.sources or not policy.is_current(today)):
+        return NextStepAdvice(kind="review", message=(
+            "先复核最新官方材料说明，再继续判断这份学校记录该如何准备。" if case.customer_language == "zh" else
+            "First recheck the current official evidence guidance before continuing with the school record."
+        ))
+    if any(evidence.fact_key == "route_confirmed_standard_visitor" and evidence.value is False
+           and not evidence.superseded for evidence in case.evidence):
+        return NextStepAdvice(kind="review", message=(
+            "先由顾问核对适用路线，再判断学校材料的安排。" if case.customer_language == "zh" else
+            "An adviser needs to check the appropriate route before choosing the school evidence."
+        ))
+    item = next((item for item in case.requirements if item.id == "status_evidence" and item.applicable), None)
+    rule = next((rule for rule in policy.requirements if rule.id == "status_evidence"), None)
+    if (item is None or item.satisfied or rule is None or item.rule_version != policy.version
+            or rule.version != policy.version or rule.source_url != DOCUMENTS_SOURCE):
+        return None
+    if any(document.kind in rule.acceptable_evidence and document.status in {
+        DocumentStatus.RECEIVED, DocumentStatus.PROCESSING, DocumentStatus.ACCEPTED_FOR_REVIEW,
+    } for document in case.documents):
+        return NextStepAdvice(kind="paused" if case.preparation_paused else "waiting", requirement_id=item.id,
+            message=("学校相关文件已经收到，先核对现有文件，不用重发。" if case.customer_language == "zh" else
+                     "The school-related file has already been received. Check the existing file; there is no need to resend it."))
+    message = (
+        "先打开学校那份网上在读记录，看看姓名、学校名称、当前在读状态和出具日期是否清楚。"
+        "缺哪项先记下来，不要自行改文件。然后问学籍部门这份记录怎样让第三方核验。"
+        "保留原文件和校方答复；能否用于说明你的情况仍需核对内容，不能直接认定它替代了学校证明。"
+        if case.customer_language == "zh" else
+        "Start by opening the university's online enrolment record. Check whether your name, university, current "
+        "enrolment status and issue date are clear. Note anything missing without editing the file. Then ask the registry "
+        "how a third party can verify it. Keep the original and the university's response; its contents still need to be "
+        "checked, so it does not automatically replace a university letter."
+    )
+    if case.preparation_paused:
+        message += ("\n\n这只是之后准备时可参考的办法，现在不用提交文件，准备仍保持暂停。" if case.customer_language == "zh" else
+                    "\n\nThis is guidance for later. There is no need to send anything now; preparation remains on hold.")
+    if not wants_no_links(case.latest_customer_message):
+        message += "\nGOV.UK: " + rule.source_url
+    return NextStepAdvice(kind="paused" if case.preparation_paused else "document", message=message, requirement_id=item.id)
+
 
 def _request_kind(text: str) -> str | None:
     # Lazy import keeps this standalone helper safe to call from conversation.py.
@@ -70,7 +248,7 @@ def _request_kind(text: str) -> str | None:
     current = latest_reply_text(text).strip()
     # Keep qualifiers intact before considering individual clauses. A quoted,
     # conditional or unsafe request must not become direct by trimming its prefix.
-    if re.search(_UNSAFE_OR_OUTSIDE + "|" + _CONDITION_OR_DECLINED + "|" + _THIRD_PARTY_REQUEST + "|" + _UK_WORK,
+    if re.search(_UNSAFE_OR_OUTSIDE + "|" + _UNAVAILABLE + "|" + _CONDITION_OR_DECLINED + "|" + _THIRD_PARTY_REQUEST + "|" + _UK_WORK,
                  current, re.I):
         return None
     current = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"|`[^`]*`', "", current)
@@ -105,6 +283,9 @@ def _request_kind(text: str) -> str | None:
 
 
 def reviewed_document_preparation(text: str, language: str) -> str | None:
+    school = reviewed_school_record(text, language)
+    if school:
+        return school
     """Return one source-bound practical explanation, or None outside this narrow set."""
     if language not in {"zh", "en"}:
         return None

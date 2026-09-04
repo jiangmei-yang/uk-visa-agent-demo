@@ -60,6 +60,14 @@ from visa_agent.workflow.conversation import (
     waiting_acknowledgement,
 )
 from visa_agent.workflow.customer_questions import grounded_customer_answer_plan
+from visa_agent.workflow.document_preparation import (
+    SCHOOL_RECORD_TOPIC,
+    school_record_followup,
+    school_record_guidance,
+    school_record_resolved,
+    school_record_unavailable,
+    sent_school_record_context,
+)
 from visa_agent.workflow.next_step import select_next_step
 
 PROFILE_CONFIRMATION_LINES = {
@@ -182,6 +190,13 @@ class WorkflowService:
             }
         )
         case.latest_customer_message = customer_event.body
+        if school_record_resolved(customer_event.body) or school_record_unavailable(customer_event.body):
+            # Retire only this discussion, not applicant facts, evidence or other
+            # unanswered FAQs. Receipt of an actual file still uses normal checks.
+            case.guidance_events.pop(SCHOOL_RECORD_TOPIC, None)
+            for prior_advice in [*case.unsent_advice, *case.pending_advice]:
+                if prior_advice.topic == SCHOOL_RECORD_TOPIC:
+                    prior_advice.deferred_by_event_id = event.id
         case.latest_document_names = [Path(path).name for path in event.attachment_paths]
         if re.search(r"[\u4e00-\u9fff]", customer_event.body):
             case.customer_language = "zh"
@@ -221,6 +236,17 @@ class WorkflowService:
         current_questions = [item for item in patch.customer_questions if not (
             continuation_requested and is_advice_continuation(item.source_excerpt)
         )]
+        school_followup = (sent_school_record_context(case, prior_outbox)
+                           and school_record_followup(customer_event.body)
+                           and not any(item.topic == "off_topic" for item in current_questions))
+        if school_followup:
+            # Deterministic, source-bound continuation of an actually sent
+            # discussion. Preserve the raw model patch; normal facts/files still
+            # pass through their validators below. Do not invent an LLM proposal.
+            current_questions = [item for item in current_questions if not (
+                item.topic in {"unsupported", "document_checklist", "next_step"}
+                and school_record_followup(item.source_excerpt)
+            )]
         was_paused = case.preparation_paused
         case.latest_preparation_action = None
         if patch.preparation_intent is not None and not (
@@ -241,6 +267,8 @@ class WorkflowService:
         may_confirm = not was_paused and not case.preparation_paused and not decision.grant_business
         case.proactive_guidance_offered = False
         case.customer_question_topics = [item.topic for item in current_questions]
+        if school_followup and "next_step" not in case.customer_question_topics:
+            case.customer_question_topics.append("next_step")
         case.customer_question_exclusions = [item.source_excerpt for item in current_questions
                                              if item.topic in {"off_topic", "unsupported", "next_step"}]
         answer_plan = grounded_customer_answer_plan(
@@ -399,12 +427,17 @@ class WorkflowService:
         if "next_step" in case.customer_question_topics:
             # Advice sees this event's validated facts/documents and current gate.
             # Asking for a step is not resume, profile consent or final consent.
-            case.next_step_advice = select_next_step(case, self.policy, gate)
+            case.next_step_advice = select_next_step(
+                case, self.policy, gate, today=self.today_provider(),
+                school_record_context=sent_school_record_context(case, prior_outbox),
+            )
             case.customer_answers.append(case.next_step_advice.message)
         extras = [answer for answer in case.customer_answers if answer not in answer_plan.answers]
         case.customer_answers = merge_unsent_advice(
             case, event.id, customer_event.body, answer_plan, prior_outbox, self.today_provider(),
         ) + extras
+        if any(school_record_guidance(case.customer_language) in answer for answer in case.customer_answers):
+            case.guidance_events[SCHOOL_RECORD_TOPIC] = event.id
         if (continuation_requested and not case.customer_answers and not case.customer_question_topics
                 and case.status == CaseStatus.DRAFT):
             # Mixed facts/files still pass normal validation above. A separate

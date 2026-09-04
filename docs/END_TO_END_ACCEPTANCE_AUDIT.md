@@ -44,8 +44,11 @@ for these outcomes.
    [Contextual preparation replies](CONSULTANT_CONTEXT_REPAIR_2026-09-05.md)
    now acknowledge supplied location/identity, keep useful advice when links are
    declined and distinguish an explicit next-document request from a missing
-   personal field. School-document unavailability and some undecided-date or
-   application-complaint paraphrases still have observed gaps.
+   personal field. [School online-record obstacles and undecided-date next actions](SCHOOL_RECORD_GUIDANCE.md)
+   now have bounded captured-SENT and restart coverage, including actual discussion
+   memory, current resolution/access changes and source/authority boundaries.
+   Broader unavailable-evidence language, application-complaint paraphrases and
+   independent ordinary-model/recipient evaluation remain open.
 
 ## Bounded recovery added in this work
 

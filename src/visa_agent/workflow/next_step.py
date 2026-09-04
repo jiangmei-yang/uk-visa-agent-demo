@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from datetime import date
 
 from visa_agent.domain.models import (
     Case,
@@ -20,6 +21,7 @@ from visa_agent.workflow.conversation import (
     latest_reply_text,
     next_fact_questions,
 )
+from visa_agent.workflow.document_preparation import school_record_next_step
 from visa_agent.workflow.preparation_obstacles import reviewed_obstacle_next_step
 
 _DETAILS_EN = {
@@ -199,7 +201,8 @@ def _material_first_step(case: Case, policy: Policy, gate: GateResult) -> NextSt
     return None
 
 
-def select_next_step(case: Case, policy: Policy, gate: GateResult) -> NextStepAdvice:
+def select_next_step(case: Case, policy: Policy, gate: GateResult, *, school_record_context: bool = False,
+                     today: date | None = None) -> NextStepAdvice:
     """Read a freshly evaluated case; the caller validates the current request separately.
 
     The returned question field is for the existing question plan/SENT ledger, not
@@ -233,6 +236,11 @@ def select_next_step(case: Case, policy: Policy, gate: GateResult) -> NextStepAd
             "The next step is to check the summary below, especially your name, dates and who pays for the trip. "
             "Point out anything that needs correcting."
         ), kind="waiting")
+
+    school_step = school_record_next_step(case, policy, previously_sent=school_record_context,
+                                          today=today or date.today())
+    if school_step is not None:
+        return school_step
 
     obstacle_step = reviewed_obstacle_next_step(case, policy, gate)
     if obstacle_step is not None:

@@ -1,0 +1,61 @@
+{
+  "scope": "Reviewed school-record obstacle guidance and undecided-date next-action paraphrases",
+  "baseline_commit": "a70efe260c188170bf3b2aa539181b44d142dec0",
+  "new_paid_model_calls": 0,
+  "manual_live_mailbox_sends": 0,
+  "not_a_naturalness_score": true,
+  "full_suite": {"passed": 3703, "failed": 0, "warnings": 1, "seconds": 58.19},
+  "new_focused_suites": {"passed": 171, "failed": 0, "seconds": 2.41},
+  "checks": {"ruff": "passed", "strict_mypy": "passed", "mypy_source_files": 70, "diff_check": "passed"},
+  "earlier_observations": {
+    "school_initial": {"failed": 22, "passed": 10},
+    "dates_isolated_red": {"failed": 7, "passed": 22},
+    "school_memory_initial": {"failed": 16, "passed": 43},
+    "first_full": {"failed": 16, "passed": 3639, "seconds": 56.75},
+    "school_lifecycle_additions": {"failed": 3, "passed": 13},
+    "school_ownership_and_record_additions": {"failed": 7, "passed": 3},
+    "intermediate_full_before_final_scope_review": {"failed": 0, "passed": 3681, "seconds": 57.06},
+    "final_review_findings": [
+      "A sibling's school policy could be combined with the applicant's own record",
+      "Lost record access required retirement of the old access advice, not just current-turn suppression",
+      "A separate question could hide a preceding affirmative resolution",
+      "Unavailable visa-specific letters must not be paraphrased as a school offering only online records"
+    ]
+  },
+  "gmail_worker": {
+    "pid": 7822,
+    "observed_phase": "idle",
+    "observed_at": "2026-09-04T17:32:24.427921+00:00",
+    "configuration_unchanged": true,
+    "plist_sha256": "a82564de8ab818088e5afb363de951b1a7ad6a93459e21ae4a645aa487587d7e",
+    "business_projection_sha256_before_and_after": "939aac258e7e217b002f2eea3857727698bfbc24047c4fc016a68d718af5cac0",
+    "existing_cases": 1,
+    "existing_sent": 9,
+    "existing_deliveries": 0,
+    "applicant_processing_permission": "unknown; not fabricated or bypassed"
+  },
+  "docker": {
+    "container_id": "d897731b62d4f46e1585bc9a1fdc29f46586c3bc0760370b226b804668d8118b",
+    "image_id": "sha256:524ba7a1d15a66312d64a3ce1a61e0b1132de0b20784b71f2cc7aee7680aaf44",
+    "health": "healthy",
+    "preserved_volume": "uk-visa-agent-demo_review-runtime",
+    "local_and_container_source_manifest_sha256": "ab2d4852e4b2335b04d723c93c8c8305f00f5cd6740e6422911a3bc84ebe410e",
+    "source_files": 70,
+    "persistent_zip_sha256_before_and_after": "8bc0681a837437d30675da7650cd9c61e1ecc69532ea969c77ceb383c458f724",
+    "isolated_network_none_demo": {
+      "cases": 1, "processed_events": 3, "outbox": 3, "deliveries": 1,
+      "unchanged_zip_sha256": "7e27fe057a2643dd892bd41e94ed47245a225ff716bb99a7a4802bb0447b641f"
+    }
+  },
+  "next_application_complaint_probe": {
+    "evidence_class": "Read-only isolated Workflow/Guard/reopened SQLite/reviewed captured SENT with synthetic intent proposals",
+    "combinations": 8,
+    "passed": 3,
+    "failed": 5,
+    "observed_gaps": [
+      "Known official application guidance omitted under empty English or unsupported proposals",
+      "Explicit request to stop personal questions overridden by a next_step proposal"
+    ],
+    "not_fixed_by_this_rollout": true
+  }
+}
