@@ -1,6 +1,6 @@
 # Gmail incremental intake: implementation status
 
-Status: API boundary verified; **not yet connected to the live worker**. The live runner
+Status: API boundary and durable journal verified; **not yet connected to the live worker**. The live runner
 still has the explicit 100-message full-batch limit described in `GMAIL_AUTOMATIC_SERVICE.md`.
 
 ## Implemented and checked
@@ -13,7 +13,22 @@ History IDs retain their exact string representation and are never incremented a
 
 Fifteen contract tests cover pagination arguments, duplicate IDs, empty history, invalid cursors,
 and separation of history-expired 404 from authorization failures, quota errors and server errors.
-The complete local regression suite passes 239 tests; lint and strict typing pass.
+The complete local regression suite passes 249 tests; lint and strict typing pass.
+
+`GmailSyncJournal` now binds a private SQLite journal to one intake scope and commits each
+page's candidate IDs and checkpoint in one transaction. Full bootstrap retains its baseline
+history cursor and requires a history catch-up before becoming ready. Partial history pages
+retain their original start cursor. Replayed/stale responses and cyclic tokens are rejected;
+expired-history resync retains pending and previously acknowledged candidates.
+
+Ten local integration tests cover 251 full-sync candidates plus one arriving during bootstrap,
+reopening state, deduplication, partial-history cursor handling, injected SQL write failure,
+scope mismatch, acknowledgement outcomes and two actual child-process exit windows. Exiting
+with code 75 before commit leaves neither candidate nor advanced checkpoint; exiting after
+commit preserves both. This verifies SQLite process-crash atomicity in these windows, not
+power-loss recovery or the still-unintegrated live Gmail worker. The first crash-test run
+failed because an acknowledgement assertion was accidentally attached to the wrong test;
+the test layout was corrected before the complete suite passed.
 
 The real authorized service mailbox accepted both scoped message-page and history reads.
 The scoped query returned one message ID; history from the newly obtained cursor was empty
@@ -25,7 +40,7 @@ work with the current authorization, **not** live multi-page recovery or correct
 
 1. Capture a baseline history cursor before bootstrapping the activation-scoped message list;
    retain it while following every full-sync page, then consume intervening history.
-2. Persist each page's candidates and continuation together in a transaction. Store only IDs
+2. Wire the tested journal into the runner so each page's candidates and continuation persist together. Store only IDs
    until sender/recipient/activation/loop boundaries have been checked. History has no sender
    query: history candidates must not automatically become applicant messages.
 3. Keep the original history start cursor throughout pagination. Advance to the returned
