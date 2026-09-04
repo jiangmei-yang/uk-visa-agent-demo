@@ -65,6 +65,9 @@ def test_registration_subquestion_is_not_silently_omitted_or_guessed(body, langu
     assert len(answers) == 1
     assert ("没有核验" if language == "zh" else "haven't verified") in answers[0]
     assert ("答案必须用英文" if language == "zh" else "answers must be in English") in answers[0]
+    assert ("中文、中国大陆示例" if language == "zh" else "Simplified Chinese/mainland China example") in answers[0]
+    assert ("地点确认后不能更改" if language == "zh" else "cannot be changed after confirmation") in answers[0]
+    assert ("不要照着示例选" if language == "zh" else "not the example") in answers[0]
     assert "https://visas-immigration.service.gov.uk/apply-visa-type/visit" in answers[0]
 
 

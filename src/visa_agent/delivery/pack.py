@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
+import tempfile
 import zipfile
 from datetime import date
 from html import escape
@@ -17,7 +19,14 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from reportlab.platypus.flowables import Flowable
 
-from visa_agent.domain.models import Case, CaseStatus, DocumentStatus, IssueStatus, WorkflowStage
+from visa_agent.domain.models import (
+    Case,
+    CaseStatus,
+    DocumentStatus,
+    GateResult,
+    IssueStatus,
+    WorkflowStage,
+)
 from visa_agent.domain.policy import Policy
 from visa_agent.domain.rules import evaluate_gate, transition
 from visa_agent.storage.sqlite import SQLiteStore
@@ -283,7 +292,13 @@ def generate_pack(
         rejection = _preparation_control_rejection(case, store)
         if rejection:
             return None, [rejection]
-        return _generate_pack(case, policy, store, output_root, today)
+        path, reasons = _generate_pack(case, policy, store, output_root, today)
+    # Do not publish an in-memory ready path before the outer SQLite commit succeeds.
+    if path is not None and case.delivery_path is None:
+        case.status = CaseStatus.READY_FOR_HUMAN_REVIEW
+        case.stage = WorkflowStage.READY_FOR_HUMAN_REVIEW
+        case.delivery_path = str(path)
+    return path, reasons
 
 
 def _preparation_control_rejection(case: Case, store: SQLiteStore) -> str | None:
@@ -309,14 +324,29 @@ def _generate_pack(
     gate = evaluate_gate(case, policy, today)
     if not gate.allowed:
         return None, gate.reasons
+    registered = store.connection.execute(
+        "SELECT path, sha256, case_revision FROM deliveries WHERE case_id=?", (case.id,),
+    ).fetchone()
     if case.delivery_path:
-        registered = store.connection.execute(
-            "SELECT path, case_revision FROM deliveries WHERE case_id=?", (case.id,),
-        ).fetchone()
         if (registered is None or registered["path"] != case.delivery_path
                 or registered["case_revision"] != case.delivery_revision):
             return None, ["Existing pack does not match the current delivery revision."]
+        if not _registered_archive_is_intact(registered["path"], registered["sha256"], output_root):
+            return None, ["Registered pack is missing, unreadable or changed; recover its original bytes before continuing."]
         return Path(case.delivery_path), []
+    if registered is not None:
+        if registered["case_revision"] == case.delivery_revision:
+            return None, ["Registered pack has no matching case path; recover its recorded state, do not rebuild it."]
+        if (registered["case_revision"] != case.delivery_revision - 1
+                or not _registered_archive_is_intact(registered["path"], registered["sha256"], output_root)):
+            return None, ["A revised pack requires its intact registered predecessor."]
+        # A legitimate next revision keeps the predecessor; save_delivery still checks
+        # that its operator-authorized revision was actually processed.
+    if store.connection.execute(
+        "SELECT 1 FROM delivery_versions WHERE case_id=? AND case_revision>=?",
+        (case.id, case.delivery_revision),
+    ).fetchone():
+        return None, ["Historical artifacts already exist for this revision; do not rebuild or replace them."]
     if any(
         row["case_id"] == case.id
         and int(row.get("case_revision", 1)) == case.delivery_revision
@@ -328,9 +358,81 @@ def _generate_pack(
             "A delivery send was already attempted; keep its original artifact immutable."
         ]
 
+    if case.id in {"", ".", ".."} or "/" in case.id or "\\" in case.id:
+        return None, ["Case artifact identifier must be a single safe path component."]
     case_dir = output_root / case.id
     if case.delivery_revision > 1:
         case_dir = case_dir / f"revision-{case.delivery_revision}"
+    revision_suffix = f"_revision-{case.delivery_revision}" if case.delivery_revision > 1 else ""
+    zip_path = output_root / f"visa_application_pack_{case.id}{revision_suffix}.zip"
+    try:
+        _check_materialization_paths(case_dir, zip_path, output_root)
+        zip_location = zip_path.resolve()
+        case_location = case_dir.resolve()
+        for row in store.connection.execute("SELECT path FROM deliveries UNION SELECT path FROM delivery_versions"):
+            registered_location = Path(row["path"]).resolve()
+            if (registered_location in {zip_location, case_location}
+                    or case_location in registered_location.parents):
+                return None, ["Target artifacts include a registered archive; its historical path cannot be replaced."]
+    except (OSError, RuntimeError, ValueError):
+        return None, ["Pack artifact paths are unavailable or outside the configured output directory."]
+    output_root.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".pack-stage-", dir=output_root) as directory:
+        staging = Path(directory)
+        return _materialize_fresh_pack(
+            case, policy, store, gate, output_root, case_dir, zip_path, staging,
+        )
+
+
+def _registered_archive_is_intact(path: str, digest: str, output_root: Path) -> bool:
+    try:
+        archive = Path(path).resolve()
+        if output_root.resolve() not in archive.parents or not archive.is_file():
+            return False
+        return hashlib.sha256(archive.read_bytes()).hexdigest() == digest
+    except (OSError, RuntimeError):
+        return False
+
+
+def _check_materialization_paths(case_dir: Path, zip_path: Path, output_root: Path) -> None:
+    root = output_root.resolve()
+    for path in (case_dir, case_dir / "pack", case_dir / "audit",
+                 case_dir / "pack" / "supporting_documents", zip_path):
+        if root not in path.resolve().parents:
+            raise ValueError("Materialization paths must stay inside the configured output directory")
+
+
+def _publish_fresh_materialization(
+    staged_case: Path, staged_zip: Path, case_dir: Path, zip_path: Path, output_root: Path,
+) -> None:
+    _check_materialization_paths(case_dir, zip_path, output_root)
+    _check_materialization_paths(staged_case, staged_zip, output_root)
+    # Existing unregistered partials are evidence of an interrupted attempt, not
+    # inputs for a new pack. Preserve them without deleting or merging their files.
+    if case_dir.exists() or case_dir.is_symlink() or zip_path.exists() or zip_path.is_symlink():
+        quarantine = Path(tempfile.mkdtemp(prefix=".unregistered-pack-", dir=output_root))
+        if case_dir.exists() or case_dir.is_symlink():
+            os.replace(case_dir, quarantine / "case-tree")
+        if zip_path.exists() or zip_path.is_symlink():
+            os.replace(zip_path, quarantine / "archive.zip")
+    case_dir.parent.mkdir(parents=True, exist_ok=True)
+    os.replace(staged_case, case_dir)
+    os.replace(staged_zip, zip_path)
+
+
+def _materialize_fresh_pack(
+    case: Case, policy: Policy, store: SQLiteStore, gate: GateResult, output_root: Path,
+    final_case_dir: Path, zip_path: Path, staging: Path,
+) -> tuple[Path | None, list[str]]:
+    for document in case.documents:
+        if document.status != DocumentStatus.ACCEPTED_FOR_REVIEW:
+            continue
+        if (not document.filename.strip() or document.filename in {".", ".."}
+                or "/" in document.filename or "\\" in document.filename):
+            raise ValueError("Accepted supporting document filename must be one non-empty safe path component.")
+    case_dir = staging / "case-tree"
+    staged_zip = staging / "archive.zip"
+    _check_materialization_paths(case_dir, staged_zip, output_root)
     pack_dir = case_dir / "pack"
     audit_dir = case_dir / "audit"
     support_dir = pack_dir / "supporting_documents"
@@ -430,11 +532,13 @@ def _generate_pack(
         if document.status != DocumentStatus.ACCEPTED_FOR_REVIEW:
             continue
         destination = support_dir / document.filename
-        if not destination.exists():
-            shutil.copy2(document.path, destination)
-
-    revision_suffix = f"_revision-{case.delivery_revision}" if case.delivery_revision > 1 else ""
-    zip_path = output_root / f"visa_application_pack_{case.id}{revision_suffix}.zip"
+        shutil.copy2(document.path, destination)
+    # Verify the final staged bytes, not a source that could change during copying.
+    for document in case.documents:
+        if document.status == DocumentStatus.ACCEPTED_FOR_REVIEW:
+            staged_digest = hashlib.sha256((support_dir / document.filename).read_bytes()).hexdigest()
+            if staged_digest != document.sha256:
+                raise ValueError("Accepted supporting document bytes no longer match their recorded SHA-256.")
     prepared_case = case.model_copy(deep=True)
     if prepared_case.status != CaseStatus.READY_FOR_HUMAN_REVIEW:
         transition(prepared_case, CaseStatus.READY_FOR_HUMAN_REVIEW)
@@ -465,14 +569,12 @@ def _generate_pack(
         encoding="utf-8",
     )
 
-    _write_zip(pack_dir, zip_path)
-    digest = hashlib.sha256(zip_path.read_bytes()).hexdigest()
+    _write_zip(pack_dir, staged_zip)
+    digest = hashlib.sha256(staged_zip.read_bytes()).hexdigest()
     rejection = _preparation_control_rejection(case, store)
     if rejection:
         return None, [rejection]
     store.save_delivery(case.id, str(zip_path), digest, case_revision=case.delivery_revision)
     store.save_case(prepared_case)
-    case.status = prepared_case.status
-    case.stage = prepared_case.stage
-    case.delivery_path = prepared_case.delivery_path
+    _publish_fresh_materialization(case_dir, staged_zip, final_case_dir, zip_path, output_root)
     return zip_path, []

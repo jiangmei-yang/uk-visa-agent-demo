@@ -288,10 +288,12 @@ def test_nested_delivery_and_case_writes_roll_back_as_one_unit(store: SQLiteStor
 def test_pack_serializes_pause_against_materialization_and_both_persistence_writes(
     complete_case, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    store, case, _ = complete_case
-    case.delivery_path = None
-    case.status = CaseStatus.DRAFT
-    case.stage = WorkflowStage.FINAL_CONFIRMATION
+    _, prepared, _ = complete_case
+    # A separate, not-yet-materialized fixture; never erase the original delivery registry
+    # to manufacture permission to rebuild its immutable archive.
+    store = SQLiteStore(tmp_path / "unmaterialized-lock-test.db")
+    case = prepared.model_copy(update={"delivery_path": None, "status": CaseStatus.DRAFT,
+                                       "stage": WorkflowStage.FINAL_CONFIRMATION})
     store.save_case(case)
     locked_at: list[str] = []
     original_zip = pack._write_zip
@@ -331,6 +333,7 @@ def test_pack_serializes_pause_against_materialization_and_both_persistence_writ
         assert not evaluate_gate(persisted, load_policy(POLICY_PATH), DEMO_EVALUATION_DATE).allowed
     finally:
         contender.close()
+        store.close()
 
 
 @pytest.mark.parametrize("write_event", [False, True])

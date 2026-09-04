@@ -43,6 +43,8 @@ def revision_store(tmp_path: Path, *, registry_revision: int = 2) -> tuple[SQLit
         delivery_path=str(pack_path),
         status=CaseStatus.READY_FOR_HUMAN_REVIEW,
         stage=WorkflowStage.READY_FOR_HUMAN_REVIEW,
+        # Simulated transport precondition, not real applicant consent or identity evidence.
+        final_summary_confirmed=True,
     )
     store.save_case(case)
     with store.connection:

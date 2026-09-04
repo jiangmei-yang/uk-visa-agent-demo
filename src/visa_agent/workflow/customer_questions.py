@@ -422,13 +422,18 @@ def _reviewed_answer(topic: str, language: str, *, body: str = "") -> str:
         r"\b(?:register|registration|sign up)\b|\b(?:create|set up).{0,20}account\b", body, re.I,
     ):
         answer += (
-            "\n你问的账户注册顺序，我还没有核验到那一步，不能确定是否必须先注册再填表。"
-            "目前官方入口先显示语言选择页：可以用中文查看问题，但答案必须用英文填写。"
-            "账户设置请以随后官网显示的步骤为准。"
+            "\n可以先从上面的官方入口选择阅读语言；题目可以显示中文，但答案必须用英文填写。"
+            "我核验过的中文、中国大陆示例，接下来会选择采集生物信息的国家或地区，再确认签证中心地点。"
+            "官网提示地点确认后不能更改，所以这一步要按你实际能到场的地方选，不要照着示例选。"
+            "你问的账户注册顺序，我还没有核验到那一步，不能确定是否必须先注册再填表；"
+            "账户设置仍以随后官网显示的步骤为准。"
             if language == "zh" else
-            "\nI haven't verified the account-registration step, so I can't confirm whether registration must come before filling in the form. "
-            "The current entry page first asks you to select a language; questions can be shown in another language, but answers must be in English. "
-            "Follow the account steps shown on the official site as you continue."
+            "\nStart at the official entry above and select your reading language; your answers must be in English. "
+            "In the Simplified Chinese/mainland China example I checked, the next steps select the country or region "
+            "for biometrics and confirm the visa application centre location. The page warns that the location cannot "
+            "be changed after confirmation, so use a location you can actually attend, not the example. "
+            "I haven't verified the account-registration step, so I can't confirm whether registration must come before "
+            "filling in the form. Follow the account steps shown on the official site as you continue."
         )
         extra_source = "https://visas-immigration.service.gov.uk/apply-visa-type/visit"
     elif topic == "translation" and re.search(r"朋友|自己|\b(?:friend|myself|self[- ]translate)\b", body, re.I):

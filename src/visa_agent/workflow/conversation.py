@@ -214,6 +214,25 @@ def preparation_context_progress(case: Case) -> bool:
     })
 
 
+def quiet_preparation_resume(case: Case) -> bool:
+    """A resume receipt with an explicit closing is not a request for a tutorial."""
+    if (case.latest_preparation_action != "resume" or "next_step" in case.customer_question_topics
+            or case.latest_received_facts or case.latest_changes or case.latest_document_names):
+        return False
+    text = _unquoted_reply_text(case.latest_customer_message)
+    return bool(re.search(
+        r"\b(?:that['’]s|that is|this is) all for (?:this (?:email|message)|now|today)\b|"
+        r"(?:这封(?:邮件)?|本封(?:邮件)?|这条消息|这次|今天)(?:就|先)(?:说)?(?:这些|这样|到这里)",
+        text, re.I,
+    ))
+
+
+def _unquoted_reply_text(body: str) -> str:
+    text = latest_reply_text(body)
+    text = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"', "", text)
+    return re.sub(r"(?<!\w)'[^'\n]+'(?!\w)|`[^`\n]+`", "", text)
+
+
 def update_deferred_questions(case: Case, body: str) -> None:
     """Defer unanswered dates, not requirements or previously supplied facts."""
     case.latest_deferred_fields = []
@@ -415,16 +434,23 @@ QUESTION_TEXT_EN = {
 }
 
 
+def _document_list_request_text(body: str) -> str:
+    clauses = re.split(r"[。！!；;\n，,]|(?<=[?？])\s*|\.(?:\s|$)", _unquoted_reply_text(body))
+    return "\n".join(clause for clause in clauses if not re.search(
+        r"(?:不用|不需要|不要).{0,20}(?:清单|材料|资料)|"
+        r"(?:don't|do not|no need).{0,30}(?:checklist|documents|list)", clause, re.I,
+    ))
+
+
 def document_list_requested(case: Case) -> bool:
     """A bounded explicit request, after enough context to select material categories."""
     if not all((case.profile.visit_purpose, case.profile.nationality_country,
                 case.profile.application_country, case.profile.occupation_status,
                 case.profile.funding_source)):
         return False
-    text = latest_reply_text(case.latest_customer_message)
-    text = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"', "", text)
-    if re.search(r"(?:不用|不需要|不要).{0,20}(?:清单|材料|资料)|"
-                 r"(?:don't|do not|no need).{0,30}(?:checklist|documents|list)", text, re.I):
+    # A declined general checklist must not veto a separate current personal request.
+    text = _document_list_request_text(case.latest_customer_message)
+    if not text.strip():
         return False
     if {"off_topic", "unsupported", "next_step"}.intersection(case.customer_question_topics):
         # A separate visa question still gets keyword fallback. Exclude only clauses
@@ -450,6 +476,52 @@ def document_list_requested(case: Case) -> bool:
         r"(?:send|share|show|give).{0,30}(?:document checklist|document list|list of documents)|"
         r"(?:what|which) documents.{0,20}(?:need|required|prepare)", text, re.I,
     ))
+
+
+def general_document_list_requested(case: Case) -> bool:
+    """Only explicitly general/reference questions change the checklist's framing."""
+    if not document_list_requested(case):
+        return False
+    text = _document_list_request_text(case.latest_customer_message)
+    clauses = re.split(r"[。！!；;\n]|(?<=[?？])\s*|\.(?:\s|$)", text)
+    list_clauses = [clause for clause in clauses if re.search(
+        r"清单|哪些材料|什么材料|还缺(?:什么|哪些)|\bchecklist\b|\blist of documents\b|\b(?:what|which) documents\b",
+        clause, re.I,
+    )]
+    if any(re.search(
+        r"(?:按|根据|结合).{0,18}(?:我|本人).{0,12}(?:情况|进度)|"
+        r"(?:我|本人).{0,18}(?:还缺|待补|补交)|(?:我这次|我的)(?:申请|材料|档案)|"
+        r"\b(?:my|our|own) (?:case|file|application)\b|"
+        r"\b(?:I|we) (?:still )?(?:need|am missing|are missing)\b",
+        clause, re.I,
+    ) for clause in list_clauses):
+        return False
+    return any(re.search(r"一般|通常|常见|参考|概览|\b(?:general|usual|typical|normally|reference)\b",
+                         clause, re.I) for clause in list_clauses) or bool(re.search(
+        r"(?:只|仅).{0,12}(?:一般信息|一般要求|参考信息)|"
+        r"\bonly (?:looking|asking).{0,35}\bgeneral (?:information|requirements)\b", text, re.I,
+    ))
+
+
+def reference_document_label(case: Case, item: Requirement) -> str:
+    """Describe reviewed evidence categories, not this applicant's unsatisfied tasks."""
+    labels = {
+        "passport": ("有效护照或旅行证件 — 用于核对身份及计划停留期间的有效性",
+                     "Valid passport or travel document — identity and validity for the planned stay"),
+        "status_evidence": ("工作、学习或自雇情况的证明 — 例如在职、在读或经营记录，按实际情况选用",
+                            "Work, study or self-employment evidence — employment, enrolment or business records, as applicable"),
+        "purpose_evidence": ("访问目的及计划安排 — 说明赴英做什么，未预订的安排不写成已预订",
+                             "Visit purpose and intended arrangements — explain the visit without presenting unbooked plans as bookings"),
+        "funding_evidence": ("可用资金及来源证明 — 说明谁承担费用、资金从哪里来以及能否使用；预算数字本身不是证明",
+                             "Available funds and their source — who pays, where funds come from and access to them; a budget alone is not evidence"),
+        "sponsor_evidence": ("如由他人资助：资助内容、资助能力及双方关系的证明；适用时说明资助人的英国身份",
+                             "If someone else provides funding: evidence of support, means and the relationship, plus UK status where applicable"),
+        "certified_translation": ("如材料不是英文或威尔士文：完整、可核验的翻译",
+                                  "For documents not in English or Welsh: a full, verifiable translation"),
+        "legal_residence": ("如在非国籍国申请：在申请所在地合法居留的证明",
+                            "When applying outside the country of nationality: evidence of lawful residence there"),
+    }
+    return labels.get(item.id, (item.title, item.title))[0 if case.customer_language == "zh" else 1]
 
 
 def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
@@ -507,12 +579,14 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
     documents = []
     requested_list = document_list_requested(case)
     paused = case.question_plan == [] and bool(case.pending_question_fields)
-    quiet_turn = bool(case.latest_customer_message) and not (
+    quiet_turn = quiet_preparation_resume(case) or bool(case.latest_customer_message) and not (
         preparation_context_progress(case) or case.latest_document_names
         or customer_requests_next_step(case.latest_customer_message)
     )
     answering_question = bool(case.customer_question_topics or case.customer_answers)
-    if (requested_list or case.latest_document_names or issues or (
+    if general_document_list_requested(case):
+        documents = [reference_document_label(case, item) for item in case.requirements if item.blocker]
+    elif (requested_list or case.latest_document_names or issues or (
             not quiet_turn and not answering_question
             and ((not questions and not paused) or case.documents)
     )):
@@ -637,13 +711,18 @@ def paused_customer_message(case: Case) -> str:
         sections.append(context)
     sections.extend(case.customer_answers)
     if document_list_requested(case):
-        documents = [explained_document_label(case, item) for item in case.requirements
-                     if item.applicable and item.blocker and not item.satisfied]
+        general_list = general_document_list_requested(case)
+        documents = ([reference_document_label(case, item) for item in case.requirements if item.blocker]
+                     if general_list else [explained_document_label(case, item) for item in case.requirements
+                                          if item.applicable and item.blocker and not item.satisfied])
         if documents:
             sections.append(
-                ("如果之后继续准备，按你目前的情况可以参考这份材料清单，现在不用急着提交：\n" if zh else
+                (("一般可以参考以下材料类别；具体适用项取决于申请情况，现在不是要求你提交：\n" if zh else
+                  "For general reference, these are common evidence categories, not a request to send documents:\n")
+                 if general_list else
+                 ("如果之后继续准备，按你目前的情况可以参考这份材料清单，现在不用急着提交：\n" if zh else
                  "For when you decide to continue, this is a preparation list for your current circumstances; "
-                 "there's no need to send these now:\n")
+                 "there's no need to send these now:\n"))
                 + "\n".join(f"- {item}" for item in documents)
             )
             sources = list(dict.fromkeys(source for item in case.requirements
@@ -744,6 +823,7 @@ def blocked_customer_message(case: Case) -> str:
         )
     elif (case.deferred_fields and not questions and not issues and not documents and not case.customer_answers
           and not case.pending_question_fields
+          and not quiet_preparation_resume(case)
           and customer_requests_next_step(case.latest_customer_message)):
         sections.append(
             "日期确定后再告诉我就好，已经提供的信息会保留。具体日期补齐前，还不能完成最终核对。"
@@ -751,6 +831,9 @@ def blocked_customer_message(case: Case) -> str:
             "The final check will remain on hold until the dates are supplied."
         )
     if case.latest_preparation_action == "resume" and (receipt := preparation_control_receipt(case)):
+        if (quiet_preparation_resume(case) and not acknowledgements and not questions
+                and not issues and not documents and not case.customer_answers):
+            sections = []
         sections.insert(0, receipt)
     sections.extend(case.customer_answers)
     if issues:
@@ -763,20 +846,24 @@ def blocked_customer_message(case: Case) -> str:
             + "\n".join(f"- {item}" for item in issues)
         )
     if documents:
+        general_list = general_document_list_requested(case)
         sections.append(
-            (
+            (("一般可以参考以下材料类别；具体适用项取决于申请情况：\n" if zh else
+              "For general reference, common evidence categories include:\n") if general_list else (
                 "接下来还需要这些材料；有哪份暂时拿不到，也可以直接告诉我：\n"
                 if zh
                 else "We'll also need these documents. Let me know if any are difficult to obtain:\n"
-            )
+            ))
             + "\n".join(f"- {item}" for item in documents)
         )
         if document_list_requested(case):
             sections.append(
-                "这是按你的情况列出的待补材料，不是所有申请人通用的强制清单。"
+                ("这是参考概览，不是要求你现在补交材料，也不是所有申请人通用的强制清单。" if zh else
+                  "This is a reference overview, not a request for you to send documents or a universal mandatory checklist.")
+                 if general_list else ("这是按你的情况列出的待补材料，不是所有申请人通用的强制清单。"
                 "如果行程或资助情况有变化，我会再调整。"
                 if zh else "This is a preparation list for your circumstances, not a universal "
-                "mandatory checklist. I'll adjust it if your travel or funding arrangements change."
+                "mandatory checklist. I'll adjust it if your travel or funding arrangements change.")
             )
             if not re.search(
                 r"(?:不用|不需要|不要|无需|别).{0,12}(?:链接|网址|官网)|"

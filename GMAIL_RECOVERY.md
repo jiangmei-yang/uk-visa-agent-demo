@@ -130,5 +130,6 @@ synthetic applicant documents or supply ordinary-material final-delivery evidenc
 Real credential revocation/reconsent and live-worker recovery, provider-induced 429/5xx, natural
 history expiry, recipient-side revised-pack delivery and independent nontechnical operation are
 still open. The runner's pack-generation failure/acknowledgement window and a full broken-page →
-operator-rescan → restart experiment remain separate follow-up work. Do not infer those results
-from an invalid-token HTTP 401 probe, a healthy reload, or an increasing unit-test count.
+operator-rescan → restart experiment now have separate [isolated fixture regressions](PACK_RECOVERY.md).
+These are not live outage observations. Do not infer real recovery from an invalid-token HTTP 401
+probe, a healthy reload, or an increasing unit-test count.

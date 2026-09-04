@@ -122,7 +122,44 @@ has not been verified rather than inventing it. The current language-selection p
 requirement were checked against the [official entry](https://visas-immigration.service.gov.uk/apply-visa-type/visit)
 on 2026-09-04. Full account-creation/form navigation is **not** validated.
 
+### Additional entry-page observation, 2026-09-04
+
+A later browser check followed the public entry with Simplified Chinese selected. It observed
+language confirmation, the biometrics country/region selector, and the mainland China example's
+visa-application-centre information/location-confirmation page. That page warns that the location
+cannot be changed after confirmation. The observation stopped there: no location confirmation,
+personal details, account creation, payment or application submission was performed. Mainland China
+was a navigation example, not an inference about the applicant's location. The registration answer
+now gives these limited steps and warns the customer to use their own actual location; it still
+explicitly leaves account-registration order unverified. This is a dated UI observation, not a
+guarantee that every country/language route has the same sequence. Start at the
+[official application entry](https://visas-immigration.service.gov.uk/apply-visa-type/visit), not a
+copied session-specific intermediate URL.
+
 ## Reproduction and limits
+
+### Reply-scope repair and retained replay
+
+An additional reading review found two remaining delivery-of-information problems in exposed
+development outputs: `ns_dev_18` asked only for general requirements but received a personal
+missing-document demand; `ns_dev_14` asked only to resume preparation and close this email, but
+received an unsolicited application tutorial. Their captured original patches first failed both
+new local workflow regressions. The repair distinguishes a reference overview from a request for
+this applicant's missing items, and a quiet resume receipt from a new next-step question. It keeps
+independent FAQs, facts, documents and explicit personal next steps. No extraction prompt or
+confirmation/release gate was changed. The [28 focused regressions](tests/integration/test_adviser_reply_scope.py)
+pass with network disabled, including Chinese/English requests, negation and quoted history controls.
+
+The new zero-call [development replay](eval_output/next_step_scope_replay_2026-09-04.json) is retained
+as **21/24 guard, 21/24 workflow, 19/24 combined**, not replaced with a passing score. Source,
+corpus and original-report hashes stayed unchanged during the replay. Its two additional failures,
+03 and 18, are the unchanged oracle's requirement for verbatim *personal missing-item* labels:
+the current answers use conditional reference labels when a general overview is requested.
+Independent reading confirmed that 03 still includes the separately requested personal passport
+step, and 18 still answers the translation question. This is an explanation of exposed examples,
+not permission to relabel the original results. The prior 22/23 ambiguity and 24 model scope failure
+remain. A future evaluation must predefine separate reference-list and personal-action contracts;
+this report and the original **6/8 first holdout** must remain visible. Naturalness is still unscored.
 
 ```sh
 .venv/bin/python scripts/next_step_probe.py --corpus evals/next_step_cases.json \

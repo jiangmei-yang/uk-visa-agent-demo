@@ -17,11 +17,21 @@ explicitly recorded here.
 
 Updated 2026-09-04. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **2,040 passing tests**; see the latest [recovery work](GMAIL_RECOVERY.md)
+The local suite has **2,130 passing tests**; see the latest [pack/intake recovery work](PACK_RECOVERY.md),
+[credential recovery](GMAIL_RECOVERY.md)
 and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
 
-Latest reliability work: private atomic credential replacement, mailbox-checked explicit
+Latest reliability work: isolated staging and accepted-source SHA checks prevent changed or stale
+support files entering a retry; registered history is never silently regenerated. Failed pack work
+does not acknowledge the email or starve newer unread pauses/corrections. Final replies are tied to
+the current revision's latest final-confirmation event and cannot duplicate another final send in
+that revision. Broken-page/rescan/restart and process-exit windows passed offline fixture tests.
+The supervised Gmail worker and persistent Docker UI have loaded these changes with unchanged
+existing case/reply/ZIP projections; see [the rollout record](eval_output/pack_recovery_rollout_2026-09-04.json).
+This is not a new recipient-side or ordinary-document final-delivery result.
+
+Earlier reliability work: private atomic credential replacement, mailbox-checked explicit
 reauthorization, visible query-only recovery after access failure, and guided-lab archive
 integrity passed isolated regressions. A real three-stage **isolated** refresh/profile probe also
 passed with zero sends and original credentials unchanged. Forced local expiry and an invalid
@@ -33,7 +43,14 @@ and preserve date deferrals and customer pacing. The first new holdout is **6/8*
 resume expression and wrongly applying a sibling's next-step question to the applicant's case.
 Original reports are retained. Post-holdout repairs are local exposed regressions, not new holdout
 successes. The previous saved-output development replay remains 21/24 guard and 23/24 workflow,
-including documented label ambiguity and one different-UK-route classification error.
+including documented label ambiguity and one different-UK-route classification error. The later
+reply-scope repair separates general information from personal upload requests and removes the
+unsolicited tutorial from an explicitly quiet resume. Its 28 local regressions pass. The retained
+new development replay is **21/24 guard, 21/24 workflow, 19/24 combined**: two additional checks
+still require the old personal labels in general-reference lists; their FAIL results are not hidden
+or rescored. See [the reading and limitations](NEXT_STEP_ADVICE.md#reply-scope-repair-and-retained-replay).
+No new model calls or naturalness score were produced. Official UI navigation was observed only
+through the mainland-China example's location-confirmation page, not account creation/submission.
 
 Earlier: [persisted preparation pause/restart](PREPARATION_CONTROL.md) separates customer pacing
 from human review and consent, blocks obsolete queued replies and retains independent facts/FAQs.

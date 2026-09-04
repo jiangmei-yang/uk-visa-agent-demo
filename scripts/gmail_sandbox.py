@@ -32,6 +32,10 @@ from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.service import WorkflowService
 
 
+class PackPreparationError(RuntimeError):
+    """Committed applicant work still has unresolved materialization; never imply delivery."""
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("prepare", "serve", "send-reviewed", "reconcile", "status"))
@@ -166,11 +170,21 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
                 if not discover_messages(adapter, journal, query):
                     print("Intake discovery continues next cycle; no dispatch")
                     return
-                ids = ordered_candidates(adapter, journal, sender=args.sender, mailbox=args.mailbox,
-                                         after=args.after, subject=args.subject)[:100]
+                ordered = ordered_candidates(adapter, journal, sender=args.sender, mailbox=args.mailbox,
+                                             after=args.after, subject=args.subject)
+                # A committed event is recovery work, not an unread customer message.
+                # Keep new events chronological and ahead of old pack retries so a
+                # full batch of failed artifacts cannot starve a later pause/correction.
+                # Both queues share the existing 100-body cap; dispatch still requires
+                # the entire discovery backlog to be acknowledged.
+                unread, committed = [], []
+                for identifier in ordered:
+                    (committed if store.event_processed(identifier) else unread).append(identifier)
+                ids = (unread + committed)[:100]
             else:
                 ids = list(reversed(adapter.list_complete_message_ids(query, limit=100)))
-            # Metadata gives chronological order. Fetch/process one body at a time.
+            # New messages remain chronological. Fetch/process one body at a time.
+            pack_pending = False
             for identifier in ids:
                 raw = adapter.get_raw_message(identifier)
                 mime = message_from_bytes(raw.raw, policy=policy.default)
@@ -193,9 +207,20 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
                 case, duplicate, plan = workflow.process(result.event)
                 # Recover a crash after the workflow commit but before pack materialisation.
                 if plan == "ready" or (duplicate and case.stage.value == "READY_FOR_HUMAN_REVIEW"):
-                    generate_pack(
-                        case, workflow.policy, store, args.state_dir / "packs", date.today()
-                    )
+                    try:
+                        archive, _ = generate_pack(
+                            case, workflow.policy, store, args.state_dir / "packs", date.today()
+                        )
+                    except Exception:
+                        # Only materialization failures are recoverable here: workflow/DB
+                        # processing exceptions above still stop immediately. Later customer
+                        # corrections or a pause must not be trapped behind an already
+                        # committed ready event. No dispatch is allowed in this failed cycle.
+                        pack_pending = True
+                        continue
+                    if archive is None:
+                        pack_pending = True
+                        continue
                 if journal is not None:
                     journal.acknowledge(identifier, "processed")
                 print(
@@ -213,6 +238,11 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
                         }
                     )
                 )
+            if pack_pending:
+                raise PackPreparationError(
+                    "A required pack was not materialized. Committed applicant information and "
+                    "pending candidates are retained; no automatic dispatch in this cycle."
+                ) from None
         if args.action == "serve":
             if journal is None or not journal.discovery_drained():
                 print("Intake backlog remains; no dispatch")

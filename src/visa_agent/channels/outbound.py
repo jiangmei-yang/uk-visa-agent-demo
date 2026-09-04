@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Protocol
 
+from visa_agent.domain.models import CaseStatus, WorkflowStage
 from visa_agent.storage.sqlite import SQLiteStore
 
 
@@ -23,6 +24,10 @@ class ReconciliationAccessError(PermanentChannelError):
 
 class UncertainDeliveryError(RuntimeError):
     """The provider may have accepted the send; reconcile before any resend."""
+
+
+class ReadyReplyAuthorityError(PermanentChannelError):
+    """Local final-reply preflight failed before any provider send was attempted."""
 
 
 @dataclass(frozen=True)
@@ -82,12 +87,23 @@ class OutboxDispatcher:
 
     def dispatch_due(self, now: datetime, limit: int = 20) -> list[DispatchOutcome]:
         outcomes: list[DispatchOutcome] = []
+        self._withhold_superseded_ready()
         for row in self.store.claim_pending_outbox(now, limit, self.channel, self.allowed_message_types):
             outbox_id = str(row["id"])
             attempt = int(row["attempt_count"]) + 1
             try:
                 request = self._request_for(row, now)
                 provider_message_id = self.sender.send(request)
+            except ReadyReplyAuthorityError as error:
+                # An obsolete confirmation is not a provider attempt. Preserve any
+                # existing attempt count; never fabricate a send while withholding it.
+                with self.store.connection:
+                    self.store.connection.execute(
+                        "UPDATE outbox SET status='FAILED', next_attempt_at=NULL, last_error=? "
+                        "WHERE id=? AND status='SENDING'",
+                        (_safe_error(error), outbox_id),
+                    )
+                outcomes.append(DispatchOutcome(outbox_id, "FAILED"))
             except UncertainDeliveryError as error:
                 self.store.mark_outbox_uncertain(outbox_id, _safe_error(error))
                 outcomes.append(DispatchOutcome(outbox_id, "SENDING"))
@@ -118,6 +134,28 @@ class OutboxDispatcher:
                     DispatchOutcome(outbox_id, "SENT", provider_message_id=provider_message_id)
                 )
         return outcomes
+
+    def _withhold_superseded_ready(self) -> None:
+        """Retire unattempted older final events, not unrelated later conversation.
+
+        This is event authority, not a persisted final-summary fingerprint. The
+        latest ready row is produced by the workflow's gate-passing final event.
+        SQLite rowid disambiguates events committed within the same second.
+        """
+        if self.allowed_message_types is not None and "ready" not in self.allowed_message_types:
+            return
+        channel_clause = " AND old.channel=?" if self.channel is not None else ""
+        values: tuple[object, ...] = () if self.channel is None else (self.channel,)
+        with self.store.atomic_write():
+            self.store.connection.execute(
+                "UPDATE outbox AS old SET status='FAILED', next_attempt_at=NULL, "
+                "last_error='Superseded final confirmation; no provider send attempted' "
+                "WHERE old.message_type='ready' AND old.status IN ('PENDING','RETRY') "
+                "AND old.attempt_count=0" + channel_clause + " AND EXISTS ("
+                "SELECT 1 FROM outbox newer WHERE newer.case_id=old.case_id "
+                "AND newer.case_revision=old.case_revision AND newer.message_type='ready' "
+                "AND newer.rowid>old.rowid)", values,
+            )
 
     def reconcile_sending(
         self,
@@ -176,6 +214,26 @@ class OutboxDispatcher:
             raise PermanentChannelError("The channel's free-form reply window has expired")
         attachment: tuple[str, bytes] | None = None
         if str(row["message_type"]) == "ready":
+            latest = self.store.connection.execute(
+                "SELECT id FROM outbox WHERE case_id=? AND case_revision=? "
+                "AND message_type='ready' ORDER BY rowid DESC LIMIT 1",
+                (case.id, case.delivery_revision),
+            ).fetchone()
+            if latest is None or latest["id"] != outbox_id:
+                raise ReadyReplyAuthorityError("Ready reply belongs to a superseded final confirmation event")
+            if (not case.final_summary_confirmed
+                    or case.status not in {CaseStatus.READY_FOR_HUMAN_REVIEW, CaseStatus.DELIVERED_AFTER_CONFIRMATION}
+                    or case.stage not in {WorkflowStage.READY_FOR_HUMAN_REVIEW, WorkflowStage.DELIVERED_AFTER_CONFIRMATION}):
+                raise ReadyReplyAuthorityError("Ready reply requires current confirmed and materialized preparation")
+            other_attempt = self.store.connection.execute(
+                "SELECT 1 FROM outbox WHERE case_id=? AND case_revision=? AND message_type='ready' "
+                "AND id<>? AND (status IN ('SENDING','AMBIGUOUS','SENT') OR attempt_count>0) LIMIT 1",
+                (case.id, case.delivery_revision, outbox_id),
+            ).fetchone()
+            if other_attempt:
+                raise ReadyReplyAuthorityError(
+                    "Another final reply for this revision was attempted; reconcile or review before delivery"
+                )
             if not case.delivery_path:
                 raise PermanentChannelError("Ready reply has no generated pack")
             registered = self.store.connection.execute(
