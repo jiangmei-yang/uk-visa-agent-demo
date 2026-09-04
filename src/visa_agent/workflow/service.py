@@ -173,7 +173,8 @@ class WorkflowService:
         update_deferred_questions(case, case.latest_customer_message)
         customer_event = event.model_copy(
             update={
-                "body": latest_reply_text(event.body),
+                "body": (decision.business_body if decision.business_body is not None
+                         else latest_reply_text(event.body)),
                 "requested_fields": [field for field in prior_pending
                                      if field not in case.deferred_fields],
                 "known_profile": case.profile.model_dump(mode="json"),
@@ -221,7 +222,9 @@ class WorkflowService:
         )]
         was_paused = case.preparation_paused
         case.latest_preparation_action = None
-        if patch.preparation_intent is not None:
+        if patch.preparation_intent is not None and not (
+            decision.grant_business and patch.preparation_intent.action == "resume"
+        ):
             paused = patch.preparation_intent.action == "pause"
             if paused != case.preparation_paused:
                 case.preparation_paused = paused
@@ -234,7 +237,7 @@ class WorkflowService:
                 case.confirmation_kind = None
                 case.confirmation_request_event_id = None
         # A restart of preparation is not consent to a previously sent summary.
-        may_confirm = not was_paused and not case.preparation_paused
+        may_confirm = not was_paused and not case.preparation_paused and not decision.grant_business
         case.proactive_guidance_offered = False
         case.customer_question_topics = [item.topic for item in current_questions]
         case.customer_question_exclusions = [item.source_excerpt for item in current_questions
@@ -502,6 +505,7 @@ class WorkflowService:
             if message_id not in case.outbound_message_ids:
                 case.outbound_message_ids.append(message_id)
             self.store.commit_event(case, event, plan, message)
+            ConsentLedger(self.store).mark_completed(event.id)
 
     def _inbound_rejection(
         self,

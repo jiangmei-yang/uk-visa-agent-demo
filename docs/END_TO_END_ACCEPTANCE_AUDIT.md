@@ -12,8 +12,9 @@ for these outcomes.
    have now been implemented and exercised with isolated, captured transports;
    see [the exact boundary and remaining limits](PROCESSING_CONSENT.md).
    `CONSENTED` is a workflow-stage label, not proof that consent was obtained.
-   WhatsApp pre-download consent, mixed consent-plus-material emails, independent
-   notice usability and a real applicant grant still require verification.
+   [Mixed consent-plus-material emails](MIXED_PROCESSING_CONSENT.md) now have
+   bounded local/captured-transport coverage. WhatsApp pre-download consent,
+   independent notice usability and a real applicant grant still require verification.
    OAuth, a mailbox allowlist, operator approval, or the retry CLI's model
    flag is not applicant privacy consent. Do not ask a new participant to send
    ordinary personal documents until this is addressed and consent established.
@@ -36,7 +37,9 @@ for these outcomes.
    [Delivery-backed FAQ continuation and two preparation obstacles](ADVICE_CONTINUATION.md)
    now have bounded local/captured-sender repairs, including mixed facts/files.
    Broader paraphrases, other unavailable evidence and bounded consultation-context
-   retention still need work. No new live model run or independent recipient trial is implied.
+   retention still need work. Multiple independent emails in one batch can also
+   supersede earlier unsent FAQ replies; broader batch question retention remains
+   open. No new live model run or independent recipient trial is implied.
 
 ## Bounded recovery added in this work
 

@@ -80,7 +80,13 @@ class InboundEventWorker:
             except ValueError:
                 continue  # Retain corrupt/unbound source material for operator review.
             case = self.store.get_case(str(row["case_id"]))
-            if (case is None or event.id != row["id"] or event.channel != self.channel
+            # Reviewed queues retain the original Gmail envelope. The candidate
+            # query and atomic resume both require its exact review/held binding;
+            # this is not permission for arbitrary cross-channel replay.
+            matching_channel = event.channel == self.channel or (
+                self.channel == "gmail_review" and event.channel == "gmail"
+            )
+            if (case is None or event.id != row["id"] or not matching_channel
                     or case.primary_channel != event.channel
                     or event.external_thread_id != case.external_thread_id
                     or not self._same_sender(event, case) or not ledger.allowed(case)):

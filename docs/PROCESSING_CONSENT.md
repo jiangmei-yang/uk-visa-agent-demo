@@ -38,10 +38,15 @@ source IDs, invent a customer email or process unrelated historical corresponden
 The customer should not have to attach the same files again merely because the
 first email arrived before the notice.
 
-The permission reply is currently a pure control message. New facts or files mixed
-into that reply are not automatically extracted; the notice asks for a separate
-permission reply. Earlier deferred originals are still recovered. This usability
-restriction remains a real limit, not evidence that arbitrary mixed email works.
+The permission reply may now include new facts, questions or attachments. Its
+valid grant is recorded first; business processing follows from the same original
+provider ID after all discovered privacy controls have been scanned. The business
+view removes only the verified grant clause, not adjacent facts or punctuation.
+Pure grants remain control-only. Replays require a matching original-message hash
+and current permission; they neither re-grant consent nor acquire preparation
+resume or summary-confirmation authority. See [the mixed-message repair and its
+bounded evidence](MIXED_PROCESSING_CONSENT.md). This is not a claim to parse every
+possible consent paraphrase.
 
 ## Withdrawal and secondary execution paths
 
@@ -59,7 +64,9 @@ body, never the ordinary case renderer. SENDING/AMBIGUOUS/SENT records remain
 evidence: withdrawal cannot recall already transmitted data or justify resending
 an uncertain message. Minimal provider-send reconciliation remains available.
 
-Provider/model or notice-version changes require fresh permission. A document
+Provider/model, notice-version or actual notice-text changes require fresh permission.
+The old persisted scope hash is compared, not reconstructed using today's notice.
+A document
 retry must not silently select a different provider than the applicant was told
 about. `--allow-model-processing` is an operator execution choice, not an applicant
 privacy grant.

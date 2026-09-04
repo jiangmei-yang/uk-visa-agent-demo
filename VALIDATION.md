@@ -17,7 +17,8 @@ explicitly recorded here.
 
 Updated 2026-09-05. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **3,214 passing tests**; see the latest [consultation continuation and obstacle repair](docs/ADVICE_CONTINUATION.md),
+The local suite has **3,348 passing tests**; see the latest [mixed permission and consultation repair](docs/MIXED_PROCESSING_CONSENT.md),
+[consultation continuation and obstacle repair](docs/ADVICE_CONTINUATION.md),
 [independent usefulness review and repairs](docs/ADVISER_USEFULNESS_REVIEW_2026-09-04.md),
 [processing-permission boundary](docs/PROCESSING_CONSENT.md),
 [earlier consultant-usefulness repair](docs/CONSULTANT_REPLY_DESIGN.md),
@@ -29,7 +30,28 @@ The local suite has **3,214 passing tests**; see the latest [consultation contin
 and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
 
-Latest local repair: **3,214 passed in 48.15s**, Ruff and strict Mypy passed (68 source files).
+Latest mixed-message repair: **3,348 passed in 50.54s**, Ruff and strict Mypy passed
+(68 source files); one existing FastAPI/Starlette deprecation warning remains.
+The three new suites also passed independently: **134 passed in 2.35s**.
+Independent questions, facts and attachments in a
+valid processing-grant email now continue from its original source ID. A captured
+reviewed sender actually sends the FAQ answer and official link. Current
+permission, source hashes, all-controls-first scanning and separate
+resume/confirmation authority remain enforced. Supported operator retries survive
+withdrawal/re-grant without rewriting the original envelope; scope upgrades can
+request a new notice without nagging prior refusals. Obsolete unattempted control
+drafts no longer consume the current reply's send slot. See [the exact boundaries,
+red/green evidence and remaining limitations](docs/MIXED_PROCESSING_CONSENT.md).
+No paid model call, real mailbox test send or independent applicant trial was
+performed in this repair. The prior intermediate failures remain documented.
+The supervised Gmail worker reloaded as PID 992 and was observed idle at
+2026-09-04 16:36:00 UTC (2026-09-05 locally). Its configuration and existing
+business projection, including nine SENT rows, are unchanged; permission is
+still unknown. The Docker service is healthy, all 68 deployed Python source hashes
+and the Gmail script match locally, the persistent ZIP is unchanged and the
+isolated network-disabled demo completes. See [rollout evidence](eval_output/mixed_consent_rollout_2026-09-05.json).
+
+Previous consultation repair: **3,214 passed in 48.15s**, Ruff and strict Mypy passed (68 source files).
 The existing one FastAPI/Starlette test-client deprecation warning remains.
 New consultation memory requires actually SENT omission/answer text; failed,
 pending and uncertain drafts do not consume a question. Pure information
@@ -68,8 +90,8 @@ all discovered controls precede normal work. Recovery uses original message IDs.
 Model/document/review/send/pack/download paths check current authority. Generic
 inbound defer now retains its original queue payload instead of clearing it as
 processed. These are captured-transport tests, not a real applicant consent trial
-or legal-compliance certification; WhatsApp pre-download permission and mixed
-consent-plus-business mails remain limited as documented.
+or legal-compliance certification. Mixed consent-plus-business mails now have
+the bounded coverage above; WhatsApp pre-download permission remains unverified.
 
 Retained local failures during this change: first full suite **2 failed / 2,936
 passed** because previous live-reader fixtures lacked the now-required consent;

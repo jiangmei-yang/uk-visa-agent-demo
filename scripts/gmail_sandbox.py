@@ -44,7 +44,11 @@ PRIVACY_MESSAGE_TYPES = ("processing_notice", "processing_receipt")
 def _resume_consent_deferred(ledger: ConsentLedger, store: SQLiteStore,
                              journal: GmailSyncJournal) -> None:
     for case in store.list_cases():
-        if ledger.allowed(case):
+        if ledger.allowed(case) or ledger.needs_scope_notice(case):
+            # Scope changes may leave an old mixed grant in awaiting_consent.
+            # This only schedules the original ID for control preflight; the
+            # ledger remains unauthorized until a new current notice is sent
+            # and the applicant agrees. Explicit withdrawal is never rescheduled.
             journal.resume_awaiting_consent(ledger.deferred_ids(case.id))
 
 
@@ -90,7 +94,11 @@ def _consent_preflight(adapter: GmailAdapter, ingestion: EmailIngestionBoundary,
                 journal.acknowledge(identifier, "processed")
                 ledger.mark_completed(identifier)
             continue
-        decision = ledger.handle(result.event, policy_version)
+        # Only MIME part existence is needed to distinguish a pure grant from
+        # a grant carrying business material. Do not inspect a filename or
+        # decode/save payload bytes before the consent decision.
+        decision = ledger.handle(result.event, policy_version,
+                                 has_attachments=next(mime.iter_attachments(), None) is not None)
         if decision.action == "allow":
             journal.acknowledge(identifier, "consent_scanned")
         elif decision.action == "control":
@@ -188,7 +196,7 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
     try:
         ledger = ConsentLedger(store)
         if not fixture_without_processing_consent and args.action in {"prepare", "serve", "send-reviewed"}:
-            ledger.configure(ProcessingScope(provider="DeepSeek", model=args.model, version="2026-09-04"))
+            ledger.configure(ProcessingScope(provider="DeepSeek", model=args.model))
         # Resolve previous uncertain sends even if intake/model processing fails this cycle.
         # This only observes provider state; dispatch still waits for successful intake.
         if args.action == "serve":
@@ -312,7 +320,8 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
                             ledger.mark_completed(identifier)
                             continue
                     else:
-                        decision = ledger.handle(preview.event, active_policy.version)
+                        decision = ledger.handle(preview.event, active_policy.version,
+                            has_attachments=next(mime.iter_attachments(), None) is not None)
                         if decision.action != "allow":
                             if decision.action == "control":
                                 journal.acknowledge(identifier, "consent_control", "PROCESSING_CONTROL_RECORDED")
@@ -340,6 +349,9 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
                         journal.acknowledge(identifier, "rejected", result.failure_code)
                     continue
                 assert workflow is not None
+                # Preserve the original provider identity, timestamp and body.
+                # WorkflowService obtains the ledger's already-validated
+                # business view; the runner never strips/rewrites consent text.
                 case, duplicate, plan = workflow.process(result.event)
                 # Recover a crash after the workflow commit but before pack materialisation.
                 if plan == "ready" or (duplicate and case.stage.value == "READY_FOR_HUMAN_REVIEW"):

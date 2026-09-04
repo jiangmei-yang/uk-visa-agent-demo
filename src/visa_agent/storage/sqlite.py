@@ -130,6 +130,9 @@ CREATE TABLE IF NOT EXISTS processing_consent_events (
     epoch INTEGER NOT NULL,
     excerpt TEXT NOT NULL,
     received_at TEXT NOT NULL,
+    business_pending INTEGER NOT NULL DEFAULT 0,
+    message_sha256 TEXT,
+    has_attachments INTEGER NOT NULL DEFAULT 0,
     recorded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS processing_deferred_events (
@@ -204,6 +207,9 @@ class SQLiteStore:
                 ("delivery_versions", "case_revision", "INTEGER NOT NULL DEFAULT 1"),
                 ("review_actions", "action_kind", "TEXT NOT NULL DEFAULT 'retry'"),
                 ("processing_consent", "thread_id", "TEXT NOT NULL DEFAULT ''"),
+                ("processing_consent_events", "business_pending", "INTEGER NOT NULL DEFAULT 0"),
+                ("processing_consent_events", "message_sha256", "TEXT"),
+                ("processing_consent_events", "has_attachments", "INTEGER NOT NULL DEFAULT 0"),
             ):
                 existing = {row["name"] for row in self.connection.execute(f"PRAGMA table_info({table})")}
                 if column not in existing:
@@ -653,7 +659,13 @@ class SQLiteStore:
         """Do not jump ahead of queued controls or erase the original source IDs."""
         rows = self.connection.execute(
             "SELECT q.id,q.channel,q.payload_json,d.case_id,p.epoch FROM inbound_queue q "
-            "JOIN processing_deferred_events d ON d.event_id=q.id AND d.channel=q.channel "
+            "JOIN processing_deferred_events d ON d.event_id=q.id AND ((q.channel!='gmail_review' AND d.channel=q.channel) OR ("
+            "q.channel='gmail_review' AND d.channel='gmail' AND EXISTS ("
+            "SELECT 1 FROM review_actions a JOIN held_inbound_events h "
+            "ON h.id=a.held_event_id AND h.case_id=a.case_id "
+            "WHERE a.retry_event_id=q.id AND a.case_id=d.case_id AND ("
+            "(a.action_kind='retry' AND h.reason_code='HUMAN_REVIEW_CASE_NEW_EVENT') OR "
+            "(a.action_kind IN ('revision','revision_update') AND h.reason_code='FINALIZED_CASE_NEW_EVENT'))))) "
             "JOIN processing_consent p ON p.case_id=d.case_id "
             "JOIN processing_scope s ON s.singleton=1 AND s.scope_id=p.scope_id "
             "WHERE q.channel=? AND q.status='AWAITING_CONSENT' AND d.completed_at IS NULL "
@@ -670,12 +682,54 @@ class SQLiteStore:
     ) -> bool:
         """CAS the validated event and case while rechecking canonical authorization."""
         with self.atomic_write():
+            if channel == "gmail_review":
+                # A review queue uses a distinct worker channel, but must never
+                # rewrite the applicant's transport, date, content or sender.
+                # Recheck the original within this write transaction, not merely
+                # when discovering candidates before a possible concurrent edit.
+                from email.utils import getaddresses
+
+                from visa_agent.privacy.consent import ConsentLedger
+
+                binding = self.connection.execute(
+                    "SELECT h.id AS held_event_id,h.payload_json FROM review_actions a JOIN held_inbound_events h "
+                    "ON h.id=a.held_event_id AND h.case_id=a.case_id "
+                    "WHERE a.retry_event_id=? AND a.case_id=? AND ("
+                    "(a.action_kind='retry' AND h.reason_code='HUMAN_REVIEW_CASE_NEW_EVENT') OR "
+                    "(a.action_kind IN ('revision','revision_update') AND h.reason_code='FINALIZED_CASE_NEW_EVENT'))",
+                    (event_id, case_id),
+                ).fetchone()
+                if binding is None:
+                    return False
+                try:
+                    original = InboundEvent.model_validate_json(binding["payload_json"])
+                    event = InboundEvent.model_validate_json(payload_json)
+                except ValueError:
+                    return False
+                expected = original.model_copy(update={"id": event_id, "requested_fields": [], "known_profile": {}})
+                case = self.get_case(case_id)
+                if (original.id != binding["held_event_id"] or event != expected or case is None or event.channel != "gmail"
+                        or case.primary_channel != "gmail" or event.external_thread_id != case.external_thread_id
+                        or not ConsentLedger(self).allowed(case)):
+                    return False
+                senders = getaddresses([event.sender])
+                applicants = getaddresses([case.applicant_contact])
+                if not (len(senders) == len(applicants) == 1 and senders[0][1]
+                        and "@" in senders[0][1] and senders[0][1].casefold() == applicants[0][1].casefold()):
+                    return False
             cursor = self.connection.execute(
                 "UPDATE inbound_queue SET status='PENDING',available_at=NULL,lease_until=NULL,last_error=NULL "
                 "WHERE id=? AND channel=? AND status='AWAITING_CONSENT' AND payload_json=? "
                 "AND NOT EXISTS (SELECT 1 FROM processed_events e WHERE e.event_id=inbound_queue.id) "
                 "AND EXISTS (SELECT 1 FROM processing_deferred_events d WHERE d.event_id=inbound_queue.id "
-                "AND d.case_id=? AND d.channel=inbound_queue.channel AND d.completed_at IS NULL) "
+                "AND d.case_id=? AND d.completed_at IS NULL AND ((inbound_queue.channel!='gmail_review' "
+                "AND d.channel=inbound_queue.channel) OR ("
+                "inbound_queue.channel='gmail_review' AND d.channel='gmail' AND EXISTS ("
+                "SELECT 1 FROM review_actions a JOIN held_inbound_events h "
+                "ON h.id=a.held_event_id AND h.case_id=a.case_id "
+                "WHERE a.retry_event_id=inbound_queue.id AND a.case_id=d.case_id AND ("
+                "(a.action_kind='retry' AND h.reason_code='HUMAN_REVIEW_CASE_NEW_EVENT') OR "
+                "(a.action_kind IN ('revision','revision_update') AND h.reason_code='FINALIZED_CASE_NEW_EVENT')))))) "
                 "AND EXISTS (SELECT 1 FROM cases c WHERE c.id=? AND c.snapshot_json=?) "
                 "AND EXISTS (SELECT 1 FROM processing_consent p JOIN processing_scope s "
                 "ON s.singleton=1 AND s.scope_id=p.scope_id WHERE p.case_id=? AND p.epoch=? AND p.status='granted')",
