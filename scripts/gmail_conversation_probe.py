@@ -159,9 +159,15 @@ def main() -> None:
                             reply.index(case.customer_answers[0]) < reply.index(reply_items(case)[1][0]))
                     if index == 1:
                         checks['student_funding_explained'] = (
-                            '预算数字本身不能代替资金证明' in reply if language == 'zh'
-                            else 'a budget figure is not funding evidence' in reply)
-                        checks['application_intro_not_repeated'] = APPLICATION_URL not in reply
+                            ('在读证明' in reply and '银行流水' in reply
+                             and any(text in reply for text in ('预算数字本身不能代替资金证明', '预算金额本身不是证明')))
+                            if language == 'zh' else
+                            ('student' in reply and 'bank statements' in reply
+                             and any(text in reply for text in ('a budget figure is not funding evidence',
+                                                                'a budget figure alone is not evidence'))))
+                        # A source citation is not a repeated application introduction.
+                        checks['application_intro_not_repeated'] = (
+                            '先给你申请入口' not in reply and 'Here is the official starting point' not in reply)
                     if index >= 1:
                         checks['student'] = case.profile.occupation_status == 'student'
                         checks['funding'] = case.profile.funding_source == ('self' if index == 1 else 'employer_or_school')

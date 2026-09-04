@@ -3,12 +3,24 @@
 import re
 from datetime import date
 
+from visa_agent.llm.ports import CustomerQuestion
 from visa_agent.workflow.conversation import latest_reply_text
 
 SOURCE = "https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk"
 APPLICATION_SOURCE = "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+PROCESSING_SOURCE = "https://www.gov.uk/guidance/visa-processing-times-applications-outside-the-uk#when-your-application-processing-time-ends"
 CHECKED_AT = date(2026, 9, 4)
 REVIEW_AFTER = date(2026, 10, 4)
+OTHER_ROUTE = r"学生签证|工作签证|结婚签证|\b(?:student visa|work visa|marriage visa)\b"
+TRANSIT_ROUTE = r"过境|\btransit\b"
+
+
+def _route_check_answer(language: str) -> str:
+    return (
+        "你提到的路线可能不是普通 Standard Visitor，申请安排、费用和材料要求需要先按对应路线核实，不能直接套用访问签证说明。"
+        if language == "zh" else
+        "The route you mentioned may not be an ordinary Standard Visitor visa; its application arrangements, fees and evidence requirements need a separate route check."
+    )
 
 
 def _booking_answer(body: str, language: str, today: date) -> list[str]:
@@ -23,13 +35,21 @@ def _booking_answer(body: str, language: str, today: date) -> list[str]:
     )
     if not booking or not question:
         return []
+    return _booking_guidance(language, today, transit=_mentions_current_route(body, TRANSIT_ROUTE),
+                             other_route=_mentions_current_route(body, OTHER_ROUTE))
+
+
+def _booking_guidance(language: str, today: date, *, transit: bool = False,
+                      other_route: bool = False) -> list[str]:
     if not CHECKED_AT <= today <= REVIEW_AFTER:
         return [
             "关于提前订机票和酒店的问题，我需要先复核最新官方说明，暂时不能给你确定答复。"
             if language == "zh"
             else "I need to recheck the current official guidance before answering your booking question."
         ]
-    if re.search(r"过境|transit", body, re.I):
+    if other_route:
+        return [_route_check_answer(language)]
+    if transit:
         return [
             "你提到过境；过境与普通访问的材料要求不能直接混用，需要先由顾问确认路线。"
             if language == "zh"
@@ -52,16 +72,56 @@ def _active_clauses(body: str) -> list[str]:
     """Quoted and explicitly declined topics are not fresh requests for advice."""
     text = latest_reply_text(body)
     text = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|"[^"\n]*"', "", text)
+    text = re.sub(r"(?<!\w)'[^'\n]+'(?!\w)|`[^`\n]+`", "", text)
     clauses = re.split(r"[。！!；;\n，,]|(?<=[?？])\s*|\.(?:\s|$)", text)
     declined = (
         r"(?:不用|不需要|无需|别|不要|不想|不必).{0,10}(?:发|给|说|讲|解释|介绍|告诉|知道)|"
         r"\b(?:don['’]t|do not|no need to|not asking|not interested).{0,18}"
         r"(?:send|give|explain|tell|know|discuss|about)\b|"
         r"(?:无需|不用|不需要).{0,8}(?:链接|网址|官网)|"
-        r"\bno (?:links?|websites?)\b"
+        r"\bno (?:links?|websites?)\b|"
+        r"(?:不问|没问|不是问|不(?:想|需要|打算)问|不用回答|别回答|不要回答)|"
+        r"\b(?:not asking|did not ask|didn't ask|don't answer|do not answer)\b|"
+        r"(?:忽略|跳过|绕过|修改|无视).{0,12}(?:规则|指令|提示|检查|审核)|"
+        r"\b(?:ignore|bypass|override).{0,20}(?:instructions?|rules?|checks?|system|prompt)\b|"
+        r"(?:customer_questions|source_excerpt|requires_human_review|question_deferrals)"
     )
     return [clause.strip() for clause in clauses
             if clause.strip() and not re.search(declined, clause, re.I)]
+
+
+def _normalised_excerpt(text: str) -> str:
+    """Use identical matching for intent grounding and answer suppression."""
+    return re.sub(r"\s+", " ", text).strip().casefold()
+
+
+def _overlapping_excerpt(left: str, right: str) -> bool:
+    left, right = _normalised_excerpt(left), _normalised_excerpt(right)
+    return bool(left and right and (left in right or right in left))
+
+
+def _mentions_current_route(body: str, route_pattern: str) -> bool:
+    """Ignore only a directly negated route, not uncertainty about that route.
+
+    "Not a student visa" is different from "not sure about a student visa".
+    Keep ambiguous and hypothetical route mentions for the conservative route check.
+    """
+    negated_prefix = (
+        r"(?:不是|并非|不(?:申请|办理)|不打算(?:申请|办理)|不想(?:申请|办理))\s*$|"
+        r"\b(?:not\s+(?:(?:applying|going to apply)\s+for\s+)?(?:a\s+|the\s+)?|"
+        r"(?:don't|do not)\s+(?:want|need)\s+(?:a\s+|the\s+)?)$"
+    )
+    for clause in _active_clauses(body):
+        for match in re.finditer(route_pattern, clause, re.I):
+            prefix = clause[:match.start()]
+            uncertain = re.search(
+                r"(?:是不是|是否|不确定|不知道|不清楚|想知道|想确认|请问|如果|假如|若).{0,16}$|"
+                r"\b(?:not sure|uncertain|whether|if).{0,40}$", prefix, re.I,
+            )
+            question = re.search(r"[?？]|吗", clause[match.end():])
+            if uncertain or question or not re.search(negated_prefix, prefix, re.I):
+                return True
+    return False
 
 
 def _question_clauses(body: str) -> list[str]:
@@ -74,7 +134,62 @@ def _question_clauses(body: str) -> list[str]:
     return [clause for clause in _active_clauses(body) if re.search(question, clause, re.I)]
 
 
-def _reviewed_answer(topic: str, language: str) -> str:
+def validated_customer_questions(body: str, proposals: list[CustomerQuestion]) -> list[CustomerQuestion]:
+    """Keep only source-grounded current intents, without treating topics as facts.
+
+    Literal support cannot prove semantic classification. The model still may select an
+    irrelevant allowed topic; the downstream answer remains reviewed and conditional.
+    Validate the whole containing clause, so a substring cannot strip away a refusal.
+    """
+    active = _active_clauses(body)
+    accepted: dict[str, CustomerQuestion] = {}
+    for proposal in proposals:
+        excerpt = _normalised_excerpt(proposal.source_excerpt)
+        fragments = [_normalised_excerpt(fragment) for fragment in re.split(
+            r"[。！!；;\n，,]|(?<=[?？])\s*|\.(?:\s|$)", proposal.source_excerpt,
+        ) if fragment.strip()]
+        if (proposal.confidence >= 0.8 and excerpt
+                and excerpt in _normalised_excerpt(latest_reply_text(body)) and fragments
+                and (excerpt in _normalised_excerpt("\n".join(active)) or all(
+                    any(fragment in _normalised_excerpt(clause) for clause in active) for fragment in fragments
+                ))):
+            accepted.setdefault(proposal.topic, proposal)
+    return list(accepted.values())
+
+
+def _capped_answers(answers: list[tuple[str, str]], language: str) -> list[str]:
+    """Limit reading load without silently dropping an unanswered-risk notice."""
+    unique: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for item in answers:
+        if item[1] not in seen:
+            unique.append(item)
+            seen.add(item[1])
+    if len(unique) <= 3:
+        return [answer for _, answer in unique]
+
+    unsupported = next((item for item in unique if item[0] == "unsupported"), None)
+    selected = ([item for item in unique if item[0] != "unsupported"][:2] + [unsupported]) if unsupported else unique[:3]
+    omitted = [topic for topic, answer in unique if answer not in {text for _, text in selected}]
+    names = {
+        "booking": ("预订安排", "bookings"), "application": ("申请步骤", "application steps"),
+        "timing": ("申请时间", "timing"), "translation": ("翻译要求", "translation requirements"),
+        "fees": ("申请费用", "fees"), "bank_period": ("流水时间范围", "bank statement periods"),
+    }
+    language_index = 0 if language == "zh" else 1
+    remaining = [names.get(topic, ("其他问题", "other questions"))[language_index] for topic in omitted]
+    remaining_text = ("、" if language == "zh" else ", ").join(dict.fromkeys(remaining))
+    note = (
+        f"这封还没有展开{remaining_text}，可以接着逐项说明。"
+        if language == "zh" else
+        f"I have not covered {remaining_text} in this reply; we can go through those next."
+    )
+    result = [answer for _, answer in selected]
+    result[-1] += "\n" + note
+    return result
+
+
+def _reviewed_answer(topic: str, language: str, *, body: str = "") -> str:
     if topic == "application_link":
         answer = (
             "这是之前的 GOV.UK 申请入口，打开页面后选择 Apply now。"
@@ -99,11 +214,13 @@ def _reviewed_answer(topic: str, language: str) -> str:
             "如果你需要申请 Standard Visitor，最早可在出发前 3 个月申请。"
             "在线申请、身份核验和材料提交都完成后，通常在 3 周内收到决定；"
             "不是从开始准备材料那天起算，也不保证按时出结果或一定获批。"
+            "这说的是签证决定时间，不是护照返还日期。"
             if language == "zh"
             else "If you need a Standard Visitor visa, you can apply up to 3 months before travel. "
             "A decision usually takes up to 3 weeks after you have applied online, proved your "
             "identity and provided your documents—not from the day you start preparing. "
             "This is not a guaranteed deadline or a promise of approval."
+            " That is decision timing, not a passport-return date."
         )
         source = APPLICATION_SOURCE
     elif topic == "fees":
@@ -141,7 +258,29 @@ def _reviewed_answer(topic: str, language: str) -> str:
             "A summary alone does not meet that requirement."
         )
         source = SOURCE
-    return answer + "\nGOV.UK: " + source
+    extra_source: str | None = None
+    if topic == "timing" and re.search(r"护照|\bpassport\b", body, re.I):
+        answer += (
+            "\nGOV.UK 当前的 Standard Visitor 页面说明，护照或旅行证件在签证中心预约当天退回。"
+            "如果你实际把护照留在了签证中心，另一份官方处理时间说明要求等收到联系后再回中心。"
+            "不能用通常 3 周的决定时间推算你个人的护照返还日。"
+            if language == "zh" else
+            "\nThe current GOV.UK Standard Visitor page says your passport or travel document is returned "
+            "on the appointment day. If you actually left it at a visa application centre, the official "
+            "processing-time guidance says to wait until you are contacted before returning. "
+            "The usual 3-week decision time cannot establish your individual passport-return date."
+        )
+        extra_source = PROCESSING_SOURCE
+    elif topic == "translation" and re.search(r"朋友|自己|\b(?:friend|myself|self[- ]translate)\b", body, re.I):
+        answer += (
+            "\n仅凭是朋友或自己翻译，不能判断译件是否合格；还要检查实际完整译件及其可核验性。"
+            "我不能保证这样的译件会被接受，也不会只根据译者与你的关系作判断。"
+            if language == "zh" else
+            "\nWho translated it—a friend or you—does not by itself establish whether it meets the requirements. "
+            "We need to check the actual full translation and whether it can be independently verified; "
+            "I cannot guarantee acceptance or decide from the relationship alone."
+        )
+    return answer + "\nGOV.UK: " + source + ("\nGOV.UK: " + extra_source if extra_source else "")
 
 
 def _requests_previous_application_link(body: str) -> bool:
@@ -168,10 +307,27 @@ def _requests_previous_application_link(body: str) -> bool:
 
 def grounded_customer_answers(
     body: str, language: str, today: date, *, sent_application_guidance: bool = False,
+    semantic_questions: list[CustomerQuestion] | None = None,
+    include_unsupported: bool = True,
 ) -> list[str]:
     """Reviewed facts only, capped at three relevant answers, never a case-state update."""
     current = latest_reply_text(body)
+    semantic = validated_customer_questions(current, semantic_questions or [])
+    unsupported_excerpts = [item.source_excerpt for item in semantic if item.topic == "unsupported"]
+    unsupported_clauses = [clause for clause in _active_clauses(current) if any(
+        _overlapping_excerpt(excerpt, clause) for excerpt in unsupported_excerpts
+    )]
+    # Two different proposals about one question are not independent evidence that
+    # it is answerable. Unknown scope takes priority over a narrower canned answer.
+    semantic = [item for item in semantic if item.topic == "unsupported" or not any(
+        _overlapping_excerpt(item.source_excerpt, clause) for clause in unsupported_clauses
+    )]
     clauses = _question_clauses(current)
+    # A classified unsupported question must not accidentally receive a narrower
+    # keyword answer (for example a ten-year fee answered with the six-month fee).
+    clauses = [clause for clause in clauses if not any(
+        _overlapping_excerpt(excerpt, clause) for excerpt in unsupported_excerpts
+    )]
     patterns = {
         "application": (
             r"(?:申请|办理|签证).{0,8}(?:官网|网站|网页|网址|链接|入口|流程|步骤)|"
@@ -206,40 +362,55 @@ def grounded_customer_answers(
     }
     requested = [topic for topic, pattern in patterns.items()
                  if any(re.search(pattern, clause, re.I) for clause in clauses)]
+    semantic_topics = {item.topic for item in semantic}
+    for item in semantic:
+        if item.topic not in {"booking", "document_checklist", "unsupported"} and item.topic not in requested:
+            requested.append(item.topic)
     previous_link_requested = sent_application_guidance and _requests_previous_application_link(current)
     if previous_link_requested and "application" not in requested:
         requested.insert(0, "application")
     # Preserve booking's cross-clause context ("I have no tickets; must I buy them?").
     active_text = "\n".join(_active_clauses(current))
-    booking = _booking_answer(active_text, language, today)
-    answers = list(booking)
+    booking_text = "\n".join(clause for clause in _active_clauses(current) if not any(
+        _overlapping_excerpt(excerpt, clause) for excerpt in unsupported_excerpts
+    ))
+    booking = _booking_answer(booking_text, language, today)
+    if not booking and "booking" in semantic_topics:
+        # The model chooses a topic, never supplies the legal answer or a URL.
+        booking = _booking_guidance(language, today, transit=_mentions_current_route(active_text, TRANSIT_ROUTE),
+                                    other_route=_mentions_current_route(active_text, OTHER_ROUTE))
+    answers = [("booking", answer) for answer in booking]
     if requested and not CHECKED_AT <= today <= REVIEW_AFTER:
-        answers.append(
+        answers.append(("guidance",
             "关于你问的申请安排或材料要求，我需要先复核最新 GOV.UK 说明，暂时不能给你确定答复。"
             if language == "zh"
             else "I need to recheck the current GOV.UK guidance before answering your application or document question."
-        )
+        ))
     elif requested:
-        other_route = re.search(r"过境|学生签证|工作签证|结婚签证|\b(?:transit|student visa|work visa|marriage visa)\b", active_text, re.I)
+        other_route = _mentions_current_route(active_text, OTHER_ROUTE + "|" + TRANSIT_ROUTE)
         if other_route and any(topic in {"application", "timing", "fees", "bank_period"} for topic in requested):
-            answers.append(
-                "你提到的路线可能不是普通 Standard Visitor，申请安排、费用和材料要求需要先按对应路线核实，不能直接套用访问签证说明。"
-                if language == "zh"
-                else "The route you mentioned may not be an ordinary Standard Visitor visa; its application arrangements, fees and evidence requirements need a separate route check."
-            )
+            answers.append(("route_check", _route_check_answer(language)))
             requested = [topic for topic in requested if topic == "translation"]
-        answers.extend(_reviewed_answer(
+        answers.extend((topic, _reviewed_answer(
             "application_link" if topic == "application" and previous_link_requested else topic,
-            language,
-        ) for topic in requested)
+            language, body=active_text,
+        )) for topic in requested)
+    if "unsupported" in semantic_topics and include_unsupported:
+        answers.append(("unsupported",
+            "你问的这点，我目前没有核验过的依据，不能直接给你确定答复。"
+            "这项需要另行核实，不能把还没确认的结论写进申请材料；已确定的信息可以继续整理。"
+            if language == "zh" else
+            "I don't currently have verified guidance to answer that point reliably. "
+            "It needs a separate check before we rely on it in the application; we can still organise the details already established."
+        ))
     if re.search(
         r"(?:不要|不用|无需|不需要|别).{0,12}(?:链接|网址|网站|官网)|"
         r"\b(?:no links?|(?:don['’]t|do not) (?:send|need)|no need (?:for|to send)).{0,12}"
         r"(?:links?|websites?)\b|\b(?:no links?|without links?)\b",
         current, re.I,
     ):
-        answers = [answer.split("\nGOV.UK:", 1)[0] for answer in answers]
-        answers = [answer.replace("下面的 GOV.UK 页面", "GOV.UK 官方申请页面")
-                   .replace("the GOV.UK page below", "the official GOV.UK application page")
-                   for answer in answers]
-    return list(dict.fromkeys(answers))[:3]
+        answers = [(topic, answer.split("\nGOV.UK:", 1)[0]) for topic, answer in answers]
+        answers = [(topic, answer.replace("下面的 GOV.UK 页面", "GOV.UK 官方申请页面")
+                   .replace("the GOV.UK page below", "the official GOV.UK application page"))
+                   for topic, answer in answers]
+    return _capped_answers(answers, language)

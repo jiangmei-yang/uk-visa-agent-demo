@@ -485,3 +485,84 @@ reload: one case, eight SENT replies. Schema migration assigned legacy rows revi
 was replayed, no manual mail was sent, and no sender scope or guarded-draft setting was changed.
 This proves safe loading/polling, not recipient-side acceptance of the new replies. General open-
 ended advice, nontechnical reviewer usability and real ordinary-document redelivery remain open.
+
+## Semantic questions: classification is not adviser quality
+
+The next iteration adds bounded question topics to the existing extraction call, not a second
+autonomous agent or model-written legal advice. Natural requests can select application entry,
+timing, translation, booking, ordinary visitor fees, financial evidence, or a case-specific
+document list. An unsupported question is acknowledged rather than answered with an invented
+rule. Invalid intents do not discard an otherwise grounded birthday or other fact.
+
+An independent agent froze 36 bilingual fictional cases before the implementation was evaluated:
+28 development and eight reserved holdout. `eval_output/adviser_semantic_development_2026-09-04.json`
+retains the first 28 real DeepSeek extractions. Raw and validated topic sets matched all 28 expected
+sets; the initial selected content/sender checks also passed. This used 72,399 provider tokens,
+temporary SQLite cases and captured Gmail sends, not real mail. The report is not overwritten.
+
+Reading the actual replies found defects those checks missed: an unrelated university website
+question received a visa brochure; some unchanged updates did too; human-review and unsupported
+warnings repeated; a passport-return question was answered with only decision timing; and a
+friend-translation question got requirements without directly addressing the implied assumption.
+Consequently that mechanically passing report is **not** an adviser-quality pass.
+
+Proactive guidance now needs actual intake progress or a current preparation request, not merely
+an old profile plus an unsent advice topic. Quoted/refused/control text cannot itself supply that
+request. Explicit question topics take priority over unsolicited advice. A legacy follow-up test
+now explicitly requests preparation in its setup; its unsent-draft case no longer expects an
+unseen link to be treated as shared context. The SENT/no-resend assertions are preserved.
+
+Source checks on 2026-09-04 distinguish decision timing from passport handling. The
+[Standard Visitor application page](https://www.gov.uk/standard-visitor/apply-standard-visitor-visa)
+currently describes same-day passport return at the appointment; where a passport was actually
+left with the centre, the
+[processing-time guidance](https://www.gov.uk/guidance/visa-processing-times-applications-outside-the-uk#when-your-application-processing-time-ends)
+says to wait for contact before returning. This is not a personal collection or courier deadline.
+The [visitor document guide](https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk)
+requires a complete, independently verifiable translation and the listed translator details;
+it does not establish acceptance or rejection merely because a friend made it. These explanations
+share the existing guidance review deadline; they are not live retrieval on every customer turn.
+
+The development replays retain the original raw model patches without additional API calls:
+`adviser_semantic_development_2026-09-04-v2.json` still passed its checks but revealed default
+three-item document requests after unrelated messages. The stricter v3 report failed one timing
+question because a date-deferral acknowledgement displaced the answer. V4 passed all 28 selected
+checks after quiet/advice-only turns stopped issuing unsolicited missing-document lists and
+pure FAQ answers stopped repeating deferred-date reminders. Explicit lists now explain what each
+item supports and where to obtain it, include policy source URLs, and respect declined links.
+These are development results, not unseen or independent customer acceptance.
+
+The single, first holdout run is retained in `adviser_semantic_holdout_2026-09-04.json`: seven of
+eight topic sets matched (raw and guarded); micro precision was 8/9 and recall 1.0. One unrelated
+school-library question was confidently misclassified as visa-related `unsupported`, producing
+an irrelevant application-boundary response. The excerpt was genuine, illustrating why the guard
+cannot establish semantic correctness. The other selected safety/content checks passed for all
+eight; no new confirmation, pack, applicant mutation or real mail was produced. This used eight
+API calls and 20,752 tokens. The holdout was not tuned against or repeated, and is **not a full pass**.
+
+The separate fresh 20-turn bilingual provider run
+`gmail_semantic_adviser_multiturn_2026-09-04-v2.json` passed its selected checks with 51,468 tokens:
+date uncertainty, later exact dates and dotted birthday, corrections, pending-question pacing,
+requested application links, fees/evidence answers and durable captured-body/no-resend checks.
+Its earlier report with two fixed-phrase failures remains unchanged. Neither run sent real mail.
+
+After these provider runs, final regression review restored an ordinary preparation-turn date
+acknowledgement separately from a pure FAQ: current-turn `proactive_guidance_offered` distinguishes
+an offered preparation step from an answer. It defaults false and resets each new event; it grants
+no fact or release authority. An old exhausted-fields test now explicitly asks for the next step,
+instead of requiring a date reminder on a silent turn. These final presentation refinements are
+covered locally, not retroactively claimed as measured by the frozen holdout. The full suite
+passes 860 tests, ruff and mypy (56 source files), with the existing Starlette/httpx warning.
+
+Remaining limitations include irrelevant responses to some off-topic questions, formulaic quiet-
+turn openings, a bounded reviewed answer catalogue, and no independent recipient naturalness
+acceptance. Topic accuracy on this small corpus is not general accuracy, and no perfect-score
+claim follows from the regression count. A future off-topic improvement needs new unseen cases;
+the now-exposed holdout must not be relabelled or reused as fresh evidence.
+
+The incremental candidate was loaded into the existing registered-sender Gmail service under its
+state lock, without enabling model prose, widening sender access or automatic final-pack release.
+New PID 60803 was separately confirmed live and completed an idle poll at 2026-09-04T11:07:55Z.
+The raw case/outbox fingerprint matched before and after: one case and eight SENT replies. No
+historic mail was replayed or manually sent. This is a safe-loading observation, not a new customer
+reply, recipient-side usability result, or evidence that the failed holdout issue was fixed.

@@ -21,10 +21,20 @@ def test_case_patch_rejects_unknown_fields() -> None:
 
 def test_case_patch_schema_contains_no_state_field() -> None:
     properties = CasePatch.model_json_schema()["properties"]
-    assert set(properties) == {"updates", "ambiguities", "requires_human_review", "question_deferrals"}
+    assert set(properties) == {
+        "updates", "ambiguities", "requires_human_review", "question_deferrals", "customer_questions",
+    }
     intent = CasePatch.model_json_schema()['$defs']['QuestionDeferral']['properties']
     assert set(intent) == {'field', 'source_excerpt', 'confidence'}
     assert set(intent['field']['enum']) == {'planned_arrival_date', 'planned_departure_date'}
+    question = CasePatch.model_json_schema()['$defs']['CustomerQuestion']
+    assert question['additionalProperties'] is False
+    assert set(question['properties']) == {'topic', 'source_excerpt', 'confidence'}
+    assert set(question['properties']['topic']['enum']) == {
+        'application', 'timing', 'translation', 'booking', 'fees', 'bank_period',
+        'document_checklist', 'unsupported',
+    }
+    assert properties['customer_questions']['maxItems'] == 4
 
 
 def test_legacy_email_named_case_snapshot_migrates_to_channel_neutral_fields() -> None:

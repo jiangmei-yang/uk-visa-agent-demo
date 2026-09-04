@@ -172,6 +172,9 @@ class Case(BaseModel):
     final_summary_confirmed: bool = False
     customer_language: str = "en"
     customer_answers: list[str] = Field(default_factory=list)
+    # Topics from this turn only; not applicant facts or permission to progress.
+    customer_question_topics: list[str] = Field(default_factory=list)
+    proactive_guidance_offered: bool = False
     # Advice topic -> most recent event whose reply offered it; a SENT outbox row
     # is required before subsequent turns suppress it as already communicated.
     guidance_events: dict[str, str] = Field(default_factory=dict)

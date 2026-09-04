@@ -53,6 +53,15 @@ a “waiting for your details” introduction when the customer is asking for ad
 was checked on 2026-09-04 and shares the 2026-10-04 review deadline; there is no live web retrieval
 or unconstrained immigration advice in this path.
 
+The extraction call also proposes a bounded semantic question topic, so customers need not use
+fixed FAQ keywords. The sender still uses reviewed wording, not unconstrained generated advice.
+Explicit material lists explain how to obtain each selected item and what it supports, with
+official source links. Unchanged or advice-only turns do not automatically receive another batch
+of missing documents. New files, unresolved issues and explicit checklist requests retain their
+normal attention. A deferred date remains required for finalization even when it is not re-asked.
+See `CONVERSATION_REVIEW.md` for retained failed reviews and the distinction between model,
+local captured-send and live-recipient evidence.
+
 Post-pack corrections can now enter a separate operator-authorized revision workflow; see
 `HUMAN_REVIEW_RECOVERY.md`. It preserves prior ZIPs, requires new confirmation and binds each outbox
 message to its case revision. Multiple held corrections require explicit batch authorization and

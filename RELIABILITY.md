@@ -9,6 +9,21 @@ and render an already-decided message plan. Pydantic rejects unknown fields and 
 The deterministic application layer owns requirements, issue resolution, state transitions, gate
 checks, persistence, outbound side effects, and pack generation.
 
+The same extraction call may propose `customer_questions`: at most four enum topics with a
+current-message excerpt and confidence. They are not free-form answers, sources, facts, tool
+calls or permission to advance. Supported topics select dated, reviewed GOV.UK wording; a
+document-list topic selects the existing case-specific requirements. Invalid/quoted/declined
+intents are dropped independently of otherwise valid facts. Current-turn topics reset on the
+next event; the durable applicant profile and sent-question ledger remain separate.
+
+This follows the constrained-data-flow principle in the
+[OpenAI agent safety guide](https://developers.openai.com/api/docs/guides/agent-builder-safety#use-structured-outputs-to-constrain-data-flow).
+The shared contract is used by both provider adapters, but DeepSeek uses JSON mode followed by
+Pydantic validation, not an API-enforced strict-schema guarantee. Literal excerpt matching and
+valid enums do not prove correct intent or a complete answer. Model self-reported confidence is
+only a threshold, not calibrated accuracy; classification, sender invariants and human reading
+are evaluated separately. Reviewed wording can still be irrelevant if a model misclassifies.
+
 ## Invariants
 
 - An inbound provider message ID is an idempotency key.

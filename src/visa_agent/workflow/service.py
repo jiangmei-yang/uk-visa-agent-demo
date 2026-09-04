@@ -158,10 +158,6 @@ class WorkflowService:
             case.customer_language = "zh"
         elif len(re.findall(r"[A-Za-z]+", customer_event.body)) > 4:
             case.customer_language = "en"
-        case.customer_answers = grounded_customer_answers(
-            customer_event.body, case.customer_language, self.today_provider(),
-            sent_application_guidance=case.guidance_events.get("application_overview_v1") in sent_events,
-        )
         prior_profile = summary_fingerprint(case, include_documents=False)
         prior_confirmation = case.confirmation_fingerprint
         prior_kind = case.confirmation_kind
@@ -171,6 +167,14 @@ class WorkflowService:
             if row["case_id"] == case.id
         )
         patch = self.llm.extract_case_patch(customer_event)
+        case.proactive_guidance_offered = False
+        case.customer_question_topics = [item.topic for item in patch.customer_questions]
+        case.customer_answers = grounded_customer_answers(
+            customer_event.body, case.customer_language, self.today_provider(),
+            sent_application_guidance=case.guidance_events.get("application_overview_v1") in sent_events,
+            semantic_questions=patch.customer_questions,
+            include_unsupported=not patch.requires_human_review,
+        )
         if patch.requires_human_review:
             case.status = CaseStatus.HUMAN_REVIEW_REQUIRED
             advance_stage(case, WorkflowStage.HUMAN_REVIEW_REQUIRED)
@@ -286,6 +290,7 @@ class WorkflowService:
             sent_topics = {topic for topic, source_event in case.guidance_events.items()
                            if source_event in sent_events}
             guidance = preparation_guidance(case, self.today_provider(), sent_topics)
+            case.proactive_guidance_offered = bool(guidance)
             for topic, answer in guidance:
                 case.customer_answers.append(answer)
                 case.guidance_events[topic] = event.id

@@ -86,3 +86,31 @@ equivalence. The domain requirement comparison uses the same explicit aliases to
 `中国` and `China` as different locations. Original profile/evidence values are not rewritten;
 Hong Kong remains distinct from China in this application-location comparison. The corrected
 oracle has local tests, but no fourth provider run is claimed. Original reports remain unchanged.
+
+## Semantic adviser questions
+
+`adviser_intent_cases.json` contains 28 development cases and eight reserved holdout cases,
+written independently of the implementation. Do not inspect the holdout to tune a candidate.
+Freeze the candidate and run it once with the explicit holdout flag; retain failures. Once seen,
+these eight cases are no longer unseen evaluation data for future development.
+
+```bash
+uv run python scripts/adviser_intent_probe.py --split development --output NEW_DEVELOPMENT.json
+uv run python scripts/adviser_intent_probe.py --split development \
+  --replay-report eval_output/adviser_semantic_development_2026-09-04.json --output NEW_REPLAY.json
+uv run python scripts/adviser_intent_probe.py --split holdout --allow-holdout --output NEW_HOLDOUT.json
+```
+
+The first and third commands make paid DeepSeek calls. The second reuses a matching original
+development report's raw extraction, without loading an API key or making model calls. Replay
+reports label the source/hash and do not count as fresh provider results. Each run uses temporary
+case stores and captures automatic Gmail dispatch locally; no real mail is sent. Existing output
+paths are refused. `completed: false` and per-case checkpoints preserve interrupted runs.
+
+Report raw and guarded topic accuracy separately from sender invariants and actual reply quality.
+The first development run matched all topics, yet human reading found irrelevant brochures and
+incomplete answers; later local replays must not retroactively turn that report into a quality pass.
+The 2026-09-04 multi-turn semantic run also retained two failed exact-phrase checks. Inspection
+showed equivalent funding explanations in the detailed checklist. Its oracle now checks the
+document/context and accepts both reviewed explanations; repeated-introduction detection checks
+the introduction itself, not a legitimate source link. Original report bytes remain unchanged.

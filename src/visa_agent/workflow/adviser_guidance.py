@@ -4,7 +4,8 @@ import re
 from datetime import date
 
 from visa_agent.domain.models import Case, CaseStatus
-from visa_agent.workflow.conversation import latest_reply_text
+from visa_agent.workflow.conversation import customer_requests_next_step, latest_reply_text
+from visa_agent.workflow.customer_questions import _active_clauses
 
 APPLICATION_URL = "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
 ROUTE_CHECK_URL = "https://www.gov.uk/check-uk-visa"
@@ -19,10 +20,25 @@ def preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> list
     Topic IDs are versioned. Only topics in actually sent replies count as already shared.
     These suggestions cannot change requirements, evidence acceptance, facts or consent.
     """
-    if (not CHECKED_AT <= today <= REVIEW_AFTER or case.customer_answers or case.open_blockers()
+    if (not CHECKED_AT <= today <= REVIEW_AFTER or case.customer_answers or case.customer_question_topics
+            or case.open_blockers()
             or case.latest_document_names or case.status != CaseStatus.DRAFT):
         return []
-    text = latest_reply_text(case.latest_customer_message).strip()
+    text = "\n".join(_active_clauses(latest_reply_text(case.latest_customer_message)))
+    # An unshared topic is not by itself a reason to send it now. Proactive advice
+    # needs progress in intake or a current preparation request; existing profile
+    # data must not turn unrelated chatter or control instructions into a brochure.
+    if not (case.latest_received_facts or case.latest_changes or customer_requests_next_step(text)
+            or re.search(
+                r"(?:想|准备|打算|需要).{0,6}(?:申请|办理).{0,6}(?:英国|签证)|"
+                r"(?:准备|整理|收集|补充).{0,8}(?:材料|资料|文件)|"
+                r"(?:材料|资料|文件).{0,8}(?:准备|整理|收集)|"
+                r"\b(?:prepar\w*|collect\w*|gather\w*|organis\w*|organiz\w*).{0,24}"
+                r"(?:documents?|evidence|application)|"
+                r"\b(?:want|need|planning) to apply.{0,20}(?:UK|visa)\b",
+                text, re.I,
+            )):
+        return []
     if (re.search(r"(?:不用|不需要|不要|无需|不想).{0,18}(?:链接|官网|流程|材料|建议|说明)|"
                   r"(?:don't|do not|no need|stop).{0,30}(?:link|website|guidance|explain|advice)|"
                   r"\bno links?\b", text, re.I)

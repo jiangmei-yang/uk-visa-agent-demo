@@ -17,6 +17,7 @@ from visa_agent.workflow.conversation import (
     reply_items,
     waiting_acknowledgement,
 )
+from visa_agent.workflow.customer_questions import validated_customer_questions
 
 MIN_ACCEPTED_CONFIDENCE = 0.8
 MAX_MODEL_ATTEMPTS = 2
@@ -196,6 +197,7 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
             if item.confidence >= MIN_ACCEPTED_CONFIDENCE
             and item.source_excerpt.strip()
             and _normalise_evidence(item.source_excerpt) in _normalise_evidence(latest_reply_text(event.body))],
+        customer_questions=validated_customer_questions(event.body, proposed.customer_questions),
     )
 
 

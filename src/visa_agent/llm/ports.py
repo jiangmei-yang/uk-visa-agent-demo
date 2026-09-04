@@ -24,6 +24,17 @@ class QuestionDeferral(BaseModel):
     confidence: float = Field(ge=0, le=1)
 
 
+class CustomerQuestion(BaseModel):
+    """A proposed topic, never a free-form answer, source URL or workflow instruction."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    topic: Literal["application", "timing", "translation", "booking", "fees", "bank_period",
+                   "document_checklist", "unsupported"]
+    source_excerpt: str = Field(min_length=1, max_length=320)
+    confidence: float = Field(ge=0, le=1)
+
+
 class CasePatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -31,6 +42,7 @@ class CasePatch(BaseModel):
     ambiguities: list[str]
     requires_human_review: bool = False
     question_deferrals: list[QuestionDeferral] = Field(default_factory=list, max_length=2)
+    customer_questions: list[CustomerQuestion] = Field(default_factory=list, max_length=4)
 
 
 class LLMClient(Protocol):

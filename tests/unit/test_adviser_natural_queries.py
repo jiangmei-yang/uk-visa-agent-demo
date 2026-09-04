@@ -277,7 +277,7 @@ def test_real_reply_pipeline_answers_followup_before_resuming_intake(
     path = tmp_path / "fictional-query.db"
     seed = seed_student(path)
     adapter = CaptureGmail()
-    _, first, _ = captured_turn(path, seed, adapter, "我在读书，自己付钱，日期没定。", 1)
+    _, first, _ = captured_turn(path, seed, adapter, "我在读书，自己付钱，日期没定。我准备开始整理申请资料。", 1)
     assert APPLICATION_SOURCE in first and "在读证明" in first
     case, body, _ = captured_turn(path, seed, adapter, followup, 2)
     assert answer_fragment in body
@@ -294,18 +294,19 @@ def test_short_followup_uses_sent_context_not_unsent_draft(tmp_path: Path, send_
     path = tmp_path / "sent-context.db"
     seed = seed_student(path)
     adapter = CaptureGmail()
-    captured_turn(path, seed, adapter, "我在读书，自己付钱，日期没定。", 1, send=send_first)
+    captured_turn(path, seed, adapter, "我在读书，自己付钱，日期没定。我准备开始整理申请资料。", 1, send=send_first)
     case, body, rows = captured_turn(path, seed, adapter, "网址发我一下", 2)
-    assert APPLICATION_SOURCE in body
     if send_first:
+        assert APPLICATION_SOURCE in body
         # Explicit short follow-up is resolved against delivered context; no fresh advice dump.
         assert len(case.customer_answers) == 1
         assert "在读证明" not in body
         assert rows[0]["status"] == "SENT"
     else:
-        # No delivered context: the unsent preparation guidance is still new to the customer.
-        assert len(case.customer_answers) == 2
-        assert "在读证明" in body
+        # Unsent guidance cannot resolve a bare link reference or trigger a brochure.
+        assert case.customer_answers == []
+        assert APPLICATION_SOURCE not in body
+        assert "在读证明" not in body
         assert rows[0]["status"] == "FAILED"
     assert len(adapter.calls) == (2 if send_first else 1)
 
@@ -322,7 +323,7 @@ def test_reply_pipeline_does_not_reinterpret_declined_quoted_or_unrelated_questi
     path = tmp_path / "unrelated-query.db"
     seed = seed_student(path)
     adapter = CaptureGmail()
-    captured_turn(path, seed, adapter, "我在读书，自己付钱，日期没定。", 1)
+    captured_turn(path, seed, adapter, "我在读书，自己付钱，日期没定。我准备开始整理申请资料。", 1)
     _, body, _ = captured_turn(path, seed, adapter, followup, 2)
     assert APPLICATION_SOURCE not in body
     assert "接下来还需要这些材料" not in body

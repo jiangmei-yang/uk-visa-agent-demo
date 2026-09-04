@@ -112,6 +112,7 @@ def test_exhausted_actionable_fields_do_not_restart_deferred_questions():
 
     case = example()
     case.deferred_fields = sorted(required_profile_facts(case))
+    case.latest_customer_message = "下一步是什么？"
     assert next_fact_questions(case) == []
     reply = deterministic_fallback_message(case, 'blocked')
     assert '具体日期补齐前，还不能完成最终核对' in reply

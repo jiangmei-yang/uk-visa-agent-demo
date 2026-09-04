@@ -315,6 +315,51 @@ def document_label(case: Case, item: Requirement) -> str:
     return DOCUMENT_LABELS_ZH.get(item.id, item.title) if zh else item.title
 
 
+def explained_document_label(case: Case, item: Requirement) -> str:
+    """Explain how an already-selected item helps; never add an acceptance rule."""
+    zh = case.customer_language == "zh"
+    details = {
+        "passport": (
+            "核对身份，以及有效期是否覆盖整个计划停留期间",
+            "to check your identity and validity throughout the planned stay",
+        ),
+        "purpose_evidence": (
+            "说明这次去做什么；旅游可以先整理真实的计划行程，不把未定安排写成已预订",
+            "to explain what you will do; for a holiday, outline your real plans without presenting unbooked arrangements as bookings",
+        ),
+        "funding_evidence": (
+            "说明谁承担费用、资金从哪里来，以及你是否能使用这些钱；预算金额本身不是证明",
+            "to show who pays, where the money comes from and access to it; a budget figure alone is not evidence",
+        ),
+        "legal_residence": (
+            "说明你在递交申请的国家或地区的合法居留身份",
+            "to show your lawful residence where you are applying",
+        ),
+        "sponsor_evidence": (
+            "说明资助内容、资助能力及你们的关系；适用时还要说明资助人的英国身份",
+            "to explain the support, the sponsor's means and your relationship, plus their UK status where applicable",
+        ),
+        "certified_translation": (
+            "让原件内容可被核验；不是只翻摘要，译者声明和联系信息也需检查",
+            "so the original content can be verified; check completeness, the translator's declaration and contact details",
+        ),
+    }
+    status_details = {
+        "student": ("可向学校索取抬头纸证明，说明在读及准假情况，用来支持你的学习情况说明",
+                    "ask your school for a headed letter confirming enrolment and leave, to support your stated study circumstances"),
+        "employed": ("可向雇主索取抬头纸证明，说明职位、薪资及任职时间，用来支持工作情况说明",
+                     "ask your employer for a headed letter with your role, salary and length of employment, to support your work circumstances"),
+        "self_employed": ("例如经营登记或近期发票，用来说明目前仍在经营",
+                          "for example business registration or recent invoices, to explain ongoing self-employment"),
+    }
+    if item.id == "status_evidence" and case.profile.occupation_status in status_details:
+        details[item.id] = status_details[case.profile.occupation_status]
+    if item.id == "purpose_evidence" and case.profile.visit_purpose == "conference":
+        details[item.id] = ("向主办方索取，用来说明活动及访问目的", "ask the organiser for it, to explain the event and purpose")
+    explanation = details.get(item.id)
+    return document_label(case, item) + (f" — {explanation[0 if zh else 1]}" if explanation else "")
+
+
 QUESTION_TEXT_ZH = {
     "application_country": "你准备在哪个国家或地区递交申请？",
     "nationality_country": "你持哪个国家的护照？",
@@ -359,6 +404,8 @@ def document_list_requested(case: Case) -> bool:
     if re.search(r"(?:不用|不需要|不要).{0,20}(?:清单|材料|资料)|"
                  r"(?:don't|do not|no need).{0,30}(?:checklist|documents|list)", text, re.I):
         return False
+    if "document_checklist" in case.customer_question_topics:
+        return True
     return bool(re.search(
         r"(?:请|麻烦|想要|需要).{0,25}(?:材料清单|资料清单)|"
         r"(?:需要|准备|提供|还缺)(?:什么|哪些)(?:材料|资料)|"
@@ -421,9 +468,17 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
     documents = []
     requested_list = document_list_requested(case)
     paused = case.question_plan == [] and bool(case.pending_question_fields)
-    if (not questions and not paused) or case.documents or requested_list:
+    quiet_turn = bool(case.latest_customer_message) and not (
+        case.latest_received_facts or case.latest_changes or case.latest_document_names
+        or customer_requests_next_step(case.latest_customer_message)
+    )
+    answering_question = bool(case.customer_question_topics or case.customer_answers)
+    if (requested_list or case.latest_document_names or issues or (
+            not quiet_turn and not answering_question
+            and ((not questions and not paused) or case.documents)
+    )):
         documents = [
-            document_label(case, item)
+            explained_document_label(case, item) if requested_list else document_label(case, item)
             for item in case.requirements
             if item.applicable
             and item.blocker
@@ -444,6 +499,13 @@ def change_acknowledgement(case: Case) -> str | None:
     if not case.latest_changes:
         return None
     zh = case.customer_language == "zh"
+    if not zh and set(case.latest_changes) == {"occupation_status"}:
+        occupation = {
+            "employed": "you're employed", "student": "you're studying",
+            "self_employed": "you're self-employed",
+        }.get(case.latest_changes["occupation_status"])
+        if occupation:
+            return f"Thanks for clarifying—I've noted that {occupation}."
     changes = ("；" if zh else "; ").join(
         f"{fact_label(case, key)}{'：' if zh else ': '}"
         f"{funding_label(case, language=case.customer_language) if key == 'funding_source' and value == case.profile.funding_source else VALUE_LABELS_ZH.get(value, value) if zh else value.replace('_', ' ')}"
@@ -541,13 +603,16 @@ def blocked_customer_message(case: Case) -> str:
     sections = ([intro] if contextual or (case.question_plan == [] and case.pending_question_fields
                                         and not case.customer_answers and not documents)
                 else ([] if case.customer_answers or documents else [greeting, intro]))
-    if case.latest_deferred_fields:
+    if case.latest_deferred_fields and (
+        not case.customer_answers or case.proactive_guidance_offered or case.latest_received_facts or case.latest_changes
+    ):
         sections.append(
             "日期先留空，等你确定后再补。我们先整理其他信息。"
             if zh else "We can leave the dates open for now and collect the other details first."
         )
-    elif (case.deferred_fields and not questions and not issues and not documents
-          and not case.pending_question_fields):
+    elif (case.deferred_fields and not questions and not issues and not documents and not case.customer_answers
+          and not case.pending_question_fields
+          and (case.latest_received_facts or case.latest_changes or customer_requests_next_step(case.latest_customer_message))):
         sections.append(
             "日期确定后再告诉我就好，已经提供的信息会保留。具体日期补齐前，还不能完成最终核对。"
             if zh else "Let me know when your dates are decided; the details you've already provided are retained. "
@@ -579,6 +644,17 @@ def blocked_customer_message(case: Case) -> str:
                 if zh else "This is a preparation list for your circumstances, not a universal "
                 "mandatory checklist. I'll adjust it if your travel or funding arrangements change."
             )
+            if not re.search(
+                r"(?:不用|不需要|不要|无需|别).{0,12}(?:链接|网址|官网)|"
+                r"\b(?:no|without) links?\b|\b(?:don't|do not).{0,12}(?:send|need).{0,12}(?:links?|websites?)",
+                latest_reply_text(case.latest_customer_message), re.I,
+            ):
+                sources = list(dict.fromkeys(
+                    source for item in case.requirements
+                    if item.applicable and item.blocker and not item.satisfied
+                    for source in item.source_urls
+                ))
+                sections.append("\n".join(f"GOV.UK: {source}" for source in sources))
     if questions:
         # Keep the grounded questions verbatim, but don't turn a short conversation
         # into a labelled form. Longer questions get their own paragraph.
