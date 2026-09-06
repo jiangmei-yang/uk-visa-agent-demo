@@ -18,7 +18,7 @@ explicitly recorded here.
 Updated 2026-09-06. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
 The bounded interviewer handoff is in [SUBMISSION.md](SUBMISSION.md). See the
-[September 6 release review](docs/RELEASE_REVIEW_2026-09-06.md) for the latest consultant
+[earlier September 6 release review](docs/RELEASE_REVIEW_2026-09-06.md) for the preceding consultant
 probe, retained financial failure, source-bound v10 repair and clean-container HTTP checks.
 The latest [multi-turn repair](docs/CONSULTANT_JOURNEY_REPAIR_2026-09-06.md) has
 **4,525 passing tests** (91.64s, one existing test-client warning), Ruff and strict
