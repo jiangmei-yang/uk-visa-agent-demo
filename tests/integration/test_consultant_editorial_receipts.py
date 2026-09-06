@@ -63,3 +63,19 @@ def test_receipt_is_not_trimmed_when_advice_is_unselected_or_facts_are_corrected
     else:
         case.proactive_guidance_offered = False
     assert "目前在读书" in received_context(case)
+
+
+def test_saved_name_and_birthday_turn_has_coordinated_actual_reply(tmp_path):
+    report = json.loads(Path("eval_output/consultant_journey_2026-09-07-v9.json").read_text())
+    conversation = Conversation(tmp_path)
+    rows = [row for row in report["results"]
+            if row["journey"] == "en-durable-pacing" and row["turn"] <= 2]
+    assert len(rows) == 2
+    for row in rows:
+        result = conversation.turn(row["input"], CasePatch.model_validate_json(row["raw_model_content"]))
+    assert "I've recorded the name in your passport and your date of birth." in result.body
+    assert "passport, your date of birth" not in result.body
+    assert result.case.profile.full_name == rows[-1]["profile"]["full_name"]
+    assert result.case.profile.date_of_birth.isoformat() == rows[-1]["profile"]["date_of_birth"]
+    assert result.case.delivery_path is None
+    assert not result.case.profile_confirmed and not result.case.final_summary_confirmed

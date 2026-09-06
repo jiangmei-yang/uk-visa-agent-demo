@@ -680,9 +680,17 @@ def received_context(case: Case) -> str:
             recorded.append("your proposed accommodation")
         if "estimated_trip_cost_gbp" in facts:
             recorded.append("your estimated budget")
-        if "planned_arrival_date" in facts or "planned_departure_date" in facts:
-            recorded.append("your updated travel dates")
-        return "I've recorded " + ", ".join(recorded) + "." if recorded else ""
+        if {"planned_arrival_date", "planned_departure_date"} <= set(facts):
+            recorded.append("your planned travel dates")
+        elif "planned_arrival_date" in facts:
+            recorded.append("your planned arrival date")
+        elif "planned_departure_date" in facts:
+            recorded.append("your planned departure date")
+        if not recorded:
+            return ""
+        recorded_phrase = (recorded[0] if len(recorded) == 1 else " and ".join(recorded)
+                           if len(recorded) == 2 else ", ".join(recorded[:-1]) + ", and " + recorded[-1])
+        return "I've recorded " + recorded_phrase + "."
     parts = []
     for field, phrase in (
         ("employer_name", "你目前的雇主是"),
@@ -775,8 +783,12 @@ def received_context(case: Case) -> str:
         recorded.append("计划住宿")
     if "estimated_trip_cost_gbp" in facts:
         recorded.append("旅行预算")
-    if "planned_arrival_date" in facts or "planned_departure_date" in facts:
+    if {"planned_arrival_date", "planned_departure_date"} <= set(facts):
         recorded.append("行程日期")
+    elif "planned_arrival_date" in facts:
+        recorded.append("计划抵达日期")
+    elif "planned_departure_date" in facts:
+        recorded.append("计划离开日期")
     return "你提供的" + "、".join(recorded) + "已记下。" if recorded else ""
 
 
