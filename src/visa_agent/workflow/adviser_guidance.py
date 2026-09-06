@@ -408,12 +408,8 @@ def _application_process_orientation(case: Case) -> str:
         )
         answer = (
             opening
-            + "从官方申请页选择 Apply now。表格可以中途保存；在线提交后，"
-            "预约签证申请中心，再按页面要求完成身份核验和材料提供。\n\n"
-            "6 个月 Standard Visitor 当前申请费为 £135；"
-            "最早可在出发前 3 个月申请，完成在线申请、身份核验和材料提供后，"
-            "通常约 3 周出决定，并非保证时限或获签。无需为了准备材料先买机票或订酒店。"
-            "我会帮你整理和核对材料，正式递交由你在官网完成。"
+            + "之后可从官方申请页选择 Apply now，表格可以保存后再继续。"
+            "我们先把资料准备好；正式递交由你在官网完成。"
         )
         sources = [] if route_confirmed else [
             "官方签证 / ETA 查询：\nGOV.UK: " + ROUTE_CHECK_URL,
@@ -433,14 +429,8 @@ def _application_process_orientation(case: Case) -> str:
     )
     answer = (
         opening
-        + "select Apply now on the official application page. You can save the form and return to it. "
-        "After applying online, book a visa application centre appointment and follow the page instructions "
-        "to prove your identity and provide documents.\n\n"
-        "The current fee for a 6-month Standard Visitor application is £135. You can apply "
-        "up to 3 months before travel, and a decision usually takes about 3 weeks after the online application, "
-        "identity check and documents are complete; neither timing nor approval is guaranteed. "
-        "No need to buy flights or book a hotel just for evidence. "
-        "I will help organise and check the documents; you will submit on the official website."
+        + "the official application page's Apply now link lets you start and save the form. "
+        "We can prepare the information first; you will submit it on the official website."
     )
     sources = [] if route_confirmed else [
         "Official visa / ETA checker:\nGOV.UK: " + ROUTE_CHECK_URL,

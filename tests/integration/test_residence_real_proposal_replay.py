@@ -1,6 +1,7 @@
 """Real saved proposals, local reopened workflow and captured sends; no live calls."""
 
 import json
+import re
 from pathlib import Path
 
 from test_consultant_value import Conversation
@@ -24,3 +25,23 @@ def test_real_residence_corrections_move_and_chinese_supplement_retain_facts_and
         else:
             assert not result.case.active_evidence("current_address_duration")
         assert {"planned_arrival_date", "planned_departure_date"} <= set(result.case.deferred_fields)
+
+
+def test_first_receipt_does_not_inject_prices_but_explicit_process_questions_still_get_answers(tmp_path):
+    report = json.loads(Path("eval_output/residence_duration_2026-09-07-v2.json").read_text())
+    dialogue = Conversation(tmp_path)
+    row = report["results"][0]
+    first = dialogue.turn(row["input"], CasePatch.model_validate_json(row["raw_model_content"]))
+    assert "£135" not in first.body and "3 weeks" not in first.body
+    assert first.body.count("buy flights") == 1
+    assert "intended itinerary" in first.body and "https://www.gov.uk/check-uk-visa" in first.body
+    assert len(re.sub(r"https?://\S+", "", first.body).split()) <= 210
+    body = "What is the application fee, how long does it take, and where do I apply online?"
+    proposal = CasePatch.model_validate({"updates": [], "ambiguities": [], "customer_questions": [
+        {"topic": topic, "source_excerpt": body, "confidence": 1} for topic in ("fees", "timing", "application")
+    ]})
+    asked = dialogue.turn(body, proposal)
+    assert "£135" in asked.body
+    assert re.search(r"(?:3|three) weeks", asked.body, re.I)
+    assert "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa" in asked.body
+    assert not asked.case.last_requested_fields

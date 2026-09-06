@@ -102,6 +102,11 @@ check deselected (1.97s), before the final receipt change. Ruff passes; strict
 Mypy passed for 92 modules before the receipt edit. No full-suite run, deployment
 or actual Gmail recipient acceptance is claimed for this experiment.
 
+Subsequent [focused first-reply work](FOCUSED_FIRST_REPLY_2026-09-07.md) removes
+the unsolicited fee/timing block and duplicate booking caution while preserving
+explicit compound-question answers. It is an improvement, not independent
+naturalness acceptance.
+
 ## Implemented foundation
 
 `CaseProfile.current_address_duration` preserves the supplied text with a bounded
