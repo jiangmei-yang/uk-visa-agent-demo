@@ -195,9 +195,15 @@ def _profile_rows(case: Case) -> list[str]:
             and case.residence_duration_deferrals
             and case.residence_duration_deferrals[-1].get("address") == case.profile.current_address):
         profile["current_address_duration"] = "Deferred for checking - not yet supplied"
-    if profile["funding_source"] != "personal_sponsor":
-        for field in ("sponsor_name", "sponsor_address", "sponsor_relationship", "sponsor_is_in_uk"):
-            profile[field] = "Not applicable"
+    for field in ("sponsor_name", "sponsor_address", "sponsor_relationship", "sponsor_is_in_uk"):
+        # Preserve supplied facts (including False) for review. Unknown funding
+        # cannot establish that personal-sponsor details are inapplicable.
+        if profile[field] is not None:
+            continue
+        if profile["funding_source"] in {"self", "employer_or_school"}:
+            profile[field] = "Not applicable to the recorded funding source"
+        elif profile["funding_source"] != "personal_sponsor":
+            profile[field] = "Applicability not yet established"
     for field in ("estimated_trip_cost_gbp", "annual_income_gbp"):
         if isinstance(profile[field], int):
             profile[field] = f"GBP {profile[field]:,}"

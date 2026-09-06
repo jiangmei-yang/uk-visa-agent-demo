@@ -52,7 +52,7 @@ def test_quoted_cjk_statement_is_not_fresh_applicant_evidence():
     assert not sponsor_address_is_grounded("深圳市示例路12号", "我的资助人的地址是深圳市示例路12号", body)
 
 
-def test_customer_summary_keeps_home_separate_and_hides_inapplicable_sponsor():
+def test_customer_summary_keeps_home_separate_and_preserves_supplied_legacy_sponsor():
     from visa_agent.delivery.pack import _profile_rows
     from visa_agent.domain.models import Case, CaseProfile
 
@@ -63,8 +63,11 @@ def test_customer_summary_keeps_home_separate_and_hides_inapplicable_sponsor():
     assert "Sponsor address: 12 Example Road, Hong Kong" in rows
     assert "Current home address: Not provided" in rows
     case.profile.funding_source = "self"
-    assert "Sponsor address: Not applicable" in _profile_rows(case)
-    assert all("12 Example Road" not in row for row in _profile_rows(case))
+    # Display formatting must not silently erase a supplied fact. The normal
+    # funding-change workflow owns source-backed invalidation, not the renderer.
+    assert "Sponsor address: 12 Example Road, Hong Kong" in _profile_rows(case)
+    case.profile.sponsor_address = None
+    assert "Sponsor address: Not applicable to the recorded funding source" in _profile_rows(case)
 
 
 @pytest.mark.parametrize("language", ["en", "zh"])
