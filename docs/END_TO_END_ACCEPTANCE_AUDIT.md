@@ -1,4 +1,4 @@
-# Remaining end-to-end acceptance, 2026-09-04
+# Remaining end-to-end acceptance — updated 2026-09-07
 
 Overall acceptance remains incomplete. The original supplied design is a
 requirements reference; recommendations about vendors or libraries are not
@@ -14,9 +14,20 @@ intake and explicit local operator-review gates with fresh customer confirmation
 A fictional captured-transport journey generates a local ZIP; known-family missing
 passport details now have conditional advice and persistent deferral. This is not
 complete intake, a finished nontechnical review interface or real final delivery.
-The running Gmail service remains on the preceding release.
+The registered Gmail service was reloaded with the candidate runtime on September
+7; see [reload evidence](GMAIL_CANDIDATE_ROLLOUT_2026-09-07.md). Unknown applicant
+processing consent and the lack of a new recipient-side final-pack result remain
+open. Reloading is not acceptance of these application-record workflows.
 
-Latest released work: [consultant editorial repair](CONSULTANT_EDITORIAL_REPAIR_2026-09-06.md)
+Current candidate engineering evidence: [CI](CI_CANDIDATE_2026-09-07.md) passed
+all 5,124 tests without exclusions, lint, typing, stability and fresh-container
+smoke checks. [Consultant v8](CONSULTANT_JOURNEY_V8_2026-09-07.md) retains 22/22
+real-model development turns; [financial v17](FINANCIAL_PROVIDER_V17_2026-09-07.md)
+retains 4/4 frozen fictional-PDF extractions. These are exposed development
+scenarios, not independent naturalness or universal accuracy measurements.
+The candidate branch is on GitHub; main/release acceptance is not complete.
+
+Historical checkpoint: [consultant editorial repair](CONSULTANT_EDITORIAL_REPAIR_2026-09-06.md)
 shortens brief first receipts and school-record help, preserving historical SENT
 discussion across upgrades. Fresh source-bound journey v7 is 22/22 and financial
 v16 is 4/4; implementer review is not independent naturalness evidence. The active
@@ -64,8 +75,10 @@ still records pacing, durable style preference and broader paraphrase gaps;
    travel/contact records, field sources, revision history, explicit collection
    assertions and summary projections. The bounded inbound planner now has local
    captured-transport coverage. Broader real-model semantic extraction,
-   declaration-driven question planning and replacement of the temporary hold by the complete
-   delivery gate are still pending. A serious-history flag is not equivalent to
+   declaration-driven question planning and end-to-end validation of the current
+   source-registration, operator-review and fresh-confirmation gates are still
+   pending. The temporary blanket hold has been replaced in the candidate; that
+   change alone is not real-recipient acceptance. A serious-history flag is not equivalent to
    complete travel history. Related current-address duration, known parent and
    condition-dependent employer/partner/family details must also be checked against
    the original scope and official form information before claiming a complete pack.

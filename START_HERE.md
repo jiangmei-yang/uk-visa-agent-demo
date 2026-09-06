@@ -22,7 +22,7 @@ applicant explicitly confirms the final summary. The final status is **Ready for
 
 In the console:
 
-1. choose **Try the workflow** and send the three prepared applicant messages;
+1. choose **Try the offline workflow** and send the prepared applicant messages;
 2. see the first pack withheld for two named evidence problems;
 3. see the corrections clear those blockers while the pack still waits for confirmation;
 4. check the displayed summary, confirm it, and download the released pack;

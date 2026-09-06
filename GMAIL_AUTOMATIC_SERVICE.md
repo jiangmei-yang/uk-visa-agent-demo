@@ -1,5 +1,13 @@
 # Controlled automatic Gmail service
 
+Latest candidate reload, September 7: the registered worker was restarted with
+the runtime source covered by candidate CI, backed-up case/sync databases and
+unchanged registration. A completed idle cycle and independent process liveness
+were observed; nine SENT rows and unknown processing consent remained unchanged.
+See [the dated rollout evidence](docs/GMAIL_CANDIDATE_ROLLOUT_2026-09-07.md).
+This is not a new recipient-side delivery or applicant-consent result. Older
+rollout entries below describe their historical code and PIDs.
+
 Current code adds a [versioned applicant processing boundary](docs/PROCESSING_CONSENT.md).
 `prepare` and `serve` inspect controls before materializing attachments or invoking
 the model; a grant requires an actually SENT current notice and its public reference.
