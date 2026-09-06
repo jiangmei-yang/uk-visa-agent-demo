@@ -11,8 +11,10 @@ import hashlib
 import json
 import re
 import subprocess
+import sys
 import tempfile
 from datetime import UTC, date, datetime, timedelta
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +34,33 @@ from visa_agent.workflow.conversation import reply_items
 ROOT = Path(__file__).resolve().parents[1]
 CONTACT = "fictional-journey@example.test"
 TODAY = date(2026, 9, 6)
+POLICY_PATH = Path("knowledge/uk_standard_visitor_2026-02-25.yaml")
+
+
+def evidence_sources(root: Path) -> dict[str, str]:
+    """Bind rules and dependency declarations as well as executable source.
+
+    Deliberately no environment dump, mailbox state or secret directory. Missing
+    required inputs fail before a provider call rather than weaken the manifest.
+    """
+    paths = [root / "scripts/consultant_journey_probe.py", root / POLICY_PATH,
+             root / "pyproject.toml", root / "uv.lock",
+             *sorted((root / "src/visa_agent").rglob("*.py")),
+             *sorted(path for path in (root / "src/visa_agent/assets").rglob("*") if path.is_file())]
+    return {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
+
+
+def runtime_versions() -> dict[str, str]:
+    """Installed versions supplement, but do not claim conformance to, the lock."""
+    result = {"python": sys.version.split()[0]}
+    for package in ("openai", "pydantic", "PyYAML", "httpx", "reportlab", "pypdf"):
+        try:
+            result[package] = version(package)
+        except PackageNotFoundError:
+            result[package] = "not-installed"
+    return result
+
+
 EMPLOYER_SCENARIOS: dict[str, list[dict[str, Any]]] = {
     "employer-contact-and-job-change": [
         {"body": "I'm preparing for a UK holiday. I hold a Chinese passport and will apply from Hong Kong. "
@@ -342,9 +371,7 @@ def main() -> None:
                       default_file=ROOT / ".secrets/deepseek_api_key.txt"))
     if not key and not saved:
         parser.error("Missing DeepSeek key")
-    policy = load_policy(ROOT / "knowledge/uk_standard_visitor_2026-02-25.yaml")
-    paths = [Path(__file__).resolve(), *sorted((ROOT / "src/visa_agent").rglob("*.py")),
-             *sorted(path for path in (ROOT / "src/visa_agent/assets").rglob("*") if path.is_file())]
+    policy = load_policy(ROOT / POLICY_PATH)
     report: dict[str, Any] = {
         "scope": "fictional multi-turn development scenarios; real DeepSeek extraction; captured transport",
         "mailbox_calls": 0, "real_documents": 0,
@@ -352,7 +379,14 @@ def main() -> None:
         "requested_model": "deepseek-v4-flash", "check_contract": "consultant-journey-v5",
         "evaluation_date": TODAY.isoformat(), "run_started_at": datetime.now(UTC).isoformat(),
         "git_head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
-        "source_sha256": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths},
+        "source_manifest_version": 2,
+        "source_sha256": evidence_sources(ROOT),
+        "runtime_versions": runtime_versions(),
+        "policy": {"path": str(POLICY_PATH), "id": policy.policy_id, "version": policy.version,
+                   "effective_date": policy.effective_date.isoformat(), "valid_until": policy.valid_until.isoformat(),
+                   "current_on_evaluation_date": policy.is_current(TODAY)},
+        "workflow_configuration": {"model_rendering": False, "extraction_attempts": 1,
+                                   "transport": "capture_only", "policy_clock": TODAY.isoformat()},
         "case_patch_schema_sha256": hashlib.sha256(json.dumps(CasePatch.model_json_schema(), sort_keys=True).encode()).hexdigest(),
         "scenarios": scenarios, "completed": False, "all_passed": False, "results": [],
     }
