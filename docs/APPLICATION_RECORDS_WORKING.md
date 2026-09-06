@@ -7,6 +7,32 @@ The overall acceptance goal remains active.
 
 ## Requirement and design boundary
 
+### 2026-09-07 explicit local operator command entry point
+
+`visa-agent record-review-plan` and `record-review-apply` now expose the local
+review transaction for existing Gmail state directories. See
+`docs/OPERATOR_RECORD_REVIEW.md` for the exact procedure and limitations. Plans
+start with blank identity/rationale, null relationship categories and false
+assessment flags; they are not pre-approved. Submission trusts only the typed
+decision, rechecks the full policy digest/current saved-case fingerprint and uses
+the Gmail worker lock plus the existing atomic transaction. It does not stop a
+worker, send mail, grant processing permission or confirm a customer's summary.
+
+Missing state is not created. Empty/non-SQLite or symlink database targets are
+rejected before initialization. Existing worker ownership, stale case/policy,
+unsupported decision fields and unchanged blank templates fail. Local terminal
+access is the operator boundary, not authentication inferred from an actor label.
+
+Both actual CLI help commands were exercised. The command/operator/source-audit
+test group passed **24 tests** (0.96s). Ruff passed and strict Mypy passed for 91
+source modules. Focused integration uses copied
+fictional SQLite state and a fixed test clock, with no network or real approval;
+it verifies unapproved plan, explicit application, unchanged outbox/confirmations,
+worker lock, missing/empty database, stale policy/case and unsupported fields.
+No full-suite/current-provider report, real operator approval, live send,
+service restart or deployment is claimed for this command addition. A guided
+nontechnical review UI and missing-detail feedback are still unfinished.
+
 ### 2026-09-07 operator record review and local ZIP journey
 
 The constant nonempty-record hold has been replaced by a saved-review binding;

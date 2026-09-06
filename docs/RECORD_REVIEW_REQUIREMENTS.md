@@ -1,7 +1,8 @@
 # Application-record review: remaining implementation contract
 
 Development contract, **not a release claim**. The trusted local transaction is
-now implemented; operator-facing authenticated UI/CLI and remaining broader
+now implemented, with an explicit local-terminal command entry point described in
+`OPERATOR_RECORD_REVIEW.md`. A guided authenticated UI and remaining broader
 application-field coverage are not complete.
 Official source checked 2026-09-07:
 [Standard Visitor application information](https://www.gov.uk/standard-visitor/apply-standard-visitor-visa).
@@ -84,7 +85,7 @@ review and fresh SENT profile/final confirmations. This is local integration
 evidence, not an authenticated real human review, visual PDF audit, live model
 test or real mailbox recipient acceptance.
 
-Still required: operator-facing workflow, missing-applicable-detail feedback to
+Still required: guided operator interface, missing-applicable-detail feedback to
 the customer, conditional field intake (including family passport data), the
 broader home/parent/employer/partner/payer fields, independently checked output
 quality and a fresh source-bound live-provider/Gmail acceptance run.

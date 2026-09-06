@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import sqlite3
 from datetime import UTC, datetime
 from importlib import import_module
 from pathlib import Path
@@ -58,9 +60,25 @@ def main() -> None:
         "whatsapp-dispatch", help="Send one due WhatsApp outbox batch"
     )
     whatsapp_parser.add_argument("--limit", type=int, default=20)
+    review_plan_parser = subparsers.add_parser("record-review-plan", help="Inspect a local Gmail case and prepare an unapproved review template")
+    review_plan_parser.add_argument("--state-dir", type=Path, required=True)
+    review_plan_parser.add_argument("--case-id", required=True)
+    review_apply_parser = subparsers.add_parser("record-review-apply", help="Apply an explicitly completed local operator decision; never sends mail")
+    review_apply_parser.add_argument("--state-dir", type=Path, required=True)
+    review_apply_parser.add_argument("--decision-file", type=Path, required=True)
     args = parser.parse_args()
     settings = Settings.from_env()
-    if args.command == "demo":
+    if args.command in {"record-review-plan", "record-review-apply"}:
+        from visa_agent.workflow.record_review_command import record_review_command
+
+        try:
+            review_result = record_review_command(state_dir=args.state_dir, policy_path=settings.policy_path,
+                case_id=args.case_id if args.command == "record-review-plan" else None,
+                decision_path=args.decision_file if args.command == "record-review-apply" else None)
+        except (ValueError, OSError, RuntimeError, sqlite3.Error) as error:
+            parser.error(str(error))
+        print(json.dumps(review_result, ensure_ascii=False, indent=2))
+    elif args.command == "demo":
         result = run_demo(settings, reset=bool(args.reset))
         print("Credential-free synthetic email demo completed.")
         print(f"Case: {result.case.id} — {result.case.status}")

@@ -211,6 +211,11 @@ closed and requires a human to recheck the linked GOV.UK sources before extendin
 
 ## Optional live providers
 
+Development branch operator tooling: [local Gmail record-review commands](docs/OPERATOR_RECORD_REVIEW.md)
+prepare an unapproved review template and apply an explicit, version-bound operator
+decision. They never send mail or confirm a customer summary. This is not yet a
+guided nontechnical review UI or evidence that the unreleased record feature is ready.
+
 Install optional provider SDKs with `uv sync --extra dev --extra live`.
 
 For local DeepSeek use, place the key in `.secrets/deepseek_api_key.txt` and set file permissions to
