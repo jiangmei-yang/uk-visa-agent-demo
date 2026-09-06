@@ -19,13 +19,21 @@ The registered Gmail service was reloaded with the candidate runtime on Septembe
 processing consent and the lack of a new recipient-side final-pack result remain
 open. Reloading is not acceptance of these application-record workflows.
 
-Current candidate engineering evidence: [CI](CI_CANDIDATE_2026-09-07.md) passed
+Previous candidate engineering evidence: [CI](CI_CANDIDATE_2026-09-07.md) passed
 all 5,124 tests without exclusions, lint, typing, stability and fresh-container
 smoke checks. [Consultant v8](CONSULTANT_JOURNEY_V8_2026-09-07.md) retains 22/22
 real-model development turns; [financial v17](FINANCIAL_PROVIDER_V17_2026-09-07.md)
 retains 4/4 frozen fictional-PDF extractions. These are exposed development
 scenarios, not independent naturalness or universal accuracy measurements.
 The candidate branch is on GitHub; main/release acceptance is not complete.
+
+Subsequent delivery repairs distinguish unknown sponsor applicability, preserve
+supplied values, remove footer-only PDF pages and improve bounded cover-letter
+wording. [Consultant v9](CONSULTANT_JOURNEY_V9_2026-09-07.md) is 22/22 and
+[financial v18](FINANCIAL_PROVIDER_V18_2026-09-07.md) is 4/4 on this runtime.
+The local no-exclusion suite now passes 5,153 tests. The previous CI and running
+Gmail worker do not automatically cover these later source changes. General
+naturalness, complete organization-funding intake and real delivery remain open.
 
 Historical checkpoint: [consultant editorial repair](CONSULTANT_EDITORIAL_REPAIR_2026-09-06.md)
 shortens brief first receipts and school-record help, preserving historical SENT

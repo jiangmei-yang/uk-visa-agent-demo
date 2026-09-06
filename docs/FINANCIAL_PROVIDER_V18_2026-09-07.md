@@ -33,3 +33,8 @@ This refresh closes the known financial source-freshness mismatch for the curren
 runtime. It does not establish complex transaction analysis, genuine document
 authenticity, funds sufficiency, sponsor support terms, independent accuracy or
 recipient-side delivery. There were no new Gmail sends or worker reloads.
+
+After updating both current provider references, the complete no-exclusion suite
+passed **5,153 tests**, with one existing Starlette warning, in **103.51 seconds**.
+No runtime source was edited during that run. This restores local full-suite
+validation; it is not itself a new GitHub CI or deployed-service acceptance result.
