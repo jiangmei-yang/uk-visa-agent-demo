@@ -347,6 +347,7 @@ def _question_step_allows_preparation_guidance(case: Case, active: str, *, initi
             continue
         if re.search(
             r"\btell me what to (?:gather|prepare|collect) first\b|"
+            r"(?:先|请)(?:简短)?告诉我眼下最值得做的一件事|"
             r"(?:帮我|请|想|先|开始|继续|接着|打算|下一步|该|应该|需要).{0,10}"
             r"(?:准备|整理|收集).{0,10}(?:申请|材料|资料|文件|签证|什么)|"
             r"\b(?:help me|please|let['’]s|can we|could we|want to|ready to|start|continue|"

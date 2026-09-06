@@ -57,6 +57,14 @@ automatic reply sender and outbox dispatcher with a fictional capture transport.
 The v2 checker fixes the date comparison and strengthens the sponsor action check.
 Keyword, pacing and fact assertions remain proxies, not human naturalness scores.
 
+The second live run (`consultant_journey_2026-09-06-v2.json`) reported 12/12,
+but manual reading rejected that as full acceptance: the student opener merely
+acknowledged studying (matching a weak keyword assertion), and the guarantee reply
+contained a redundant generic unsupported-answer preface. The report is retained
+unchanged. Contract v3 explicitly requires a school-document preparation action
+and forbids that redundant preface. Both retained proposal sets are replayed with
+the stronger current contract; later passing runs do not erase either limitation.
+
 ## Still not complete
 
 The new wording is a bounded repair, not general language understanding in the

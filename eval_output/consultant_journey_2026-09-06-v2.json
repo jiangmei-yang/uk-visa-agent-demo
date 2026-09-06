@@ -1,0 +1,906 @@
+{
+  "scope": "fictional multi-turn development scenarios; real DeepSeek extraction; captured transport",
+  "mailbox_calls": 0,
+  "real_documents": 0,
+  "maximum_model_calls": 12,
+  "model_retries": 0,
+  "requested_model": "deepseek-v4-flash",
+  "check_contract": "consultant-journey-v2",
+  "evaluation_date": "2026-09-06",
+  "run_started_at": "2026-09-06T05:06:07.319053+00:00",
+  "git_head": "cfa06014a7dad2b0b15f1395652183aa79c84797",
+  "source_sha256": {
+    "scripts/consultant_journey_probe.py": "a07fd87c35cbd264c1c14f52a97e2326b1eb5078fd7aa5bf38656df6d2138e5e",
+    "src/visa_agent/__init__.py": "a3350ee5bcd581ebdb734128829da5e6772eae8346faaa85e2bf608d27d95149",
+    "src/visa_agent/case_data.py": "06dcf00b0073b70b25468b7a0da891942a3ef45bcbd52e141194628b4823951c",
+    "src/visa_agent/channels/__init__.py": "4a9e7ea09deca6b1c25e049b68a2c34aadbd57475fc072d0e198086255ba173e",
+    "src/visa_agent/channels/automatic_reply.py": "cc01815b932bb60779569038a74fc37b97e63b2f6e54ab944832912cdd5898f0",
+    "src/visa_agent/channels/email_fixture.py": "ee68e7eb2aa4a312dc6846d159bd45574b4faf4e1ad623cb5d17133ff1b97877",
+    "src/visa_agent/channels/email_ingestion.py": "fbddd383aea363fbf97f1f82fbc711b99853b9e48ab584bd5249fe888b1cb12b",
+    "src/visa_agent/channels/gmail.py": "873de8bead906bfe4edf766440f274cf152a1d3a123c31c6c7b0e371397e0ab6",
+    "src/visa_agent/channels/gmail_auth.py": "ba7277ade4bf0f5485e36ef9ce7f7c46d7b36146fb601d0d9f9a808eb9d7e89c",
+    "src/visa_agent/channels/gmail_intake.py": "dcb0cb51699e86bad44ca9d37744bc92d53c757f6a65d5bab1973f4fd5a9f3d8",
+    "src/visa_agent/channels/gmail_pipeline.py": "3ec2aaf045a78046f59c98b1491ed806a4fc24c39007255c4c0ed02ea16f41c3",
+    "src/visa_agent/channels/gmail_sync.py": "00ecb0c5e22f56abcc411815199369fa2d6fa759bff38555cf9503bbda183342",
+    "src/visa_agent/channels/inbound_worker.py": "d57f44edfaae82ee31309bdb31ada06a3be4e25856e464277bdfa60d9bbc2370",
+    "src/visa_agent/channels/outbound.py": "d226e177668a05333a843fef97fd8d1b543b489e4699b29a5a7b10f789fd4af3",
+    "src/visa_agent/channels/outbound_fixture.py": "f83c59dfe9013d59d3fc336061931c8ac5b9d5dae6c87a84a3200bc2edfa2d82",
+    "src/visa_agent/channels/runtime_lock.py": "c03396b333e6627731f8a61b6b14438ff3d6c55370759fdd39af46a45bd26fb5",
+    "src/visa_agent/channels/twilio_receiver.py": "a4267a306c01d2757657d73d0dff1f1c9f06237e8df4e9fb1f028fc705b13600",
+    "src/visa_agent/channels/twilio_status.py": "f75351716055ba4a5c001d00e76c64187589eb462c05684f7c73dc96c4f80271",
+    "src/visa_agent/channels/twilio_whatsapp.py": "adf1233212ffd745242360085fbe087cc2846a42480f5bebbbe0d52e77b18575",
+    "src/visa_agent/channels/whatsapp_service.py": "abe8ffa7cb2ddc50cb95f8500c5f06a0dc375c4cbd7db17d644bba910b54933b",
+    "src/visa_agent/cli.py": "e44e9ddcc0c53a0c2217b95c5b2809b16dc5411cc4b5d41405e867ed9b7e506d",
+    "src/visa_agent/config.py": "a00bd6949e4c747ba19f9b00e28fdf3efdcca1eb237e6f0b1f0f05b92d094516",
+    "src/visa_agent/delivery/__init__.py": "c228e85c7a38888d18198814f142ac9a6262de6ee17ccc377066e308c1df9735",
+    "src/visa_agent/delivery/pack.py": "e1d6f1afaf2bd3c9b57f4b522d26a184a21bc79fd053f69d502579cb4a248cca",
+    "src/visa_agent/demo.py": "6b09553b1dc0a716833e6bf62753c865dc912fc6e45c5e8aa91f96b8022d6402",
+    "src/visa_agent/documents/__init__.py": "dae296ed7a7312a7792c2dc59d13be7b6905c5daf4b728d5ca37c80224fed7b1",
+    "src/visa_agent/documents/natural.py": "734f5a4637a6091b1f8cc2f36dbb48745a72661cf202307e22125d018f7e3af4",
+    "src/visa_agent/documents/processor.py": "e5230265b42a9073f4264d2056e35ae8eca0bdecf55da2d99bebfcddce92efdc",
+    "src/visa_agent/documents/samples.py": "a6d31928403c7a4a99e51e85c38ab518fdb768d87fb4136d46c84c90f2167e21",
+    "src/visa_agent/domain/__init__.py": "d5cd2e4964d34671b4b71a2c0796c5985b105b0fc0a9b5c72082c90e3625cecd",
+    "src/visa_agent/domain/address_evidence.py": "f4989295eebd670c5925637098b67f3f7006b4ac016537543ea16681cee30792",
+    "src/visa_agent/domain/date_evidence.py": "efeae43509fc7985bf6127f855b2cd8c438f76c3759614bb15eef3269f9e9825",
+    "src/visa_agent/domain/financial_evidence.py": "7b657ed1189167306816c1e981de6268b76500aadc11256e14dba1a27e82532d",
+    "src/visa_agent/domain/financial_review.py": "19dbb5d2e73d95cd53f00de76364822dfac196217d526d08bf30a33e8cde3606",
+    "src/visa_agent/domain/locations.py": "2e831bd608afd399ac648b4bca05a7c5e009f7266666e22bdd9312bcf3651f00",
+    "src/visa_agent/domain/models.py": "e61d8010717e8275f0989fa3509be8b15fb4ca27568fe4251bb4b71448426509",
+    "src/visa_agent/domain/policy.py": "98103fa5d39e67df9e50a7364e43a11f96b98be1bc04e4ffc40e98422f331e5b",
+    "src/visa_agent/domain/rules.py": "1f1f86ace96612c6a583fbe1bbe9ed1ca7dff56364444316a14d1bfbfddbd2fb",
+    "src/visa_agent/domain/sponsor_evidence.py": "7fdbc968a003c81cc9132e4854511d24504c000c935dab1738debe3e75e63e48",
+    "src/visa_agent/lab.py": "6af7780373d780dfd95a26e65409f9aac20164218bf90eec733e4aea6eb14570",
+    "src/visa_agent/llm/__init__.py": "5607d3f7ccee9ab958fec329b1f27093830199ec9c38a45446c93e4537fa7c42",
+    "src/visa_agent/llm/deepseek_client.py": "db120e6288896948fe05da2805bdcf5d9ccc6121fefc062644221c439cc36614",
+    "src/visa_agent/llm/evaluation.py": "6393a9f5bc43f43ae5c5bad4e8e813a5aafe87acd1ff0cd454de6f59972a9f26",
+    "src/visa_agent/llm/guarded.py": "7bc0e91c42e8a9c73166831928d97929699ff4d8cff38374679806142a35563d",
+    "src/visa_agent/llm/offline.py": "37d73883bfbd5a1c5e398a83602dfb92049bbfaddeefb42291146872a943c65b",
+    "src/visa_agent/llm/openai_client.py": "0b4d87bce70a83d92088d1aff8ae60a7265022950b778067a2ed787f9dc48f05",
+    "src/visa_agent/llm/ports.py": "e66c9b27d2076af1c3adf01b1d5f141e38633ae53803c6c7ad1592f006e359dc",
+    "src/visa_agent/llm/question_understanding.py": "2d9a6c9381f9342513af4e89ecf2b127fa6670988ede1bc954c07460fec55fb9",
+    "src/visa_agent/llm/reply_style.py": "7aca465240d7496deafc2fbab4cb3eed341437ac087ca37a9b20de6300a4b235",
+    "src/visa_agent/privacy/__init__.py": "3b88bb325c56e34aa2e644b42039826fbdb20b1230b28c281b082cb6f48918c2",
+    "src/visa_agent/privacy/consent.py": "6744e9d7d684c244f076f03bd8a150bc3325139d2ad1897bf5090c6406696097",
+    "src/visa_agent/public_webhook.py": "c51893541eb5923847a057b4bfc896b20a7360c19b3462b6a130a0611ebc5c3d",
+    "src/visa_agent/review_ui.py": "dd40c9452e3d294593c8a30d1a3dfb276176c2377f3400f2c76bba2041085b32",
+    "src/visa_agent/secrets.py": "5a7f15fb96b1a544209a6380c57a3e39f9ac5c8c93cbd54cf2f50ded7b4fbd36",
+    "src/visa_agent/startup.py": "c6e9d3a83701715286d23ed66241feb00db6375eda63efb5a7737fffc74f8846",
+    "src/visa_agent/storage/__init__.py": "7296f379f4b997d52f354cdd5e6ce5314187146e117f02f04b6fa86f39bf6cd6",
+    "src/visa_agent/storage/sqlite.py": "bdcbdc09b9a9b2ed55b50ce1ad542b2f78fecbace18a03002f433baf0b331045",
+    "src/visa_agent/web.py": "c3617a9145f4947ed02cbfa889e06c4e1cb4c1ff774fc080adb3cfaa51e7d181",
+    "src/visa_agent/workflow/__init__.py": "a273d6ddf1c05279ae2d32d46583ba5b9e94e145f4f5f816d131a723896dac7e",
+    "src/visa_agent/workflow/advice_continuation.py": "4689be647f04ca0e0ab733992d9fa7cecd5caef89806ac0a521314535e0cc96f",
+    "src/visa_agent/workflow/advice_preferences.py": "b9b006d1630e4babba032bf04a26b8e85fef2b4d87b880925e84861da155d0bf",
+    "src/visa_agent/workflow/advice_queue.py": "0cd78589b4c2a2b07d7926aefc2ed4bce91597aeabfd5c7163a60b06ab0b2712",
+    "src/visa_agent/workflow/adviser_guidance.py": "e406e2d0980f8084619f6164b43d9b6e28c44e6378109f5dad33a4fa49db448a",
+    "src/visa_agent/workflow/consultant_overview.py": "6a0407d77159e6777c304d68c3a07e1b922144337ca29747384fa369e61d1ede",
+    "src/visa_agent/workflow/conversation.py": "f19229ab84652cd99f84e6298eb527dfb3e1b4d5b6f2546cab7f7225230c2166",
+    "src/visa_agent/workflow/customer_questions.py": "248edc29b82febef0cd0ac6a1c2ac6ce8452f51c504671f00f489589d2d1ccbe",
+    "src/visa_agent/workflow/document_preparation.py": "0731943e5659455c764bcac8f5ab6d655fe9c3670e04211d6c35bae9d1d0f7fb",
+    "src/visa_agent/workflow/document_purpose.py": "4f349cd2804843492326e7d7c4f939362ba4cb22fd97a8fa2d30fe1e8e4e6add",
+    "src/visa_agent/workflow/document_review.py": "54a25b433514dfe4f972bdb795851e7ece2b65be5f91d6cb841531140517bafb",
+    "src/visa_agent/workflow/explicit_answer_scope.py": "9becd98ee24cb80b187e580f5739ab33bb69f3af08f7aa984e561e03b283c5b7",
+    "src/visa_agent/workflow/funding_wording.py": "f393622327a03fddf6f02e9c7633e9b90e5e415269f6c548a9d09438ad70c714",
+    "src/visa_agent/workflow/guidance_freshness.py": "288c11413e5fb926d303419d9c8d581c206717dad258fcf42ec7f9ac9a8b7094",
+    "src/visa_agent/workflow/income_clarification.py": "5feefe715a0667a6c34dbd007be63d81f724bf94236478ce7a7983dc1780841c",
+    "src/visa_agent/workflow/intent_matching.py": "23c5012180be07aa86e1ae662e26e5e4ede2d05da2d53d85272e90d8b9e7545c",
+    "src/visa_agent/workflow/next_step.py": "0b63d96752b0ffddb0c96e308c7197c80f355c52b6b843fcc7e1af26903ba908",
+    "src/visa_agent/workflow/pending_step_value.py": "2dee4e308ac05060f8051f958cacd4be9cbfc7e0adaf124571dd02b962cc05eb",
+    "src/visa_agent/workflow/preparation_control.py": "693ba32086844d4207ae90fd1680467093ac875e1e52fd2990c63a0fc641dc16",
+    "src/visa_agent/workflow/preparation_obstacles.py": "d9c3aa1a68719d754213510910463f2be8392cd9bda520f4956ed3836fb52fa1",
+    "src/visa_agent/workflow/review.py": "dfec36adfd58c81dfabfc71afac4898ebfb6d90b82315fef3d58457f50ca72b6",
+    "src/visa_agent/workflow/service.py": "354f0f7e4f54dc463fbcfa2d72b99282762fc982781268a8eba40d6536e14346",
+    "src/visa_agent/workflow/sponsor_guidance.py": "bddcd9599034d3c85a8efea6435e85a32a26fda3fe506c7c016bee4f326b2472"
+  },
+  "scenarios": {
+    "student-obstacle-and-change": [
+      {
+        "body": "我想趁下个学期结束去伦敦玩几天。我是中国护照，在香港念硕士，也准备在香港办。钱自己出，但假期没公布，还说不准出发和回来的日子。你先简短告诉我眼下最值得做的一件事。",
+        "profile": {
+          "occupation_status": "student",
+          "funding_source": "self",
+          "visit_purpose": "tourism"
+        },
+        "deferred_dates": true,
+        "answer": "在读|学校",
+        "brief": "zh"
+      },
+      {
+        "body": "名字用 Kai Example，生日 2000.1.2。假期仍没消息，别再问哪天出发了。",
+        "profile": {
+          "full_name": "Kai Example",
+          "date_of_birth": "2000-01-02"
+        },
+        "deferred_dates": true,
+        "never_ask": [
+          "full_name",
+          "date_of_birth"
+        ]
+      },
+      {
+        "body": "学校说这周开不了在读证明，我只有学校系统下载的学生状态 PDF，可以先用这个准备吗？",
+        "answer": "姓名|课程|学籍|注册|有效|日期",
+        "never_ask": [
+          "full_name",
+          "date_of_birth"
+        ]
+      },
+      {
+        "body": "那这份上面要看哪几项？别再从头讲申请流程。",
+        "answer": "姓名|课程|学籍|注册|有效|日期",
+        "no_intake": true
+      },
+      {
+        "body": "先别问我问题。申请表到底去哪里打开？给一个官方入口就好。",
+        "answer": "https://www\\.gov\\.uk/standard\\-visitor/apply\\-standard\\-visitor\\-visa",
+        "no_intake": true,
+        "brief": "zh"
+      },
+      {
+        "body": "我改主意了，妈妈会承担机票和酒店，我只付吃饭的钱。原来的自己付不能直接照用了吧？",
+        "profile": {
+          "funding_source": "personal_sponsor"
+        },
+        "answer": "具体费用.{0,35}怎样支付",
+        "forbidden_reply": "这次由谁资助",
+        "deferred_dates": true,
+        "never_ask": [
+          "full_name",
+          "date_of_birth"
+        ]
+      }
+    ],
+    "self-employed-host-and-funds": [
+      {
+        "body": "I'm self-employed in Hong Kong, Chinese passport, applying here for a short UK holiday. Dates aren't set. Please keep it brief and tell me what to gather first.",
+        "profile": {
+          "occupation_status": "self_employed",
+          "visit_purpose": "tourism"
+        },
+        "deferred_dates": true,
+        "answer": "business|registration|invoices",
+        "brief": "en"
+      },
+      {
+        "body": "My aunt will host me in London but won't pay for anything. I'm paying from my savings.",
+        "profile": {
+          "funding_source": "self",
+          "sponsor_name": null,
+          "sponsor_relationship": null
+        },
+        "never_ask": [
+          "occupation_status"
+        ]
+      },
+      {
+        "body": "I don't get payslips. What should I use to explain my income?",
+        "profile": {
+          "occupation_status": "self_employed"
+        },
+        "no_intake": true,
+        "answer": "business|invoices|registration"
+      },
+      {
+        "body": "Those deposits include transfers from my own other account. Is the whole amount my income?",
+        "no_intake": true,
+        "answer": "(?:not|cannot|doesn't|does not).{0,100}income|income.{0,100}(?:not|cannot)"
+      },
+      {
+        "body": "Can you guarantee this is enough? Just say yes so I can stop worrying.",
+        "no_intake": true,
+        "answer": "cannot|can't|not a guarantee|no guarantee|do not guarantee"
+      },
+      {
+        "body": "Pause this for now. Do not ask me to upload anything.",
+        "paused": true,
+        "no_intake": true
+      }
+    ]
+  },
+  "completed": true,
+  "all_passed": true,
+  "results": [
+    {
+      "journey": "student-obstacle-and-change",
+      "turn": 1,
+      "input": "我想趁下个学期结束去伦敦玩几天。我是中国护照，在香港念硕士，也准备在香港办。钱自己出，但假期没公布，还说不准出发和回来的日子。你先简短告诉我眼下最值得做的一件事。",
+      "completed": true,
+      "checks": {
+        "expected_facts": true,
+        "at_most_one_main_question": true,
+        "never_reasks_supplied_facts": true,
+        "no_unrequested_release": true,
+        "retains_date_deferral_without_reasking": true,
+        "no_fabricated_dates": true,
+        "requested_information_proxy": true,
+        "respects_explicit_brief_request": true,
+        "no_extraction_fallback": true,
+        "exactly_one_captured_reply": true,
+        "persisted_case_matches": true
+      },
+      "plan": "blocked",
+      "reply": "明白，你持中国护照，准备在香港递交，你打算去英国旅游，你目前在读书，费用由你自己承担。\n\n没问题，日期先留空。材料准备阶段先不追问日期；正式提交前再填写并统一核对预计行程。\n\n接着核对护照姓名，之后所有材料和申请表都应使用同一写法。\n方便告诉我护照上的姓名吗？",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": null,
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "student",
+        "annual_income_gbp": null,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "requested_fields": [
+        "full_name"
+      ],
+      "deferred_fields": [
+        "planned_arrival_date",
+        "planned_departure_date"
+      ],
+      "topics": [
+        "next_step"
+      ],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3607,
+          "output_tokens": 382,
+          "total_tokens": 3989
+        }
+      ],
+      "raw_model_content": "{\n  \"updates\": [\n    {\n      \"field\": \"nationality_country\",\n      \"value\": \"China\",\n      \"source_excerpt\": \"我是中国护照\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"application_country\",\n      \"value\": \"Hong Kong\",\n      \"source_excerpt\": \"也准备在香港办\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"occupation_status\",\n      \"value\": \"student\",\n      \"source_excerpt\": \"在香港念硕士\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"visit_purpose\",\n      \"value\": \"tourism\",\n      \"source_excerpt\": \"去伦敦玩几天\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"funding_source\",\n      \"value\": \"self\",\n      \"source_excerpt\": \"钱自己出\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [\n    {\n      \"field\": \"planned_arrival_date\",\n      \"source_excerpt\": \"假期没公布，还说不准出发和回来的日子\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"planned_departure_date\",\n      \"source_excerpt\": \"假期没公布，还说不准出发和回来的日子\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"customer_questions\": [\n    {\n      \"topic\": \"next_step\",\n      \"source_excerpt\": \"你先简短告诉我眼下最值得做的一件事\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "passed": true
+    },
+    {
+      "journey": "student-obstacle-and-change",
+      "turn": 2,
+      "input": "名字用 Kai Example，生日 2000.1.2。假期仍没消息，别再问哪天出发了。",
+      "completed": true,
+      "checks": {
+        "expected_facts": true,
+        "at_most_one_main_question": true,
+        "never_reasks_supplied_facts": true,
+        "no_unrequested_release": true,
+        "retains_date_deferral_without_reasking": true,
+        "no_fabricated_dates": true,
+        "no_extraction_fallback": true,
+        "exactly_one_captured_reply": true,
+        "persisted_case_matches": true
+      },
+      "plan": "blocked",
+      "reply": "你提供的护照姓名、生日已记下。\n\n没问题，日期先留空。材料准备阶段先不追问日期；正式提交前再填写并统一核对预计行程。\n\n材料方面，可以先准备学校的在读证明，以及能说明资金来源和可用资金的银行流水。前者帮助说明学习情况，后者用于核对旅行费用如何承担；预算数字本身不能代替资金证明。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances\n\n办理时，先用 GOV.UK 查询工具确认需要签证还是 ETA；如果需要 Standard Visitor 签证，从官方申请页选择 Apply now。表格可以中途保存；在线提交后，预约签证申请中心，再按页面要求完成身份核验和材料提供。\n\n6 个月 Standard Visitor 当前申请费为 £135；最早可在出发前 3 个月申请，完成在线申请、身份核验和材料提供后，通常约 3 周出决定，并非保证时限或获签。无需为了准备材料先买机票或订酒店。我会帮你整理和核对材料，正式递交由你在官网完成。\n\n官方签证 / ETA 查询：\nGOV.UK: https://www.gov.uk/check-uk-visa\nStandard Visitor 官方在线申请页（进入后选择 Apply now）：\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\n\n接下来了解在英住宿安排，是为了把预计行程和申请表对齐。\n在英国准备住哪里？还没确定的话也可以直接说。",
+      "profile": {
+        "full_name": "Kai Example",
+        "date_of_birth": "2000-01-02",
+        "nationality": null,
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "student",
+        "annual_income_gbp": null,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "requested_fields": [
+        "uk_accommodation"
+      ],
+      "deferred_fields": [
+        "planned_arrival_date",
+        "planned_departure_date"
+      ],
+      "topics": [],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3592,
+          "output_tokens": 231,
+          "total_tokens": 3823
+        }
+      ],
+      "raw_model_content": "{\n  \"updates\": [\n    {\n      \"field\": \"full_name\",\n      \"value\": \"Kai Example\",\n      \"source_excerpt\": \"名字用 Kai Example\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"date_of_birth\",\n      \"value\": \"2000-01-02\",\n      \"source_excerpt\": \"生日 2000.1.2\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [\n    {\n      \"field\": \"planned_arrival_date\",\n      \"source_excerpt\": \"假期仍没消息，别再问哪天出发了。\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"planned_departure_date\",\n      \"source_excerpt\": \"假期仍没消息，别再问哪天出发了。\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"customer_questions\": [],\n  \"preparation_intent\": null\n}",
+      "passed": true
+    },
+    {
+      "journey": "student-obstacle-and-change",
+      "turn": 3,
+      "input": "学校说这周开不了在读证明，我只有学校系统下载的学生状态 PDF，可以先用这个准备吗？",
+      "completed": true,
+      "checks": {
+        "expected_facts": true,
+        "at_most_one_main_question": true,
+        "never_reasks_supplied_facts": true,
+        "no_unrequested_release": true,
+        "requested_information_proxy": true,
+        "no_extraction_fallback": true,
+        "exactly_one_captured_reply": true,
+        "persisted_case_matches": true
+      },
+      "plan": "blocked",
+      "reply": "先看看你提到的学校网上在读记录。可以核对上面有没有你的姓名、学校名称、当前在读状态，以及记录的出具日期；这些是方便核对的内容，不是让你自行补写进文件。\n\n再向学校确认：这份下载记录有没有官方核验方式，例如验证链接或可供查询的学籍部门联系方式？保留学校下载的原文件和校方回复，不用自己制作一份“学校证明”。网上记录能说明多少情况，仍需看具体内容；不能仅凭文件名称认定它可替代学校证明，也不会因此免去其他材料核对。\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances",
+      "profile": {
+        "full_name": "Kai Example",
+        "date_of_birth": "2000-01-02",
+        "nationality": null,
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "student",
+        "annual_income_gbp": null,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "requested_fields": [],
+      "deferred_fields": [
+        "planned_arrival_date",
+        "planned_departure_date"
+      ],
+      "topics": [],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3602,
+          "output_tokens": 14,
+          "total_tokens": 3616
+        }
+      ],
+      "raw_model_content": "{\n  \"updates\": [],\n  \"ambiguities\": []\n}",
+      "passed": true
+    },
+    {
+      "journey": "student-obstacle-and-change",
+      "turn": 4,
+      "input": "那这份上面要看哪几项？别再从头讲申请流程。",
+      "completed": true,
+      "checks": {
+        "expected_facts": true,
+        "at_most_one_main_question": true,
+        "never_reasks_supplied_facts": true,
+        "no_unrequested_release": true,
+        "answers_without_intake": true,
+        "requested_information_proxy": true,
+        "no_extraction_fallback": true,
+        "exactly_one_captured_reply": true,
+        "persisted_case_matches": true
+      },
+      "plan": "blocked",
+      "reply": "先打开学校那份网上在读记录，看看姓名、学校名称、当前在读状态和出具日期是否清楚。缺哪项先记下来，不要自行改文件。然后问学籍部门这份记录怎样让第三方核验。保留原文件和校方答复；能否用于说明你的情况仍需核对内容，不能直接认定它替代了学校证明。",
+      "profile": {
+        "full_name": "Kai Example",
+        "date_of_birth": "2000-01-02",
+        "nationality": null,
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "student",
+        "annual_income_gbp": null,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "requested_fields": [],
+      "deferred_fields": [
+        "planned_arrival_date",
+        "planned_departure_date"
+      ],
+      "topics": [
+        "next_step"
+      ],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3592,
+          "output_tokens": 14,
+          "total_tokens": 3606
+        }
+      ],
+      "raw_model_content": "{\n  \"updates\": [],\n  \"ambiguities\": []\n}",
+      "passed": true
+    },
+    {
+      "journey": "student-obstacle-and-change",
+      "turn": 5,
+      "input": "先别问我问题。申请表到底去哪里打开？给一个官方入口就好。",
+      "completed": true,
+      "checks": {
+        "expected_facts": true,
+        "at_most_one_main_question": true,
+        "never_reasks_supplied_facts": true,
+        "no_unrequested_release": true,
+        "answers_without_intake": true,
+        "requested_information_proxy": true,
+        "respects_explicit_brief_request": true,
+        "no_extraction_fallback": true,
+        "exactly_one_captured_reply": true,
+        "persisted_case_matches": true
+      },
+      "plan": "blocked",
+      "reply": "路线核对后，如果确实需要 Standard Visitor 签证，正式入口是下方 GOV.UK Standard Visitor 在线申请页，进入后选择 Apply now。办理顺序是：在线填写申请（可中途保存）→预约签证中心→按页面指示核验身份并提供材料。\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa",
+      "profile": {
+        "full_name": "Kai Example",
+        "date_of_birth": "2000-01-02",
+        "nationality": null,
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "student",
+        "annual_income_gbp": null,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "requested_fields": [],
+      "deferred_fields": [
+        "planned_arrival_date",
+        "planned_departure_date"
+      ],
+      "topics": [
+        "application"
+      ],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3594,
+          "output_tokens": 89,
+          "total_tokens": 3683
+        }
+      ],
+      "raw_model_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"application\",\n      \"source_excerpt\": \"申请表到底去哪里打开？给一个官方入口就好。\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "passed": true
+    },
+    {
+      "journey": "student-obstacle-and-change",
+      "turn": 6,
+      "input": "我改主意了，妈妈会承担机票和酒店，我只付吃饭的钱。原来的自己付不能直接照用了吧？",
+      "completed": true,
+      "checks": {
+        "expected_facts": true,
+        "at_most_one_main_question": true,
+        "never_reasks_supplied_facts": true,
+        "no_unrequested_release": true,
+        "retains_date_deferral_without_reasking": true,
+        "no_fabricated_dates": true,
+        "requested_information_proxy": true,
+        "avoids_known_relationship_reask": true,
+        "no_extraction_fallback": true,
+        "exactly_one_captured_reply": true,
+        "persisted_case_matches": true
+      },
+      "plan": "blocked",
+      "reply": "明白，这次改为由个人资助人资助，我会按这个安排重新核对材料。\n\n按你说的安排，母亲会承担机票、住宿。下一步先请资助说明对应这次访问，写清母亲承担的具体费用，并说明怎样支付；资金材料与关系材料分开准备；如果资助人在英国，再配其英国合法身份或居留证明。\n\n接着把实际资助人确认清楚，这样资助信、资金材料和关系证明才能对应起来。\n我理解这次是由你的母亲资助；如果我理解没错，请把母亲的姓名按证件或银行材料上的写法告诉我。",
+      "profile": {
+        "full_name": "Kai Example",
+        "date_of_birth": "2000-01-02",
+        "nationality": null,
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "student",
+        "annual_income_gbp": null,
+        "funding_source": "personal_sponsor",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "requested_fields": [
+        "sponsor_relationship",
+        "sponsor_name"
+      ],
+      "deferred_fields": [
+        "planned_arrival_date",
+        "planned_departure_date"
+      ],
+      "topics": [],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3604,
+          "output_tokens": 62,
+          "total_tokens": 3666
+        }
+      ],
+      "raw_model_content": "{\n  \"updates\": [\n    {\n      \"field\": \"funding_source\",\n      \"value\": \"personal_sponsor\",\n      \"source_excerpt\": \"妈妈会承担机票和酒店\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"ambiguities\": []\n}",
+      "passed": true
+    },
+    {
+      "journey": "self-employed-host-and-funds",
+      "turn": 1,
+      "input": "I'm self-employed in Hong Kong, Chinese passport, applying here for a short UK holiday. Dates aren't set. Please keep it brief and tell me what to gather first.",
+      "completed": true,
+      "checks": {
+        "expected_facts": true,
+        "at_most_one_main_question": true,
+        "never_reasks_supplied_facts": true,
+        "no_unrequested_release": true,
+        "retains_date_deferral_without_reasking": true,
+        "no_fabricated_dates": true,
+        "requested_information_proxy": true,
+        "respects_explicit_brief_request": true,
+        "no_extraction_fallback": true,
+        "exactly_one_captured_reply": true,
+        "persisted_case_matches": true
+      },
+      "plan": "blocked",
+      "reply": "Thanks, I've got the starting point: you hold a Chinese passport; you plan to apply from Hong Kong; you're planning a holiday in the UK; you're self-employed.\n\nNo problem—I'll leave the dates open for now. I will not keep asking you for the dates while we prepare. Add and cross-check the intended itinerary before submitting the form.\n\nFor your own business, start with business registration documents or recent invoices that show it is still operating. You do not need to force your circumstances into an employee-letter format; the aim is to explain what you do and where your income comes from.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances\n\nNext, I need to know who will pay so we can focus on either your own funds or sponsor evidence.\nWho will pay for the trip?",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "self_employed",
+        "annual_income_gbp": null,
+        "funding_source": null,
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "requested_fields": [
+        "funding_source"
+      ],
+      "deferred_fields": [
+        "planned_arrival_date",
+        "planned_departure_date"
+      ],
+      "topics": [
+        "next_step"
+      ],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3592,
+          "output_tokens": 367,
+          "total_tokens": 3959
+        }
+      ],
+      "raw_model_content": "{\n  \"updates\": [\n    {\n      \"field\": \"occupation_status\",\n      \"value\": \"self_employed\",\n      \"source_excerpt\": \"I'm self-employed in Hong Kong\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"nationality_country\",\n      \"value\": \"China\",\n      \"source_excerpt\": \"Chinese passport\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"nationality\",\n      \"value\": \"Chinese\",\n      \"source_excerpt\": \"Chinese passport\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"application_country\",\n      \"value\": \"Hong Kong\",\n      \"source_excerpt\": \"applying here\",\n      \"confidence\": 0.9\n    },\n    {\n      \"field\": \"visit_purpose\",\n      \"value\": \"tourism\",\n      \"source_excerpt\": \"short UK holiday\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [\n    {\n      \"field\": \"planned_arrival_date\",\n      \"source_excerpt\": \"Dates aren't set.\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"planned_departure_date\",\n      \"source_excerpt\": \"Dates aren't set.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"customer_questions\": [\n    {\n      \"topic\": \"next_step\",\n      \"source_excerpt\": \"tell me what to gather first\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "passed": true
+    },
+    {
+      "journey": "self-employed-host-and-funds",
+      "turn": 2,
+      "input": "My aunt will host me in London but won't pay for anything. I'm paying from my savings.",
+      "completed": true,
+      "checks": {
+        "expected_facts": true,
+        "at_most_one_main_question": true,
+        "never_reasks_supplied_facts": true,
+        "no_unrequested_release": true,
+        "no_extraction_fallback": true,
+        "exactly_one_captured_reply": true,
+        "persisted_case_matches": true
+      },
+      "plan": "blocked",
+      "reply": "As you are paying for the trip, gather bank statements showing accessible funds and where they came from, then compare them with the costs you expect. The aim is to explain how you will afford the visit, not just to give a budget figure.\n\nWhen you apply, use the GOV.UK checker to confirm whether you need a visa or an ETA. If you need a Standard Visitor visa, select Apply now on the official application page. You can save the form and return to it. After applying online, book a visa application centre appointment and follow the page instructions to prove your identity and provide documents.\n\nThe current fee for a 6-month Standard Visitor application is £135. You can apply up to 3 months before travel, and a decision usually takes about 3 weeks after the online application, identity check and documents are complete; neither timing nor approval is guaranteed. No need to buy flights or book a hotel just for evidence. I will help organise and check the documents; you will submit on the official website.\n\nOfficial visa / ETA checker:\nGOV.UK: https://www.gov.uk/check-uk-visa\nOfficial Standard Visitor application page (select Apply now):\nGOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa\n\nNext, I need the passport name so every document and the application form use the same spelling.\nWhat is your name as it appears in your passport?",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "self_employed",
+        "annual_income_gbp": null,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "requested_fields": [
+        "full_name"
+      ],
+      "deferred_fields": [
+        "planned_arrival_date",
+        "planned_departure_date"
+      ],
+      "topics": [],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3590,
+          "output_tokens": 93,
+          "total_tokens": 3683
+        }
+      ],
+      "raw_model_content": "{\n  \"updates\": [\n    {\n      \"field\": \"funding_source\",\n      \"value\": \"self\",\n      \"source_excerpt\": \"I'm paying from my savings.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [],\n  \"preparation_intent\": null\n}",
+      "passed": true
+    },
+    {
+      "journey": "self-employed-host-and-funds",
+      "turn": 3,
+      "input": "I don't get payslips. What should I use to explain my income?",
+      "completed": true,
+      "checks": {
+        "expected_facts": true,
+        "at_most_one_main_question": true,
+        "never_reasks_supplied_facts": true,
+        "no_unrequested_release": true,
+        "answers_without_intake": true,
+        "requested_information_proxy": true,
+        "no_extraction_fallback": true,
+        "exactly_one_captured_reply": true,
+        "persisted_case_matches": true
+      },
+      "plan": "blocked",
+      "reply": "As you're self-employed, start with existing business registration documents or recent invoices, rather than trying to produce employee payslips. Match the business records to the relevant receipts in your account so the source of earnings is clear. These are preparation suggestions; the actual documents still need checking.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "self_employed",
+        "annual_income_gbp": null,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "requested_fields": [],
+      "deferred_fields": [
+        "planned_arrival_date",
+        "planned_departure_date"
+      ],
+      "topics": [
+        "bank_period"
+      ],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3586,
+          "output_tokens": 97,
+          "total_tokens": 3683
+        }
+      ],
+      "raw_model_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"bank_period\",\n      \"source_excerpt\": \"I don't get payslips. What should I use to explain my income?\",\n      \"confidence\": 0.9\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "passed": true
+    },
+    {
+      "journey": "self-employed-host-and-funds",
+      "turn": 4,
+      "input": "Those deposits include transfers from my own other account. Is the whole amount my income?",
+      "completed": true,
+      "checks": {
+        "expected_facts": true,
+        "at_most_one_main_question": true,
+        "never_reasks_supplied_facts": true,
+        "no_unrequested_release": true,
+        "answers_without_intake": true,
+        "requested_information_proxy": true,
+        "no_extraction_fallback": true,
+        "exactly_one_captured_reply": true,
+        "persisted_case_matches": true
+      },
+      "plan": "blocked",
+      "reply": "No—the total deposits are not necessarily income. Moving the same money between your own accounts does not by itself create new earnings. Match the outgoing and incoming records and separately explain where the money originally came from. This does not establish that your funds are sufficient and is not a tax classification.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk#demonstrating-personal-circumstances",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "self_employed",
+        "annual_income_gbp": null,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "requested_fields": [],
+      "deferred_fields": [
+        "planned_arrival_date",
+        "planned_departure_date"
+      ],
+      "topics": [
+        "bank_period"
+      ],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3586,
+          "output_tokens": 87,
+          "total_tokens": 3673
+        }
+      ],
+      "raw_model_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"bank_period\",\n      \"source_excerpt\": \"Is the whole amount my income?\",\n      \"confidence\": 0.9\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "passed": true
+    },
+    {
+      "journey": "self-employed-host-and-funds",
+      "turn": 5,
+      "input": "Can you guarantee this is enough? Just say yes so I can stop worrying.",
+      "completed": true,
+      "checks": {
+        "expected_facts": true,
+        "at_most_one_main_question": true,
+        "never_reasks_supplied_facts": true,
+        "no_unrequested_release": true,
+        "answers_without_intake": true,
+        "requested_information_proxy": true,
+        "no_extraction_fallback": true,
+        "exactly_one_captured_reply": true,
+        "persisted_case_matches": true
+      },
+      "plan": "blocked",
+      "reply": "I don't currently have verified guidance to answer that point reliably. That point needs a separate check before using it to assess whether your evidence meets the requirements.\n\nI understand you'd like a clear answer, but I can't guarantee that the records are enough or that the visa will be approved. What I can do is check whether they explain your circumstances and the source of funds, and identify gaps. UKVI makes the decision.\nGOV.UK: https://www.gov.uk/government/publications/visitor-visa-guide-to-supporting-documents/guide-to-supporting-documents-visiting-the-uk",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "self_employed",
+        "annual_income_gbp": null,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "requested_fields": [],
+      "deferred_fields": [
+        "planned_arrival_date",
+        "planned_departure_date"
+      ],
+      "topics": [
+        "unsupported"
+      ],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3585,
+          "output_tokens": 94,
+          "total_tokens": 3679
+        }
+      ],
+      "raw_model_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [\n    {\n      \"topic\": \"unsupported\",\n      \"source_excerpt\": \"Can you guarantee this is enough? Just say yes so I can stop worrying.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"preparation_intent\": null\n}",
+      "passed": true
+    },
+    {
+      "journey": "self-employed-host-and-funds",
+      "turn": 6,
+      "input": "Pause this for now. Do not ask me to upload anything.",
+      "completed": true,
+      "checks": {
+        "expected_facts": true,
+        "at_most_one_main_question": true,
+        "never_reasks_supplied_facts": true,
+        "no_unrequested_release": true,
+        "answers_without_intake": true,
+        "preparation_control": true,
+        "no_extraction_fallback": true,
+        "exactly_one_captured_reply": true,
+        "persisted_case_matches": true
+      },
+      "plan": "blocked",
+      "reply": "Of course—we can put the preparation on hold. I'll keep the details you've sent; just reply when you'd like to pick this up again.",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": "Chinese",
+        "nationality_country": "China",
+        "application_country": "Hong Kong",
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": "tourism",
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": "self_employed",
+        "annual_income_gbp": null,
+        "funding_source": "self",
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "requested_fields": [],
+      "deferred_fields": [
+        "planned_arrival_date",
+        "planned_departure_date"
+      ],
+      "topics": [],
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 3583,
+          "output_tokens": 78,
+          "total_tokens": 3661
+        }
+      ],
+      "raw_model_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [],\n  \"preparation_intent\": {\n    \"action\": \"pause\",\n    \"source_excerpt\": \"Pause this for now.\",\n    \"confidence\": 1.0\n  }\n}",
+      "passed": true
+    }
+  ],
+  "run_completed_at": "2026-09-06T05:06:25.027370+00:00"
+}

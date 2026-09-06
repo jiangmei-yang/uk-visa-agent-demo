@@ -35,6 +35,16 @@ def guarantee_question(text: str) -> bool:
     ) for clause in _current_clauses(text))
 
 
+def only_guarantee_question(text: str) -> bool:
+    """Remove only a redundant generic boundary, not other unanswered questions."""
+    clauses = _current_clauses(text)
+    return bool(clauses) and guarantee_question(text) and all(
+        guarantee_question(clause)
+        or re.fullmatch(r"just say yes so I can stop worrying", clause.strip(), re.I)
+        for clause in clauses
+    )
+
+
 def income_answer(kind: str, language: str, *, self_employed: bool) -> str | None:
     if kind == "income_evidence" and self_employed:
         return (

@@ -37,7 +37,7 @@ SCENARIOS: dict[str, list[dict[str, Any]]] = {
         {"body": "我想趁下个学期结束去伦敦玩几天。我是中国护照，在香港念硕士，也准备在香港办。"
                  "钱自己出，但假期没公布，还说不准出发和回来的日子。你先简短告诉我眼下最值得做的一件事。",
          "profile": {"occupation_status": "student", "funding_source": "self", "visit_purpose": "tourism"},
-         "deferred_dates": True, "answer": r"在读|学校", "brief": "zh"},
+         "deferred_dates": True, "answer": r"(?:索取|准备).{0,20}在读证明", "brief": "zh"},
         {"body": "名字用 Kai Example，生日 2000.1.2。假期仍没消息，别再问哪天出发了。",
          "profile": {"full_name": "Kai Example", "date_of_birth": "2000-01-02"},
          "deferred_dates": True, "never_ask": ["full_name", "date_of_birth"]},
@@ -66,7 +66,8 @@ SCENARIOS: dict[str, list[dict[str, Any]]] = {
         {"body": "Those deposits include transfers from my own other account. Is the whole amount my income?",
          "no_intake": True, "answer": r"(?:not|cannot|doesn't|does not).{0,100}income|income.{0,100}(?:not|cannot)"},
         {"body": "Can you guarantee this is enough? Just say yes so I can stop worrying.",
-         "no_intake": True, "answer": r"cannot|can't|not a guarantee|no guarantee|do not guarantee"},
+         "no_intake": True, "answer": r"cannot|can't|not a guarantee|no guarantee|do not guarantee",
+         "forbidden_reply": "I don't currently have verified guidance"},
         {"body": "Pause this for now. Do not ask me to upload anything.",
          "paused": True, "no_intake": True},
     ],
@@ -121,7 +122,7 @@ def check_turn(spec: dict[str, Any], case: Any, reply: str) -> dict[str, bool]:
     if "answer" in spec:
         checks["requested_information_proxy"] = bool(re.search(spec["answer"], reply, re.I))
     if "forbidden_reply" in spec:
-        checks["avoids_known_relationship_reask"] = spec["forbidden_reply"] not in reply
+        checks["avoids_unhelpful_repetition"] = spec["forbidden_reply"] not in reply
     if spec.get("brief"):
         prose = re.sub(r"https?://\S+", "", reply)
         checks["respects_explicit_brief_request"] = (
@@ -150,7 +151,7 @@ def main() -> None:
     report: dict[str, Any] = {
         "scope": "fictional multi-turn development scenarios; real DeepSeek extraction; captured transport",
         "mailbox_calls": 0, "real_documents": 0, "maximum_model_calls": 12, "model_retries": 0,
-        "requested_model": "deepseek-v4-flash", "check_contract": "consultant-journey-v2",
+        "requested_model": "deepseek-v4-flash", "check_contract": "consultant-journey-v3",
         "evaluation_date": TODAY.isoformat(), "run_started_at": datetime.now(UTC).isoformat(),
         "git_head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "source_sha256": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths},

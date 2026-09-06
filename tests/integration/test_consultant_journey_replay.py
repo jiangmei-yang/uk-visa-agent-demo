@@ -14,13 +14,15 @@ PROBE = runpy.run_path("scripts/consultant_journey_probe.py")
 
 
 @pytest.mark.parametrize("journey", REPORT["scenarios"])
-def test_saved_provider_facts_and_controls_survive_reopening(tmp_path, journey):
+@pytest.mark.parametrize("version", ["v1", "v2"])
+def test_saved_provider_facts_and_controls_survive_reopening(tmp_path, journey, version):
+    report = json.loads(Path(f"eval_output/consultant_journey_2026-09-06-{version}.json").read_text())
     dialogue = Conversation(tmp_path)
-    for row in REPORT["results"]:
+    for row in report["results"]:
         if row["journey"] != journey:
             continue
         result = dialogue.turn(row["input"], CasePatch.model_validate_json(row["raw_model_content"]))
-        spec = REPORT["scenarios"][journey][row["turn"] - 1]
+        spec = PROBE["SCENARIOS"][journey][row["turn"] - 1]
         checks = PROBE["check_turn"](spec, result.case, result.body)
         assert all(checks.values()), (row["turn"], checks, result.body)
         actual = result.case.profile.model_dump(mode="json")
