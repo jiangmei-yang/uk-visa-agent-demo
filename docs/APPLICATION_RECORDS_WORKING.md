@@ -7,6 +7,35 @@ The overall acceptance goal remains active.
 
 ## Requirement and design boundary
 
+### 2026-09-07 deferred-detail summary and PDF visibility
+
+Readable application-record summaries now show an active field-specific deferral
+instead of silently omitting a contact field or describing a deferred travel
+field as merely unprovided. Once the field is supplied, the actual value replaces
+the uncertainty row. Internal question/event IDs are not added to the readable
+summary. No new blanket requirement is inferred for missing optional contact
+fields, and the existing release/deferral gates are unchanged.
+
+Domain and captured-workflow tests cover EN/ZH deferred travel fields, the family
+passport uncertainty and its later supplied value. The focused set passed
+**52 tests** (0.35s); Ruff and strict Mypy passed for 91 source modules. This
+checkpoint did not run full regression, a model or real mailbox.
+
+The production PDF renderer generated explicitly synthetic EN/ZH one-page QA
+previews under `output/pdf/application-records-deferred-v5/`, using
+`scripts/application_record_preview.py --include-deferred-details`. Both rendered
+pages were visually inspected: Chinese glyphs, long addresses, uncertainty rows,
+headers and footers are readable with no observed overlap or clipping. Poppler
+reported a missing default Fontconfig configuration but completed both renders;
+embedded PDF text rendered correctly. These are incomplete-intake QA previews,
+not applicant packs or proof of final release. The rendering fixture deliberately
+uses synthetic source/question identifiers, not an actual sent-question claim.
+
+SHA-256: EN `c96046cafd7138c65c3f2580d222b30d299edf5ac5682ca94f5344d34eec3dd6`;
+ZH `3cbd836118596bdf50a4bcedd242c159b5e1cb1a675619a118acb70a431e948c`.
+The PDF skill's render-and-inspect workflow exposed and verified this output-level
+gap. Full final-pack visual QA and broader intake/release acceptance remain open.
+
 ### 2026-09-07 natural supplements and prior-error corrections
 
 The two v5 failed Chinese amendments now reach the same grounded target/source

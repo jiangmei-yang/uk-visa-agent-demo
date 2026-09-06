@@ -4,6 +4,7 @@ from test_application_record_workflow import patch, record
 from test_consultant_value import Conversation
 from test_next_step_workflow import _seed
 
+from visa_agent.domain.application_records import application_record_rows
 from visa_agent.llm.application_records import CollectionDeclarationProposal
 from visa_agent.storage.sqlite import SQLiteStore
 
@@ -40,6 +41,9 @@ def test_family_passport_question_can_be_deferred_then_supplied_without_reasking
     assert deferrals[0].question_event_id == asked.event.id
     assert "could you provide it after checking?" not in unknown.body
     assert unknown.case.application_records.collection_state("uk_contact") == "complete_declared"
+    assert "Passport number: You said you are unsure; deferred for checking." in application_record_rows(
+        unknown.case.application_records)
+    assert "护照号码: 你表示暂时不清楚，留待核实。" in application_record_rows(unknown.case.application_records, "zh")
     # Deliberately synthetic value; avoid describing the applicant's statement
     # as hypothetical inside the actual body being tested.
     correction = "Please correct Example Doe's passport number to TEST00001."
@@ -47,6 +51,8 @@ def test_family_passport_question_can_be_deferred_then_supplied_without_reasking
         kind="uk_contact", action="amend", reference="Example Doe")]))
     ledger = supplied.case.application_records
     assert ledger.collection_state("uk_contact") == "complete_declared"
+    assert "Passport number: TEST00001" in application_record_rows(ledger)
+    assert not any(line.startswith("Passport number: You said") for line in application_record_rows(ledger))
     assert ledger.latest_declarations()["uk_contact"] == asked.case.application_records.latest_declarations()["uk_contact"]
     assert not ledger.active_field_deferrals() and len(ledger.field_deferrals) == 1
     assert next(iter(ledger.current().values())).fields["passport_number"].source_event_id == supplied.event.id

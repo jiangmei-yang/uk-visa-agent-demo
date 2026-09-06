@@ -6,7 +6,7 @@ import pytest
 from pydantic import ValidationError
 from test_contextual_collection_answer import context
 
-from visa_agent.domain.application_records import ApplicationRecordLedger
+from visa_agent.domain.application_records import ApplicationRecordLedger, application_record_rows
 from visa_agent.domain.models import InboundEvent
 from visa_agent.workflow.record_collection_plan import (
     collection_question_text,
@@ -52,6 +52,19 @@ def test_detail_uncertainty_survives_reload_without_becoming_collection_unknown(
     assert any(item.field == "purpose" for item in questions)
     replay = plan_record_intake(event, ledger, case_id=case.id, records=[], declarations=[], contextual_field_deferral=deferred)
     assert not replay.changed and replay.ledger == ledger
+
+
+@pytest.mark.parametrize("language,label,uncertain", [
+    ("en", "Travel period", "You said you are unsure; deferred for checking."),
+    ("zh", "旅行时间", "你表示暂时不清楚，留待核实。"),
+])
+def test_readable_summary_distinguishes_deferred_from_unprovided(language, label, uncertain):
+    case, row = detail_context()
+    result, _, _ = apply(case, row)
+    rows = application_record_rows(result.ledger, language)
+    assert f"{label}: {uncertain}" in rows
+    assert f"{label}: Not provided" not in rows and f"{label}: 尚未提供" not in rows
+    assert not any("source_event_id" in line or "question_key" in line for line in rows)
 
 
 @pytest.mark.parametrize("body", ["No.", "没有。", "If I need to check.", "> I need to check."])

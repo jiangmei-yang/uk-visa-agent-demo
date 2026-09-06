@@ -376,6 +376,10 @@ def application_record_rows(ledger: ApplicationRecordLedger, language: str = "en
                 # do not invent a blanket request just to fill a rendered row.
                 if fact is not None:
                     rows.append(f"{labels[field]}: {fact.value}")
+                elif any(item.record_id == record.record_id and item.field == field
+                         for item in ledger.active_field_deferrals()):
+                    rows.append(f"{labels[field]}: " + ("你表示暂时不清楚，留待核实。" if zh else
+                                                       "You said you are unsure; deferred for checking."))
                 elif kind == "travel":
                     rows.append(f"{labels[field]}: " + ("尚未提供" if zh else "Not provided"))
     return rows
