@@ -29,9 +29,13 @@ replacing its old assertion that explicitly required hiding a supplied address.
 Full lint and configured typing passed.
 
 `scripts/sponsor_output_qa.py` generated a separate fictional summary using the
-production formatter. Its actual one-page PNG was inspected: the five states,
-literal underscore address and negative UK-location answer were readable, with no
-clipping or overlap. This is a QA artifact, not a customer delivery.
+production formatter. The initial inspection covered only the first page: the
+five states, literal underscore address and negative UK-location answer were
+readable. A subsequent complete page inventory found a second, footer-only page;
+the earlier claim that this was a one-page artifact was incorrect. Both the
+original PDF and this correction are retained. The trailing-spacer defect is
+documented in `PDF_PAGINATION_REPAIR_2026-09-07.md`. This is a QA artifact, not a
+customer delivery.
 
 The first full-suite run captured the older sponsor-address test before it was
 updated and failed that assertion plus two model-report freshness checks. A fresh

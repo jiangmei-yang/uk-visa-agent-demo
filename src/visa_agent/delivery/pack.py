@@ -16,7 +16,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle
 from reportlab.platypus.flowables import Flowable
 
 from visa_agent.delivery.fonts import UNICODE_FONT, font_for_text
@@ -137,7 +137,9 @@ def _pdf(
                 ]
             )
         )
-        story.extend([table, Spacer(1, 3 * mm)])
+        # There is no following content to separate. A trailing spacer can
+        # overflow an otherwise full table page and create a footer-only page.
+        story.append(table)
     document.build(story, onFirstPage=_page_frame, onLaterPages=_page_frame)
 
 
