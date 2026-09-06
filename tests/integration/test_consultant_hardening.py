@@ -754,7 +754,7 @@ def test_same_turn_tourism_fact_does_not_drop_materials_from_combined_cold_email
     )
 
     assert all(term in result.body for term in (
-        "有效护照或旅行证件", "赴英目的", "在职、在读或自雇", "可用资金", "翻译", "合法居留",
+        "有效护照或旅行证件", "预计旅游行程", "在职、在读或自雇", "可用资金", "翻译", "合法居留",
         "Apply now", "£135", "3 周",
     )), result.body
     assert all(url in result.body for url in (ROUTE_CHECK_URL, APPLICATION_URL, DOCUMENTS_URL))

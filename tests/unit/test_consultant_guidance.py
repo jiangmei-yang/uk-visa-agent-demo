@@ -42,8 +42,8 @@ def test_specific_context_has_an_action_and_explanation_without_mutation(
     case = example(language, occupation, funding, purpose)
     before = case.model_dump_json()
     result = preparation_guidance(case, TODAY, set())
-    assert [key for key, _ in result] == ["application_overview_v1", topic]
-    body = result[1][1]
+    assert [key for key, _ in result] == [topic, "application_overview_v1"]
+    body = result[0][1]
     assert all(word in body for word in (zh_words if language == "zh" else en_words))
     assert DOCUMENTS_URL in body
     assert ("可以" in body or "先请" in body) if language == "zh" else any(word in body for word in ("start", "Ask", "ask"))
@@ -67,8 +67,8 @@ def test_new_organisation_funding_gets_explanation_of_support_and_payment(langua
     case = example(language, "student", "employer_or_school")
     case.latest_received_facts = {"funding_source": "employer_or_school"}
     result = preparation_guidance(case, TODAY, set())
-    assert result[1][0] == "organisation_funding_preparation_v1"
-    text = result[1][1]
+    assert result[0][0] == "organisation_funding_preparation_v1"
+    text = result[0][1]
     assert all(word in text for word in (("资助", "费用", "怎样支付", "关系", "直接支付", "报销")
                                          if language == "zh" else ("costs", "payment", "relationship", "directly", "reimburses")))
     assert len(result) == 2
@@ -136,7 +136,7 @@ def test_sent_memory_not_stored_unsent_topic_controls_repeat():
     case = example()
     case.guidance_events = {"application_overview_v1": "unsent", "employment_preparation_v1": "unsent"}
     assert [key for key, _ in preparation_guidance(case, TODAY, set())] == [
-        "application_overview_v1", "employment_preparation_v1"]
+        "employment_preparation_v1", "application_overview_v1"]
     next_result = preparation_guidance(case, TODAY, set(case.guidance_events))
     assert [key for key, _ in next_result] == ["self_funding_preparation_v1"]
     assert preparation_guidance(case, TODAY, {*case.guidance_events, "self_funding_preparation_v1"}) == []
@@ -246,7 +246,7 @@ def test_question_step_can_offer_first_contextual_guidance_for_an_actual_prepara
     case = question_case(body)
     before = case.model_dump_json()
     guidance = preparation_guidance(case, TODAY, set())
-    assert [key for key, _ in guidance] == ["application_overview_v1", "student_self_preparation_v1"]
+    assert [key for key, _ in guidance] == ["student_self_preparation_v1", "application_overview_v1"]
     assert case.model_dump_json() == before
     sent = {key for key, _ in guidance}
     followup = preparation_guidance(case, TODAY, sent)
@@ -412,7 +412,7 @@ def test_same_first_enquiry_across_fixed_model_labels_reaches_persisted_orientat
         assert not duplicate and plan == "blocked" and not workflow.llm.last_extraction_fallback
         reply = store.list_outbox()[0]["payload"]
         assert ROUTE_CHECK_URL in reply and APPLICATION_URL in reply
-        assert "如果需要" in reply and "旅行证件" in reply
+        assert "如果查询结果显示需要" in reply and "旅行证件" in reply
         assert len(case.last_requested_fields) == 1
         assert case.profile.visit_purpose is None and not case.profile.route_confirmed_standard_visitor
         assert not case.profile_confirmed and not case.final_summary_confirmed and not case.delivery_path
@@ -437,7 +437,7 @@ def test_shared_generic_enquiry_recognition_covers_how_to_start_without_route_fa
     guidance = preparation_guidance(case, TODAY, set())
     assert [key for key, _ in guidance] == ["route_orientation_v1"]
     assert APPLICATION_URL in guidance[0][1] and ROUTE_CHECK_URL in guidance[0][1]
-    assert ("如果需要" if language == "zh" else "If you need") in guidance[0][1]
+    assert ("如果查询结果显示需要" if language == "zh" else "If you need") in guidance[0][1]
     assert preparation_guidance(case, TODAY, {"route_orientation_v1"}) == []
     assert case.model_dump_json() == before
 

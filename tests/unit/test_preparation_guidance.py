@@ -31,8 +31,8 @@ def test_guidance_is_contextual_sourced_and_does_not_change_case(language):
     case = student_case(language)
     before = case.model_dump_json()
     guidance = preparation_guidance(case, date(2026, 9, 4), set())
-    assert [topic for topic, _ in guidance] == ["application_overview_v1", "student_self_preparation_v1"]
-    assert APPLICATION_URL in guidance[0][1] and DOCUMENTS_URL in guidance[1][1]
+    assert [topic for topic, _ in guidance] == ["student_self_preparation_v1", "application_overview_v1"]
+    assert DOCUMENTS_URL in guidance[0][1] and APPLICATION_URL in guidance[1][1]
     assert case.model_dump_json() == before
     assert preparation_guidance(case, date(2026, 9, 4), {key for key, _ in guidance}) == []
 
@@ -122,8 +122,8 @@ def test_conditional_guidance_does_not_wait_for_or_grant_route_confirmation():
     case = student_case()
     case.profile.route_confirmed_standard_visitor = False
     guidance = preparation_guidance(case, date(2026, 9, 4), set())
-    assert APPLICATION_URL in guidance[0][1]
-    assert "如果需要" in guidance[0][1]
+    assert APPLICATION_URL in guidance[1][1]
+    assert "如果需要" in guidance[1][1]
     assert not case.profile.route_confirmed_standard_visitor
 
 

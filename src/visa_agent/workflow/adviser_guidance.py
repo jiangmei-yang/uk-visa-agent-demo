@@ -203,12 +203,10 @@ def _conditional_common_evidence_orientation(case: Case, *, no_links: bool) -> s
             )
     else:
         context_zh = (
-            "目前还需要核对你的护照国家或地区、具体赴英目的和递交地点，"
-            "所以我不会先替你认定路线。"
+            "具体清单要看你持哪国护照、去英国做什么，以及在哪里申请。"
         )
         context_en = (
-            "I still need to check your passport country, exact purpose and application location, "
-            "so I will not assume the route for you."
+            "The right list depends on your passport country, reason for visiting and where you will apply."
         )
     purpose_item_zh = {
         "tourism": "- 一页简洁的预计旅游行程，说明城市、大致活动和住宿地区，未定内容如实标注待确认；",
@@ -223,36 +221,25 @@ def _conditional_common_evidence_orientation(case: Case, *, no_links: bool) -> s
         "conference": "- an organiser invitation and conference plan explaining the event, dates and reason for attending;",
     }.get(case.profile.visit_purpose or "", "- evidence or an explanation matching the purpose and intended arrangements for the visit;")
     answer = (
-        "当然可以。第一次准备不用先把所有资料一次凑齐。\n\n"
+        "可以，先从手边已有的资料开始。\n\n"
         + context_zh
-        + "\n\n先把办理顺序说清楚：\n"
-        "1. 第一步先用官方查询入口，按护照和赴英目的确认需要签证还是 ETA；\n"
-        "2. 如果查询结果显示需要 Standard Visitor 签证，在官方申请页选择 Apply now，表格可以保存后继续；\n"
-        "3. 在线申请后预约签证申请中心，按页面要求完成身份核验并提供材料。\n"
-        "如果需要申请 6 个月 Standard Visitor，GOV.UK 当前列出的申请费是 £135；"
-        "最早可在出发前 3 个月申请，完成在线申请、身份核验和材料提供后通常约 3 周出决定。"
-        "这是官方公布的通常节奏，不是个人结果保证。\n\n"
-        "你现在就可以开始整理：\n"
+        + "\n\n通常先整理这些，再按你的情况筛选：\n"
         "- 有效护照或旅行证件；\n"
         + purpose_item_zh + "\n"
         "- 按实际情况选用在职、在读或自雇证明；\n"
         "- 说明谁承担费用、可用资金和真实来源；如由他人资助，还要说明资助内容和双方关系；\n"
         "- 非英文或威尔士文的材料，配完整、可核验的翻译；\n"
         "- 如果在护照国以外申请，准备当地合法居留证明。\n"
-        "这不是所有人一模一样的必交清单；等关键情况确认后，我会把不适用的项目删掉。"
+        "这不是所有人一模一样的必交清单；等关键情况确认后，我会把不适用的项目删掉。\n\n"
+        "办理时先用官方查询入口确认需要签证还是 ETA；如果查询结果显示需要 Standard Visitor 签证，"
+        "在官方在线申请页选择 Apply now，表格可以保存后继续。在线申请后预约签证申请中心，"
+        "按页面要求完成身份核验并提供材料。\n"
+        "6 个月 Standard Visitor 当前申请费为 £135，最早可在出发前 3 个月申请；"
+        "完成在线申请、身份核验和材料提供后通常约 3 周出决定，并非保证时限或获签。"
         if zh else
-        "Of course. You do not need to collect everything before we can make a useful start.\n\n"
+        "Of course. Let's start with what you already have.\n\n"
         + context_en
-        + "\n\nHere is the process in plain terms:\n"
-        "1. Use the official checker with your passport and purpose to establish whether you need a visa or ETA.\n"
-        "2. If you need a Standard Visitor visa, select Apply now on the official GOV.UK online application page; "
-        "you can save the form and return to it.\n"
-        "3. After applying online, book a visa application centre appointment and follow the page instructions "
-        "to prove your identity and provide documents.\n"
-        "For a 6-month Standard Visitor application, GOV.UK currently lists a £135 fee. You can apply up to "
-        "3 months before travel, and a decision usually takes about 3 weeks after the online application, identity "
-        "check and documents are complete. That is the published usual timeframe, not a guarantee for an individual case.\n\n"
-        "You can start organising these now:\n"
+        + "\n\nThese are useful starting points; we will select what fits your circumstances:\n"
         "- a valid passport or travel document;\n"
         + purpose_item_en + "\n"
         "- employment, study or self-employment evidence, as applicable;\n"
@@ -260,8 +247,13 @@ def _conditional_common_evidence_orientation(case: Case, *, no_links: bool) -> s
         "arrangement and relationship;\n"
         "- a full, verifiable translation for any document you submit that is not in English or Welsh;\n"
         "- evidence of lawful residence if you apply outside your country of nationality.\n"
-        "This is not a universal mandatory checklist. Once the key circumstances are confirmed, I will remove "
-        "anything that does not apply to you."
+        "This is not a universal mandatory checklist.\n\n"
+        "Use the official checker to establish whether you need a visa or ETA. If you need a Standard Visitor visa, "
+        "select Apply now on the GOV.UK online application page; you can save the form and return to it. "
+        "After applying online, book a visa application centre appointment to prove your identity and provide documents.\n"
+        "The current fee for a 6-month Standard Visitor visa is £135. You can apply up to 3 months before travel. "
+        "A decision usually takes about 3 weeks after the application, identity check and documents are complete; "
+        "neither timing nor approval is guaranteed."
     )
     existing = "\n".join(case.customer_answers)
     sources = [
@@ -380,24 +372,24 @@ def _conference_organisation_preparation(case: Case, current: str) -> str:
 
 
 def _application_process_orientation(case: Case) -> str:
-    """Explain the actual visitor application journey before asking for form fields."""
+    """Add a compact application path after the immediately useful case-specific action."""
     zh = case.customer_language == "zh"
     route_confirmed = case.profile.route_confirmed_standard_visitor
     if zh:
         opening = (
-            "先把办理路径交代清楚：你已确认按 Standard Visitor 准备，"
+            "你已确认按 Standard Visitor 准备，"
             if route_confirmed else
-            "先把办理路径交代清楚：先用 GOV.UK 查询工具确认需要签证还是 ETA；"
+            "办理时，先用 GOV.UK 查询工具确认需要签证还是 ETA；"
             "如果需要 Standard Visitor 签证，"
         )
         answer = (
             opening
-            + "再从官方申请页选择 Apply now。表格可以中途保存；在线提交后，"
+            + "从官方申请页选择 Apply now。表格可以中途保存；在线提交后，"
             "预约签证申请中心，再按页面要求完成身份核验和材料提供。\n\n"
-            "费用和时间也先给你一个尺度：6 个月 Standard Visitor 当前官方申请费是 £135；"
+            "6 个月 Standard Visitor 当前申请费为 £135；"
             "最早可在出发前 3 个月申请，完成在线申请、身份核验和材料提供后，"
-            "通常约 3 周出决定。这不是个人时限或获签保证；也不需要为了准备材料先买机票或订酒店。\n\n"
-            "我们这里先把申请信息、证明材料和一致性问题整理好，正式递交仍由你在官网完成。"
+            "通常约 3 周出决定，并非保证时限或获签。无需为了准备材料先买机票或订酒店。"
+            "我会帮你整理和核对材料，正式递交由你在官网完成。"
         )
         sources = [] if route_confirmed else [
             "官方签证 / ETA 查询：\nGOV.UK: " + ROUTE_CHECK_URL,
@@ -409,10 +401,10 @@ def _application_process_orientation(case: Case) -> str:
         return answer + "\n\n" + "\n".join(sources)
 
     opening = (
-        "Here is the application journey first. You have confirmed that we are preparing on the "
+        "You have confirmed that we are preparing on the "
         "Standard Visitor route, so "
         if route_confirmed else
-        "Here is the application journey first. Use the GOV.UK checker to confirm whether you need a visa "
+        "When you apply, use the GOV.UK checker to confirm whether you need a visa "
         "or an ETA. If you need a Standard Visitor visa, "
     )
     answer = (
@@ -420,12 +412,11 @@ def _application_process_orientation(case: Case) -> str:
         + "select Apply now on the official application page. You can save the form and return to it. "
         "After applying online, book a visa application centre appointment and follow the page instructions "
         "to prove your identity and provide documents.\n\n"
-        "For scale, GOV.UK currently lists a £135 fee for a 6-month Standard Visitor application. You can apply "
+        "The current fee for a 6-month Standard Visitor application is £135. You can apply "
         "up to 3 months before travel, and a decision usually takes about 3 weeks after the online application, "
-        "identity check and documents are complete. That is not a personal deadline or an approval guarantee. "
-        "You do not need to buy flights or book a hotel merely to prepare evidence.\n\n"
-        "We will organise the form information, evidence and consistency checks here; you will make the formal "
-        "submission on the official website."
+        "identity check and documents are complete; neither timing nor approval is guaranteed. "
+        "No need to buy flights or book a hotel just for evidence. "
+        "I will help organise and check the documents; you will submit on the official website."
     )
     sources = [] if route_confirmed else [
         "Official visa / ETA checker:\nGOV.UK: " + ROUTE_CHECK_URL,
@@ -741,4 +732,7 @@ def _preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> lis
         candidates.sort(key=lambda item: item[0] != "residence_preparation_v1")
     if candidates:
         result.append(candidates[0])
+    # Lead with the useful action for this applicant, not a generic process lecture.
+    # Keep topic identities unchanged so already-sent guidance is not sent again.
+    result.sort(key=lambda item: item[0] == "application_overview_v1")
     return result[:2]

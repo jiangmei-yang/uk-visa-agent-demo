@@ -214,7 +214,7 @@ def test_vague_first_enquiry_gives_orientation_sources_and_one_easy_question(tmp
     assert all(term in result.body for term in (
         "Standard Visitor", "有效护照或旅行证件", "可用资金和真实来源",
         "完整、可核验的翻译", "合法居留证明", "这次去英国主要是",
-        "第一步先用官方查询入口", "选择 Apply now", "决定后面该按旅游",
+        "先用官方查询入口", "选择 Apply now", "决定后面该按旅游",
     )), result.body
     assert "你问了材料" not in result.body and "我记下的是" not in result.body
     assert set(_urls(result.body)) == {ROUTE_CHECK_URL, APPLICATION_URL, DOCUMENTS_URL}
@@ -229,7 +229,7 @@ def test_vague_first_enquiry_gives_orientation_sources_and_one_easy_question(tmp
         (
             "zh",
             "我第一次申请英国旅游签证，不知道从哪里开始、要准备什么。",
-            ("第一步先用官方查询入口", "有效护照或旅行证件", "决定后面该按旅游"),
+            ("先用官方查询入口", "有效护照或旅行证件", "决定后面该按旅游"),
         ),
         (
             "en",

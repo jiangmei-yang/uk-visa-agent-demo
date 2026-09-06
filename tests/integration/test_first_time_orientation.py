@@ -51,6 +51,10 @@ def test_first_time_enquiry_gets_full_orientation_without_an_application_topic(
     assert all(result.body.count(url) == 1 for url in (
         ROUTE_CHECK_URL, APPLICATION_URL, DOCUMENTS_URL,
     ))
+    # On the actual persisted/SENT path, answer the material question before
+    # walking the applicant through an online form.
+    passport = "有效护照" if language == "zh" else "valid passport"
+    assert result.body.index(passport) < result.body.index("Apply now")
     if language == "zh":
         assert all(term in result.body for term in (
             "签证还是 ETA", "如果查询结果显示需要 Standard Visitor 签证",

@@ -116,12 +116,16 @@ def checks_for(kind: str, case: Any, reply: str, expected: dict[str, str]) -> di
         checks["official_source"] = "https://www.gov.uk/" in reply
         if kind == "student":
             checks["contextual_action"] = "在读证明" in reply and "资金来源" in reply
+            action = "在读证明"
         elif kind == "employed":
             checks["contextual_action"] = "在职证明" in reply and "职位" in reply
+            action = "在职证明"
         elif kind == "parents":
             checks["contextual_action"] = "资助" in reply and "关系" in reply and "资金" in reply
+            action = "怎样支付"
         else:
             checks["contextual_action"] = "探亲" in reply and "住宿" in reply
+            action = "邀请说明"
             # Visiting/staying with a relative is not, by itself, a statement
             # that this person is the applicant's financial sponsor.
             checks["host_not_silently_recorded_as_sponsor"] = all(
@@ -129,6 +133,10 @@ def checks_for(kind: str, case: Any, reply: str, expected: dict[str, str]) -> di
                 ("sponsor_name", "sponsor_relationship", "sponsor_is_in_uk")
             )
         checks["no_wrong_student_template"] = kind == "student" or "在读证明" not in reply
+        checks["practical_action_before_application_form"] = (
+            action in reply and "Apply now" in reply
+            and reply.index(action) < reply.index("Apply now")
+        )
     else:
         checks["independent_visitor_link_answered"] = APPLICATION_URL in reply
         checks["no_visitor_fee_for_other_question"] = "135" not in reply
