@@ -16,6 +16,7 @@ from visa_agent.llm.application_records import (
 )
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.conversation import summary_fingerprint
+from visa_agent.workflow.record_source_audit import audit_application_record_sources
 
 
 @pytest.fixture(autouse=True)
@@ -87,6 +88,15 @@ def test_collection_question_is_actually_sent_and_remembered_after_reopen(tmp_pa
     assert assertion.source_event_id == third.event.id
     assert assertion.question_event_id == second.event.id
     assert assertion.question_key in second.case.collection_question_event_ids
+    audit_store = SQLiteStore(dialogue.path)
+    try:
+        assert audit_application_record_sources(audit_store, third.case).registered_sources_match
+        audit_store.connection.execute("UPDATE outbox SET status='PENDING' WHERE event_id=?", (second.event.id,))
+        assert f"question_not_sent_to_applicant:{second.event.id}" in audit_application_record_sources(audit_store, third.case).issues
+        audit_store.connection.execute("UPDATE outbox SET status='SENT' WHERE event_id=?", (second.event.id,))
+        assert audit_application_record_sources(audit_store, third.case).registered_sources_match
+    finally:
+        audit_store.close()
     body = "I visited Japan. That is my full travel history."
     detail_question = dialogue.turn(body, patch(
         records=[record("I visited Japan.", {"country": "Japan"})],
@@ -101,6 +111,11 @@ def test_collection_question_is_actually_sent_and_remembered_after_reopen(tmp_pa
     assert len(memory) == 1 and memory[0].field == "period"
     assert memory[0].question_event_id == detail_question.event.id
     assert memory[0].source_event_id == deferred.event.id
+    audit_store = SQLiteStore(dialogue.path)
+    try:
+        assert audit_application_record_sources(audit_store, deferred.case).registered_sources_match
+    finally:
+        audit_store.close()
     assert "when approximately did you travel" not in deferred.body
     assert "what was the purpose" in deferred.body
     assert "please don't guess" in deferred.body

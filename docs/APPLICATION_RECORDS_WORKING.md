@@ -7,6 +7,32 @@ The overall acceptance goal remains active.
 
 ## Requirement and design boundary
 
+### 2026-09-07 source-registration audit prerequisite
+
+Official application-information requirements were rechecked; conditional field
+review and remaining original-scope omissions are recorded in
+`docs/RECORD_REVIEW_REQUIREMENTS.md`. The nonempty-record hold remains until that
+review flow exists. A source-registration pass is not a legal/factual approval.
+
+`workflow/record_source_audit.py` now checks current record/field, latest declaration
+and active-deferral source IDs against actual processed case events. Contextual
+links must refer to recorded question IDs and an actually SENT reply to the same
+applicant/thread. Missing/foreign sources and a question downgraded to PENDING
+fail the audit. Actual captured-workflow tests cover original/corrected field
+sources, short collection uncertainty and field-specific uncertainty after SQLite
+reopening; they do not send real email. The audit performs no writes or approvals.
+
+Important limit found in storage: processed raw inbound queue bodies are purged.
+This audit cannot reconstruct their full contents/hash; it checks registered
+event linkage, not independent full-email authenticity. The earlier intake
+literal/source checks and retained evidence remain necessary, and policy review
+must not pretend this limitation is solved. See the review contract for next work.
+
+Focused verification: 33 tests passed (0.69s); Ruff passed and strict Mypy passed
+for 88 modules. No full-suite rerun or new provider report is claimed for this
+isolated audit addition. No actual operator approval, live Gmail send, deployment,
+container/worker restart or change to existing runtime permissions was made.
+
 ### 2026-09-07 universal intake gate migration (in progress, do not deploy)
 
 `domain/record_completeness.py` now checks both collection declarations for
