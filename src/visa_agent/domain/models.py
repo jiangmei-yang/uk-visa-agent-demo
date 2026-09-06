@@ -266,6 +266,7 @@ class Case(BaseModel):
     residence_duration_deferrals: list[dict[str, str]] = Field(default_factory=list)
     sponsor_address_question_identity: str | None = None
     sponsor_address_deferrals: list[dict[str, str]] = Field(default_factory=list)
+    employment_document_reviews: list[dict[str, str]] = Field(default_factory=list)
     latest_deferred_fields: list[str] = Field(default_factory=list)
     latest_customer_message: str = ""
     latest_document_names: list[str] = Field(default_factory=list)

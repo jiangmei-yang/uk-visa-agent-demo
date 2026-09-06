@@ -1108,18 +1108,33 @@ class WorkflowService:
             case.deferred_fields = [field for field in case.deferred_fields if field != "current_address_duration"]
             for old in case.active_evidence("current_address_duration"):
                 old.superseded = True
-        if ("employer_name" in update_fields and prior_employer_name is not None
-                and prior_employer_name != case.profile.employer_name):
+        employer_changed = ("employer_name" in update_fields and prior_employer_name is not None
+                            and prior_employer_name != case.profile.employer_name)
+        left_employment = "occupation_status" in update_fields and case.profile.occupation_status != "employed"
+        if employer_changed:
             for field in ("employer_address", "employer_phone"):
                 if field not in update_fields:
                     setattr(case.profile, field, None)
                     for old in case.active_evidence(field):
                         old.superseded = True
-        if "occupation_status" in update_fields and case.profile.occupation_status != "employed":
+        if left_employment:
             for field in ("employer_name", "employer_address", "employer_phone"):
                 setattr(case.profile, field, None)
                 for old in case.active_evidence(field):
                     old.superseded = True
+        if employer_changed or left_employment:
+            for document in case.documents:
+                if (document.kind == "employment_letter"
+                        and document.status == DocumentStatus.ACCEPTED_FOR_REVIEW
+                        and document.source_event_id != event.id):
+                    # A changed employment context does not prove an old letter
+                    # is false; it means its current applicability is unverified.
+                    # Keep the file and evidence rather than deleting history.
+                    document.status = DocumentStatus.NEEDS_CLARIFICATION
+                    case.employment_document_reviews.append({
+                        "document_id": document.id, "source_event_id": event.id,
+                        "reason": "employer_changed" if employer_changed else "occupation_changed",
+                    })
         sponsor_replaced_without_complete_identity = (
             prior_funding_source == "personal_sponsor"
             and case.profile.funding_source == "personal_sponsor"

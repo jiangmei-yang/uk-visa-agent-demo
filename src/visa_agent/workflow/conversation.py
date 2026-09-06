@@ -136,6 +136,9 @@ FACT_LABELS_ZH = {
     "annual_income_gbp": "年收入（英镑）",
     "funding_source": "费用由谁承担",
     "sponsor_name": "资助人姓名",
+    "employer_name": "现任雇主名称",
+    "employer_address": "现任雇主地址",
+    "employer_phone": "现任雇主联系电话",
     "sponsor_address": "资助人地址",
     "sponsor_relationship": "与资助人的关系",
     "sponsor_is_in_uk": "资助人是否住在英国",
@@ -1550,9 +1553,16 @@ def change_acknowledgement(case: Case) -> str | None:
         f"{funding_label(case, language=case.customer_language) if key == 'funding_source' and value == case.profile.funding_source else VALUE_LABELS_ZH.get(value, value) if zh else value.replace('_', ' ')}"
         for key, value in case.latest_changes.items()
     )
-    if zh:
-        return f"好的，已按你说的改为：{changes}。"
-    return f"Thanks for clarifying. I've updated {changes}."
+    message = f"好的，已按你说的改为：{changes}。" if zh else f"Thanks for clarifying. I've updated {changes}."
+    if "employer_name" in case.latest_changes:
+        sources = {item.source_event_id for item in case.active_evidence("employer_name")}
+        pending_ids = {document.id for document in case.documents
+                       if document.status == DocumentStatus.NEEDS_CLARIFICATION}
+        if any(item["source_event_id"] in sources and item["document_id"] in pending_ids
+               for item in case.employment_document_reviews):
+            message += ("之前的在职证明需要和这家雇主重新核对，确认适用前先不作为当前工作的证明。"
+                        if zh else " The earlier employment letter needs checking against this employer before we can use it as evidence of your current work.")
+    return message
 
 
 def waiting_acknowledgement(case: Case) -> str | None:
