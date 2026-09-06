@@ -7,6 +7,10 @@ confirm a summary, change the stored visa route or grant processing consent.
 from __future__ import annotations
 
 import re
+from typing import TYPE_CHECKING, Literal
+
+if TYPE_CHECKING:
+    from visa_agent.domain.models import Case
 
 from visa_agent.workflow.intent_matching import normalize_intent_text
 
@@ -118,6 +122,75 @@ def wants_brief_reply(body: str) -> bool:
         r"(?:请|先)?简短(?:告诉|说|回答)|\b(?:please\s+)?keep it brief\b",
         clause, re.I,
     ) and not re.search(r"不要|不用|\b(?:not|don't|do not)\b", clause, re.I)
+               for clause in _current_clauses(body))
+
+
+def reply_style_request(body: str) -> tuple[Literal["standard", "brief"], str, bool] | None:
+    """Mode, grounded current clause, one-reply-only flag; no model authority."""
+    matches: list[tuple[Literal["standard", "brief"], str, bool]] = []
+    for clause in _current_clauses(body):
+        if clause not in body or len(clause) > 500 or re.search(
+            r"reply_style|source_event|\b(?:translate|rephrase)\b|翻译|翻譯|改写|"
+            r"我不喜欢|我不希望|\bI (?:dislike|do not want)\b|"
+            r"(?:ignore|override|bypass).{0,20}(?:rules|system|instructions)",
+            clause, re.I,
+        ):
+            continue
+        local = bool(re.search(r"这次|这封|这个回复|\b(?:this time|this reply|this response|this email)\b", clause, re.I))
+        brief = wants_brief_reply(clause) or bool(re.search(
+            r"(?:以后|之后)?(?:请|麻烦)?(?:回复|回答|说话)(?:都)?(?:简短|短)(?:一点|一些)|"
+            r"(?:请|以后)(?:都)?说重点|\b(?:please\s+)?keep (?:your|the) (?:replies|answers) (?:short|brief)\b",
+            clause, re.I,
+        ))
+        standard = bool(re.search(
+            r"(?:请|这次|以后)(?:都)?详细(?:说|讲|解释|回答)|"
+            r"(?:以后|之后)(?:都)?不用(?:那么)?简短|"
+            r"\b(?:please\s+)?(?:explain|answer)(?:\s+this)? in detail\b|"
+            r"\bno need to keep (?:it|your replies) brief\b", clause, re.I,
+        ))
+        if standard and re.search(r"不用(?:那么)?简短|\bno need to keep\b", clause, re.I):
+            brief = False
+        if re.search(r"不要.{0,5}(?:简短|详细)|\b(?:do not|don't|not to)\b", clause, re.I):
+            continue
+        if brief != standard:
+            matches.append(("brief" if brief else "standard", clause, local))
+    # Conflicting requests are not resolved by taking a convenient last phrase.
+    if not matches or len({item[0] for item in matches}) > 1:
+        return None
+    return matches[-1]
+
+
+def remember_reply_style(case: Case, event_id: str) -> None:
+    request = reply_style_request(case.latest_customer_message)
+    if request and not request[2]:
+        case.reply_style, case.reply_style_source_excerpt = request[0], request[1]
+        case.reply_style_source_event_id = event_id
+
+
+def prefers_brief_reply(case: Case) -> bool:
+    request = reply_style_request(case.latest_customer_message)
+    return (request[0] if request else case.reply_style) == "brief"
+
+
+def reply_style_only(body: str) -> bool:
+    """A presentation-only instruction does not invite a new intake question."""
+    return reply_style_request(body) is not None and bool(re.fullmatch(
+        r"(?:以后|之后|这次|这封邮件)?(?:请|麻烦|你)?(?:都)?"
+        r"(?:简短回答|回复(?:都)?(?:简短|短)一点|详细(?:解释|回答)|不用(?:那么)?简短)(?:了|吧)?|"
+        r"(?:for this reply,\s*)?(?:please\s+)?(?:keep (?:it|your replies|your answers) (?:short|brief)|"
+        r"explain in detail|no need to keep (?:it|your replies) brief)",
+        body.strip(" \t\r\n。.!！?？"), re.I,
+    ))
+
+
+def wants_one_action(body: str) -> bool:
+    """One practical next action this turn, never completion of omitted items."""
+    return any(re.search(
+        r"(?:告诉我|给我|先做|先准备).{0,16}(?:一件事|一个步骤|(?<!下)一步)|"
+        r"\b(?:just|only)\s+(?:give|tell)\s+me\s+(?:the\s+)?(?:one|a single)\s+(?:thing|step|action)\b|"
+        r"\b(?:what is|what's) the one thing I should (?:do|prepare)\b",
+        clause, re.I,
+    ) and not re.search(r"不要|不是|\b(?:not|don't|do not)\b", clause, re.I)
                for clause in _current_clauses(body))
 
 

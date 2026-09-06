@@ -9,7 +9,11 @@ from datetime import date
 
 from visa_agent.domain.models import Case, DocumentStatus, Requirement
 from visa_agent.domain.rules import profile_fact_complete, required_profile_facts
-from visa_agent.workflow.advice_preferences import wants_no_links
+from visa_agent.workflow.advice_preferences import (
+    prefers_brief_reply,
+    reply_style_request,
+    wants_no_links,
+)
 from visa_agent.workflow.consultant_overview import (
     APPLICATION_URL,
     DOCUMENTS_URL,
@@ -1108,6 +1112,8 @@ def _sponsor_identity_question(case: Case, *, relationship_also_missing: bool) -
                 "再把实际资助人的姓名按证件或银行材料上的写法告诉我。"
             )
         if relationship_also_missing:
+            if prefers_brief_reply(case):
+                return f"请把你{label}的姓名按其证件或银行材料上的写法告诉我。"
             return (
                 f"我理解这次是由你的{label}资助；如果我理解没错，请把{label}的姓名"
                 "按证件或银行材料上的写法告诉我。"
@@ -1123,6 +1129,8 @@ def _sponsor_identity_question(case: Case, *, relationship_also_missing: bool) -
         )
     if relationship_also_missing:
         pronoun = "his" if relation == "father" else "her"
+        if prefers_brief_reply(case):
+            return f"What is your {label}'s full name as shown on {pronoun} ID or financial evidence?"
         return (
             f"I understand that your {label} will fund the trip. If I have that right, what is your {label}'s "
             f"full name as shown on {pronoun} ID or financial evidence?"
@@ -1645,11 +1653,22 @@ def blocked_customer_message(case: Case) -> str:
             "好的，已有资料会保留。有新安排或材料时，直接接着回复就好。"
             if zh else "Your existing details will stay on file. Just reply when you have new plans or documents to add."
         ]
+        if (request := reply_style_request(case.latest_customer_message)) is not None:
+            scope = ("这次" if request[2] else "之后") if zh else ("this reply" if request[2] else "future replies")
+            sections = [
+                f"好的，{scope}我会简短说重点。" if zh and request[0] == "brief" else
+                f"好的，{scope}需要展开的地方我会解释清楚。" if zh else
+                f"Of course—I'll keep {scope} brief." if request[0] == "brief" else
+                f"Of course—I'll give more explanation where it helps in {scope}."
+            ]
     if not personal_overview and case.latest_deferred_fields and (
         not case.customer_answers or case.proactive_guidance_offered or case.latest_received_facts or case.latest_changes
     ):
         if {"planned_arrival_date", "planned_departure_date"}.intersection(case.latest_deferred_fields):
             sections.append(
+                ("日期先留空，确定后再补；现在可以先准备其他材料。" if zh else
+                 "We'll leave the dates open and add them when decided; other preparation can start now.")
+                if prefers_brief_reply(case) else
                 "没问题，日期先留空。材料准备阶段先不追问日期；正式提交前再填写并统一核对预计行程。"
                 if zh else "No problem—I'll leave the dates open for now. I will not keep asking you for the "
                 "dates while we prepare. Add and cross-check the intended itinerary before submitting the form."
@@ -1737,7 +1756,7 @@ def blocked_customer_message(case: Case) -> str:
                          else "\n\n".join(questions))
         follow_up = (
             _single_question_context(case, next_fact_questions(case))
-            if len(questions) == 1 and (
+            if not prefers_brief_reply(case) and len(questions) == 1 and (
                 case.latest_received_facts
                 or case.latest_changes
                 or case.next_step_advice is not None and case.next_step_advice.kind == "question"
@@ -1749,7 +1768,8 @@ def blocked_customer_message(case: Case) -> str:
         )
         if follow_up:
             sections.append(follow_up + "\n" + question_text)
-        elif len(questions) == 1 and (visible_customer_answers or documents or issues):
+        elif (not prefers_brief_reply(case) and len(questions) == 1
+              and (visible_customer_answers or documents or issues)):
             lead = (
                 "我接下来会按你的答案把这份清单改成个人版本。先确认一个关键点："
                 if zh else

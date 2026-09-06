@@ -44,6 +44,11 @@ from visa_agent.workflow.advice_continuation import (
     reconcile_answered_advice,
     remember_advice_plan,
 )
+from visa_agent.workflow.advice_preferences import (
+    remember_reply_style,
+    reply_style_only,
+    wants_one_action,
+)
 from visa_agent.workflow.advice_queue import merge_unsent_advice, queue_advice
 from visa_agent.workflow.adviser_guidance import APPLICATION_URL, preparation_guidance
 from visa_agent.workflow.consultant_overview import (
@@ -282,6 +287,7 @@ class WorkflowService:
             }
         )
         case.latest_customer_message = customer_event.body
+        remember_reply_style(case, event.id)
         if school_record_resolved(customer_event.body) or school_record_unavailable(customer_event.body):
             # Retire only this discussion, not applicant facts, evidence or other
             # unanswered FAQs. Receipt of an actual file still uses normal checks.
@@ -328,6 +334,8 @@ class WorkflowService:
         current_questions = [item for item in patch.customer_questions if not (
             continuation_requested and is_advice_continuation(item.source_excerpt)
         )]
+        if reply_style_only(customer_event.body):
+            current_questions = []
         if comprehensive_overview_requested(case, customer_event.body):
             # The model may call an obvious in-thread request for the complete
             # personal preparation list "unsupported" or "next_step".  Rescue
@@ -712,7 +720,7 @@ class WorkflowService:
                 # This renderer emits only a receipt. Never record unseen candidate questions
                 # against that receipt's SENT event, even when an older draft was never sent.
                 case.question_plan = []
-            elif consultation_only_requested(customer_event.body):
+            elif consultation_only_requested(customer_event.body) or reply_style_only(customer_event.body):
                 # Asking to understand the process first is not starting an
                 # identity questionnaire. Keep every required fact/gate intact.
                 case.question_plan = []
@@ -720,7 +728,7 @@ class WorkflowService:
                     case.customer_answers = [answer for answer in case.customer_answers
                                              if answer != case.next_step_advice.message]
                     case.next_step_advice = None
-            elif overview_already_has_action:
+            elif overview_already_has_action or (actionable_preparation_guidance and wants_one_action(customer_event.body)):
                 # A comprehensive personal overview already names a practical
                 # first action. Do not append a second, unrelated intake step.
                 case.question_plan = []

@@ -232,6 +232,10 @@ class Case(BaseModel):
     preparation_control_event_id: str | None = None
     latest_preparation_action: Literal["pause", "resume"] | None = None
     customer_language: str = "en"
+    # Presentation preference only; excluded from applicant facts and consent.
+    reply_style: Literal["standard", "brief"] = "standard"
+    reply_style_source_event_id: str | None = None
+    reply_style_source_excerpt: str | None = None
     customer_answers: list[str] = Field(default_factory=list)
     pending_advice: list[PendingAdviceQuestion] = Field(default_factory=list)
     unsent_advice: list[UnsentAdviceQuestion] = Field(default_factory=list)

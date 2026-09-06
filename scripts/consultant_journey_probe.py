@@ -37,7 +37,8 @@ SCENARIOS: dict[str, list[dict[str, Any]]] = {
         {"body": "我想趁下个学期结束去伦敦玩几天。我是中国护照，在香港念硕士，也准备在香港办。"
                  "钱自己出，但假期没公布，还说不准出发和回来的日子。你先简短告诉我眼下最值得做的一件事。",
          "profile": {"occupation_status": "student", "funding_source": "self", "visit_purpose": "tourism"},
-         "deferred_dates": True, "answer": r"(?:索取|准备).{0,20}在读证明", "brief": "zh"},
+         "deferred_dates": True, "answer": r"(?:索取|准备).{0,20}在读证明", "brief": "zh",
+         "no_intake": True, "forbidden_reply": "银行流水", "saved_style": "brief"},
         {"body": "名字用 Kai Example，生日 2000.1.2。假期仍没消息，别再问哪天出发了。",
          "profile": {"full_name": "Kai Example", "date_of_birth": "2000-01-02"},
          "deferred_dates": True, "never_ask": ["full_name", "date_of_birth"]},
@@ -74,6 +75,48 @@ SCENARIOS: dict[str, list[dict[str, Any]]] = {
 }
 
 
+PACING_SCENARIOS: dict[str, list[dict[str, Any]]] = {
+    "zh-durable-pacing": [
+        {"body": "我是中国护照，准备在香港申请，去英国旅游，目前在读书，自己承担费用。"
+                 "日期还没定。以后回复短一点，先只告诉我一个步骤。",
+         "profile": {"occupation_status": "student", "funding_source": "self", "visit_purpose": "tourism"},
+         "saved_style": "brief", "effective_style": "brief", "no_intake": True,
+         "answer": r"在读证明", "forbidden_reply": "银行流水", "brief": "zh", "deferred_dates": True},
+        {"body": "护照姓名是 Mei Example，出生日期是1998年1月2日。",
+         "profile": {"full_name": "Mei Example", "date_of_birth": "1998-01-02"},
+         "saved_style": "brief", "effective_style": "brief", "brief": "zh",
+         "forbidden_reply": "Apply now", "never_ask": ["full_name", "date_of_birth"]},
+        {"body": "这次请详细解释申请表在哪里填写，告诉我官方入口和操作顺序。",
+         "saved_style": "brief", "effective_style": "standard", "no_intake": True,
+         "answer": re.escape(APPLICATION_URL)},
+        {"body": "学校说这周开不了在读证明，我只有学校系统下载的学生状态 PDF，可以先用这个准备吗？",
+         "saved_style": "brief", "effective_style": "brief", "no_intake": True,
+         "answer": r"姓名.{0,30}学校名称", "forbidden_reply": "Apply now"},
+        {"body": "以后不用那么简短了。", "saved_style": "standard", "effective_style": "standard",
+         "no_intake": True, "forbidden_reply": "护照上的姓名"},
+    ],
+    "en-durable-pacing": [
+        {"body": "Chinese passport, applying in Hong Kong, holiday, self-employed, self-funded. Dates not fixed. "
+                 "Please keep your replies short. Just give me a single action to start with.",
+         "profile": {"occupation_status": "self_employed", "funding_source": "self", "visit_purpose": "tourism"},
+         "saved_style": "brief", "effective_style": "brief", "no_intake": True, "brief": "en",
+         "answer": r"business registration|invoices", "forbidden_reply": "Apply now", "deferred_dates": True},
+        {"body": "Passport name: Alex Example. DOB: 2 January 1998.",
+         "profile": {"full_name": "Alex Example", "date_of_birth": "1998-01-02"},
+         "saved_style": "brief", "effective_style": "brief", "brief": "en",
+         "forbidden_reply": "Apply now", "never_ask": ["full_name", "date_of_birth"]},
+        {"body": "For this reply, please explain in detail. Where do I open the application form?",
+         "saved_style": "brief", "effective_style": "standard", "no_intake": True,
+         "answer": re.escape(APPLICATION_URL)},
+        {"body": "I haven't received bank statements yet. What is the one thing I should prepare now?",
+         "saved_style": "brief", "effective_style": "brief", "brief": "en",
+         "forbidden_reply": "Apply now"},
+        {"body": "No need to keep your replies brief.", "saved_style": "standard", "effective_style": "standard",
+         "no_intake": True, "answer": r"explanation"},
+    ],
+}
+
+
 class ExtractionOnly(DeepSeekStructuredLLM):
     render_message = staticmethod(deterministic_fallback_message)
 
@@ -103,6 +146,8 @@ class CapturedGmail(GmailAdapter):
 
 
 def check_turn(spec: dict[str, Any], case: Any, reply: str) -> dict[str, bool]:
+    from visa_agent.workflow.advice_preferences import prefers_brief_reply
+
     questions = set(case.last_requested_fields)
     checks = {
         "expected_facts": all(case.profile.model_dump(mode="json")[k] == v
@@ -119,6 +164,10 @@ def check_turn(spec: dict[str, Any], case: Any, reply: str) -> dict[str, bool]:
         checks["answers_without_intake"] = not questions
     if "paused" in spec:
         checks["preparation_control"] = case.preparation_paused == spec["paused"]
+    if "saved_style" in spec:
+        checks["durable_style"] = case.reply_style == spec["saved_style"]
+    if "effective_style" in spec:
+        checks["turn_style_override"] = prefers_brief_reply(case) == (spec["effective_style"] == "brief")
     if "answer" in spec:
         checks["requested_information_proxy"] = bool(re.search(spec["answer"], reply, re.I))
     if "forbidden_reply" in spec:
@@ -136,12 +185,15 @@ def main() -> None:
     parser.add_argument("--allow-model-calls", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--replay", type=Path, help="Offline saved proposals; no provider or mailbox calls")
+    parser.add_argument("--scenario-set", choices=["journey", "pacing", "all"], default="journey")
     args = parser.parse_args()
     if not args.allow_model_calls and not args.replay:
-        parser.error("Explicit --allow-model-calls required: 12 fictional extractions, no retries")
+        parser.error("Explicit --allow-model-calls required: fictional extractions, no retries")
     if args.output.exists():
         parser.error("Existing evidence must not be overwritten")
     saved = json.loads(args.replay.read_text()) if args.replay else None
+    scenarios = (SCENARIOS if args.scenario_set == "journey" else PACING_SCENARIOS
+                 if args.scenario_set == "pacing" else {**SCENARIOS, **PACING_SCENARIOS})
     key = (None if saved else read_secret("DEEPSEEK_API_KEY", file_environment_name="DEEPSEEK_API_KEY_FILE",
                       default_file=ROOT / ".secrets/deepseek_api_key.txt"))
     if not key and not saved:
@@ -150,12 +202,13 @@ def main() -> None:
     paths = [Path(__file__).resolve(), *sorted((ROOT / "src/visa_agent").rglob("*.py"))]
     report: dict[str, Any] = {
         "scope": "fictional multi-turn development scenarios; real DeepSeek extraction; captured transport",
-        "mailbox_calls": 0, "real_documents": 0, "maximum_model_calls": 12, "model_retries": 0,
-        "requested_model": "deepseek-v4-flash", "check_contract": "consultant-journey-v3",
+        "mailbox_calls": 0, "real_documents": 0,
+        "maximum_model_calls": sum(len(items) for items in scenarios.values()), "model_retries": 0,
+        "requested_model": "deepseek-v4-flash", "check_contract": "consultant-journey-v4",
         "evaluation_date": TODAY.isoformat(), "run_started_at": datetime.now(UTC).isoformat(),
         "git_head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "source_sha256": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths},
-        "scenarios": SCENARIOS, "completed": False, "all_passed": False, "results": [],
+        "scenarios": scenarios, "completed": False, "all_passed": False, "results": [],
     }
     if saved:
         report.update({"scope": "offline saved-proposal replay; no model or mailbox calls",
@@ -165,7 +218,7 @@ def main() -> None:
     with args.output.open("x", encoding="utf-8") as output:
         json.dump(report, output, ensure_ascii=False, indent=2)
     with tempfile.TemporaryDirectory(prefix="visa-journey-probe-") as directory:
-        for journey, specs in SCENARIOS.items():
+        for journey, specs in scenarios.items():
             capture = CapturedGmail()
             for index, spec in enumerate(specs, start=1):
                 model = (SavedExtraction(next(row["raw_model_content"] for row in saved["results"]
@@ -196,7 +249,9 @@ def main() -> None:
                         "persisted_case_matches": store.get_case(case.id).model_dump() == case.model_dump()})
                     row.update({"completed": True, "checks": checks, "plan": plan, "reply": reply,
                         "profile": case.profile.model_dump(mode="json"), "requested_fields": case.last_requested_fields,
-                        "deferred_fields": case.deferred_fields, "topics": case.customer_question_topics})
+                        "deferred_fields": case.deferred_fields, "topics": case.customer_question_topics,
+                        "reply_style": case.reply_style, "reply_style_source_event_id": case.reply_style_source_event_id,
+                        "reply_style_source_excerpt": case.reply_style_source_excerpt})
                 except Exception as error:
                     row["error_type"] = type(error).__name__
                 finally:

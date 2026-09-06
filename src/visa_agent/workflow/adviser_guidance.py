@@ -6,8 +6,9 @@ from datetime import date
 from visa_agent.domain.models import Case, CaseStatus
 from visa_agent.workflow.advice_preferences import (
     _current_clauses,
-    wants_brief_reply,
+    prefers_brief_reply,
     wants_no_links,
+    wants_one_action,
 )
 from visa_agent.workflow.conversation import (
     customer_requests_next_step,
@@ -345,6 +346,10 @@ def _question_step_allows_preparation_guidance(case: Case, active: str, *, initi
             clause, re.I,
         ):
             continue
+        if (wants_one_action(clause)
+                and _next_step_targets_current_case(case.latest_customer_message, clause)
+                and not explicit_nonvisitor_route(clause)):
+            return True
         if re.search(
             r"\btell me what to (?:gather|prepare|collect) first\b|"
             r"(?:先|请)(?:简短)?告诉我眼下最值得做的一件事|"
@@ -574,7 +579,7 @@ def _preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> lis
             ) + "\nGOV.UK: " + ROUTE_CHECK_URL)]
         return []
     if (not initial_checklist and "application_overview_v1" not in sent_topics
-            and not wants_brief_reply(current)):
+            and not prefers_brief_reply(case) and not wants_one_action(current)):
         result.append(("application_overview_v1", _application_process_orientation(case)))
     # Existing combined student advice covers both components. Do not re-send
     # either component merely because a deployment now has more granular topics.
@@ -624,6 +629,7 @@ def _preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> lis
         and profile.funding_source == "employer_or_school"
         and "conference_preparation_v1" not in covered
         and "organisation_funding_preparation_v1" not in covered
+        and not wants_one_action(current)
     )
     if combined_conference_funding:
         candidates.append((
@@ -631,6 +637,7 @@ def _preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> lis
             _conference_organisation_preparation(case, current),
         ))
     if (profile.occupation_status == "student" and profile.funding_source == "self"
+            and not wants_one_action(current)
             and not {"student_enrolment_preparation_v1", "self_funding_preparation_v1"} & covered):
         candidates.append(("student_self_preparation_v1", (
             "材料方面，可以先准备学校的在读证明，以及能说明资金来源和可用资金的银行流水。"
