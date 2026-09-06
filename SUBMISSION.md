@@ -3,6 +3,12 @@
 这是一个 Email 优先、帮助客户准备英国 Standard Visitor 申请材料的受控 Demo。
 交付物是**待人工复核的材料 ZIP**，不是替客户向英国政府提交申请，也不是获签保证。
 
+> 开发候选状态：本地验证与 GitHub `main` 的历史 CI 不等同。
+> 当前已保留 22 回合真实 DeepSeek 对话及 4 份虚构财务 PDF 的新实验；
+> 完整自动测试不再排除旧报告检查。真实 Gmail 收件人侧最终包验收和
+> 未受指导的面试官试用仍未完成，不能将此页视为完成声明。
+> 最新交付核对见 [开发候选验证](docs/SUBMISSION_CANDIDATE_2026-09-07.md)。
+
 ## 面试官先看这里（约 5 分钟）
 
 1. 下载仓库 ZIP 并解压，安装并打开 Docker Desktop。
@@ -40,8 +46,9 @@ Windows 有启动脚本，原生 Windows 双击体验仍待独立验证。
 之后可直接自然回复、补件和纠错，不必每封重复参考码。最终 ZIP 需操作员审核后发送。
 不要向陌生发件人开放，也不要把真实护照当测试素材。
 
-已部署测试档案的当前处理同意仍未激活，因此本次交付**不声称新的普通材料 Gmail
-全流程已在收件人侧验收**。历史证据和失败见 [GMAIL_LIVE_EVIDENCE.md](GMAIL_LIVE_EVIDENCE.md)。
+本地开发验证不代表已部署邮箱档案的授权或发送状态；恢复真实测试前须重新核对。
+当前开发候选**不声称新的普通材料 Gmail 全流程已在收件人侧验收**。
+历史证据和失败见 [GMAIL_LIVE_EVIDENCE.md](GMAIL_LIVE_EVIDENCE.md)。
 WhatsApp 接口和配置见 [WHATSAPP_SANDBOX.md](WHATSAPP_SANDBOX.md)，真实收发另行验收。
 
 ## 开发者复验

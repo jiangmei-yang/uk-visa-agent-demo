@@ -7,8 +7,8 @@ from test_consultant_value import APPLICANT, POLICY, TODAY, Model, _patch
 from visa_agent.domain.models import CaseStatus, InboundEvent
 from visa_agent.llm.guarded import GuardedLLM, deterministic_fallback_message
 from visa_agent.storage.sqlite import SQLiteStore
-from visa_agent.workflow.service import WorkflowService
 from visa_agent.workflow.review import queue_review_retry, review_fingerprint
+from visa_agent.workflow.service import WorkflowService
 
 
 def test_model_omission_does_not_allow_literal_completion_or_pack_release(tmp_path, monkeypatch):
