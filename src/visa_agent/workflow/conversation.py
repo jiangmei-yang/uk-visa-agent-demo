@@ -156,6 +156,8 @@ VALUE_LABELS_ZH = {
 
 
 def fact_label(case: Case, field: str) -> str:
+    if field == "current_address_duration" and case.customer_language != "zh":
+        return "Time living at your current home"
     return (
         FACT_LABELS_ZH.get(field, field)
         if case.customer_language == "zh"

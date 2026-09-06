@@ -162,6 +162,7 @@ def _profile_rows(case: Case) -> list[str]:
         "uk_accommodation": "UK accommodation",
         "estimated_trip_cost_gbp": "Estimated trip cost",
         "current_address": "Current home address",
+        "current_address_duration": "Time living at current home",
         "occupation_status": "Occupation status",
         "annual_income_gbp": "Annual income",
         "funding_source": "Funding source",
@@ -172,6 +173,10 @@ def _profile_rows(case: Case) -> list[str]:
         "route_confirmed_standard_visitor": "Standard Visitor route confirmed",
     }
     profile = case.profile.model_dump(mode="json")
+    if (profile["current_address_duration"] is None and "current_address_duration" in case.deferred_fields
+            and case.residence_duration_deferrals
+            and case.residence_duration_deferrals[-1].get("address") == case.profile.current_address):
+        profile["current_address_duration"] = "Deferred for checking - not yet supplied"
     if profile["funding_source"] != "personal_sponsor":
         for field in ("sponsor_name", "sponsor_relationship", "sponsor_is_in_uk"):
             profile[field] = "Not applicable"

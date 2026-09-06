@@ -45,9 +45,14 @@ def test_demo_generates_source_linked_pack_and_is_idempotent(tmp_path: Path) -> 
         answers = json.loads(archive.read("05_application_answers.json"))
         assert answers["status"] == "READY_FOR_HUMAN_REVIEW"
         assert all(item["source_event_id"] for item in answers["facts"])
+        assert answers["profile"]["current_address_duration"] == "two years"
+        duration_facts = [item for item in answers["facts"] if item["key"] == "current_address_duration"]
+        assert len(duration_facts) == 1 and duration_facts[0]["value"] == "two years"
+        assert duration_facts[0]["source_excerpt"] == "I have lived at my current address for two years."
         summary_text = PdfReader(BytesIO(archive.read("01_case_summary.pdf"))).pages[0].extract_text()
         cover_text = PdfReader(BytesIO(archive.read("04_cover_letter_draft.pdf"))).pages[0].extract_text()
         assert "Funding source: Employer or school" in summary_text
+        assert "Time living at current home: two years" in summary_text
         assert "Sponsor name: Not applicable" in summary_text
         assert "The estimated trip cost is GBP 2,200" in cover_text
         assert "Adviser note: verify every statement" in cover_text

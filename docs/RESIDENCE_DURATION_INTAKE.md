@@ -36,6 +36,31 @@ uncertainty and duration wording, friendly output labels/rendering, and a fresh
 real-model/clean-container run still need evidence. The historical foundation
 notes below describe the preceding stage, not a current exemption from the gate.
 
+## 2026-09-07 readable output and visual QA
+
+The English customer-facing field label is now “Time living at your current home”;
+the PDF profile row uses “Time living at current home” directly below the address.
+Supplied English/Chinese duration text keeps its original precision. An active
+deferral for that same address renders as deferred/not yet supplied, while old
+uncertainty from a different address cannot replace the new home's missing row.
+No source-event or question IDs are printed in this readable section.
+
+`scripts/residence_duration_preview.py` generates a one-page synthetic preview
+through the production profile-row and PDF renderer. The PDF skill's visual
+inspection of `output/pdf/residence-duration-v1/summary.pdf` verified the supplied,
+Chinese, deferred and changed-address cases: readable glyphs, no observed overlap
+or clipping, normal footer/page number. SHA-256:
+`6be130019f4c2d4f518c3ab4d9b8377dbcc1a77eaf48fd6094dc12367d57293e`.
+It is explicitly rendering QA, not a completed application or actual release.
+
+The real synthetic demo ZIP test now requires the same `two years` in the PDF
+summary and JSON profile, exactly one active duration fact, and its exact visible
+first-email source sentence. The widened output/workflow/demo/web subset passed
+**24 tests** (2.53s); Ruff and strict Mypy (92 modules) passed. No full regression,
+live model call, mailbox message or deployment was performed in this output step.
+Full-pack visual QA, multilingual customer summary review and fresh source-bound
+live/container acceptance remain necessary.
+
 ## Implemented foundation
 
 `CaseProfile.current_address_duration` preserves the supplied text with a bounded
@@ -75,8 +100,8 @@ excluded and stale.
 - Complete and verify the migrated fictional fixtures under full regression,
   then validate the clean container demo again. Real/legacy cases without the
   duration remain incomplete; no production migration supplies an invented value.
-- Include readable labels/values and unknown states in customer summaries and
-  output artifacts, then visually verify any changed PDFs.
+- Extend the focused visual QA above to complete generated packs and customer
+  confirmation messages, including long/multilingual profiles.
 - Test simultaneous address/duration corrections, broad real-model phrasing and
   address identity/formatting cases; refresh source-bound live reports.
 
