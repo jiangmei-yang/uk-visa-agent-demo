@@ -952,6 +952,20 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
         # history/route. Rebuild it below from facts that passed ownership.
         requires_review = False
 
+    from visa_agent.domain.employer_evidence import EMPLOYER_FIELDS, conflicting_employer_fields
+
+    employer_conflicts = conflicting_employer_fields(latest_reply_text(event.body))
+    if employer_conflicts:
+        # The provider may propose only one of two source statements, or omit
+        # both. Do not treat omission as resolution or bind contacts to an
+        # unresolved employer identity.
+        excluded = EMPLOYER_FIELDS if "employer_name" in employer_conflicts else employer_conflicts
+        for field in excluded:
+            accepted.pop(field, None)
+        ambiguities.extend(f"Conflicting current employer statements for {field}; clarification is required."
+                           for field in sorted(employer_conflicts))
+        requires_review = True
+
     route_update = accepted.get("route_confirmed_standard_visitor")
     history_update = accepted.get("has_serious_history")
     if (route_update is not None and route_update.value is False) or (

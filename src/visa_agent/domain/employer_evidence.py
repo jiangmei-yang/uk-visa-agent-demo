@@ -75,8 +75,7 @@ def employer_detail_is_grounded(field: str, value: str | int | bool, excerpt: st
     return False
 
 
-def literal_employer_details(body: str, verified_field: str | None = None) -> list[tuple[str, str, str]]:
-    """Return only literal grammar matches, never invented fields or permissions."""
+def _literal_candidates(body: str, verified_field: str | None = None) -> list[tuple[str, str, str]]:
     candidates = []
     if verified_field in EMPLOYER_FIELDS and employer_detail_is_grounded(
             verified_field, body.strip(), body.strip(), body, sent_question_verified=True):
@@ -90,6 +89,19 @@ def literal_employer_details(body: str, verified_field: str | None = None) -> li
                 value = sentence[match.end():].strip()
                 if employer_detail_is_grounded(field, value, sentence, body):
                     candidates.append((field, value, sentence))
+    return candidates
+
+
+def conflicting_employer_fields(body: str) -> set[str]:
+    """Detect conflicting literal current statements even if the model omits one."""
+    candidates = _literal_candidates(body)
+    return {field for field in EMPLOYER_FIELDS
+            if len({value for key, value, _ in candidates if key == field}) > 1}
+
+
+def literal_employer_details(body: str, verified_field: str | None = None) -> list[tuple[str, str, str]]:
+    """Return only literal grammar matches, never invented fields or permissions."""
+    candidates = _literal_candidates(body, verified_field)
     # Two different values for a field are not a safe literal completion.
     return list(dict.fromkeys(item for item in candidates
         if len({candidate[1] for candidate in candidates if candidate[0] == item[0]}) == 1))
