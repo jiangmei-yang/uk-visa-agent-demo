@@ -32,6 +32,33 @@ from visa_agent.workflow.conversation import reply_items
 ROOT = Path(__file__).resolve().parents[1]
 CONTACT = "fictional-journey@example.test"
 TODAY = date(2026, 9, 6)
+EMPLOYER_SCENARIOS: dict[str, list[dict[str, Any]]] = {
+    "employer-contact-and-job-change": [
+        {"body": "I'm preparing for a UK holiday. I hold a Chinese passport and will apply from Hong Kong. "
+                 "My name is Alex Sample. My date of birth is 1 July 1997. I'm employed and I pay for my own trip. "
+                 "My annual income is GBP 48000. My trip budget is GBP 2000. I plan to stay at a hotel in London. "
+                 "My travel dates are not decided yet.",
+         "profile": {"occupation_status": "employed", "funding_source": "self"}, "deferred_dates": True},
+        {"body": "What is the next step?", "expected_questions": ["employer_name"], "deferred_dates": True},
+        {"body": "Northstar Ltd", "profile": {"employer_name": "Northstar Ltd"},
+         "expected_questions": ["employer_address"], "deferred_dates": True},
+        {"body": "12 Example Road, Hong Kong", "profile": {"employer_address": "12 Example Road, Hong Kong"},
+         "expected_questions": ["employer_phone"], "deferred_dates": True},
+        {"body": "I need to check.", "profile": {"employer_phone": None},
+         "deferred_employer_field": "employer_phone", "never_ask": ["employer_phone"], "deferred_dates": True},
+        {"body": "My employer's phone number is +852 2000 1234.", "profile": {"employer_phone": "+852 2000 1234"},
+         "employer_sources": {"employer_phone": "employer-contact-and-job-change-6"}, "deferred_dates": True},
+        {"body": "My employer is Southstar Ltd. What is the next step?",
+         "profile": {"employer_name": "Southstar Ltd", "employer_address": None, "employer_phone": None},
+         "expected_questions": ["employer_address"], "deferred_dates": True},
+        {"body": "My employer's address is 34 Another Road, Hong Kong. My employer's phone number is +852 2000 5678.",
+         "profile": {"employer_address": "34 Another Road, Hong Kong", "employer_phone": "+852 2000 5678"},
+         "employer_sources": {"employer_address": "employer-contact-and-job-change-8",
+                              "employer_phone": "employer-contact-and-job-change-8"}, "deferred_dates": True},
+        {"body": "更正一下，我的雇主的电话是+852 2000 9012。", "profile": {"employer_phone": "+852 2000 9012"},
+         "employer_sources": {"employer_phone": "employer-contact-and-job-change-9"}, "deferred_dates": True},
+    ],
+}
 SPONSOR_SCENARIOS: dict[str, list[dict[str, Any]]] = {
     "sponsor-address-and-replacement": [
         {"body": "I'm preparing for a UK holiday. I hold a Chinese passport and will apply from Hong Kong. "
@@ -251,6 +278,12 @@ def check_turn(spec: dict[str, Any], case: Any, reply: str) -> dict[str, bool]:
         checks["answers_without_intake"] = not questions
     if "expected_questions" in spec:
         checks["asks_required_next_detail"] = case.last_requested_fields == spec["expected_questions"]
+    if "deferred_employer_field" in spec:
+        checks["employer_uncertainty_retained"] = spec["deferred_employer_field"] in case.deferred_fields
+    if "employer_sources" in spec:
+        checks["current_employer_sources"] = all(
+            len(case.active_evidence(field)) == 1 and case.active_evidence(field)[0].source_event_id == source
+            for field, source in spec["employer_sources"].items())
     if "deferred_sponsor_address" in spec:
         checks["sponsor_address_deferral_state"] = ("sponsor_address" in case.deferred_fields) == spec["deferred_sponsor_address"]
     if "address_source_event" in spec:
@@ -294,14 +327,14 @@ def main() -> None:
     parser.add_argument("--allow-model-calls", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--replay", type=Path, help="Offline saved proposals; no provider or mailbox calls")
-    parser.add_argument("--scenario-set", choices=["journey", "pacing", "all", "records", "residence", "sponsor"], default="journey")
+    parser.add_argument("--scenario-set", choices=["journey", "pacing", "all", "records", "residence", "sponsor", "employer"], default="journey")
     args = parser.parse_args()
     if not args.allow_model_calls and not args.replay:
         parser.error("Explicit --allow-model-calls required: fictional extractions, no retries")
     if args.output.exists():
         parser.error("Existing evidence must not be overwritten")
     saved = json.loads(args.replay.read_text()) if args.replay else None
-    scenarios = (SPONSOR_SCENARIOS if args.scenario_set == "sponsor" else RESIDENCE_SCENARIOS if args.scenario_set == "residence" else RECORD_SCENARIOS if args.scenario_set == "records" else SCENARIOS if args.scenario_set == "journey" else PACING_SCENARIOS
+    scenarios = (EMPLOYER_SCENARIOS if args.scenario_set == "employer" else SPONSOR_SCENARIOS if args.scenario_set == "sponsor" else RESIDENCE_SCENARIOS if args.scenario_set == "residence" else RECORD_SCENARIOS if args.scenario_set == "records" else SCENARIOS if args.scenario_set == "journey" else PACING_SCENARIOS
                  if args.scenario_set == "pacing" else {**SCENARIOS, **PACING_SCENARIOS})
     if saved and saved.get("scenarios") != scenarios:
         parser.error("Saved scenario contract differs; do not attach old proposals to changed customer messages")

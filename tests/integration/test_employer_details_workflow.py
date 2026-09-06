@@ -226,3 +226,16 @@ def test_contact_uncertainty_is_bound_to_employer_and_cleared_on_change(tmp_path
     changed = dialogue.turn(body, _patch(updates=[("employer_name", "Southstar Ltd", body)]))
     assert field not in changed.case.deferred_fields
     assert changed.case.employer_detail_deferrals[-1]["employer_name"] == "Northstar Ltd"
+
+
+def test_literal_completion_handles_model_omission_with_distinct_provenance(tmp_path):
+    dialogue, _ = asking(tmp_path)
+    first = dialogue.turn("Northstar Ltd", _patch())
+    assert first.case.profile.employer_name == "Northstar Ltd"
+    assert first.case.active_evidence("employer_name")[0].extraction_method == "bounded_literal_employer_parser"
+    address = "12 Example Road, Hong Kong"
+    second = dialogue.turn(address, _patch())
+    assert second.case.profile.employer_address == address
+    assert second.case.active_evidence("employer_address")[0].source_excerpt == address
+    assert not second.case.active_evidence("employer_address")[0].confirmed
+    assert not second.case.final_summary_confirmed and second.case.delivery_path is None

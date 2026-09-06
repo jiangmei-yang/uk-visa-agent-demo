@@ -35,8 +35,8 @@ from visa_agent.domain.rules import (
     required_profile_facts,
     run_consistency_checks,
 )
-from visa_agent.llm.guarded import ensure_guarded
-from visa_agent.llm.ports import LLMClient
+from visa_agent.llm.guarded import ensure_guarded, validate_case_patch
+from visa_agent.llm.ports import CasePatch, FactUpdate, LLMClient
 from visa_agent.privacy.consent import ConsentLedger, ProcessingConsentRequired
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.advice_continuation import (
@@ -429,6 +429,22 @@ class WorkflowService:
             if row["case_id"] == case.id
         )
         patch = self.llm.extract_case_patch(customer_event)
+        literal_employer_fields: set[str] = set()
+        if (not patch.requires_human_review and not patch.ambiguities
+                and not getattr(self.llm, "last_extraction_fallback", False)):
+            from visa_agent.domain.employer_evidence import literal_employer_details
+
+            proposed_fields = {item.field for item in patch.updates}
+            literal_updates = [FactUpdate(field=field, value=value, source_excerpt=excerpt, confidence=1)
+                for field, value, excerpt in literal_employer_details(
+                    customer_event.body, employer_field if employer_question is not None else None)
+                if field not in proposed_fields]
+            # The same outer ownership/type guards still apply. A rejected model
+            # extraction or ambiguity is never silently cleared by this path.
+            grounded = validate_case_patch(customer_event, CasePatch(updates=literal_updates, ambiguities=[]))
+            if not grounded.requires_human_review and not grounded.ambiguities:
+                patch.updates.extend(grounded.updates)
+                literal_employer_fields = {item.field for item in grounded.updates}
         self._require_processing(case, processing_epoch)
         record_plan = plan_record_intake(
             customer_event, case.application_records, case_id=case.id,
@@ -570,6 +586,10 @@ class WorkflowService:
             self._render_and_commit(case, event, "blocked", processing_epoch)
             return case, False, "blocked"
         self._apply_patch(case, customer_event, patch.model_dump()["updates"])
+        for literal_fact_key in literal_employer_fields:
+            for evidence in case.active_evidence(literal_fact_key):
+                if evidence.source_event_id == event.id:
+                    evidence.extraction_method = "bounded_literal_employer_parser"
         update_deferred_questions(case, customer_event.body)
         # Model intent may pause an unanswered question, never mutate a fact or release gate.
         duration_answer = customer_event.body.strip().rstrip("。.!！").casefold()

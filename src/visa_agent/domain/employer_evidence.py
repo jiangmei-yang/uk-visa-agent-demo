@@ -52,19 +52,20 @@ def employer_detail_is_grounded(field: str, value: str | int | bool, excerpt: st
             return True
     # Preserve periods inside company names and phone numbers. A sentence boundary
     # requires punctuation followed by whitespace (or the end).
-    for sentence in re.split(r"[。;；\n!?！？]|\.(?:\s|$)", body):
+    for segment in re.finditer(r"(.+?)([。;；\n!?！？]|\.(?:\s|$)|$)", body):
+        sentence, punctuation = segment.group(1, 2)
         sentence = sentence.strip()
-        if not sentence or normal(sentence) not in needle:
+        if not sentence or punctuation in {"?", "？"}:
             continue
         for match in re.finditer(_MARKERS[field], sentence, re.I):
             detail = sentence[match.end():].strip().rstrip(" .。")
-            if normal(detail) != normal(value):
+            if normal(detail) != normal(value) or normal(sentence[match.start():]) not in needle:
                 continue
             # Check framing separately; a business name can contain ordinary
             # words also used in hypothetical sentences (e.g. "Maybe Ltd").
             if _NONCURRENT.search(sentence[:match.start()]):
                 continue
-            if re.search(r"[?？]", body) or re.search(r"[\"“”「」『』>]", sentence):
+            if re.search(r"[\"“”「」『』>]", sentence):
                 continue
             if re.match(r"(?:not\b|unknown\b|tbc\b|tbd\b|不确定|不知道|不是)", detail, re.I):
                 continue
@@ -72,3 +73,23 @@ def employer_detail_is_grounded(field: str, value: str | int | bool, excerpt: st
                 continue
             return True
     return False
+
+
+def literal_employer_details(body: str, verified_field: str | None = None) -> list[tuple[str, str, str]]:
+    """Return only literal grammar matches, never invented fields or permissions."""
+    candidates = []
+    if verified_field in EMPLOYER_FIELDS and employer_detail_is_grounded(
+            verified_field, body.strip(), body.strip(), body, sent_question_verified=True):
+        candidates.append((verified_field, body.strip(), body.strip()))
+    for segment in re.finditer(r"(.+?)([。;；\n!?！？]|\.(?:\s|$)|$)", body):
+        sentence = segment.group(1).strip()
+        if segment.group(2) in {"?", "？"}:
+            continue
+        for field, marker in _MARKERS.items():
+            for match in re.finditer(marker, sentence, re.I):
+                value = sentence[match.end():].strip()
+                if employer_detail_is_grounded(field, value, sentence, body):
+                    candidates.append((field, value, sentence))
+    # Two different values for a field are not a safe literal completion.
+    return list(dict.fromkeys(item for item in candidates
+        if len({candidate[1] for candidate in candidates if candidate[0] == item[0]}) == 1))

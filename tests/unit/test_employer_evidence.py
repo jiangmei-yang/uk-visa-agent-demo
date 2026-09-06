@@ -64,3 +64,27 @@ def test_full_model_guard_still_rejects_other_hypothetical_and_former_employers(
     patch = CasePatch(updates=[FactUpdate(field="employer_name", value="Northstar Ltd",
                      source_excerpt=body, confidence=1)], ambiguities=[])
     assert not validate_case_patch(event, patch).updates
+
+
+def test_literal_parser_retains_owner_with_correction_prefix_and_independent_question():
+    from visa_agent.domain.employer_evidence import literal_employer_details
+
+    assert literal_employer_details("My employer is Southstar Ltd. What is the next step?") == [
+        ("employer_name", "Southstar Ltd", "My employer is Southstar Ltd")]
+    assert literal_employer_details("更正一下，我的雇主的电话是+852 2000 9012。") == [
+        ("employer_phone", "+852 2000 9012", "更正一下，我的雇主的电话是+852 2000 9012")]
+    assert not employer_detail_is_grounded("employer_name", "Southstar Ltd",
+                                           "My employer is Southstar Ltd", "My employer is Southstar Ltd?")
+
+
+def test_current_employer_message_does_not_erase_an_explicit_model_review_signal():
+    from visa_agent.domain.models import InboundEvent
+    from visa_agent.llm.guarded import validate_case_patch
+    from visa_agent.llm.ports import CasePatch
+
+    event = InboundEvent(id="fictional", external_thread_id="fictional", channel="gmail",
+        sender="fictional@example.test", subject="Fictional", body="My employer is Northstar Ltd.",
+        received_at="2026-09-07T00:00:00+00:00")
+    result = validate_case_patch(event, CasePatch(updates=[], ambiguities=["Needs operator clarification"],
+                                                requires_human_review=True))
+    assert result.requires_human_review and result.ambiguities

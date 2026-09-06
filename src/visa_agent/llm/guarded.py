@@ -671,6 +671,13 @@ def _has_independent_applicant_scope(text: str) -> bool:
     for sentence in re.split(r"[.!?;。！？；\n]|\.(?:\s|$)", text):
         if not sentence.strip() or _HYPOTHETICAL_SCOPE.search(_normalise_evidence(sentence)):
             continue
+        from visa_agent.domain.employer_evidence import literal_employer_details
+
+        if literal_employer_details(sentence):
+            # A current own-employer statement is applicant scope. Preserve an
+            # explicit model review/ambiguity instead of treating it as wholly
+            # another person's case and discarding the review signal.
+            return True
         for clause in re.split(
             r"[,，]|\b(?:but|whereas|while)\b|\band(?=\s+(?:i|he|she|they)\b)|"
             r"但是|不过|不過|但|而(?=我|他|她)",
