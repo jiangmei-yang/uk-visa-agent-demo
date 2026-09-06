@@ -6,7 +6,10 @@ need an OpenAI key, Gmail login, or internet access after the first Docker build
 ## Start the Demo
 
 1. Install and open [Docker Desktop](https://www.docker.com/products/docker-desktop/).
-2. Download this GitHub repository as a ZIP and extract it.
+2. For the current development candidate, select the **codex/application-records**
+   branch on GitHub, then choose **Code → Download ZIP** and extract it. Downloading
+   the default `main` branch does not include the newer candidate repairs. This
+   branch is for assessment; it is not a claim that final acceptance is complete.
 3. On macOS, double-click `START_DEMO.command`. On Windows, double-click
    `START_DEMO_WINDOWS.bat`.
 4. Wait for the browser to open the review console. The first launch may take a few minutes.

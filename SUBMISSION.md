@@ -11,7 +11,8 @@
 
 ## 面试官先看这里（约 5 分钟）
 
-1. 下载仓库 ZIP 并解压，安装并打开 Docker Desktop。
+1. 在 GitHub 先选择 **codex/application-records** 分支，再下载 ZIP 并解压；
+   默认 `main` 不包含最新候选修复。安装并打开 Docker Desktop。
 2. Mac 双击 `START_DEMO.command`；Windows 双击 `START_DEMO_WINDOWS.bat`。
 3. 浏览器打开后，点击 **Try the offline workflow**（离线流程体验）。
 4. 依次发送初始邮件、补件邮件，查看冲突如何被发现和解除。
