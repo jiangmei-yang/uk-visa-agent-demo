@@ -4,6 +4,7 @@ import calendar
 from datetime import UTC, date, datetime
 
 from visa_agent.domain.address_evidence import address_detail_is_sufficient
+from visa_agent.domain.employer_evidence import employer_phone_is_sufficient
 from visa_agent.domain.locations import location_key
 from visa_agent.domain.models import (
     Case,
@@ -41,6 +42,9 @@ BASE_REQUIRED_FACTS = {
 }
 
 CONDITIONAL_CRITICAL_FACTS = {
+    "employer_name",
+    "employer_address",
+    "employer_phone",
     "annual_income_gbp",
     "sponsor_name",
     "sponsor_address",
@@ -62,6 +66,8 @@ def required_profile_facts(case: Case) -> set[str]:
     required = set(BASE_REQUIRED_FACTS)
     if case.profile.occupation_status in {"employed", "self_employed"}:
         required.add("annual_income_gbp")
+    if case.profile.occupation_status == "employed":
+        required.update({"employer_name", "employer_address", "employer_phone"})
     if case.profile.funding_source == "personal_sponsor":
         required.update({"sponsor_name", "sponsor_address", "sponsor_relationship", "sponsor_is_in_uk"})
     return required
@@ -70,7 +76,9 @@ def required_profile_facts(case: Case) -> set[str]:
 def profile_fact_complete(case: Case, field: str) -> bool:
     """Field completeness shared by the delivery gate and missing-question plan."""
     value = getattr(case.profile, field)
-    if field in {"current_address", "sponsor_address"}:
+    if field == "employer_phone":
+        return employer_phone_is_sufficient(value)
+    if field in {"current_address", "sponsor_address", "employer_address"}:
         return address_detail_is_sufficient(value)
     if field == "route_confirmed_standard_visitor":
         return bool(value)

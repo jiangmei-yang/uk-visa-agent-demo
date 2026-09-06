@@ -92,3 +92,52 @@ was changed, no PDF generated, and no review was approved on a customer's behalf
 Full development regression for this checkpoint: **5,048 passed / 2 deselected**,
 102.27s, one existing Starlette warning. The excluded old source-bound provider
 reports remain outstanding acceptance work, not passes. No deployment or push.
+
+## Subsequent conditional intake
+
+Employed applicants now enter the employer-name/address/telephone intake. The
+name identifies the entity for contact binding; this is a preparation-workflow
+choice, not a claim that every applicant faces an identical official form.
+Student/self-employed profiles do not acquire these employer requirements.
+Address minimum detail and bounded literal telephone syntax are checked at the
+completeness gate; missing or unknown values cannot satisfy it. Employer fields
+are included in critical-fact provenance checks.
+
+The planner asks one detail at a time and waits for an identified employer before
+asking for contact details. Only an actual latest SENT question with the same
+recipient/thread, current employer binding, latest question event and an earlier
+timezone-aware timestamp permits a short reply to supply that field. The model
+receives only that verified current field as requested context. A model cannot
+set the trusted context flag through its patch.
+
+Short “I need to check”/implemented Chinese equivalents defer the asked field,
+preserve source text/event and employer identity, and do not satisfy the gate.
+The remaining questions skip deferred fields. A company change or leaving employed
+status resets active employer-question and deferral state while retaining history.
+Names, addresses and phones can still be supplied by independent full current
+statements. No translation or inferred telephone prefix is introduced.
+
+Verification:
+
+- Sequential actual captured sends collect name, address and phone from short
+  replies, checking source event and field completeness without releasing a pack.
+- Wrong-employer, unsent and future-question contexts reject short answers.
+- Name/address/phone uncertainties persist without reasking, with contact
+  uncertainty cleared for a new employer and retained in historical records.
+- Focused evidence/workflow group: **36 passed** (0.79s); Ruff and strict Mypy
+  passed (93 modules).
+- Full development suite, collected before the final two contact-uncertainty
+  tests: **5,054 passed / 2 deselected**, 102.66s, one existing Starlette warning.
+  The two added tests are covered separately by the focused result above. The
+  stale source-bound consultant/financial provider reports remain outstanding.
+
+The bundled main demo uses a student profile, so it was not changed to invent an
+employer to satisfy the new conditional gate. Existing complete student fixtures
+also remain unchanged. No new model calls, live Gmail traffic, approvals, runtime
+changes, PDF authoring or deployment occurred.
+
+Still required: broader natural expressions and explicit field corrections,
+real-model long-dialogue evidence, applicability exceptions/multiple or unnamed
+job changes, source-bound employer matching in new letters, guided human review,
+and inapplicable/deferred PDF/JSON output QA. This checkpoint is not complete
+employer-service or overall release acceptance.

@@ -812,7 +812,8 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
         if update.field in {"employer_name", "employer_address", "employer_phone"}:
             from visa_agent.domain.employer_evidence import employer_detail_is_grounded
 
-            if not employer_detail_is_grounded(update.field, update.value, update.source_excerpt, latest_reply_text(event.body)):
+            if not employer_detail_is_grounded(update.field, update.value, update.source_excerpt, latest_reply_text(event.body),
+                    sent_question_verified=event.known_profile.get("_employer_question_verified") == update.field):
                 continue
         if update.field == "current_address_duration":
             from visa_agent.domain.residence_duration import residence_duration_is_grounded

@@ -1,9 +1,15 @@
 """Fictional current-employer persistence and old-employer invalidation."""
 
+import pytest
 from test_consultant_value import Conversation, _patch
+from test_next_step_workflow import _seed
 
 from visa_agent.domain.models import Document, DocumentStatus, Evidence
-from visa_agent.domain.rules import build_requirements
+from visa_agent.domain.rules import (
+    build_requirements,
+    profile_fact_complete,
+    required_profile_facts,
+)
 from visa_agent.storage.sqlite import SQLiteStore
 
 
@@ -121,3 +127,102 @@ def test_same_employer_restatement_does_not_invalidate_existing_letter(tmp_path)
     result = dialogue.turn(body, _patch(updates=[("employer_name", "Northstar Ltd", body)]))
     assert result.case.documents[0].status == DocumentStatus.ACCEPTED_FOR_REVIEW
     assert not result.case.employment_document_reviews
+
+
+def asking(tmp_path):
+    dialogue = Conversation(tmp_path)
+    first = dialogue.turn("Hello.", _patch())
+    store = SQLiteStore(dialogue.path)
+    try:
+        case = store.get_case(first.case.id)
+        seed = _seed()
+        case.profile = seed.profile
+        case.deferred_fields = seed.deferred_fields
+        case.profile.occupation_status = "employed"
+        case.profile.annual_income_gbp = 60000  # explicit unrelated synthetic premise
+        store.save_case(case)
+    finally:
+        store.close()
+    asked = dialogue.turn("What is the next step?", _patch())
+    assert asked.case.last_requested_fields == ["employer_name"], asked.body
+    return dialogue, asked
+
+
+def test_actual_sent_questions_collect_three_short_details_sequentially(tmp_path):
+    dialogue, asked = asking(tmp_path)
+    assert {"employer_name", "employer_address", "employer_phone"} <= required_profile_facts(asked.case)
+    for field, value, next_field in [
+        ("employer_name", "Northstar Ltd", "employer_address"),
+        ("employer_address", "12 Example Road, Hong Kong", "employer_phone"),
+        ("employer_phone", "+852 2000 1234", None),
+    ]:
+        reply = dialogue.turn(value, _patch(updates=[(field, value, value)]))
+        assert getattr(reply.case.profile, field) == value
+        assert profile_fact_complete(reply.case, field)
+        assert reply.model.events[0].requested_fields == [field]
+        assert reply.case.active_evidence(field)[0].source_event_id == reply.event.id
+        if next_field:
+            assert reply.case.last_requested_fields == [next_field], reply.body
+        assert not reply.case.final_summary_confirmed and reply.case.delivery_path is None
+
+
+def test_unknown_employer_name_does_not_trigger_contact_questions_or_satisfy_gate(tmp_path):
+    dialogue, asked = asking(tmp_path)
+    reply = dialogue.turn("I need to check.", _patch())
+    assert "employer_name" in reply.case.deferred_fields
+    assert not {"employer_name", "employer_address", "employer_phone"}.intersection(reply.case.last_requested_fields)
+    assert reply.case.employer_detail_deferrals[-1]["question_event_id"] == asked.event.id
+    assert not profile_fact_complete(reply.case, "employer_name")
+    later = dialogue.turn("Thanks.", _patch())
+    assert "employer_name" in later.case.deferred_fields
+    assert "formal name of your current employer" not in later.body
+
+
+@pytest.mark.parametrize("invalid", ["unsent", "future", "wrong_employer"])
+def test_old_or_unsent_question_does_not_authorize_short_answer(tmp_path, invalid):
+    dialogue, asked = asking(tmp_path)
+    store = SQLiteStore(dialogue.path)
+    try:
+        if invalid == "wrong_employer":
+            case = store.get_case(asked.case.id)
+            case.employer_question_context["employer_name"] = "Other company"
+            store.save_case(case)
+        else:
+            sql = ("UPDATE outbox SET status='PENDING' WHERE case_id=? AND event_id=?" if invalid == "unsent"
+                   else "UPDATE outbox SET sent_at='2026-09-04T10:04:00+00:00' WHERE case_id=? AND event_id=?")
+            store.connection.execute(sql, (asked.case.id, asked.event.id))
+            store.connection.commit()
+    finally:
+        store.close()
+    reply = dialogue.turn("Northstar Ltd", _patch(updates=[("employer_name", "Northstar Ltd", "Northstar Ltd")]))
+    assert reply.case.profile.employer_name is None
+    assert reply.model.events[0].known_profile["_employer_question_verified"] is None
+
+
+def test_employer_requirement_is_conditional_and_phone_placeholder_is_incomplete(tmp_path):
+    _, asked = asking(tmp_path)
+    for occupation in ("student", "self_employed"):
+        asked.case.profile.occupation_status = occupation
+        assert not {"employer_name", "employer_address", "employer_phone"}.intersection(required_profile_facts(asked.case))
+    asked.case.profile.employer_phone = "unknown"
+    assert not profile_fact_complete(asked.case, "employer_phone")
+
+
+@pytest.mark.parametrize("field", ["employer_address", "employer_phone"])
+def test_contact_uncertainty_is_bound_to_employer_and_cleared_on_change(tmp_path, field):
+    dialogue, _ = asking(tmp_path)
+    dialogue.turn("Northstar Ltd", _patch(updates=[("employer_name", "Northstar Ltd", "Northstar Ltd")]))
+    if field == "employer_phone":
+        address = "12 Example Road, Hong Kong"
+        dialogue.turn(address, _patch(updates=[("employer_address", address, address)]))
+    deferred = dialogue.turn("I need to check.", _patch())
+    assert field in deferred.case.deferred_fields
+    assert not profile_fact_complete(deferred.case, field)
+    assert deferred.case.employer_detail_deferrals[-1]["employer_name"] == "Northstar Ltd"
+    later = dialogue.turn("Thanks.", _patch())
+    assert field in later.case.deferred_fields
+    assert field not in later.case.last_requested_fields
+    body = "My employer is Southstar Ltd."
+    changed = dialogue.turn(body, _patch(updates=[("employer_name", "Southstar Ltd", body)]))
+    assert field not in changed.case.deferred_fields
+    assert changed.case.employer_detail_deferrals[-1]["employer_name"] == "Northstar Ltd"

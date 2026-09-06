@@ -346,7 +346,26 @@ class WorkflowService:
             if len(matches) == 1 and matches[0]["payload"] == latest_sent_payload:
                 sponsor_question = matches[0]
         customer_event.known_profile["_sponsor_address_question_verified"] = sponsor_question is not None
-        if sponsor_question is not None:
+        employer_question = None
+        employer_field = prior_last_requested[0] if len(prior_last_requested) == 1 else ""
+        employer_context = {"field": employer_field, "employer_name": case.profile.employer_name or ""}
+        if (employer_field in {"employer_name", "employer_address", "employer_phone"}
+                and case.profile.occupation_status == "employed"
+                and case.employer_question_context == employer_context
+                and (employer_field == "employer_name" or case.profile.employer_name)):
+            matches = [row for row in prior_outbox if row == latest_sent_row
+                       and row["status"] == "SENT" and _sent_before_inbound(row.get("sent_at"), event.received_at)
+                       and row["event_id"] in case.question_event_ids.get(employer_field, [])[-1:]
+                       and row["recipient"] == case.applicant_contact
+                       and row["external_thread_id"] == case.external_thread_id
+                       and any(text in row["payload"] for text in
+                               (QUESTION_TEXT_EN[employer_field], QUESTION_TEXT_ZH[employer_field]))]
+            if len(matches) == 1:
+                employer_question = matches[0]
+        customer_event.known_profile["_employer_question_verified"] = employer_field if employer_question else None
+        if employer_question is not None:
+            customer_event.requested_fields = [employer_field]
+        elif sponsor_question is not None:
             # Only this question was in the last actual reply. Older unanswered
             # fields remain in case memory, but must not compete as this turn's
             # requested extraction context for a short answer.
@@ -554,6 +573,16 @@ class WorkflowService:
         update_deferred_questions(case, customer_event.body)
         # Model intent may pause an unanswered question, never mutate a fact or release gate.
         duration_answer = customer_event.body.strip().rstrip("。.!！").casefold()
+        if (employer_question is not None and case.employer_question_context == employer_context
+                and getattr(case.profile, employer_field) is None
+                and duration_answer in {"不知道", "暂时不知道", "不清楚", "不确定", "需要问一下",
+                                        "i don't know", "i need to check", "not sure", "i'm not sure"}):
+            if employer_field not in case.deferred_fields:
+                case.deferred_fields.append(employer_field)
+            case.latest_deferred_fields.append(employer_field)
+            case.employer_detail_deferrals.append({"source_event_id": event.id,
+                "source_excerpt": customer_event.body.strip(), "question_event_id": employer_question["event_id"],
+                **employer_context})
         if (sponsor_question is not None and _sponsor_identity(case) == sponsor_identity
                 and case.profile.sponsor_address is None
                 and duration_answer in {"不知道", "暂时不知道", "不清楚", "不确定", "需要问一下",
@@ -976,6 +1005,9 @@ class WorkflowService:
             if "sponsor_address" in case.last_requested_fields:
                 case.sponsor_address_question_identity = _sponsor_identity(case)
             for field in case.last_requested_fields:
+                if field in {"employer_name", "employer_address", "employer_phone"}:
+                    case.employer_question_context = {"field": field, "employer_name": case.profile.employer_name or ""}
+            for field in case.last_requested_fields:
                 delivered_ids = [value for value in case.question_event_ids.get(field, []) if value in sent_events]
                 case.question_event_ids[field] = list(dict.fromkeys(delivered_ids[-1:] + [event.id]))
         else:
@@ -1123,6 +1155,9 @@ class WorkflowService:
                 for old in case.active_evidence(field):
                     old.superseded = True
         if employer_changed or left_employment:
+            case.employer_question_context = {}
+            case.deferred_fields = [field for field in case.deferred_fields
+                                    if field not in {"employer_name", "employer_address", "employer_phone"}]
             for document in case.documents:
                 if (document.kind == "employment_letter"
                         and document.status == DocumentStatus.ACCEPTED_FOR_REVIEW

@@ -195,6 +195,9 @@ def next_fact_questions(case: Case) -> list[str]:
         "uk_accommodation",
         "estimated_trip_cost_gbp",
         "annual_income_gbp",
+        "employer_name",
+        "employer_address",
+        "employer_phone",
         "current_address",
         "current_address_duration",
         "has_serious_history",
@@ -212,6 +215,7 @@ def next_fact_questions(case: Case) -> list[str]:
         field
         for field in missing
         if field not in case.deferred_fields
+        and (field not in {"employer_address", "employer_phone"} or bool(case.profile.employer_name))
         and not explicitly_answers_current_enum(
             latest_reply_text(case.latest_customer_message),
             field,
@@ -1031,6 +1035,9 @@ QUESTION_TEXT_ZH = {
     "sponsor_relationship": "资助人和你是什么关系？",
     "sponsor_name": "资助人的姓名是什么？请按对方证件或银行材料上的写法告诉我。",
     "sponsor_address": "资助人现在的完整地址是什么？暂时不清楚的话，可以先向对方确认。",
+    "employer_name": "你现在的雇主名称是什么？按公司正式名称告诉我就好。",
+    "employer_address": "这家雇主的完整地址是什么？不清楚的话可以先向人事确认。",
+    "employer_phone": "这家雇主的联系电话是什么？暂时不清楚的话可以先向人事确认，不用猜。",
     "sponsor_is_in_uk": "这位资助人目前住在英国吗？回答“在”或“不在”就可以；如果在，后面我会再核对其英国身份材料。",
     "uk_accommodation": "在英国准备住哪里？还没确定的话也可以直接说。",
     "estimated_trip_cost_gbp": "这趟旅行大约打算花多少英镑？先给一个估计就好。",
@@ -1061,6 +1068,9 @@ QUESTION_TEXT_EN = {
     "sponsor_relationship": "What is your relationship to the person sponsoring the trip?",
     "sponsor_name": "What is the sponsor's full name, as shown on their ID or financial evidence?",
     "sponsor_address": "What is your sponsor's full current address? If you are unsure, you can check with them first.",
+    "employer_name": "What is the formal name of your current employer?",
+    "employer_address": "What is this employer's full address? You can check with HR if you are unsure.",
+    "employer_phone": "What is this employer's contact phone number? If you are unsure, check with HR rather than guess.",
     "sponsor_is_in_uk": (
         "Does this sponsor currently live in the UK? A simple yes or no is fine; if yes, "
         "we will check their UK status evidence later."
@@ -1767,6 +1777,9 @@ def blocked_customer_message(case: Case) -> str:
         if "sponsor_address" in case.latest_deferred_fields:
             sections.append("资助人的地址先留待确认，不用猜。问清楚后回复我就好，我们先继续准备其他资料。" if zh else
                             "We'll leave your sponsor's address for checking. Ask them when convenient and send it later; we can prepare the other details in the meantime.")
+        if {"employer_name", "employer_address", "employer_phone"}.intersection(case.latest_deferred_fields):
+            sections.append("这项雇主资料先记为待核实，不用猜；方便时向人事确认后再补，我们先准备其他资料。" if zh else
+                            "I'll leave that employer detail for checking. Ask HR when convenient and send it later; we can prepare the other information meanwhile.")
     elif (case.deferred_fields and not questions and not issues and not documents and not case.customer_answers
           and not case.pending_question_fields
           and not quiet_preparation_resume(case)

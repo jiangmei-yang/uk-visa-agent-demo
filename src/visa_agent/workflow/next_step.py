@@ -35,6 +35,9 @@ _DETAILS_EN = {
     "sponsor_name": "your sponsor's name", "sponsor_relationship": "your relationship with your sponsor",
     "sponsor_is_in_uk": "whether your sponsor lives in the UK",
     "sponsor_address": "your sponsor's current address",
+    "employer_name": "your current employer's formal name",
+    "employer_address": "your current employer's full address",
+    "employer_phone": "your current employer's contact phone number",
     "has_serious_history": "any relevant refusal or immigration history",
     "planned_arrival_date": "your intended arrival date", "planned_departure_date": "your intended departure date",
 }
