@@ -145,6 +145,37 @@ the material fingerprint intact while retaining replay bookkeeping. Saved raw
 outputs have a pinned offline workflow/captured-SENT replay; this repair is not
 retroactively a passing provider run. A new source-bound run is still required.
 
+### Second real-model probe (also failed, retained)
+
+`eval_output/application_record_intake_2026-09-06-v2.json` binds source `847bf43`;
+SHA-256 `27a563296e3129cb1996ebd2b1c40da1d3c3f13619d865810a1061c5662db93d`.
+The first turn passed. The second failed strict proposal parsing: the provider
+echoed an old purpose with a current excerpt that did not contain it, and composed
+a target label from several remembered values. The workflow safely entered review;
+turns 3/4 made no provider calls. Two calls consumed 9,964 input / 825 output /
+10,789 total tokens. Combined v1/v2 usage is five calls and 26,787 tokens, not eight
+calls or two successful four-turn journeys.
+
+The boundary has now been corrected structurally, not by accepting false evidence:
+model text is represented as **untrusted proposed text**; only the planner can
+construct the domain's literal `QuotedText`. A correction target is resolved from
+its current verbatim source quote against case-local identifying values; a model
+hint, concatenated label or guessed ID cannot select a target. Tied best matches
+remain ambiguous. Fields identical to the uniquely selected existing record are
+ignored as echoes and keep their original sources. Every genuinely new/changed
+field still needs current literal evidence and role checks before the entire batch
+commits. Unsupported new values, negated values, an all-unsupported correction,
+or an explicitly targeted field represented only by an unsupported old echo all
+require review. One valid change cannot hide another unsupported requested change.
+
+The original v2 raw output now has an offline actual-workflow/captured-SENT replay,
+including exact corrected period and unchanged country/purpose provenance. Negative
+tests cover malicious target hints, cross-entry ambiguity and unsupported changes.
+No old report was rewritten. This repair still needs a fresh source-bound provider
+run and the complete intake/release work above. The pre-boundary-change development
+regression was **4,765 passed / 2 deselected** (100.52s); the new boundary is being
+regressed separately.
+
 ## Rendering defect discovered and repaired
 
 The first Chinese QA render (`output/pdf/application-records-foundation-v1`)

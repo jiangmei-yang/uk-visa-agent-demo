@@ -102,10 +102,10 @@ def test_correction_uses_one_existing_target_preserves_other_fields_and_replay()
     updated = next(iter(result.ledger.current().values()))
     assert updated.revision == 2 and updated.fields["period"].value == "June 2023"
     assert updated.fields["country"].source_event_id == "record-intake-1"
-    # Workflow event replay is intercepted before extraction/planning. A direct
-    # changed interpretation must not silently overwrite the ledger either.
+    # Workflow replay is intercepted before extraction. A direct planner replay
+    # also cannot create a new revision from now-unchanged values.
     repeated = plan(body, [correction], ledger=result.ledger, identifier="record-intake-2")
-    assert repeated.requires_review and not repeated.changed
+    assert not repeated.changed and repeated.ledger == result.ledger
 
 
 def test_two_trips_to_same_country_are_not_silently_guessed_by_a_country_reference():
@@ -234,3 +234,46 @@ def test_negated_uncertainty_is_not_stored_as_a_deferral():
     body = "I am not unsure about my travel history."
     result = plan(body, assertions=[assertion(body)])
     assert not result.changed and result.ledger is None
+
+
+def test_model_target_hint_cannot_override_the_literal_customer_reference():
+    one, two = "I visited Japan in May 2023.", "I visited Korea in June 2024."
+    ledger = plan(one + " " + two, [proposed(one), proposed(two, country="Korea", period="June 2024")]).ledger
+    body = "Please correct the Korea trip to July 2024."
+    command = proposed(body, action="amend", reference="Korea", fields={"period": "July 2024"})
+    command.target_reference.value = "Japan May 2023"  # untrusted hint, not an identifier
+    result = plan(body, [command], ledger=ledger, identifier="record-intake-2")
+    assert result.changed and not result.requires_review
+    trips = {r.fields["country"].value: r for r in result.ledger.current().values()}
+    assert trips["Japan"].fields["period"].value == "May 2023" and trips["Japan"].revision == 1
+    assert trips["Korea"].fields["period"].value == "July 2024" and trips["Korea"].revision == 2
+
+
+def test_unverified_new_field_is_not_accepted_when_mixed_with_a_grounded_date_correction():
+    first = "I visited Japan in May 2023."
+    ledger = plan(first, [proposed(first)]).ledger
+    body = "Please correct the Japan trip to June 2023."
+    command = proposed(body, action="amend", reference="Japan", fields={"period": "June 2023", "purpose": "business"})
+    command.record.fields.purpose.source_excerpt = "Japan trip"
+    result = plan(body, [command], ledger=ledger, identifier="record-intake-2")
+    assert result.requires_review and not result.changed and result.ledger == ledger
+
+
+def test_echoing_only_an_unsupported_old_value_cannot_silently_drop_a_requested_correction():
+    first = "I visited Japan in May 2023."
+    ledger = plan(first, [proposed(first)]).ledger
+    body = "Please correct the Japan trip to June 2023."
+    command = proposed(body, action="amend", reference="Japan", fields={"period": "May 2023"})
+    command.record.fields.period.source_excerpt = "Japan trip"
+    result = plan(body, [command], ledger=ledger, identifier="record-intake-2")
+    assert result.requires_review and not result.changed
+
+
+def test_one_valid_change_does_not_hide_an_explicitly_requested_but_ungrounded_other_change():
+    first = "I visited Japan in May 2023 for tourism."
+    ledger = plan(first, [proposed(first, fields={"country": "Japan", "period": "May 2023", "purpose": "tourism"})]).ledger
+    body = "Please correct the Japan trip period to June 2023 and purpose to business."
+    command = proposed(body, action="amend", reference="Japan", fields={"period": "June 2023", "purpose": "tourism"})
+    command.record.fields.purpose.source_excerpt = "Japan trip"
+    result = plan(body, [command], ledger=ledger, identifier="record-intake-2")
+    assert result.requires_review and not result.changed and result.ledger == ledger

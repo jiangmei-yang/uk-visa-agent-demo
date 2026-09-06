@@ -8,10 +8,13 @@ No function here grants processing consent, completeness approval or release.
 import re
 from dataclasses import dataclass
 
+from pydantic import TypeAdapter
+
 from visa_agent.domain.application_records import (
     ApplicationRecordLedger,
     CollectionDeclaration,
     RecordCommand,
+    RecordInput,
     apply_record_commands,
 )
 from visa_agent.domain.models import InboundEvent
@@ -72,6 +75,7 @@ _COMPLETE_DECLARATION = {
     "travel": re.compile(r"\b(?:this|that)\s+is\s+my\s+(?:full|complete)\s+travel\s+history\b|\bmy\s+travel\s+history\s+is\s+(?:complete|exhaustive)\b|(?:这|這|以上)(?:就)?是我的?(?:全部|完整)(?:旅行|出境)(?:记录|記錄|历史|歷史)|我的?(?:旅行|出境)(?:记录|記錄|历史|歷史)(?:已经|已經|已)?列全", re.I),
     "uk_contact": re.compile(r"\b(?:this|that)\s+is\s+my\s+(?:full|complete)\s+list\s+of\s+UK\s+contacts\b|\bmy\s+UK\s+contacts\s+list\s+is\s+complete\b|(?:这|這|以上)(?:就)?是我的?全部(?:英国|英國)(?:联系人|聯絡人)|我的?(?:英国|英國)(?:联系人|聯絡人)(?:已经|已經|已)?列全", re.I),
 }
+_RECORD_INPUT: TypeAdapter[RecordInput] = TypeAdapter(RecordInput)
 
 
 @dataclass(frozen=True)
@@ -200,32 +204,74 @@ def plan_record_intake(
                 raise ValueError("Application record statement needs confidence/ownership review")
             if proposal.action == "add" and _FUTURE_OR_NEGATED.search(context):
                 continue
+            target = None
             fields = proposal.record.fields.supplied()
+            if proposal.action != "add":
+                reference = proposal.target_reference
+                if reference is None or not reference.source_excerpt.strip() or reference.source_excerpt not in proposal.source_excerpt:
+                    raise ValueError("Application record correction has no grounded target")
+                if (proposal.action == "withdraw") != bool(_WITHDRAW.search(context)):
+                    raise ValueError("Application record correction action does not match its source")
+                if re.search(r"\b(?:do not|don't)\s+(?:remove|delete|correct|change)|(?:不要|别|別)(?:删|刪|改|撤)", context, re.I):
+                    raise ValueError("Application record correction contains a conflicting instruction")
+                identifying = {"country", "period"} if kind == "travel" else {"name", "relationship", "address"}
+                # The model's `value` is only an untrusted hint and has zero
+                # authority. Resolve literal words in the current quote against
+                # case-local records; equal best matches remain ambiguous.
+                scored = []
+                for candidate in original.current().values():
+                    if candidate.kind != kind:
+                        continue
+                    matches = [fact for name, fact in candidate.fields.items() if name in identifying
+                               and re.search(r"(?<![A-Za-z])" + re.escape(fact.value) + r"(?![A-Za-z])",
+                                             reference.source_excerpt)]
+                    if any(re.search(r"(?:\bnot\s+|不是|并非|並非)" + re.escape(fact.value), context, re.I) for fact in matches):
+                        raise ValueError("Negated record reference cannot select a correction target")
+                    if matches:
+                        scored.append((len(matches), candidate))
+                best = max((score for score, _ in scored), default=0)
+                targets = [candidate for score, candidate in scored if score == best]
+                if len(targets) != 1:
+                    raise ValueError("Application record correction needs a unique existing target")
+                target = targets[0]
+                if any(re.search(r"(?:\bnot\s+|不是|并非|並非|不要)" + re.escape(value.value),
+                                 context, re.I) for value in fields.values()):
+                    raise ValueError("Negated application record value cannot be accepted")
+                # Drop only exact unchanged echoes from an already-grounded
+                # target. They cannot replace their original source. Any new or
+                # changed field still needs literal current-message evidence.
+                unsupported_echoes = [name for name, value in fields.items()
+                                      if name in target.fields and target.fields[name].value == value.value
+                                      and value.value not in value.source_excerpt]
+                cues = {"country": r"\bcountry\b|国家|國家", "period": r"\b(?:date|time|period)\b|时间|時間|日期",
+                        "purpose": r"\bpurpose\b|目的", "name": r"\bname\b|姓名|名字",
+                        "relationship": r"\brelationship\b|关系|關係", "address": r"\baddress\b|地址",
+                        "phone": r"\b(?:phone|telephone)\b|电话|電話", "passport_number": r"\bpassport\b|护照|護照",
+                        "support_details": r"\b(?:support|host|pay)\b|资助|資助|接待"}
+                if any(re.search(cues[name], context, re.I) for name in unsupported_echoes):
+                    raise ValueError("An explicitly targeted field has only an unsupported old-value echo")
+                fields = {name: value for name, value in fields.items()
+                          if name not in target.fields or target.fields[name].value != value.value}
+                if proposal.action == "amend" and not fields:
+                    if unsupported_echoes:
+                        raise ValueError("Correction has no source-grounded changed field")
+                    continue
             if any(value.source_excerpt not in proposal.source_excerpt for value in fields.values()):
                 raise ValueError("Application record fields span different source statements")
-            if kind == "travel" and not _travel_field_roles(proposal):
+            trusted = _RECORD_INPUT.validate_python({"kind": kind, "fields": {
+                name: value.model_dump() for name, value in fields.items()}})
+            checked_proposal = proposal.model_copy(deep=True)
+            checked_proposal.record.fields = type(proposal.record.fields).model_validate({
+                name: value.model_dump() for name, value in fields.items()})
+            if kind == "travel" and not _travel_field_roles(checked_proposal):
                 raise ValueError("Application travel fields need role or separate-entry review")
             if any(re.search(r"(?:\bnot\s+|不是|并非|並非|不要)" + re.escape(value.value),
                              context, re.I) for value in fields.values()):
                 raise ValueError("Negated application record value cannot be accepted")
-            if proposal.action == "add":
-                commands.append(RecordCommand(action="add", record=proposal.record))
-                continue
-            reference = proposal.target_reference
-            if reference is None or reference.source_excerpt not in proposal.source_excerpt:
-                raise ValueError("Application record correction has no grounded target")
-            if (proposal.action == "withdraw") != bool(_WITHDRAW.search(context)):
-                raise ValueError("Application record correction action does not match its source")
-            if re.search(r"\b(?:do not|don't)\s+(?:remove|delete|correct|change)|(?:不要|别|別)(?:删|刪|改|撤)", context, re.I):
-                raise ValueError("Application record correction contains a conflicting instruction")
-            targets = [record for record in original.current().values() if record.kind == kind
-                       and any(reference.value == value.value for value in record.fields.values())]
-            if len(targets) != 1:
-                raise ValueError("Application record correction needs a unique existing target")
-            target = targets[0]
-            commands.append(RecordCommand(action=proposal.action, record=proposal.record,
-                target_id=target.record_id, expected_revision_digest=target.digest(),
-                change_excerpt=proposal.source_excerpt))
+            commands.append(RecordCommand(action=proposal.action, record=trusted,
+                target_id=target.record_id if target else None,
+                expected_revision_digest=target.digest() if target else None,
+                change_excerpt=proposal.source_excerpt if target else None))
         for assertion in declarations:
             context = _source_context(body, assertion.source_excerpt)
             if context is None or _NONCURRENT.search(context):

@@ -1,0 +1,539 @@
+{
+  "scope": "fictional multi-turn development scenarios; real DeepSeek extraction; captured transport",
+  "mailbox_calls": 0,
+  "real_documents": 0,
+  "maximum_model_calls": 4,
+  "model_retries": 0,
+  "requested_model": "deepseek-v4-flash",
+  "check_contract": "consultant-journey-v5",
+  "evaluation_date": "2026-09-06",
+  "run_started_at": "2026-09-06T12:27:04.387397+00:00",
+  "git_head": "847bf431afa9563faba67edaa2bbb846fe5d3fc2",
+  "source_sha256": {
+    "scripts/consultant_journey_probe.py": "573ed841f8c531322d8b684db6f1c9d8bbd2dd584a81abe04e3cf16bb2cc13d1",
+    "src/visa_agent/__init__.py": "a3350ee5bcd581ebdb734128829da5e6772eae8346faaa85e2bf608d27d95149",
+    "src/visa_agent/case_data.py": "06dcf00b0073b70b25468b7a0da891942a3ef45bcbd52e141194628b4823951c",
+    "src/visa_agent/channels/__init__.py": "4a9e7ea09deca6b1c25e049b68a2c34aadbd57475fc072d0e198086255ba173e",
+    "src/visa_agent/channels/automatic_reply.py": "cc01815b932bb60779569038a74fc37b97e63b2f6e54ab944832912cdd5898f0",
+    "src/visa_agent/channels/email_fixture.py": "ee68e7eb2aa4a312dc6846d159bd45574b4faf4e1ad623cb5d17133ff1b97877",
+    "src/visa_agent/channels/email_ingestion.py": "fbddd383aea363fbf97f1f82fbc711b99853b9e48ab584bd5249fe888b1cb12b",
+    "src/visa_agent/channels/gmail.py": "873de8bead906bfe4edf766440f274cf152a1d3a123c31c6c7b0e371397e0ab6",
+    "src/visa_agent/channels/gmail_auth.py": "ba7277ade4bf0f5485e36ef9ce7f7c46d7b36146fb601d0d9f9a808eb9d7e89c",
+    "src/visa_agent/channels/gmail_intake.py": "dcb0cb51699e86bad44ca9d37744bc92d53c757f6a65d5bab1973f4fd5a9f3d8",
+    "src/visa_agent/channels/gmail_pipeline.py": "3ec2aaf045a78046f59c98b1491ed806a4fc24c39007255c4c0ed02ea16f41c3",
+    "src/visa_agent/channels/gmail_sync.py": "00ecb0c5e22f56abcc411815199369fa2d6fa759bff38555cf9503bbda183342",
+    "src/visa_agent/channels/inbound_worker.py": "d57f44edfaae82ee31309bdb31ada06a3be4e25856e464277bdfa60d9bbc2370",
+    "src/visa_agent/channels/outbound.py": "d226e177668a05333a843fef97fd8d1b543b489e4699b29a5a7b10f789fd4af3",
+    "src/visa_agent/channels/outbound_fixture.py": "f83c59dfe9013d59d3fc336061931c8ac5b9d5dae6c87a84a3200bc2edfa2d82",
+    "src/visa_agent/channels/runtime_lock.py": "c03396b333e6627731f8a61b6b14438ff3d6c55370759fdd39af46a45bd26fb5",
+    "src/visa_agent/channels/twilio_receiver.py": "a4267a306c01d2757657d73d0dff1f1c9f06237e8df4e9fb1f028fc705b13600",
+    "src/visa_agent/channels/twilio_status.py": "f75351716055ba4a5c001d00e76c64187589eb462c05684f7c73dc96c4f80271",
+    "src/visa_agent/channels/twilio_whatsapp.py": "adf1233212ffd745242360085fbe087cc2846a42480f5bebbbe0d52e77b18575",
+    "src/visa_agent/channels/whatsapp_service.py": "abe8ffa7cb2ddc50cb95f8500c5f06a0dc375c4cbd7db17d644bba910b54933b",
+    "src/visa_agent/cli.py": "e44e9ddcc0c53a0c2217b95c5b2809b16dc5411cc4b5d41405e867ed9b7e506d",
+    "src/visa_agent/config.py": "a00bd6949e4c747ba19f9b00e28fdf3efdcca1eb237e6f0b1f0f05b92d094516",
+    "src/visa_agent/delivery/__init__.py": "c228e85c7a38888d18198814f142ac9a6262de6ee17ccc377066e308c1df9735",
+    "src/visa_agent/delivery/fonts.py": "0cb75969466a07a71f1110ee0f3d84a8a18bad096f5db8ccf61d6395d2517587",
+    "src/visa_agent/delivery/pack.py": "25c576dd591c23b34b7719587fd6de2fc51723264ee875af807fba99f627e789",
+    "src/visa_agent/demo.py": "6b09553b1dc0a716833e6bf62753c865dc912fc6e45c5e8aa91f96b8022d6402",
+    "src/visa_agent/documents/__init__.py": "dae296ed7a7312a7792c2dc59d13be7b6905c5daf4b728d5ca37c80224fed7b1",
+    "src/visa_agent/documents/natural.py": "734f5a4637a6091b1f8cc2f36dbb48745a72661cf202307e22125d018f7e3af4",
+    "src/visa_agent/documents/processor.py": "e5230265b42a9073f4264d2056e35ae8eca0bdecf55da2d99bebfcddce92efdc",
+    "src/visa_agent/documents/samples.py": "a6d31928403c7a4a99e51e85c38ab518fdb768d87fb4136d46c84c90f2167e21",
+    "src/visa_agent/domain/__init__.py": "d5cd2e4964d34671b4b71a2c0796c5985b105b0fc0a9b5c72082c90e3625cecd",
+    "src/visa_agent/domain/address_evidence.py": "f4989295eebd670c5925637098b67f3f7006b4ac016537543ea16681cee30792",
+    "src/visa_agent/domain/application_records.py": "4a5a49c683c39c3e6d7c2c5c80392d8135fc09e5725daa0a6fba5e88c588f180",
+    "src/visa_agent/domain/date_evidence.py": "efeae43509fc7985bf6127f855b2cd8c438f76c3759614bb15eef3269f9e9825",
+    "src/visa_agent/domain/financial_evidence.py": "7b657ed1189167306816c1e981de6268b76500aadc11256e14dba1a27e82532d",
+    "src/visa_agent/domain/financial_review.py": "19dbb5d2e73d95cd53f00de76364822dfac196217d526d08bf30a33e8cde3606",
+    "src/visa_agent/domain/locations.py": "2e831bd608afd399ac648b4bca05a7c5e009f7266666e22bdd9312bcf3651f00",
+    "src/visa_agent/domain/models.py": "23f75e1c31e0a60d932630321b25144b9ef78a7c6d0a9b03af8c61e226076064",
+    "src/visa_agent/domain/policy.py": "98103fa5d39e67df9e50a7364e43a11f96b98be1bc04e4ffc40e98422f331e5b",
+    "src/visa_agent/domain/rules.py": "0966c238393fa3fc49e9504f20eaa00048e4570b4526eadd9f9add4c743aab32",
+    "src/visa_agent/domain/sponsor_evidence.py": "7fdbc968a003c81cc9132e4854511d24504c000c935dab1738debe3e75e63e48",
+    "src/visa_agent/lab.py": "6af7780373d780dfd95a26e65409f9aac20164218bf90eec733e4aea6eb14570",
+    "src/visa_agent/llm/__init__.py": "5607d3f7ccee9ab958fec329b1f27093830199ec9c38a45446c93e4537fa7c42",
+    "src/visa_agent/llm/application_records.py": "acca26b5fd5b849f309b01573d7dc63503f7a534f416ee8facb65221800c9178",
+    "src/visa_agent/llm/deepseek_client.py": "9b62f672b3bec365b245b0144405155113936780812f26472a54053deef19222",
+    "src/visa_agent/llm/evaluation.py": "6393a9f5bc43f43ae5c5bad4e8e813a5aafe87acd1ff0cd454de6f59972a9f26",
+    "src/visa_agent/llm/guarded.py": "b2f8ce53e280182c961194092e22307db77072cacb6bcbfe7f8586f3c45ba8cd",
+    "src/visa_agent/llm/offline.py": "37d73883bfbd5a1c5e398a83602dfb92049bbfaddeefb42291146872a943c65b",
+    "src/visa_agent/llm/openai_client.py": "f4d7d78c88499dd0b57ff2c9499247bfabe2d1ee38afd2872b2c00b8ba1c2aa8",
+    "src/visa_agent/llm/ports.py": "81630515c17fbbfadf769c310f61427c0bb5a3001903461b77d19e55780e59aa",
+    "src/visa_agent/llm/question_understanding.py": "2d9a6c9381f9342513af4e89ecf2b127fa6670988ede1bc954c07460fec55fb9",
+    "src/visa_agent/llm/reply_style.py": "7aca465240d7496deafc2fbab4cb3eed341437ac087ca37a9b20de6300a4b235",
+    "src/visa_agent/privacy/__init__.py": "3b88bb325c56e34aa2e644b42039826fbdb20b1230b28c281b082cb6f48918c2",
+    "src/visa_agent/privacy/consent.py": "6744e9d7d684c244f076f03bd8a150bc3325139d2ad1897bf5090c6406696097",
+    "src/visa_agent/public_webhook.py": "c51893541eb5923847a057b4bfc896b20a7360c19b3462b6a130a0611ebc5c3d",
+    "src/visa_agent/review_ui.py": "dd40c9452e3d294593c8a30d1a3dfb276176c2377f3400f2c76bba2041085b32",
+    "src/visa_agent/secrets.py": "5a7f15fb96b1a544209a6380c57a3e39f9ac5c8c93cbd54cf2f50ded7b4fbd36",
+    "src/visa_agent/startup.py": "c6e9d3a83701715286d23ed66241feb00db6375eda63efb5a7737fffc74f8846",
+    "src/visa_agent/storage/__init__.py": "7296f379f4b997d52f354cdd5e6ce5314187146e117f02f04b6fa86f39bf6cd6",
+    "src/visa_agent/storage/sqlite.py": "bdcbdc09b9a9b2ed55b50ce1ad542b2f78fecbace18a03002f433baf0b331045",
+    "src/visa_agent/web.py": "c3617a9145f4947ed02cbfa889e06c4e1cb4c1ff774fc080adb3cfaa51e7d181",
+    "src/visa_agent/workflow/__init__.py": "a273d6ddf1c05279ae2d32d46583ba5b9e94e145f4f5f816d131a723896dac7e",
+    "src/visa_agent/workflow/advice_continuation.py": "4689be647f04ca0e0ab733992d9fa7cecd5caef89806ac0a521314535e0cc96f",
+    "src/visa_agent/workflow/advice_preferences.py": "02000b0001a2c4c279654e39a288f35d1bcead4d1af1ebedfe2cba8727109fe7",
+    "src/visa_agent/workflow/advice_queue.py": "0cd78589b4c2a2b07d7926aefc2ed4bce91597aeabfd5c7163a60b06ab0b2712",
+    "src/visa_agent/workflow/adviser_guidance.py": "421aaa90b601d726d56b51a1166d7bd139e5317ee480f2f511e771f414282056",
+    "src/visa_agent/workflow/application_records.py": "04b235b15b94056cdb249e784a1c4eaf033a8f0786293ecda80a1572e427a590",
+    "src/visa_agent/workflow/consultant_overview.py": "6a0407d77159e6777c304d68c3a07e1b922144337ca29747384fa369e61d1ede",
+    "src/visa_agent/workflow/conversation.py": "b2cc2fbe0c9ac3bb6b9f893fca8d5a028dbf9d142b0b7dea991944c7a5ccc98e",
+    "src/visa_agent/workflow/customer_questions.py": "8bf89e44daef086e1e174f6a4e0fc1e2bc66455a1e64d2d3f60cca3b6f3bc1ce",
+    "src/visa_agent/workflow/document_preparation.py": "c30a8466859f980afb1c30da00561dcd3bced9edde4be8609ff956c1c2c98830",
+    "src/visa_agent/workflow/document_purpose.py": "4f349cd2804843492326e7d7c4f939362ba4cb22fd97a8fa2d30fe1e8e4e6add",
+    "src/visa_agent/workflow/document_review.py": "54a25b433514dfe4f972bdb795851e7ece2b65be5f91d6cb841531140517bafb",
+    "src/visa_agent/workflow/explicit_answer_scope.py": "9becd98ee24cb80b187e580f5739ab33bb69f3af08f7aa984e561e03b283c5b7",
+    "src/visa_agent/workflow/funding_wording.py": "f393622327a03fddf6f02e9c7633e9b90e5e415269f6c548a9d09438ad70c714",
+    "src/visa_agent/workflow/guidance_freshness.py": "288c11413e5fb926d303419d9c8d581c206717dad258fcf42ec7f9ac9a8b7094",
+    "src/visa_agent/workflow/income_clarification.py": "55739cf09611372b1f618a17f549fc511a570d2cc54a8d09ecc443a89f2cff5f",
+    "src/visa_agent/workflow/intent_matching.py": "23c5012180be07aa86e1ae662e26e5e4ede2d05da2d53d85272e90d8b9e7545c",
+    "src/visa_agent/workflow/next_step.py": "0b63d96752b0ffddb0c96e308c7197c80f355c52b6b843fcc7e1af26903ba908",
+    "src/visa_agent/workflow/pending_step_value.py": "2dee4e308ac05060f8051f958cacd4be9cbfc7e0adaf124571dd02b962cc05eb",
+    "src/visa_agent/workflow/preparation_control.py": "693ba32086844d4207ae90fd1680467093ac875e1e52fd2990c63a0fc641dc16",
+    "src/visa_agent/workflow/preparation_obstacles.py": "d9c3aa1a68719d754213510910463f2be8392cd9bda520f4956ed3836fb52fa1",
+    "src/visa_agent/workflow/record_intake.py": "80bcaf88456c7df80929b2ab4075d6c9efbfc467387d6f9d8365ca1c9a5a74c6",
+    "src/visa_agent/workflow/review.py": "dfec36adfd58c81dfabfc71afac4898ebfb6d90b82315fef3d58457f50ca72b6",
+    "src/visa_agent/workflow/service.py": "ba810c33c18230692809d9bdbcf45120a8106633bf2e20027f257edd23af900e",
+    "src/visa_agent/workflow/sponsor_guidance.py": "bddcd9599034d3c85a8efea6435e85a32a26fda3fe506c7c016bee4f326b2472",
+    "src/visa_agent/assets/fonts/NotoSansSC-Regular.ttf": "eeb06b8a64fd04a2744d95579db1571b51027cda61ed78c62e4b730791525461",
+    "src/visa_agent/assets/fonts/OFL-NotoSansSC.txt": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9",
+    "src/visa_agent/assets/fonts/README.md": "a3f662e4ff0300c1467c3deb62e2226a693940aa31f5c6740160b5fa5bf59f2d"
+  },
+  "case_patch_schema_sha256": "00c0967abf3d5dcfb2f6e16a301b63da42cf924b2e8cbd947e301729e0cba40a",
+  "scenarios": {
+    "application-record-intake": [
+      {
+        "body": "我2023年夏天去过日本旅游。我2024年5月去过韩国旅游。我姐姐陈示例住在英国伦敦示例路1号。这次英国行程还没定日期。",
+        "records": [
+          {
+            "kind": "travel",
+            "country": "日本",
+            "period": "2023年夏天",
+            "purpose": "旅游"
+          },
+          {
+            "kind": "travel",
+            "country": "韩国",
+            "period": "2024年5月",
+            "purpose": "旅游"
+          },
+          {
+            "kind": "uk_contact",
+            "name": "陈示例",
+            "relationship": "姐姐",
+            "address": "英国伦敦示例路1号"
+          }
+        ],
+        "deferred_dates": true,
+        "profile": {
+          "sponsor_name": null,
+          "current_address": null
+        }
+      },
+      {
+        "body": "请更正日本那次旅行的时间，是2023年秋天。韩国那次没变。",
+        "records": [
+          {
+            "kind": "travel",
+            "country": "日本",
+            "period": "2023年秋天",
+            "purpose": "旅游"
+          },
+          {
+            "kind": "travel",
+            "country": "韩国",
+            "period": "2024年5月",
+            "purpose": "旅游"
+          },
+          {
+            "kind": "uk_contact",
+            "name": "陈示例",
+            "relationship": "姐姐",
+            "address": "英国伦敦示例路1号"
+          }
+        ],
+        "deferred_dates": true
+      },
+      {
+        "body": "其余的出境记录我暂时记不清，需要再核实。这次去英国的日期也还是没定。",
+        "collection_states": {
+          "travel": "unknown"
+        },
+        "record_count": 3,
+        "deferred_dates": true
+      },
+      {
+        "body": "My friend visited France in June 2022. I am only describing his trip, not mine. My date of birth is 1997.7.1.",
+        "profile": {
+          "date_of_birth": "1997-07-01"
+        },
+        "record_count": 3,
+        "collection_states": {
+          "travel": "unknown"
+        },
+        "deferred_dates": true,
+        "never_ask": [
+          "date_of_birth"
+        ]
+      }
+    ]
+  },
+  "completed": true,
+  "all_passed": false,
+  "results": [
+    {
+      "journey": "application-record-intake",
+      "turn": 1,
+      "input": "我2023年夏天去过日本旅游。我2024年5月去过韩国旅游。我姐姐陈示例住在英国伦敦示例路1号。这次英国行程还没定日期。",
+      "completed": true,
+      "checks": {
+        "expected_facts": true,
+        "at_most_one_main_question": true,
+        "never_reasks_supplied_facts": true,
+        "no_unrequested_release": true,
+        "retains_date_deferral_without_reasking": true,
+        "no_fabricated_dates": true,
+        "exact_record_fields_without_cross_entry_mix": true,
+        "no_extraction_fallback": true,
+        "exactly_one_captured_reply": true,
+        "persisted_case_matches": true
+      },
+      "plan": "blocked",
+      "reply": "你提供的旅行记录已记下。\n\n你提供的英国联系人信息已记下。\n\n我先确认出行目的，因为它决定后面该按旅游、探亲访友还是商务或参会来整理材料。\n这次去英国主要是旅游、探亲访友，还是参加商务活动或会议？",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": null,
+        "nationality_country": null,
+        "application_country": null,
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": null,
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": null,
+        "annual_income_gbp": null,
+        "funding_source": null,
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "requested_fields": [
+        "visit_purpose"
+      ],
+      "application_records": {
+        "case_id": "case-391a76ffda16",
+        "revisions": [
+          {
+            "record_id": "record-b4048be95e0f505f9b2611ba",
+            "kind": "travel",
+            "revision": 1,
+            "active": true,
+            "fields": {
+              "country": {
+                "value": "日本",
+                "source_excerpt": "日本",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              },
+              "period": {
+                "value": "2023年夏天",
+                "source_excerpt": "2023年夏天",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              },
+              "purpose": {
+                "value": "旅游",
+                "source_excerpt": "旅游",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              }
+            },
+            "changed_by_event_id": "application-record-intake-1",
+            "predecessor_digest": null,
+            "change_excerpt": null
+          },
+          {
+            "record_id": "record-a57aa265ede1d0eee9058104",
+            "kind": "travel",
+            "revision": 1,
+            "active": true,
+            "fields": {
+              "country": {
+                "value": "韩国",
+                "source_excerpt": "韩国",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              },
+              "period": {
+                "value": "2024年5月",
+                "source_excerpt": "2024年5月",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              },
+              "purpose": {
+                "value": "旅游",
+                "source_excerpt": "旅游",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              }
+            },
+            "changed_by_event_id": "application-record-intake-1",
+            "predecessor_digest": null,
+            "change_excerpt": null
+          },
+          {
+            "record_id": "record-c142ead2ca210d2d77227635",
+            "kind": "uk_contact",
+            "revision": 1,
+            "active": true,
+            "fields": {
+              "name": {
+                "value": "陈示例",
+                "source_excerpt": "陈示例",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              },
+              "relationship": {
+                "value": "姐姐",
+                "source_excerpt": "姐姐",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              },
+              "address": {
+                "value": "英国伦敦示例路1号",
+                "source_excerpt": "英国伦敦示例路1号",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              }
+            },
+            "changed_by_event_id": "application-record-intake-1",
+            "predecessor_digest": null,
+            "change_excerpt": null
+          }
+        ],
+        "declarations": [],
+        "processed_batches": {
+          "application-record-intake-1": "65552715ecfcde68dcdec91734df41ded3e6212c02637df4dd433062d1d41ed7"
+        }
+      },
+      "deferred_fields": [
+        "planned_arrival_date",
+        "planned_departure_date"
+      ],
+      "topics": [],
+      "reply_style": "standard",
+      "reply_style_source_event_id": null,
+      "reply_style_source_excerpt": null,
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 4925,
+          "output_tokens": 584,
+          "total_tokens": 5509
+        }
+      ],
+      "raw_model_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [\n    {\n      \"field\": \"planned_arrival_date\",\n      \"source_excerpt\": \"这次英国行程还没定日期。\",\n      \"confidence\": 1.0\n    },\n    {\n      \"field\": \"planned_departure_date\",\n      \"source_excerpt\": \"这次英国行程还没定日期。\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"customer_questions\": [],\n  \"preparation_intent\": null,\n  \"application_records\": [\n    {\n      \"action\": \"add\",\n      \"record\": {\n        \"kind\": \"travel\",\n        \"fields\": {\n          \"country\": {\n            \"value\": \"日本\",\n            \"source_excerpt\": \"日本\"\n          },\n          \"period\": {\n            \"value\": \"2023年夏天\",\n            \"source_excerpt\": \"2023年夏天\"\n          },\n          \"purpose\": {\n            \"value\": \"旅游\",\n            \"source_excerpt\": \"旅游\"\n          }\n        }\n      },\n      \"source_excerpt\": \"我2023年夏天去过日本旅游。\",\n      \"target_reference\": null,\n      \"confidence\": 1.0\n    },\n    {\n      \"action\": \"add\",\n      \"record\": {\n        \"kind\": \"travel\",\n        \"fields\": {\n          \"country\": {\n            \"value\": \"韩国\",\n            \"source_excerpt\": \"韩国\"\n          },\n          \"period\": {\n            \"value\": \"2024年5月\",\n            \"source_excerpt\": \"2024年5月\"\n          },\n          \"purpose\": {\n            \"value\": \"旅游\",\n            \"source_excerpt\": \"旅游\"\n          }\n        }\n      },\n      \"source_excerpt\": \"我2024年5月去过韩国旅游。\",\n      \"target_reference\": null,\n      \"confidence\": 1.0\n    },\n    {\n      \"action\": \"add\",\n      \"record\": {\n        \"kind\": \"uk_contact\",\n        \"fields\": {\n          \"name\": {\n            \"value\": \"陈示例\",\n            \"source_excerpt\": \"陈示例\"\n          },\n          \"relationship\": {\n            \"value\": \"姐姐\",\n            \"source_excerpt\": \"姐姐\"\n          },\n          \"address\": {\n            \"value\": \"英国伦敦示例路1号\",\n            \"source_excerpt\": \"英国伦敦示例路1号\"\n          }\n        }\n      },\n      \"source_excerpt\": \"我姐姐陈示例住在英国伦敦示例路1号。\",\n      \"target_reference\": null,\n      \"confidence\": 1.0\n    }\n  ],\n  \"collection_declarations\": []\n}",
+      "passed": true
+    },
+    {
+      "journey": "application-record-intake",
+      "turn": 2,
+      "input": "请更正日本那次旅行的时间，是2023年秋天。韩国那次没变。",
+      "completed": true,
+      "checks": {
+        "expected_facts": true,
+        "at_most_one_main_question": true,
+        "never_reasks_supplied_facts": true,
+        "no_unrequested_release": true,
+        "retains_date_deferral_without_reasking": true,
+        "no_fabricated_dates": true,
+        "exact_record_fields_without_cross_entry_mix": false,
+        "no_extraction_fallback": false,
+        "exactly_one_captured_reply": true,
+        "persisted_case_matches": true
+      },
+      "plan": "blocked",
+      "reply": "这部分我还不能可靠判断，需要人工核实后才能继续，不能直接给你确定答复。你发来的信息和文件都已保留，暂时不用重新发送。",
+      "profile": {
+        "full_name": null,
+        "date_of_birth": null,
+        "nationality": null,
+        "nationality_country": null,
+        "application_country": null,
+        "planned_arrival_date": null,
+        "planned_departure_date": null,
+        "visit_purpose": null,
+        "uk_accommodation": null,
+        "estimated_trip_cost_gbp": null,
+        "current_address": null,
+        "occupation_status": null,
+        "annual_income_gbp": null,
+        "funding_source": null,
+        "sponsor_name": null,
+        "sponsor_relationship": null,
+        "sponsor_is_in_uk": null,
+        "has_serious_history": null,
+        "route_confirmed_standard_visitor": false
+      },
+      "requested_fields": [],
+      "application_records": {
+        "case_id": "case-391a76ffda16",
+        "revisions": [
+          {
+            "record_id": "record-b4048be95e0f505f9b2611ba",
+            "kind": "travel",
+            "revision": 1,
+            "active": true,
+            "fields": {
+              "country": {
+                "value": "日本",
+                "source_excerpt": "日本",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              },
+              "period": {
+                "value": "2023年夏天",
+                "source_excerpt": "2023年夏天",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              },
+              "purpose": {
+                "value": "旅游",
+                "source_excerpt": "旅游",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              }
+            },
+            "changed_by_event_id": "application-record-intake-1",
+            "predecessor_digest": null,
+            "change_excerpt": null
+          },
+          {
+            "record_id": "record-a57aa265ede1d0eee9058104",
+            "kind": "travel",
+            "revision": 1,
+            "active": true,
+            "fields": {
+              "country": {
+                "value": "韩国",
+                "source_excerpt": "韩国",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              },
+              "period": {
+                "value": "2024年5月",
+                "source_excerpt": "2024年5月",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              },
+              "purpose": {
+                "value": "旅游",
+                "source_excerpt": "旅游",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              }
+            },
+            "changed_by_event_id": "application-record-intake-1",
+            "predecessor_digest": null,
+            "change_excerpt": null
+          },
+          {
+            "record_id": "record-c142ead2ca210d2d77227635",
+            "kind": "uk_contact",
+            "revision": 1,
+            "active": true,
+            "fields": {
+              "name": {
+                "value": "陈示例",
+                "source_excerpt": "陈示例",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              },
+              "relationship": {
+                "value": "姐姐",
+                "source_excerpt": "姐姐",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              },
+              "address": {
+                "value": "英国伦敦示例路1号",
+                "source_excerpt": "英国伦敦示例路1号",
+                "source_event_id": "application-record-intake-1",
+                "source_body_sha256": "1d0121948477732de61a7661281f8ef095b820b3a3fb51de47b2adc87ac9b028",
+                "provenance_state": "extracted_unverified"
+              }
+            },
+            "changed_by_event_id": "application-record-intake-1",
+            "predecessor_digest": null,
+            "change_excerpt": null
+          }
+        ],
+        "declarations": [],
+        "processed_batches": {
+          "application-record-intake-1": "65552715ecfcde68dcdec91734df41ded3e6212c02637df4dd433062d1d41ed7"
+        }
+      },
+      "deferred_fields": [
+        "planned_arrival_date",
+        "planned_departure_date"
+      ],
+      "topics": [],
+      "reply_style": "standard",
+      "reply_style_source_event_id": null,
+      "reply_style_source_excerpt": null,
+      "usage": [
+        {
+          "operation": "extract_case_patch",
+          "input_tokens": 5039,
+          "output_tokens": 241,
+          "total_tokens": 5280
+        }
+      ],
+      "raw_model_content": "{\n  \"updates\": [],\n  \"ambiguities\": [],\n  \"requires_human_review\": false,\n  \"question_deferrals\": [],\n  \"customer_questions\": [],\n  \"preparation_intent\": null,\n  \"application_records\": [\n    {\n      \"action\": \"amend\",\n      \"record\": {\n        \"kind\": \"travel\",\n        \"fields\": {\n          \"country\": {\n            \"value\": \"日本\",\n            \"source_excerpt\": \"日本那次旅行\"\n          },\n          \"period\": {\n            \"value\": \"2023年秋天\",\n            \"source_excerpt\": \"2023年秋天\"\n          },\n          \"purpose\": {\n            \"value\": \"旅游\",\n            \"source_excerpt\": \"日本那次旅行\"\n          }\n        }\n      },\n      \"source_excerpt\": \"请更正日本那次旅行的时间，是2023年秋天。\",\n      \"target_reference\": {\n        \"value\": \"日本 2023年夏天 旅游\",\n        \"source_excerpt\": \"日本那次旅行\"\n      },\n      \"confidence\": 0.95\n    }\n  ],\n  \"collection_declarations\": []\n}",
+      "passed": false
+    },
+    {
+      "journey": "application-record-intake",
+      "turn": 3,
+      "input": "其余的出境记录我暂时记不清，需要再核实。这次去英国的日期也还是没定。",
+      "completed": false,
+      "error_type": "StopIteration",
+      "usage": [],
+      "raw_model_content": null,
+      "passed": false
+    },
+    {
+      "journey": "application-record-intake",
+      "turn": 4,
+      "input": "My friend visited France in June 2022. I am only describing his trip, not mine. My date of birth is 1997.7.1.",
+      "completed": false,
+      "error_type": "StopIteration",
+      "usage": [],
+      "raw_model_content": null,
+      "passed": false
+    }
+  ],
+  "run_completed_at": "2026-09-06T12:27:10.540469+00:00"
+}

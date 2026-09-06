@@ -50,3 +50,21 @@ def test_original_three_provider_outputs_now_preserve_uncertainty_and_unchanged_
     assert "记不清的部分先留待核实" in uncertain.body
     assert not uncertain.case.profile_confirmed and not uncertain.case.final_summary_confirmed
     assert uncertain.case.delivery_path is None
+
+
+def test_second_failed_provider_output_uses_literal_reference_and_does_not_rewrite_old_fact_sources(tmp_path):
+    path = Path("eval_output/application_record_intake_2026-09-06-v2.json")
+    raw = path.read_bytes()
+    assert hashlib.sha256(raw).hexdigest() == "27a563296e3129cb1996ebd2b1c40da1d3c3f13619d865810a1061c5662db93d"
+    report = json.loads(raw)
+    assert not report["all_passed"] and sum(len(row["usage"]) for row in report["results"]) == 2
+    assert report["results"][1]["checks"]["no_extraction_fallback"] is False
+    dialogue = Conversation(tmp_path)
+    first_row, second_row = report["results"][:2]
+    first = dialogue.turn(first_row["input"], CasePatch.model_validate_json(first_row["raw_model_content"]))
+    second = dialogue.turn(second_row["input"], CasePatch.model_validate_json(second_row["raw_model_content"]))
+    japan = next(r for r in second.case.application_records.current().values() if r.fields.get("country") and r.fields["country"].value == "日本")
+    assert japan.fields["period"].value == "2023年秋天"
+    assert japan.fields["period"].source_event_id == second.event.id
+    assert japan.fields["country"].source_event_id == japan.fields["purpose"].source_event_id == first.event.id
+    assert "已按你的更正" in second.body
