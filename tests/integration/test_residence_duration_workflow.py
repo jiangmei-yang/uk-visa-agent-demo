@@ -69,8 +69,12 @@ def test_sent_uncertainty_is_preserved_without_becoming_a_duration_or_repeated_q
     assert "About how long have you lived" not in later.body
 
 
-@pytest.mark.parametrize("invalid", ["unsent", "different_address"])
-def test_a_question_hint_without_matching_sent_current_home_context_cannot_ground_a_short_answer(tmp_path, invalid):
+@pytest.mark.parametrize("invalid", [
+    "unsent", "different_address", "future_sent", "equal_sent", "missing_sent",
+    "invalid_sent", "naive_sent",
+])
+@pytest.mark.parametrize("body", ["about two years", "I need to check."])
+def test_a_question_hint_without_matching_sent_current_home_context_cannot_ground_a_short_answer(tmp_path, invalid, body):
     dialogue, asked = asking(tmp_path)
     store = SQLiteStore(dialogue.path)
     try:
@@ -78,13 +82,40 @@ def test_a_question_hint_without_matching_sent_current_home_context_cannot_groun
             store.connection.execute("UPDATE outbox SET status='PENDING' WHERE case_id=? AND event_id=?",
                                      (asked.case.id, asked.event.id))
             store.connection.commit()
-        else:
+        elif invalid == "different_address":
             case = store.get_case(asked.case.id)
             case.residence_duration_question_address = "Different former home"
             store.save_case(case)
+        else:
+            sent_at = {
+                "future_sent": "2026-09-04T10:04:00+00:00",
+                "equal_sent": "2026-09-04T10:03:00+00:00",
+                "missing_sent": None,
+                "invalid_sent": "not a timestamp",
+                "naive_sent": "2026-09-04T10:02:00",
+            }[invalid]
+            store.connection.execute("UPDATE outbox SET sent_at=? WHERE case_id=? AND event_id=?",
+                                     (sent_at, asked.case.id, asked.event.id))
+            store.connection.commit()
+    finally:
+        store.close()
+    patch = _patch(updates=[("current_address_duration", body, body)]) if body == "about two years" else _patch()
+    replied = dialogue.turn(body, patch)
+    assert replied.case.profile.current_address_duration is None
+    assert not replied.model.events[0].known_profile["_residence_duration_question_verified"]
+    assert not replied.case.residence_duration_deferrals
+
+
+def test_sent_question_timestamp_is_compared_as_an_instant_across_timezones(tmp_path):
+    dialogue, asked = asking(tmp_path)
+    store = SQLiteStore(dialogue.path)
+    try:
+        store.connection.execute("UPDATE outbox SET sent_at=? WHERE case_id=? AND event_id=?",
+                                 ("2026-09-04T18:02:00+08:00", asked.case.id, asked.event.id))
+        store.connection.commit()
     finally:
         store.close()
     body = "about two years"
     replied = dialogue.turn(body, _patch(updates=[("current_address_duration", body, body)]))
-    assert replied.case.profile.current_address_duration is None
-    assert not replied.model.events[0].known_profile["_residence_duration_question_verified"]
+    assert replied.case.profile.current_address_duration == body
+    assert replied.model.events[0].known_profile["_residence_duration_question_verified"]

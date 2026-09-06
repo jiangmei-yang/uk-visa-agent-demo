@@ -185,6 +185,19 @@ def stable_id(prefix: str, value: str) -> str:
     return f"{prefix}-{uuid5(NAMESPACE_URL, value).hex[:12]}"
 
 
+def _sent_before_inbound(sent_at: Any, received_at: datetime) -> bool:
+    """Missing/ambiguous transport times cannot authorize a contextual answer."""
+    if not isinstance(sent_at, str):
+        return False
+    try:
+        sent = datetime.fromisoformat(sent_at)
+    except ValueError:
+        return False
+    if sent.utcoffset() is None or received_at.utcoffset() is None:
+        return False
+    return sent < received_at
+
+
 class WorkflowService:
     def __init__(
         self,
@@ -301,6 +314,7 @@ class WorkflowService:
                 and case.profile.current_address
                 and case.residence_duration_question_address == case.profile.current_address):
             matches = [row for row in prior_outbox if row["status"] == "SENT"
+                       and _sent_before_inbound(row.get("sent_at"), event.received_at)
                        and row["event_id"] in case.question_event_ids.get("current_address_duration", [])
                        and row["recipient"] == case.applicant_contact
                        and row["external_thread_id"] == case.external_thread_id
