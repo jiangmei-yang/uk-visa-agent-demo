@@ -66,6 +66,20 @@ def test_failed_provider_history_is_retained_before_green_replay() -> None:
     assert reports[-1]["all_passed"] is True
 
 
+def test_v8_missing_identity_remains_a_review_instead_of_waiving_required_facts() -> None:
+    path = ROOT / "eval_output" / "financial_document_deepseek_2026-09-06-v8.json"
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == "90d98d5db4b5ba9f7836522e0063baa61edc6ade704b25eb20b8fdc6b0a8f612"
+    report = json.loads(path.read_text())
+    assert report["completed"] and not report["all_passed"]
+    assert sum(row["passed"] for row in report["results"]) == 3
+    row = next(row for row in report["results"] if not row["passed"])
+    proposal = DocumentProposal.model_validate_json(row["raw_model_response"])
+    pages = [page.extract_text() or "" for page in PdfReader(PDFS / row["filename"]).pages]
+    result = validate_document(proposal, pages, method="saved_provider_replay", version=report["model"])
+    assert result.requires_review and "full_name" in result.review_reason
+    assert len(result.financial_observations) == 1
+
+
 def test_v7_provider_run_is_bound_to_complete_source_prompt_schema_and_pdf_set() -> None:
     report = json.loads(CURRENT_REPORT.read_text())
     rollout = json.loads(ROLLOUT.read_text())

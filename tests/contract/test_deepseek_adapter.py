@@ -112,6 +112,9 @@ def test_document_diagnostic_capture_retains_success_and_invalid_json() -> None:
     assert "Ground the holder, amount, date" in instructions
     assert "Never Ground" not in instructions
     assert "Never convert currencies" in instructions
+    assert "also include a full_name item in facts" in instructions
+    assert "subject_name does not replace this required identity fact" in instructions
+    assert "sponsor name only in financial_observations, not full_name" in instructions
 
     completions.content = "not valid JSON"
     with pytest.raises(ValidationError):

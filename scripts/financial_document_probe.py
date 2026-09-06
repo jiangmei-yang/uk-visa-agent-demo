@@ -365,6 +365,8 @@ def main() -> None:
     }
     report["run_completed_at"] = datetime.now(UTC).isoformat()
     _write_checkpoint(args.report, report)
+    if not report["all_passed"]:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

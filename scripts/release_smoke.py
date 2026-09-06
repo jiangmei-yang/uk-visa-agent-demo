@@ -94,11 +94,17 @@ def run(base_url: str) -> dict[str, Any]:
     with zipfile.ZipFile(io.BytesIO(content)) as archive:
         names = archive.namelist()
         check("zip_crc_valid", archive.testzip() is None)
-        check("pack_has_answers_and_audit", all(any(name.endswith(suffix) for name in names)
-              for suffix in ("05_application_answers.json", "gate_result.json", "evidence_ledger.json")))
-        gate_name = next(name for name in names if name.endswith("gate_result.json"))
-        gate = json.loads(archive.read(gate_name))
-        check("pack_gate_matches_release", gate["allowed"] and all(gate["checks"].values()))
+        check("pack_has_customer_deliverables", all(name in names for name in (
+            "00_READ_ME_FIRST.pdf", "01_case_summary.pdf", "02_personalised_document_checklist.pdf",
+            "03_document_index.pdf", "04_cover_letter_draft.pdf", "05_application_answers.json",
+            "06_open_issues.pdf")) and any(name.startswith("supporting_documents/") for name in names))
+        check("internal_audit_not_sent_to_customer", not any(name.endswith(suffix) for name in names
+              for suffix in ("gate_result.json", "case_snapshot.json", "evidence_ledger.json")))
+        answers = json.loads(archive.read("05_application_answers.json"))
+        check("pack_matches_confirmed_case", answers["case_id"] == final["case_id"]
+              and answers["status"] == "READY_FOR_HUMAN_REVIEW"
+              and answers["submits_application"] is False
+              and answers["profile"] == final["profile"] and len(answers["facts"]) > 0)
     return {"observed_at": datetime.now(UTC).isoformat(), "evidence": "offline HTTP fixture replay",
             "model_calls": 0, "mailbox_calls": 0, "checks": checks, "all_passed": all(checks.values()),
             "zip_sha256": hashlib.sha256(content).hexdigest(), "zip_members": names}
