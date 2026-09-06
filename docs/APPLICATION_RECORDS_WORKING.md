@@ -176,6 +176,54 @@ run and the complete intake/release work above. The pre-boundary-change developm
 regression was **4,765 passed / 2 deselected** (100.52s); the new boundary is being
 regressed separately.
 
+### Third real-model probe (bounded pass, not overall acceptance)
+
+`eval_output/application_record_intake_2026-09-06-v3.json` binds source `7c8fa51`;
+SHA-256 `018ca8d995305ed6bc5c8061c76e932eaad2a74d23967031569519d807f4e227`.
+All four turns passed, with one actual DeepSeek call per turn and captured SENT
+transport. The 89 recorded Python/probe/font hashes were compared to the working
+files after the run: no mismatch. The schema hash is also recorded. This manifest
+does not yet separately enumerate the policy YAML; the final release manifest
+must include all policy/configuration inputs as well as code/font assets.
+
+Usage: 20,355 input / 1,093 output / 21,448 total tokens. Across all three retained
+attempts: **9 actual calls**, 45,325 input / 2,910 output / 48,235 total tokens.
+No real Gmail sends, real applicant data, document uploads or workflow retries.
+
+Implementer read every actual reply and record revision:
+
+- Turn 1 retained two distinct past trips and one UK contact, with original partial
+  date precision and no applicant-address/sponsor mutation. It asked one current
+  visit-purpose question, not the deferred future dates.
+- Turn 2 corrected only the Japan period. Country/purpose retained turn-1 sources;
+  Korea and the contact were unchanged. The receipt is still generic rather than
+  quoting the exact new period: naturalness work is not complete.
+- Turn 3 retained explicit past-history uncertainty and did not demand guessed
+  dates or escalate an ordinary inability to remember.
+- Turn 4 ignored the friend's France trip, saved the explicitly stated birthday
+  as `1997-07-01`, retained both future-date deferrals and past-history uncertainty,
+  and did not ask for the birthday again. The general route explanation is useful
+  at this early stage but is not independent evidence of an ideal consultant reply.
+
+The original raw outputs also pass an offline, reopened-database/captured-SENT
+four-turn replay. The post-boundary full development regression passed **4,770 / 2
+deselected** (99.61s); subsequently the new v3 replay was added and the complete
+saved-provider replay file passed **4 tests** (0.36s). This is not a claim that a
+new full 4,771-test run was executed. Ruff and strict Mypy passed for 85 source files.
+
+Runtime observation after this work: the preceding review-console container
+`7aeb2c031629` remained healthy on `127.0.0.1:8000`; `/health` returned status `ok`.
+Its image was still `sha256:e2a730ba714c14ce395d2e40d89058b755c1ff17ae32a89159212970e8638231`.
+The existing Gmail process PID 61377 was alive and reported idle at
+`2026-09-06T12:39:18.094537+00:00`. No service was restarted or new branch deployed.
+Process/health observations do not prove receipt-side end-to-end delivery.
+
+**Next implementation priority:** replace the temporary hold with complete,
+applicability-aware collection intake, question/defer planning and provenance
+gates for both new and legacy cases; then exercise confirmations, revision and ZIP
+delivery with genuine fictional declarations. Do not stop at the four passing
+exposed examples or narrow overall acceptance to this record feature.
+
 ## Rendering defect discovered and repaired
 
 The first Chinese QA render (`output/pdf/application-records-foundation-v1`)

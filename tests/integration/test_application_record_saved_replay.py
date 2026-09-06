@@ -68,3 +68,26 @@ def test_second_failed_provider_output_uses_literal_reference_and_does_not_rewri
     assert japan.fields["period"].source_event_id == second.event.id
     assert japan.fields["country"].source_event_id == japan.fields["purpose"].source_event_id == first.event.id
     assert "已按你的更正" in second.body
+
+
+def test_repaired_four_turn_provider_trace_replays_without_losing_uncertainty_or_birth_date(tmp_path):
+    path = Path("eval_output/application_record_intake_2026-09-06-v3.json")
+    raw = path.read_bytes()
+    assert hashlib.sha256(raw).hexdigest() == "018ca8d995305ed6bc5c8061c76e932eaad2a74d23967031569519d807f4e227"
+    report = json.loads(raw)
+    assert report["all_passed"] and report["completed"] and len(report["results"]) == 4
+    assert report["git_head"] == "7c8fa517052ff91cfea52374b4c89e06d3b3ef23"
+    assert sum(len(row["usage"]) for row in report["results"]) == 4
+    dialogue = Conversation(tmp_path)
+    for row in report["results"]:
+        result = dialogue.turn(row["input"], CasePatch.model_validate_json(row["raw_model_content"]))
+    assert result.case.profile.date_of_birth.isoformat() == "1997-07-01"
+    assert result.case.profile.current_address is result.case.profile.sponsor_name is None
+    assert result.case.application_records.collection_state("travel") == "unknown"
+    records = list(result.case.application_records.current().values())
+    assert len(records) == 3
+    assert "France" not in str([record.model_dump() for record in records])
+    assert {"planned_arrival_date", "planned_departure_date"} <= set(result.case.deferred_fields)
+    assert not set(result.case.last_requested_fields).intersection({"planned_arrival_date", "planned_departure_date", "date_of_birth"})
+    assert not result.case.profile_confirmed and not result.case.final_summary_confirmed
+    assert result.case.delivery_path is None
