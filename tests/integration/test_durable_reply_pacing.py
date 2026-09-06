@@ -186,9 +186,10 @@ def test_new_pacing_journeys_before_paid_probe(tmp_path, journey):
 
 
 @pytest.mark.parametrize("journey", ["zh-durable-pacing", "en-durable-pacing"])
-def test_retained_pacing_provider_proposals_include_omitted_question(tmp_path, journey):
+@pytest.mark.parametrize("version", ["v4", "v5"])
+def test_retained_pacing_provider_proposals_include_omitted_question(tmp_path, journey, version):
     probe = runpy.run_path("scripts/consultant_journey_probe.py")
-    report = json.loads(Path("eval_output/consultant_journey_2026-09-06-v4.json").read_text())
+    report = json.loads(Path(f"eval_output/consultant_journey_2026-09-06-{version}.json").read_text())
     dialogue = Conversation(tmp_path)
     for row in report["results"]:
         if row["journey"] != journey:
@@ -215,4 +216,37 @@ def test_omitted_topic_fallback_does_not_borrow_other_case_or_route(tmp_path, bo
     result = dialogue.turn(body, _patch())
     assert not result.case.proactive_guidance_offered
     assert result.case.guidance_events == before
+    assert not result.case.profile_confirmed and not result.case.delivery_path
+
+
+@pytest.mark.parametrize("verb", ["open", "find", "access", "fill out", "fill in"])
+@pytest.mark.parametrize("model_topic", [None, "unsupported"])
+def test_application_form_paraphrases_work_without_provider_classification(tmp_path, verb, model_topic):
+    report = json.loads(Path("eval_output/consultant_journey_2026-09-06-v4.json").read_text())
+    first = next(row for row in report["results"] if row["journey"] == "en-durable-pacing")
+    dialogue = Conversation(tmp_path)
+    dialogue.turn(first["input"], CasePatch.model_validate_json(first["raw_model_content"]))
+    body = f"Where can I {verb} the application form?"
+    patch = _patch(questions=[(model_topic, body)] if model_topic else [])
+    result = dialogue.turn(body, patch)
+    assert "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa" in result.body
+    assert "Apply now" in result.body
+    assert result.case.last_requested_fields == []
+
+
+@pytest.mark.parametrize("body", [
+    "If I later apply, where can I open the application form?",
+    'Translate "Where can I open the application form?"',
+    "For my friend's application, where can I open the application form?",
+    "I am applying for a student visa. Where can I open the application form?",
+    "I am applying for a mortgage. Where can I open the application form?",
+    "Where can I open the application form without providing any bank statements?",
+])
+def test_application_form_context_does_not_borrow_route_or_drop_qualifiers(tmp_path, body):
+    report = json.loads(Path("eval_output/consultant_journey_2026-09-06-v4.json").read_text())
+    first = next(row for row in report["results"] if row["journey"] == "en-durable-pacing")
+    dialogue = Conversation(tmp_path)
+    dialogue.turn(first["input"], CasePatch.model_validate_json(first["raw_model_content"]))
+    result = dialogue.turn(body, _patch())
+    assert "https://www.gov.uk/standard-visitor/apply-standard-visitor-visa" not in result.body
     assert not result.case.profile_confirmed and not result.case.delivery_path

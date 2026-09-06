@@ -62,3 +62,11 @@ The report remains unchanged. Contract v5 requires a concrete intended-itinerary
 action and no intake question for that turn. The repaired fallback selects only
 reviewed advice for an established current case, preserves separately answered
 questions and rejects other applicants/routes and hypothetical scopes.
+
+The next live run v5 correctly retained **21/22** rather than being retried to
+green: the model omitted the English application-form question on pacing turn 3.
+The form-entry fallback now uses the already established visitor context only
+for a complete plain form-entry question (open/find/access/fill in/fill out).
+Other routes, other applicants, mortgage applications and qualified questions
+cannot borrow that context; the link remains conditional guidance, not a route
+confirmation. Raw provider reports v4 and v5 are retained for offline replay.

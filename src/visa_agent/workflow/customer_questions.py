@@ -418,7 +418,8 @@ _OTHER_APPLICATION_FRAME = re.compile(
     OTHER_ROUTE + r"|\b(?:transit|French|Canadian|Australian|US|American)\s+visa\b|"
     r"\bvisa\s+(?:for|to)\s+(?:France|Canada|Australia|the\s+US)\b|"
     r"(?:法国|加拿大|澳洲|澳大利亚|美国|过境)(?:的)?(?:签证|申请)|"
-    r"\b(?:university|college|mortgage|loan|job)\s+application\b|(?:大学|学校|贷款|工作)申请", re.I,
+    r"\b(?:university|college|mortgage|loan|job)\s+application\b|"
+    r"\bapply(?:ing)?\s+for\s+(?:a|an|the)\s+(?:mortgage|loan|job)\b|(?:大学|学校|贷款|工作)申请", re.I,
 )
 _OWN_APPLICATION_FRAME = re.compile(
     r"\b(?:my|our)\s+(?:(?:own|current|existing|UK|visitor|tourist|standard)\s+)*"
@@ -769,7 +770,12 @@ _EXPLICIT_VISITOR = (
     r"英国(?:(?:普通|标准)?(?:访问|访客)|旅游)签证|"
     r"\b(?:UK|British)\s+(?:(?:standard\s+)?visitor|tourist)\s+visa\b|\bStandard Visitor\b"
 )
+_FORM_ENTRY_REQUEST = (
+    r"\bwhere\s+(?:do|can|should)\s+I\s+(?:open|find|access|fill\s+(?:in|out))\s+"
+    r"(?:the|my)\s+(?:visa\s+)?application\s+form\b"
+)
 _APPLICATION_ENTRY_REQUEST = (
+    _FORM_ENTRY_REQUEST + "|" +
     r"(?:在哪|哪里|怎么|如何).{0,14}(?:申请|办理)|"
     r"(?:申请|办理|签证).{0,18}(?:网页|网站|入口|官网|网址|链接|流程|步骤)|"
     r"(?:网页|网站|入口|官网|网址|链接).{0,18}(?:申请|办理)|"
@@ -782,7 +788,7 @@ _APPLICATION_ENTRY_REQUEST = (
 )
 
 
-def reviewed_application_requests(body: str) -> list[str]:
+def reviewed_application_requests(body: str, *, known_visitor_context: bool = False) -> list[str]:
     """Find explicit ordinary application-entry questions, not eligibility advice.
 
     This is shared by proposal normalization and the no-proposal fallback. Keep
@@ -827,7 +833,8 @@ def reviewed_application_requests(body: str) -> list[str]:
             visitor_context = True
             explicit_visitor = _mentions_current_route(scope, _EXPLICIT_VISITOR)
         for clause in _active_clauses(scope):
-            if (not visitor_context
+            if ((not visitor_context and not (known_visitor_context and re.fullmatch(
+                    _FORM_ENTRY_REQUEST, clause.strip(" ?？.!。"), re.I)))
                     or not re.search(_APPLICATION_ENTRY_REQUEST, clause, re.I)
                     or _request_has_other_route(body, clause)
                     or not _next_step_targets_current_case(body, clause)):
@@ -849,7 +856,7 @@ def reviewed_application_requests(body: str) -> list[str]:
     return result
 
 
-def _general_application_proposal(body: str, excerpt: str) -> bool:
+def _general_application_proposal(body: str, excerpt: str, *, known_visitor_context: bool = False) -> bool:
     # An unsupported proposal may contain a narrow-looking substring and an
     # important qualifier. Normalize only a fully supported request, preserving
     # the raw excerpt/confidence and all unsupported-boundary precedence.
@@ -857,7 +864,7 @@ def _general_application_proposal(body: str, excerpt: str) -> bool:
             or re.search(_APPLICATION_QUALIFIERS, excerpt, re.I)
             or _request_has_other_route(body, excerpt)):
         return False
-    spans = reviewed_application_requests(body)
+    spans = reviewed_application_requests(body, known_visitor_context=known_visitor_context)
     if not any(_overlapping_excerpt(excerpt, span) for span in spans):
         return False
     for clause in _question_clauses(excerpt):
@@ -1856,7 +1863,16 @@ def grounded_customer_answer_plan(
     semantic = [item for item in semantic if item.topic == "off_topic" or not any(
         _overlapping_excerpt(item.source_excerpt, clause) for clause in off_topic_clauses
     )]
-    reviewed_application_spans = reviewed_application_requests(current)
+    known_visitor_context = bool(case and case.profile.visit_purpose in {
+        "tourism", "family_or_friends", "business", "conference",
+    })
+    reviewed_application_spans = reviewed_application_requests(current, known_visitor_context=known_visitor_context)
+    semantic = [item.model_copy(update={"topic": "application"})
+                if item.topic == "unsupported" and re.fullmatch(
+                    _FORM_ENTRY_REQUEST, item.source_excerpt.strip(" ?？.!。"), re.I)
+                and _general_application_proposal(
+                    current, item.source_excerpt, known_visitor_context=known_visitor_context)
+                else item for item in semantic]
     active_clauses = _active_clauses(current)
     # If an unsupported proposal is only the words ``related information``
     # inside a reviewed application-page request, it contributes no separate
