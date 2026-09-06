@@ -27,7 +27,7 @@ if ! docker compose up --build --detach; then
 fi
 
 for attempt in {1..90}; do
-  if curl --fail --silent http://127.0.0.1:8000/health >/dev/null 2>&1; then
+  if curl --fail --silent --max-time 2 http://127.0.0.1:8000/health >/dev/null 2>&1; then
     echo "The Demo is ready. Opening your browser..."
     open http://127.0.0.1:8000
     echo "You may close this window. Use STOP_DEMO.command when finished."

@@ -47,7 +47,7 @@ REPORTS = [ROOT / "eval_output" / name for name in (
 )]
 PDFS = ROOT / "output" / "pdf" / "financial-document-eval"
 ROLLOUT = ROOT / "eval_output" / "financial_document_rollout_2026-09-05.json"
-CURRENT_REPORT = ROOT / "eval_output" / "financial_document_deepseek_2026-09-05-v7.json"
+CURRENT_REPORT = ROOT / "eval_output" / "financial_document_deepseek_2026-09-06-v10.json"
 POLICY = load_policy(ROOT / "knowledge" / "uk_standard_visitor_2026-02-25.yaml")
 TODAY = date(2026, 9, 5)
 
@@ -80,7 +80,7 @@ def test_v8_missing_identity_remains_a_review_instead_of_waiving_required_facts(
     assert len(result.financial_observations) == 1
 
 
-def test_v7_provider_run_is_bound_to_complete_source_prompt_schema_and_pdf_set() -> None:
+def test_current_provider_run_is_bound_to_complete_source_prompt_schema_and_pdf_set() -> None:
     report = json.loads(CURRENT_REPORT.read_text())
     rollout = json.loads(ROLLOUT.read_text())
     run_entry = next(item for item in rollout["provider_runs"]

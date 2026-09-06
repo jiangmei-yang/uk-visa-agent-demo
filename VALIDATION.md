@@ -15,9 +15,14 @@ explicitly recorded here.
 
 ## Current capability ledger
 
-Updated 2026-09-05. The dated experiment entries below are historical records, not current
+Updated 2026-09-06. The dated experiment entries below are historical records, not current
 configuration assertions. Overall acceptance is **incomplete**.
-The local suite has **4,457 passing tests**; see the latest [consultant reply acceptance review](docs/CONSULTANT_ACCEPTANCE_REVIEW_2026-09-05.md),
+The bounded interviewer handoff is in [SUBMISSION.md](SUBMISSION.md). See the
+[September 6 release review](docs/RELEASE_REVIEW_2026-09-06.md) for the latest consultant
+probe, retained financial failure, source-bound v10 repair and clean-container HTTP checks.
+The latest local suite has **4,471 passing tests** (89.13s, one existing test-client warning);
+Ruff and strict Mypy passed. See the [release review](docs/RELEASE_REVIEW_2026-09-06.md)
+and the earlier [consultant reply acceptance review](docs/CONSULTANT_ACCEPTANCE_REVIEW_2026-09-05.md),
 [financial-document evidence repair](docs/FINANCIAL_DOCUMENT_EVIDENCE.md),
 [application-information priority repair](docs/APPLICATION_INFORMATION_PRIORITY.md),
 [school-record and undecided-date repair](docs/SCHOOL_RECORD_GUIDANCE.md),
@@ -36,7 +41,7 @@ The local suite has **4,457 passing tests**; see the latest [consultant reply ac
 and [next-step experiment](NEXT_STEP_ADVICE.md).
 Automated passes are not a naturalness score or a general accuracy/reliability percentage.
 
-Latest consultant and ordinary financial-document hardening: **4,457 passed in 79.44s**, Ruff and
+Previous September 5 consultant and ordinary financial-document hardening: **4,457 passed in 79.44s**, Ruff and
 strict Mypy passed (79 source files); the existing test-client warning remains.
 The frozen financial/provider-replay/adapter set passed **157 checks in 0.70s**.
 Financial subjects, amounts, original currencies, dates, period/basis and optional
@@ -50,10 +55,13 @@ The current fully bound v7 run was 4/4; total provider-reported use was 47,550 t
 This is exposed development evidence, not real documents, Gmail delivery, a blind
 holdout or an accuracy score. See [failure history and limits](docs/FINANCIAL_DOCUMENT_EVIDENCE.md)
 and [rollout evidence](eval_output/financial_document_rollout_2026-09-05.json).
-The Gmail worker reloaded as PID 14344 and was observed idle at 2026-09-04
-18:28:26 UTC. Existing business data and unknown permission are unchanged. Docker
-is healthy, all 72 source hashes match, the persistent volume is preserved and
-both existing ZIP hashes are unchanged.
+The Gmail worker reloaded as PID 46279 and was observed idle at 2026-09-04
+22:21:05 UTC. The restart produced no automatic dispatch and no worker error;
+the existing case, nine processed events, nine SENT messages and zero deliveries
+were unchanged. Processing consent remains unknown and inactive for the current
+scope; it was not fabricated or bypassed. Docker is healthy, all 79 local/container
+source hashes match, the persistent volume and existing ZIP are preserved, and two
+independent network-disabled synthetic runs produced the same current ZIP hash.
 
 Latest application-information priority repair: **3,854 passed in 60.73s**, Ruff
 and strict Mypy passed (70 source files); the existing test-client warning remains.
