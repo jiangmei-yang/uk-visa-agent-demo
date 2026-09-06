@@ -8,6 +8,7 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 from visa_agent.domain.application_records import ApplicationRecordLedger
 from visa_agent.domain.record_review import ApplicationRecordReview
+from visa_agent.domain.sponsor_location import SponsorLocationStatement
 
 
 def utc_now() -> datetime:
@@ -266,6 +267,8 @@ class Case(BaseModel):
     residence_duration_deferrals: list[dict[str, str]] = Field(default_factory=list)
     sponsor_address_question_identity: str | None = None
     sponsor_address_deferrals: list[dict[str, str]] = Field(default_factory=list)
+    # Source observations only; legacy location booleans are never backfilled.
+    sponsor_location_statements: list[SponsorLocationStatement] = Field(default_factory=list)
     employment_document_reviews: list[dict[str, str]] = Field(default_factory=list)
     employer_question_context: dict[str, str] = Field(default_factory=dict)
     employer_detail_deferrals: list[dict[str, str]] = Field(default_factory=list)
