@@ -20,7 +20,17 @@ configuration assertions. Overall acceptance is **incomplete**.
 The bounded interviewer handoff is in [SUBMISSION.md](SUBMISSION.md). See the
 [earlier September 6 release review](docs/RELEASE_REVIEW_2026-09-06.md) for the preceding consultant
 probe, retained financial failure, source-bound v10 repair and clean-container HTTP checks.
-The latest [multi-turn repair](docs/CONSULTANT_JOURNEY_REPAIR_2026-09-06.md) has
+The latest [durable pacing repair](docs/DURABLE_REPLY_PACING_2026-09-06.md) has
+**4,587 passing tests** (96.66s, one existing test-client warning), Ruff and strict
+Mypy passed (80 source files). It adds case-scoped persistent brief preferences,
+single-action pacing and guarded recovery of omitted application/next-step
+questions. The fresh real-model v6 probe passes **22/22**; v4's weak green and
+v5's **21/22** failure remain unchanged. Financial v15 passes **4/4**, bound to
+the final source, and fresh-container HTTP delivery passes **12 checks**.
+Actual replies were read by the implementer; some formal wording remains.
+This is not independent naturalness or universal correctness evidence.
+
+The preceding [multi-turn repair](docs/CONSULTANT_JOURNEY_REPAIR_2026-09-06.md) has
 **4,525 passing tests** (91.64s, one existing test-client warning), Ruff and strict
 Mypy passed (80 source files). It retains a 2/12 initial checker result (3/12 after
 correcting a date-comparison test bug), a weak 12/12 run rejected in manual review,

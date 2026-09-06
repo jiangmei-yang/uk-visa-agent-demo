@@ -1,5 +1,9 @@
 # Multi-turn consultant repair, 2026-09-06
 
+Follow-up: [durable reply pacing and omitted-question repair](DURABLE_REPLY_PACING_2026-09-06.md)
+addresses the known style-memory and single-action gaps below. This report's
+provider results and deployment observations remain historical evidence.
+
 This is development evidence, not a perfect-agent claim, blind evaluation, or
 recipient-side Gmail acceptance. The reviewed reply composer remains code-owned;
 DeepSeek proposes structured facts. We did not train or fine-tune a model.

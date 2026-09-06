@@ -186,7 +186,7 @@ def test_new_pacing_journeys_before_paid_probe(tmp_path, journey):
 
 
 @pytest.mark.parametrize("journey", ["zh-durable-pacing", "en-durable-pacing"])
-@pytest.mark.parametrize("version", ["v4", "v5"])
+@pytest.mark.parametrize("version", ["v4", "v5", "v6"])
 def test_retained_pacing_provider_proposals_include_omitted_question(tmp_path, journey, version):
     probe = runpy.run_path("scripts/consultant_journey_probe.py")
     report = json.loads(Path(f"eval_output/consultant_journey_2026-09-06-{version}.json").read_text())

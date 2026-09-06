@@ -70,3 +70,59 @@ for a complete plain form-entry question (open/find/access/fill in/fill out).
 Other routes, other applicants, mortgage applications and qualified questions
 cannot borrow that context; the link remains conditional guidance, not a route
 confirmation. Raw provider reports v4 and v5 are retained for offline replay.
+
+## Fresh provider results and manual reading
+
+The final v6 run completed **22/22** with contract `consultant-journey-v5`, zero
+retries, no Gmail calls, and source revision `b67b2006893203d942ffc7e6c3f4881cc655db5c`.
+Its report SHA-256 is `c2f8caa48e86aac0e03d037f832888cc75f7c6268166d921008f15038f15de23`.
+All 22 actual captured replies were read, not just their checks. The two omitted
+English questions now receive the official application entry and one intended-
+itinerary action respectively. Undecided dates are not requested again; identity
+updates survive reopening; sponsor changes and a preparation pause remain scoped.
+
+This manual review is by the implementer, not an independent naturalness score.
+Opening acknowledgements and school-record explanations remain fairly formal;
+brief mode deliberately does not truncate the reviewed evidence limitations.
+These known stylistic limits and broader unseen paraphrases remain outside the
+bounded pass claim. No "human-perfect" result is asserted.
+
+The three retained journey runs v4–v6 used 66 calls and 245,489 provider-reported
+tokens (236,913 input / 8,576 output). v4's weak green and v5's failure were not
+overwritten. The matching financial v13–v15 runs used 12 calls and 26,214 tokens;
+each extracted four frozen fictional PDFs. Current v15 binds the probe plus all
+80 source files and passes 4/4, SHA-256
+`6c20dcf6de248fb67cc13bc502cd58bc5a85a88a0705e335332c8918924d0ad5`.
+The four rendered PDF pages were visually checked; labels and content were
+readable and no PDF was modified.
+
+The isolated fresh-container HTTP run passes 12 checks, including correction,
+confirmation, duplicate-click protection and ZIP delivery. Its downloadable ZIP
+SHA-256 is `69508420e47d5f843bf89eeb088347fa1d0e1cb2252d91c8108fb98bbdb18582`.
+See [the retained HTTP report](../eval_output/pacing_release_smoke_2026-09-06.json).
+
+## Local regression
+
+Full suite, with both current source-binding checks enabled: **4,587 passed**,
+one existing FastAPI/Starlette test-client deprecation warning, 96.66 seconds.
+Ruff, strict Mypy (80 source files) and `git diff --check` passed. Saved provider
+proposals v1–v6 are replayed through the current workflow without network access;
+tests also cover route/owner/conditional boundaries and SQLite reopen/isolation.
+
+## Local deployment preservation
+
+The deployed loopback console is healthy, container
+`4b15d3cc7e1b83ba95daeba479999c480061b96798ed6eb37ad6b096977a482c`, image
+`sha256:f3038578536823fa9e979b10aa23962b89b0dc5874ae5e9791c1e83a764387f6`.
+All 80 deployed source files match local source; the sorted path/hash JSON digest
+is `5a940aa841701be349d272990a5bc4742b219f42347fa00524cbc7154050c846`.
+The named runtime volume was preserved, as was the existing ZIP hash
+`8bc0681a837437d30675da7650cd9c61e1ecc69532ea969c77ceb383c458f724`.
+
+The existing Gmail worker was restarted with unchanged configuration, PID 56119,
+observed idle at `2026-09-06T05:51:40.111483+00:00`. Its database dump digest was
+identical before and after: `e50176d0c1de0e690a1f37a1c81ad9d56b45eb01241fe359a74bc28bfadec900`.
+The retained state remains one case, nine processed events, nine SENT rows and
+zero deliveries. No test email was sent and no applicant consent was fabricated.
+These observations prove preservation and startup, not new recipient-side Gmail
+delivery or continuous availability after the local computer stops.

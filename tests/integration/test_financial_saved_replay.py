@@ -47,7 +47,7 @@ REPORTS = [ROOT / "eval_output" / name for name in (
 )]
 PDFS = ROOT / "output" / "pdf" / "financial-document-eval"
 ROLLOUT = ROOT / "eval_output" / "financial_document_rollout_2026-09-05.json"
-CURRENT_REPORT = ROOT / "eval_output" / "financial_document_deepseek_2026-09-06-v12.json"
+CURRENT_REPORT = ROOT / "eval_output" / "financial_document_deepseek_2026-09-06-v15.json"
 POLICY = load_policy(ROOT / "knowledge" / "uk_standard_visitor_2026-02-25.yaml")
 TODAY = date(2026, 9, 5)
 
