@@ -989,6 +989,7 @@ class WorkflowService:
         update_fields = {str(update["field"]) for update in updates}
         prior_sponsor_identity = (case.profile.sponsor_name, case.profile.sponsor_relationship)
         prior_funding_source = case.profile.funding_source
+        prior_home_address = case.profile.current_address
         for update in updates:
             field = str(update["field"])
             if field not in allowed:
@@ -1017,6 +1018,12 @@ class WorkflowService:
                     ),
                 )
             )
+        if ("current_address" in update_fields and prior_home_address != case.profile.current_address
+                and "current_address_duration" not in update_fields):
+            # Time at the former home is not evidence for the new address.
+            case.profile.current_address_duration = None
+            for old in case.active_evidence("current_address_duration"):
+                old.superseded = True
         sponsor_replaced_without_complete_identity = (
             prior_funding_source == "personal_sponsor"
             and case.profile.funding_source == "personal_sponsor"

@@ -149,6 +149,8 @@ class CaseProfile(BaseModel):
     uk_accommodation: str | None = None
     estimated_trip_cost_gbp: int | None = None
     current_address: str | None = None
+    # Preserve the applicant's precision; never derive a move-in day from a duration.
+    current_address_duration: str | None = Field(default=None, min_length=1, max_length=120)
     occupation_status: str | None = None
     annual_income_gbp: int | None = None
     funding_source: str | None = None

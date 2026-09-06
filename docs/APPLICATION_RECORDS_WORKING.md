@@ -7,6 +7,15 @@ The overall acceptance goal remains active.
 
 ## Requirement and design boundary
 
+### 2026-09-07 current-home duration foundation
+
+The missing residence-duration requirement is now represented as a source-bound,
+literal profile field with current-home role checks and retirement after address
+changes. See [implemented evidence and required integration](RESIDENCE_DURATION_INTAKE.md).
+It remains supplied-only: automatic questions, durable deferral, universal release
+gating, explicit fixture migration and readable output are still required. Do not
+claim complete intake or treat a passed current gate as covering this field.
+
 ### 2026-09-07 deferred-detail summary and PDF visibility
 
 Readable application-record summaries now show an active field-specific deferral

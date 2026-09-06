@@ -810,6 +810,11 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
             # a persisted fact (or use that rejected risk value to force review).
             controlled_value_rejections += 1
             continue
+        if update.field == "current_address_duration":
+            from visa_agent.domain.residence_duration import residence_duration_is_grounded
+
+            if not residence_duration_is_grounded(update.value, update.source_excerpt, latest_reply_text(event.body)):
+                continue
         if (update.field == "current_address" and isinstance(update.value, str)
                 and address_excerpt_is_other_location(update.source_excerpt, update.value)):
             # Other people's or workplace details are not a home-address update.
