@@ -183,3 +183,36 @@ def test_new_pacing_journeys_before_paid_probe(tmp_path, journey):
         result = dialogue.turn(spec["body"], patch)
         checks = probe["check_turn"](spec, result.case, result.body)
         assert all(checks.values()), (i + 1, checks, result.body)
+
+
+@pytest.mark.parametrize("journey", ["zh-durable-pacing", "en-durable-pacing"])
+def test_retained_pacing_provider_proposals_include_omitted_question(tmp_path, journey):
+    probe = runpy.run_path("scripts/consultant_journey_probe.py")
+    report = json.loads(Path("eval_output/consultant_journey_2026-09-06-v4.json").read_text())
+    dialogue = Conversation(tmp_path)
+    for row in report["results"]:
+        if row["journey"] != journey:
+            continue
+        result = dialogue.turn(row["input"], CasePatch.model_validate_json(row["raw_model_content"]))
+        spec = probe["PACING_SCENARIOS"][journey][row["turn"] - 1]
+        checks = probe["check_turn"](spec, result.case, result.body)
+        assert all(checks.values()), (row["turn"], checks, result.body)
+
+
+@pytest.mark.parametrize("body", [
+    "For my friend's application, what is the one thing I should prepare now?",
+    "If I apply tomorrow, what is the one thing I should prepare now?",
+    'Please translate "What is the one thing I should prepare now?"',
+    "I am applying for a student visa instead. What is the one thing I should prepare now?",
+    "我朋友的签证申请，只告诉我一个步骤。",
+])
+def test_omitted_topic_fallback_does_not_borrow_other_case_or_route(tmp_path, body):
+    report = json.loads(Path("eval_output/consultant_journey_2026-09-06-v4.json").read_text())
+    first = next(row for row in report["results"] if row["journey"] == "en-durable-pacing")
+    dialogue = Conversation(tmp_path)
+    result = dialogue.turn(first["input"], CasePatch.model_validate_json(first["raw_model_content"]))
+    before = dict(result.case.guidance_events)
+    result = dialogue.turn(body, _patch())
+    assert not result.case.proactive_guidance_offered
+    assert result.case.guidance_events == before
+    assert not result.case.profile_confirmed and not result.case.delivery_path

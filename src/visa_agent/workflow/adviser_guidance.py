@@ -319,11 +319,24 @@ def _question_step_allows_preparation_guidance(case: Case, active: str, *, initi
     answer about a document/review/paused state or another customer question.
     """
     step = case.next_step_advice
+    if _information_only_request(active):
+        return False
+    # A provider may omit a plainly expressed one-action request. This only
+    # selects reviewed advice for the established case; it creates no topic,
+    # fact, permission or replacement for a separately answered question.
+    if (set(case.customer_question_topics) <= {"next_step"}
+            and (not case.customer_answers or step is not None and step.kind == "question"
+                 and case.customer_answers == [step.message])
+            and case.profile.visit_purpose in {"tourism", "family_or_friends", "business", "conference"}
+            and case.profile.occupation_status in {"student", "employed", "self_employed"}
+            and not explicit_nonvisitor_route(case.latest_customer_message)
+            and any(wants_one_action(clause)
+                    and _next_step_targets_current_case(case.latest_customer_message, clause)
+                    for clause in _current_clauses(case.latest_customer_message))):
+        return True
     if (step is None or step.kind != "question"
             or set(case.customer_question_topics) != {"next_step"}
             or case.customer_answers != [step.message]):
-        return False
-    if _information_only_request(active):
         return False
     if re.search(
         r"个人(?:资料|信息)|身份(?:资料|信息)|申请表(?:信息|内容)|"

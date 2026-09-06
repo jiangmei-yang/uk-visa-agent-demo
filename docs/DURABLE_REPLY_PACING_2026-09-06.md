@@ -54,3 +54,11 @@ extraction and full regression are refreshed after the implementation is stable.
 
 The preceding fully bound journey/financial reports remain historical evidence;
 their file hashes must not be rewritten to make this new source appear tested.
+
+The first live pacing run v4 reported 22/22 under its then-current checks. Manual
+reading rejected full acceptance: English pacing turn 4 had an empty model patch
+and asked about accommodation instead of offering the requested practical action.
+The report remains unchanged. Contract v5 requires a concrete intended-itinerary
+action and no intake question for that turn. The repaired fallback selects only
+reviewed advice for an established current case, preserves separately answered
+questions and rejects other applicants/routes and hypothetical scopes.
