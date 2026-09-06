@@ -103,6 +103,10 @@ def clear_natural_confirmation(body: str) -> bool:
 
 def summary_fingerprint(case: Case, *, include_documents: bool) -> str:
     payload: dict[str, object] = {"profile": case.profile.model_dump(mode="json")}
+    if case.sponsor_location_statements:
+        payload["sponsor_location_statements"] = [
+            item.model_dump(mode="json") for item in case.sponsor_location_statements
+        ]
     if case.application_records is not None and (case.application_records.revisions or case.application_records.declarations):
         payload["application_records"] = case.application_records.fingerprint()
     if include_documents:

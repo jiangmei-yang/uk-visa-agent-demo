@@ -1065,6 +1065,20 @@ def deterministic_fallback_message(case: Case, plan: str) -> str:
             # Retain serious-history instructions; a contact clarification never
             # resolves or hides an independent risk requiring review.
             message = message + "\n\n" + clarification if history_reported else clarification
+        location_reason = ("Sponsor residence and current presence were recorded separately; "
+                           "review UK-status evidence applicability before resuming preparation.")
+        if location_reason in (case.human_review_reason or ""):
+            location_receipt = (
+                "资助人的居住情况和目前所在地已分别记下，这两项不能混为一谈。"
+                "我会保留你的原话，交给顾问核对是否需要其英国身份材料；现在还不会定稿。"
+                "这段说明不用重复发送。"
+                if case.customer_language == "zh" else
+                "I've kept your sponsor's residence and current location as separate information. "
+                "An adviser needs to check whether UK-status evidence is applicable before the pack "
+                "can be finalised. You do not need to repeat the explanation you've just sent."
+            )
+            message = (location_receipt if case.human_review_reason == location_reason else
+                       message + "\n\n" + location_receipt)
         acknowledgement = change_acknowledgement(case.model_copy(update={"latest_changes": {
             key: value for key, value in case.latest_changes.items() if key != "has_serious_history"
         }}))

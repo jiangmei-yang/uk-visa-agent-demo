@@ -35,6 +35,7 @@ from visa_agent.domain.rules import (
     required_profile_facts,
     run_consistency_checks,
 )
+from visa_agent.domain.sponsor_location import parse_sponsor_location_statements
 from visa_agent.llm.guarded import ensure_guarded, validate_case_patch
 from visa_agent.llm.ports import CasePatch, FactUpdate, LLMClient
 from visa_agent.privacy.consent import ConsentLedger, ProcessingConsentRequired
@@ -101,6 +102,7 @@ from visa_agent.workflow.record_collection_plan import (
 )
 from visa_agent.workflow.record_intake import plan_record_intake, record_intake_receipt
 from visa_agent.workflow.record_source_audit import audit_application_record_sources
+from visa_agent.workflow.sponsor_location import record_sponsor_location
 
 PROFILE_CONFIRMATION_LINES = {
     "profile confirmed",
@@ -564,6 +566,7 @@ class WorkflowService:
         # an unrelated question but omits the customer's separate date uncertainty.
         update_deferred_questions(case, customer_event.body)
         if (set(case.customer_question_topics) == {"off_topic"}
+                and not parse_sponsor_location_statements(customer_event.body, source_event_id=event.id)
                 and not patch.updates and not patch.question_deferrals and not event.attachment_paths
                 and not record_plan.changed and not record_plan.requires_review
                 and patch.preparation_intent is None and not case.preparation_paused
@@ -586,6 +589,7 @@ class WorkflowService:
             self._render_and_commit(case, event, "blocked", processing_epoch)
             return case, False, "blocked"
         self._apply_patch(case, customer_event, patch.model_dump()["updates"])
+        record_sponsor_location(case, customer_event)
         for literal_fact_key in literal_employer_fields:
             for evidence in case.active_evidence(literal_fact_key):
                 if evidence.source_event_id == event.id:
