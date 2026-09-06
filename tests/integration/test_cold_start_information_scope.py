@@ -100,7 +100,7 @@ def test_exposed_first_enquiry_gets_requested_overview_before_funding_is_known(t
     assert initial is None and patch.customer_questions[0].topic == "document_checklist"
     case, reply = _run(tmp_path, event, patch)
     _assert_reference(reply, "zh")
-    assert case.profile.model_dump(mode="json") == {"current_address_duration": None, "sponsor_address": None, **row["after"]["cases"][0]["profile"]}
+    assert case.profile.model_dump(mode="json") == {"employer_name": None, "employer_address": None, "employer_phone": None, "current_address_duration": None, "sponsor_address": None, **row["after"]["cases"][0]["profile"]}
     assert case.profile.funding_source is None
     assert set(case.deferred_fields) == {"planned_arrival_date", "planned_departure_date"}
     assert not case.preparation_paused and case.last_requested_fields == case.question_plan == []
@@ -112,7 +112,7 @@ def test_exposed_single_employment_letter_question_is_not_a_four_document_demand
     row, initial, event, patch, original_hash = _captured("dev_zh_01_t03")
     assert patch.customer_questions[0].topic == "document_checklist"
     case, reply = _run(tmp_path, event, patch, initial)
-    assert case.profile.model_dump(mode="json") == {"current_address_duration": None, "sponsor_address": None, **row["after"]["cases"][0]["profile"]}
+    assert case.profile.model_dump(mode="json") == {"employer_name": None, "employer_address": None, "employer_phone": None, "current_address_duration": None, "sponsor_address": None, **row["after"]["cases"][0]["profile"]}
     assert case.latest_changes["estimated_trip_cost_gbp"] == "3200" and "3200" in reply
     assert not document_list_requested(case)
     assert "接下来还需要这些材料" not in reply and "待补材料" not in reply
@@ -259,7 +259,7 @@ def test_exposed_first_holdout_overview_is_answered_without_a_private_questionna
     assert initial is None and patch.customer_questions[0].topic == "document_checklist"
     case, reply = _run(tmp_path, event, patch)
     _assert_reference(reply, language)
-    assert case.profile.model_dump(mode="json") == {"current_address_duration": None, "sponsor_address": None, **row["after"]["cases"][0]["profile"]}
+    assert case.profile.model_dump(mode="json") == {"employer_name": None, "employer_address": None, "employer_phone": None, "current_address_duration": None, "sponsor_address": None, **row["after"]["cases"][0]["profile"]}
     assert not case.preparation_paused
     assert case.last_requested_fields == case.question_plan == [] and case.question_event_ids == {}
     assert "Who will pay" not in reply and "费用由你自己承担，还是" not in reply
@@ -274,7 +274,7 @@ def test_exposed_first_holdout_translation_question_does_not_request_four_docume
     )
     assert [question.topic for question in patch.customer_questions] == ["translation"]
     case, reply = _run(tmp_path, event, patch, initial)
-    assert case.profile.model_dump(mode="json") == {"current_address_duration": None, "sponsor_address": None, **row["after"]["cases"][0]["profile"]}
+    assert case.profile.model_dump(mode="json") == {"employer_name": None, "employer_address": None, "employer_phone": None, "current_address_duration": None, "sponsor_address": None, **row["after"]["cases"][0]["profile"]}
     assert "2800" in reply and all(word in reply for word in ("准确性声明", "全名", "签名", "联系方式"))
     assert not document_list_requested(case)
     assert "接下来还需要这些材料" not in reply and "待补材料" not in reply

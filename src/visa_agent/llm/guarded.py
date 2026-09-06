@@ -647,9 +647,9 @@ def _other_person_controls_clause(clause: str, update: FactUpdate) -> bool:
         return False
     if not (_OTHER_PERSON_SUBJECT.search(clause) or _OTHER_PERSON_POSSESSIVE.search(clause)):
         return False
-    if update.field in SPONSOR_FIELDS:
-        # sponsor_role_is_grounded performs the stricter cross-clause role check
-        # after ordinary evidence validation.
+    if update.field in SPONSOR_FIELDS or update.field in {"employer_name", "employer_address", "employer_phone"}:
+        # Dedicated sponsor/employer guards establish ownership below. Those
+        # entities are necessarily distinct from the applicant themselves.
         return False
     if update.field == "funding_source" and (
         _CURRENT_APPLICANT_SUPPORT.search(clause)
@@ -724,10 +724,9 @@ def _profile_update_has_nonapplicant_owner(event: InboundEvent, update: FactUpda
         return True
     if any(_other_person_controls_clause(clause, update) for clause in clauses):
         return True
-    if update.field in SPONSOR_FIELDS:
-        # A sponsor is necessarily another person.  Conditions and reported
-        # speech were rejected above; let the dedicated role/evidence gate
-        # decide whether this person is actually this applicant's sponsor.
+    if update.field in SPONSOR_FIELDS or update.field in {"employer_name", "employer_address", "employer_phone"}:
+        # Conditions and reported speech were rejected above; the dedicated
+        # ownership guard must still establish this applicant's sponsor/employer.
         return False
     return _message_is_wholly_nonapplicant(event) and not any(
         _CURRENT_APPLICANT_SUBJECT.search(clause)
@@ -810,6 +809,11 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
             # a persisted fact (or use that rejected risk value to force review).
             controlled_value_rejections += 1
             continue
+        if update.field in {"employer_name", "employer_address", "employer_phone"}:
+            from visa_agent.domain.employer_evidence import employer_detail_is_grounded
+
+            if not employer_detail_is_grounded(update.field, update.value, update.source_excerpt, latest_reply_text(event.body)):
+                continue
         if update.field == "current_address_duration":
             from visa_agent.domain.residence_duration import residence_duration_is_grounded
 

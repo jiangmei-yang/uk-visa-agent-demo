@@ -1071,6 +1071,7 @@ class WorkflowService:
         prior_sponsor_identity = (case.profile.sponsor_name, case.profile.sponsor_relationship)
         prior_funding_source = case.profile.funding_source
         prior_home_address = case.profile.current_address
+        prior_employer_name = case.profile.employer_name
         for update in updates:
             field = str(update["field"])
             if field not in allowed:
@@ -1107,6 +1108,18 @@ class WorkflowService:
             case.deferred_fields = [field for field in case.deferred_fields if field != "current_address_duration"]
             for old in case.active_evidence("current_address_duration"):
                 old.superseded = True
+        if ("employer_name" in update_fields and prior_employer_name is not None
+                and prior_employer_name != case.profile.employer_name):
+            for field in ("employer_address", "employer_phone"):
+                if field not in update_fields:
+                    setattr(case.profile, field, None)
+                    for old in case.active_evidence(field):
+                        old.superseded = True
+        if "occupation_status" in update_fields and case.profile.occupation_status != "employed":
+            for field in ("employer_name", "employer_address", "employer_phone"):
+                setattr(case.profile, field, None)
+                for old in case.active_evidence(field):
+                    old.superseded = True
         sponsor_replaced_without_complete_identity = (
             prior_funding_source == "personal_sponsor"
             and case.profile.funding_source == "personal_sponsor"

@@ -152,6 +152,9 @@ class CaseProfile(BaseModel):
     # Preserve the applicant's precision; never derive a move-in day from a duration.
     current_address_duration: str | None = Field(default=None, min_length=1, max_length=120)
     occupation_status: str | None = None
+    employer_name: str | None = Field(default=None, min_length=1, max_length=400)
+    employer_address: str | None = Field(default=None, min_length=1, max_length=400)
+    employer_phone: str | None = Field(default=None, min_length=1, max_length=80)
     annual_income_gbp: int | None = None
     funding_source: str | None = None
     sponsor_name: str | None = None
