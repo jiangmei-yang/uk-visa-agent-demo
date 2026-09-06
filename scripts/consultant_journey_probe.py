@@ -52,6 +52,19 @@ RECORD_SCENARIOS: dict[str, list[dict[str, Any]]] = {
          "profile": {"date_of_birth": "1997-07-01"}, "record_count": 3,
          "collection_states": {"travel": "unknown"}, "deferred_dates": True,
          "never_ask": ["date_of_birth"]},
+        {"body": "我在英国只有前面提到的姐姐陈示例，没有其他亲属或联系人了。出境经历仍有记不清的部分。",
+         "collection_states": {"travel": "unknown", "uk_contact": "complete_declared"},
+         "record_count": 3, "deferred_dates": True},
+        {"body": "补充一下，姐姐陈示例的护照号码是TEST00001。",
+         "contact_passport": "TEST00001", "passport_source_event": "application-record-intake-6",
+         "collection_states": {"travel": "unknown", "uk_contact": "complete_declared"},
+         "record_count": 3, "deferred_dates": True,
+         "forbidden_reply": "除了已记下的人，你在英国还有其他亲属或联系人吗"},
+        {"body": "刚才姐姐陈示例的护照号码写错了，请更正为TEST00002。她的其他资料没变。",
+         "contact_passport": "TEST00002", "passport_source_event": "application-record-intake-7",
+         "collection_states": {"travel": "unknown", "uk_contact": "complete_declared"},
+         "record_count": 3, "deferred_dates": True,
+         "forbidden_reply": "除了已记下的人，你在英国还有其他亲属或联系人吗"},
     ],
 }
 SCENARIOS: dict[str, list[dict[str, Any]]] = {
@@ -208,6 +221,12 @@ def check_turn(spec: dict[str, Any], case: Any, reply: str) -> dict[str, bool]:
     if "collection_states" in spec:
         checks["preserves_explicit_collection_state"] = bool(case.application_records) and all(
             case.application_records.collection_state(kind) == state for kind, state in spec["collection_states"].items())
+    if "contact_passport" in spec:
+        contacts = ([record for record in case.application_records.current().values() if record.kind == "uk_contact"]
+                    if case.application_records else [])
+        passport = contacts[0].fields.get("passport_number") if len(contacts) == 1 else None
+        checks["contact_detail_and_current_source"] = bool(passport) and (
+            passport.value == spec["contact_passport"] and passport.source_event_id == spec["passport_source_event"])
     return checks
 
 

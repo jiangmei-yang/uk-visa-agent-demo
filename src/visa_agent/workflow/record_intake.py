@@ -78,6 +78,10 @@ _COMPLETE_DECLARATION = {
     "uk_contact": re.compile(r"\b(?:this|that)\s+is\s+my\s+(?:full|complete)\s+list\s+of\s+UK\s+contacts\b|\bmy\s+UK\s+contacts\s+list\s+is\s+complete\b|(?:这|這|以上)(?:就)?是我的?全部(?:英国|英國)(?:联系人|聯絡人)|我的?(?:英国|英國)(?:联系人|聯絡人)(?:已经|已經|已)?列全", re.I),
 }
 _RECORD_INPUT: TypeAdapter[RecordInput] = TypeAdapter(RecordInput)
+_NO_OTHER_CONTACTS = re.compile(
+    r"\bI\s+have\s+no\s+other\s+UK\s+(?:relatives?\s+or\s+)?contacts?\b|"
+    r"我在(?:英国|英國)(?:只有[^。！？?\n]{1,60}[，,])?(?:没有|沒有)其他(?:亲属或|親屬或)?(?:联系人|聯絡人)", re.I,
+)
 
 
 @dataclass(frozen=True)
@@ -299,6 +303,14 @@ def plan_record_intake(
             if re.search(r"\b(?:want|intend|plan|hope|might|would|will)\b|打算|想说|想說|准备说|準備說", context, re.I):
                 continue
             explicit_uncertainty = bool(_STATE["unknown"].search(context))
+            no_other_contacts = (assertion.kind == "uk_contact" and bool(_NO_OTHER_CONTACTS.search(context))
+                                 and not re.search(re.escape(context) + r"\s*[?？]", body))
+            if no_other_contacts and assertion.state in {"none_declared", "complete_declared"}:
+                # 'No others' asserts list scope, not an empty list. Bind the
+                # whole current sentence, retaining its subject and UK scope,
+                # rather than a model's clipped 'no other contacts' fragment.
+                # Applying complete_declared still requires a nonempty ledger.
+                assertion = assertion.model_copy(update={"state": "complete_declared", "source_excerpt": context})
             if explicit_uncertainty and re.search(r"\b(?:not|no longer)\s+(?:unsure|uncertain)|不是不确定|不是不確定", context, re.I):
                 raise ValueError("Negated uncertainty cannot become a deferred collection")
             if explicit_uncertainty and assertion.state == "partial":
@@ -313,7 +325,8 @@ def plan_record_intake(
                 raise ValueError("Uncertain application collection cannot be marked absent or complete")
             if assertion.state == "none_declared" and not _NONE_DECLARATION[assertion.kind].search(context):
                 raise ValueError("Application collection absence is not explicitly stated")
-            if assertion.state == "complete_declared" and not _COMPLETE_DECLARATION[assertion.kind].search(context):
+            if assertion.state == "complete_declared" and not (
+                    _COMPLETE_DECLARATION[assertion.kind].search(context) or no_other_contacts):
                 raise ValueError("Application collection completeness is not explicitly stated")
             if assertion.state == "complete_declared" and re.search(r"\bnot\b|没列全|沒列全|不完整", context, re.I):
                 raise ValueError("Negated completeness cannot become a full-list assertion")

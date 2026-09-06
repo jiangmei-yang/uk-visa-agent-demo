@@ -7,6 +7,47 @@ The overall acceptance goal remains active.
 
 ## Requirement and design boundary
 
+### 2026-09-07 real-model records v4/v5: retained failures, not acceptance
+
+The exposed real-DeepSeek/captured-transport records journey now includes seven
+turns: partial travel/contact records, correction, travel uncertainty, another
+person's travel plus a supplied birthday, explicit no-other-contacts, a contact
+passport supplement and its correction. No mailbox or real documents are used.
+
+`eval_output/application_record_intake_2026-09-07-v4.json` retains five actual
+calls / **26,752 tokens**. Turns 1–4 passed; turn 5 incorrectly proposed
+`none_declared` from “没有其他亲属或联系人了” despite an existing sister contact.
+The workflow withheld for review. Turns 6–7 had no model calls; the probe recorded
+`StopIteration` because the held workflow produced no normal outbox message.
+Those are failures, not skipped successes or transport evidence.
+
+The planner now distinguishes a bounded, first-person current “no other UK
+contacts” statement from absence. It retains the complete source sentence and
+still requires a nonempty ledger; it does not invent records or declarations from
+silence. Question/hypothesis/third-party/uncertainty and empty-list counterexamples
+are tested. The prompt also explicitly distinguishes these meanings. The new
+13-test set plus existing intake suite passed **73 tests** (0.15s); Ruff and strict
+Mypy passed for 91 source modules.
+
+`eval_output/application_record_intake_2026-09-07-v5.json` retains seven actual
+calls / **37,804 tokens**. Turns 1–5 passed, but turns 6–7 failed: the model correctly
+proposed the passport supplement/correction while the local planner ignored the
+natural Chinese “补充一下…” / “刚才…写错了，请更正…” wording because its correction
+recognizer requires a narrower sentence prefix. Replies merely acknowledged
+retaining existing information. This is an unresolved intake/data-loss defect,
+not an acceptable natural-adviser result. Next implementation must repair and
+replay those retained proposals, test conflicting/hypothetical amendments, then
+rerun fresh extraction. Do not adjust expected values to accept discarded input.
+
+Both attempts are source/schema-bound historical evidence, not independent
+naturalness evaluation, complete requirements coverage or Gmail delivery. The
+two older journey/financial source reports remain stale and must be refreshed.
+Full development regression passed **4,892 tests / 2 deselected**, 98.63s, one
+existing Starlette warning (`/tmp/visa-no-other-contact-regression.log`). This
+green regression does not cover away the two failed live-proposal turns above.
+The v5 captured source hashes were compared with the worktree and all matched
+before this commit. No deployed runtime was changed.
+
 ### 2026-09-07 preserve list scope when supplementing contact details
 
 An existing contact's phone, passport number or support-detail update no longer
