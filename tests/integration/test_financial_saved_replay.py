@@ -105,7 +105,7 @@ def test_current_provider_run_is_bound_to_complete_source_prompt_schema_and_pdf_
         name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
         for name in IMPLEMENTATION_FILES
     }
-    assert len(expected_implementation) == 80  # probe plus every one of 79 source files
+    assert len(expected_implementation) == 81  # probe plus every one of 80 source files
     assert report["implementation_files_sha256"] == expected_implementation
     assert report["implementation_bundle_sha256"] == CANONICAL_SHA256(expected_implementation)
     assert report["document_schema_sha256"] == CANONICAL_SHA256(

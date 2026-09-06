@@ -731,7 +731,7 @@ def _single_question_context(case: Case, question_fields: list[str]) -> str:
     else:
         key = question_fields[0]
     if case.customer_language == "zh":
-        if key == "sponsor_identity" and case.profile.sponsor_relationship:
+        if key == "sponsor_identity" and _current_parent_sponsor_hint(case):
             return "接着把实际资助人确认清楚，这样资助信、资金材料和关系证明才能对应起来。"
         return {
             "visit_purpose": "我先确认出行目的，因为它决定后面该按旅游、探亲访友还是商务或参会来整理材料。",
@@ -752,7 +752,7 @@ def _single_question_context(case: Case, question_fields: list[str]) -> str:
             "current_address": "接下来核对现住址，因为申请表会需要这项信息。",
             "has_serious_history": "接下来做一项常规背景核对；如有相关情况，后面会按需要转人工复核。",
         }.get(key, "")
-    if key == "sponsor_identity" and case.profile.sponsor_relationship:
+    if key == "sponsor_identity" and _current_parent_sponsor_hint(case):
         return (
             "Next, I need to identify the actual sponsor so the support letter, financial evidence and "
             "relationship evidence all match."
@@ -1061,8 +1061,8 @@ def _current_parent_sponsor_hint(case: Case) -> str | None:
     clauses = re.split(r"[。！!？？；;\n]|\.(?:\s|$)", text)
     relation_patterns = {
         "parents": (r"(?:我(?:的)?(?:父母|爸妈)|父母|爸妈)", r"my parents"),
-        "father": (r"(?:我(?:的)?(?:父亲|爸爸|爸)|我爸|父亲)", r"my (?:father|dad)"),
-        "mother": (r"(?:我(?:的)?(?:母亲|妈妈|妈)|我妈|母亲)", r"my (?:mother|mum|mom)"),
+        "father": (r"(?:我(?:的)?(?:父亲|爸爸|爸)|我爸|父亲|爸爸)", r"my (?:father|dad)"),
+        "mother": (r"(?:我(?:的)?(?:母亲|妈妈|妈)|我妈|母亲|妈妈)", r"my (?:mother|mum|mom)"),
     }
     for clause in clauses:
         if re.search(

@@ -112,6 +112,15 @@ def excluded_advice_topics(body: str) -> set[str]:
             if any(re.search(pattern, target, re.I) for target in objects)}
 
 
+def wants_brief_reply(body: str) -> bool:
+    """Pacing only: never changes facts, consent, requirements or release gates."""
+    return any(re.search(
+        r"(?:请|先)?简短(?:告诉|说|回答)|\b(?:please\s+)?keep it brief\b",
+        clause, re.I,
+    ) and not re.search(r"不要|不用|\b(?:not|don't|do not)\b", clause, re.I)
+               for clause in _current_clauses(body))
+
+
 def wants_no_links(body: str) -> bool:
     """Only a current global no-link preference, not 'do not only send links'."""
     link = r"(?:links?|urls?|websites?)"

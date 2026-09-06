@@ -25,6 +25,12 @@ from visa_agent.workflow.document_preparation import (
 )
 from visa_agent.workflow.document_purpose import reviewed_document_purpose
 from visa_agent.workflow.guidance_freshness import CHECKED_AT, REVIEW_AFTER
+from visa_agent.workflow.income_clarification import (
+    guarantee_answer,
+    guarantee_question,
+    income_answer,
+    income_question,
+)
 from visa_agent.workflow.intent_matching import (
     EXPLICIT_VISITOR_ROUTE_PATTERN,
     explicit_nonvisitor_route,
@@ -1526,6 +1532,10 @@ def _reviewed_answer(topic: str, language: str, *, body: str = "", case: Case | 
     elif topic == "sponsor_support":
         return sponsor_support_answer(body, language, case)
     elif topic == "bank_period":
+        clarification = income_answer(income_question(body) or "", language,
+            self_employed=bool(case and case.profile.occupation_status == "self_employed"))
+        if clarification:
+            return clarification + "\nGOV.UK: " + SOURCE + "#demonstrating-personal-circumstances"
         self_employed_accounts = _self_employed_account_comparison(body)
         if self_employed_accounts:
             answer = (
@@ -2063,6 +2073,17 @@ def grounded_customer_answer_plan(
     # A source-grounded model topic is only a proposal. An individual document's
     # purpose is not a request for an entire missing-documents checklist.
     if CHECKED_AT <= today <= REVIEW_AFTER:
+        # A missing provider topic must not turn a directly answerable question
+        # into an empty acknowledgement. These explanations create no case facts.
+        if not off_topic_excerpts and not _request_has_other_route(active_text, current):
+            kind = income_question(current)
+            if kind and "bank_period" not in requested:
+                clarification = income_answer(kind, language,
+                    self_employed=bool(case and case.profile.occupation_status == "self_employed"))
+                if clarification:
+                    answers.append(("income_clarification", clarification + "\nGOV.UK: " + SOURCE))
+            if guarantee_question(current):
+                answers.append(("no_guarantee", guarantee_answer(language) + "\nGOV.UK: " + SOURCE))
         direct_preparation = reviewed_document_preparation(current, language)
         if (direct_preparation and not off_topic_excerpts
                 and not _request_has_other_route(active_text, current)):

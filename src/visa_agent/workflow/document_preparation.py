@@ -146,11 +146,12 @@ def host_not_sponsor_financial_question(text: str) -> bool:
 SCHOOL_RECORD_TOPIC = "student_online_record_obstacle_v1"
 _SCHOOL = r"学校|校方|大学|\b(?:school|university|college|registry)\b"
 _SCHOOL_UNAVAILABLE = (
-    r"(?:学校|校方|大学).{0,18}(?:不提供|不开|不出具|开不出|不给开|拒绝开).{0,18}(?:在读|在学|证明)|"
+    r"(?:学校|校方|大学).{0,18}(?:不提供|不开|不出具|开不出|开不了|不给开|拒绝开).{0,18}(?:在读|在学|证明)|"
     r"\b(?:school|university|college|registry)\b.{0,30}\b(?:does not|doesn't|cannot|can't|won't|refuses to)\s+"
     r"(?:issue|provide|write)\b.{0,35}\b(?:enrol\w*|student status)\s+letters?\b"
 )
 _ONLINE_RECORD = (
+    r"我只有学校系统下载的学生状态\s*(?:PDF|记录)|"
     r"(?:只能|只有|仅有|可以)[^。！？；;，,\n]{0,18}(?:网上|线上|在线|电子)"
     r"[^。！？；;，,\n]{0,18}(?:在读|在学|学籍)(?:记录|证明)|"
     r"\bI\s+(?:can\s+)?only\s+(?:download|have|obtain|get)\b"
@@ -165,6 +166,9 @@ def _school_current(text: str) -> str:
     if not text or len(text) > 6000:
         return ""
     current = latest_reply_text(text)
+    # Declining a repeated application-process overview does not decline help
+    # with the record currently under discussion. No other opt-out is removed.
+    current = re.sub(r"(?:^|(?<=[。？]))别再从头讲申请流程[。！]?", "", current)
     unsafe = (
         _UNSAFE_OR_OUTSIDE + "|" + _CONDITION_OR_DECLINED + "|" + _THIRD_PARTY_REQUEST + "|" + _UK_WORK
         + r"|(?:朋友|同学|同事|客户|他|她)(?:的学校|只能)|\b(?:friend's|friend’s|his|her|their)\b"
@@ -259,6 +263,7 @@ def school_record_followup(text: str) -> bool:
         return False
     return any(re.fullmatch(
         r"(?:那|我|现在|接下来|下一步){0,3}(?:应该|该|可以)?(?:怎么办|怎么做|做什么|准备什么)[?？]?|"
+        r"(?:那)?这份(?:上面)?要看哪几项[?？]?|"
         r"what\s+(?:should|can|do)\s+I\s+(?:do|prepare)\s*(?:next|now)?\s*[?？]?",
         clause.strip(), re.I,
     ) for clause in re.split(r"[。！!；;\n]|(?<=[?？])\s*|\.(?:\s|$)", current))

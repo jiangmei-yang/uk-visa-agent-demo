@@ -4,7 +4,11 @@ import re
 from datetime import date
 
 from visa_agent.domain.models import Case, CaseStatus
-from visa_agent.workflow.advice_preferences import _current_clauses, wants_no_links
+from visa_agent.workflow.advice_preferences import (
+    _current_clauses,
+    wants_brief_reply,
+    wants_no_links,
+)
 from visa_agent.workflow.conversation import (
     customer_requests_next_step,
     document_list_requested,
@@ -342,6 +346,7 @@ def _question_step_allows_preparation_guidance(case: Case, active: str, *, initi
         ):
             continue
         if re.search(
+            r"\btell me what to (?:gather|prepare|collect) first\b|"
             r"(?:帮我|请|想|先|开始|继续|接着|打算|下一步|该|应该|需要).{0,10}"
             r"(?:准备|整理|收集).{0,10}(?:申请|材料|资料|文件|签证|什么)|"
             r"\b(?:help me|please|let['’]s|can we|could we|want to|ready to|start|continue|"
@@ -567,7 +572,8 @@ def _preparation_guidance(case: Case, today: date, sent_topics: set[str]) -> lis
                 "without asking you to send every personal detail at once."
             ) + "\nGOV.UK: " + ROUTE_CHECK_URL)]
         return []
-    if not initial_checklist and "application_overview_v1" not in sent_topics:
+    if (not initial_checklist and "application_overview_v1" not in sent_topics
+            and not wants_brief_reply(current)):
         result.append(("application_overview_v1", _application_process_orientation(case)))
     # Existing combined student advice covers both components. Do not re-send
     # either component merely because a deployment now has more granular topics.

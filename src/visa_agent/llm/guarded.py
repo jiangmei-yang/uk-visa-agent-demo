@@ -154,7 +154,7 @@ _SEMANTIC_VALUE_PATTERNS: dict[str, dict[str, tuple[re.Pattern[str], ...]]] = {
             ),
             re.compile(
                 r"(?:^|\b我|本人|我们|我們)(?:目前|现在|現在|当前|當前|正在|仍然|是|在)?"
-                r".{0,8}(?:在读|在讀|读大学|讀大學|读书|讀書|上学|上學|学生|學生)|"
+                r".{0,8}(?:在读|在讀|读大学|讀大學|读书|讀書|上学|上學|学生|學生|念硕士|念碩士|念博士)|"
                 r"^(?:目前|现在|現在|是)?(?:在读|在讀|大学生|大學生|学生|學生)$",
                 re.I,
             ),
@@ -208,7 +208,8 @@ _SEMANTIC_VALUE_PATTERNS: dict[str, dict[str, tuple[re.Pattern[str], ...]]] = {
                 r"\bi\b.{0,70}\b(?:uk\s+)?(?:holiday|tourism|sightseeing|vacation)\b|"
                 r"\b(?:my|our|this)\s+(?:main\s+)?(?:trip|visit|purpose)\b.{0,20}"
                 r"\b(?:holiday|tourism|sightseeing|vacation)\b|"
-                r"^(?:(?:uk|britain|england)\s+)?(?:holiday|tourism|sightseeing|vacation|tourist visit)$",
+                r"\bapplying\s+(?:here|in\s+Hong Kong)\s+for\s+a\s+(?:short\s+)?UK\s+holiday\b|"
+                r"^(?:short\s+)?(?:(?:uk|britain|england)\s+)?(?:holiday|tourism|sightseeing|vacation|tourist visit)$",
                 re.I,
             ),
             re.compile(
@@ -220,7 +221,8 @@ _SEMANTIC_VALUE_PATTERNS: dict[str, dict[str, tuple[re.Pattern[str], ...]]] = {
                 r"(?:旅游|旅遊|自由行)(?:签证|簽證)?|"
                 r"^(?:(?:主要|主要目的)(?:是|为|為)?|"
                 r"(?:想|打算|计划|計劃))?(?:去|前往|到)?(?:英国|英國)?"
-                r"(?:旅游|旅遊|观光|觀光|度假|自由行)$",
+                r"(?:旅游|旅遊|观光|觀光|度假|自由行)$|"
+                r"(?:^|我.{0,18})(?:去|到)(?:伦敦|倫敦|英国|英國)玩(?:几天|幾天|一周|一星期)",
                 re.I,
             ),
         ),
@@ -287,10 +289,10 @@ _SEMANTIC_VALUE_PATTERNS: dict[str, dict[str, tuple[re.Pattern[str], ...]]] = {
 }
 
 _SEMANTIC_TARGET_TERMS = {
-    ("occupation_status", "student"): r"students?|study(?:ing)?|学生|學生|在读|在讀|读书|讀書|读大学|讀大學",
+    ("occupation_status", "student"): r"students?|study(?:ing)?|学生|學生|在读|在讀|读书|讀書|读大学|讀大學|念硕士|念碩士|念博士",
     ("occupation_status", "employed"): r"employed|work(?:ing)?|job|受雇|在职|在職|工作|上班|任职|任職",
     ("occupation_status", "self_employed"): r"self[- ]employed|freelancer|自雇|自僱|个体经营|個體經營|自由职业|自由職業",
-    ("visit_purpose", "tourism"): r"holiday|tourism|tourist(?: visa| visit)?|sightseeing|vacation|旅游|旅遊|观光|觀光|度假|自由行",
+    ("visit_purpose", "tourism"): r"holiday|tourism|tourist(?: visa| visit)?|sightseeing|vacation|旅游|旅遊|观光|觀光|度假|自由行|玩(?:几天|幾天|一周|一星期)",
     ("visit_purpose", "family_or_friends"): r"family visit|visiting (?:family|friends?)|探亲|探望|看望",
     ("visit_purpose", "business"): r"business trip|business visit|client meeting|商务|商務|出差|客户会议|客戶會議",
     ("visit_purpose", "conference"): r"conference|congress|symposium|seminar|会议|會議|研讨会|研討會|峰会|峰會|论坛|論壇",
@@ -361,7 +363,7 @@ def _target_is_negated(fragment: str, terms: str) -> bool:
         re.search(
             rf"\b(?:no|not|never|no longer|neither|isn['’]?t|aren['’]?t|wasn['’]?t|"
             rf"don['’]?t|doesn['’]?t|do not|does not|rather than)\b"
-            rf"(?:\W+\w+){{0,5}}\W*(?:{terms})\b|"
+            rf"(?:\W+\w+){{0,8}}\W*(?:{terms})\b|"
             rf"\b(?:{terms})\b.{{0,18}}\b(?:is|are|was|were)\s+not\b|"
             rf"(?:不(?:是|再|会|會|打算|准备|準備|想)?|并非|並非|没有|沒有|未)"
             rf".{{0,12}}(?:{terms})|(?:{terms}).{{0,8}}(?:不是|并非|並非)",
@@ -709,6 +711,17 @@ def _profile_update_has_nonapplicant_owner(event: InboundEvent, update: FactUpda
     if any(_hypothetical_controls_evidence(sentence, update) for sentence in sentences):
         return True
     clauses = [clause for sentence in sentences for clause in _evidence_clauses(sentence, update)]
+    # Quoting a payer in a translation request, or reporting a friend's words,
+    # does not establish applicant ownership even if the quote contains "I".
+    # Stay within the containing clause so an independent own-case correction
+    # in the same message can still be accepted.
+    if any(re.search(
+        r"(?:朋友|同学|同事|客户|姐姐|妹妹|哥哥|弟弟|他|她)(?:说|說|写道|寫道)\s*[:：]|"
+        r"\b(?:my\s+)?(?:friend|sister|brother|client)\s+(?:said|says|wrote)\s*[:：]|"
+        r"\b(?:please\s+)?(?:translate|rephrase)\b|(?:请|請)?(?:翻译|翻譯|改写|改寫)",
+        clause, re.I,
+    ) for clause in clauses):
+        return True
     if any(_other_person_controls_clause(clause, update) for clause in clauses):
         return True
     if update.field in SPONSOR_FIELDS:
@@ -835,7 +848,7 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
         # A literal quote is necessary but not sufficient: employment/passport facts
         # must not silently become residential/application-location facts.
         cues = {
-            "application_country": r"appl(?:y|ying|ication)|申请|递交|提交",
+            "application_country": r"appl(?:y|ying|ication)|申请|递交|提交|(?:准备|打算|计划)在.{1,12}办(?:理)?$",
             "current_address": r"address|residen|live|living|住址|居住|住在|家在|地址",
             "nationality": r"passport|citizen|national|国籍|护照|公民|国人|\b(?:Chinese|British|American|Canadian|French|German|Indian|Australian)\b",
             "nationality_country": r"passport|citizen|national|国籍|护照|公民|国人|\b(?:Chinese|British|American|Canadian|French|German|Indian|Australian)\b",

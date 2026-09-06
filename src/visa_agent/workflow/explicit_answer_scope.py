@@ -130,12 +130,13 @@ _CURRENT_FIELD_CONTEXT = {
 _FUNDING_VALUE_PATTERNS: dict[str, re.Pattern[str]] = {
     "self": re.compile(
         r"\bself[- ]?funded\b|"
+        r"\bI(?:['’]m| am)\s+paying\s+from\s+my\s+(?:own\s+)?savings\b|"
         r"\bI(?:['’]?ll| will| am going to)?\s+(?:pay|cover|fund)\b.{0,28}"
         r"(?:myself|my own (?:funds?|money|savings|account|trip|travel|costs?|expenses?)|from my own)|"
         r"\b(?:will|am going to)\s+(?:pay|cover|fund)\b.{0,28}\bmyself\b|"
         r"\b(?:paying|covering|funding)\b.{0,18}\bmyself\b|"
         r"自费|自費|(?:费用|費用|旅费|旅費)(?:由我)?自理|"
-        r"(?:费用|費用|旅费|旅費|机票|機票|住宿).{0,14}"
+        r"(?:费用|費用|旅费|旅費|机票|機票|住宿|钱|錢).{0,14}"
         r"(?:由)?(?:我)?(?:自己|本人).{0,8}(?:承担|承擔|支付|负担|負擔|付|出)|"
         r"(?:我)?(?:自己|本人).{0,8}(?:承担|承擔|支付|负担|負擔|付|出).{0,14}"
         r"(?:费用|費用|旅费|旅費|机票|機票|住宿)",
@@ -186,6 +187,7 @@ _DIRECT_FUNDING_VALUE = {
 }
 
 _NEGATED_FUNDING = re.compile(
+    r"(?:钱|錢)(?:不|并非|並非|不是)(?:由我)?(?:自己|本人)出|"
     r"\b(?:not|never|isn['’]?t|aren['’]?t|doesn['’]?t|don['’]?t|won['’]?t|will not)\b"
     r".{0,18}\b(?:pay|paying|cover|covering|fund|funding|sponsor|sponsoring)\b|"
     r"\b(?:can(?:not|['’]?t)|could(?:not|n['’]?t)|(?:is|are|was|were|be|being)\s+unable\s+to|"

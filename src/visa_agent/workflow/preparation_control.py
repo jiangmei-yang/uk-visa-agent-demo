@@ -64,6 +64,7 @@ _INTERNAL_COMMAND = re.compile(
     r"(?:忽略|跳过|绕过).{0,12}(?:指令|规则|检查|系统)", re.I,
 )
 _THIRD_PARTY_OR_HISTORY = re.compile(
+    r"\bfor\s+my\s+(?:friend|sister|brother|mother|father|partner|client)['’]s\s+(?:visa|application)\b|"
     r"\b(?:he|she|they|my\s+(?:friend|sister|brother|mother|father|partner|client)|"
     r"the\s+(?:client|customer|applicant))\b.{0,40}"
     r"\b(?:want|wants|asked|asks|said|says|plans?|needs?)\b|"
@@ -172,6 +173,11 @@ def _current_controls(text: str) -> list[_Control]:
                     or _OTHER_APPLICATION.search(raw)):
                 continue
             pause = _PATTERNS["pause"].search(raw)
+            if pause is None:
+                # A whole-clause deictic pause is a request to stop the current
+                # preparation, not permission to send, resume or release files.
+                # Keep every surrounding history/condition/negation guard below.
+                pause = re.fullmatch(r"\s*(?:please\s+)?pause\s+this\s+for\s+now\s*", raw, re.I)
             # 'Continue the pause' maintains a pause, rather than resuming work.
             # Mask only that governing verb, preserving offsets and any separate
             # real resume request; negating it cannot become a new pause either.
