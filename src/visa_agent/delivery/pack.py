@@ -164,6 +164,9 @@ def _profile_rows(case: Case) -> list[str]:
         "current_address": "Current home address",
         "current_address_duration": "Time living at current home",
         "occupation_status": "Occupation status",
+        "employer_name": "Current employer",
+        "employer_address": "Employer address",
+        "employer_phone": "Employer contact number",
         "annual_income_gbp": "Annual income",
         "funding_source": "Funding source",
         "sponsor_name": "Sponsor name",
@@ -174,6 +177,20 @@ def _profile_rows(case: Case) -> list[str]:
         "route_confirmed_standard_visitor": "Standard Visitor route confirmed",
     }
     profile = case.profile.model_dump(mode="json")
+    for field in ("employer_name", "employer_address", "employer_phone"):
+        # Applicability is a display state, never a replacement profile fact.
+        # Preserve any supplied value, including inconsistent legacy snapshots,
+        # for review rather than hide it behind an inapplicable label.
+        if profile[field] is not None:
+            continue
+        if profile["occupation_status"] in {"student", "self_employed"}:
+            profile[field] = "Not applicable to the recorded occupation"
+        elif profile["occupation_status"] is None:
+            profile[field] = "Applicability not yet established"
+        elif field in case.deferred_fields and any(
+                item.get("field") == field and item.get("employer_name") == (case.profile.employer_name or "")
+                for item in case.employer_detail_deferrals):
+            profile[field] = "Deferred for checking - not yet supplied"
     if (profile["current_address_duration"] is None and "current_address_duration" in case.deferred_fields
             and case.residence_duration_deferrals
             and case.residence_duration_deferrals[-1].get("address") == case.profile.current_address):
