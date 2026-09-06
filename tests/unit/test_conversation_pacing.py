@@ -224,7 +224,9 @@ def test_exhausted_actionable_fields_do_not_restart_deferred_questions():
     case.latest_customer_message = "下一步是什么？"
     assert next_fact_questions(case) == []
     reply = deterministic_fallback_message(case, 'blocked')
-    assert '具体日期补齐前，还不能完成最终核对' in reply
+    assert '待核实的资料确认后再补' in reply
+    assert '最终核对前还需要补齐' in reply
+    assert '具体日期补齐前' not in reply  # all required facts are deferred, not only dates
     assert '？' not in reply
     assert not case.final_summary_confirmed
 

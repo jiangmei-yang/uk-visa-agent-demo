@@ -406,7 +406,8 @@ def sponsor_role_is_grounded(
     if not needle or needle not in _normal(body):
         return False
     if field == "sponsor_address":
-        return sponsor_address_is_grounded(value, excerpt, body)
+        return sponsor_address_is_grounded(value, excerpt, body,
+            sent_question_verified=known_profile.get("_sponsor_address_question_verified") is True)
     if field == "sponsor_is_in_uk" and not _sponsor_location_polarity_matches(value, excerpt):
         return False
     sentences = [part for part in re.split(r"[。!?！？;；\n]|\.(?:\s|$)", body) if part.strip()]
@@ -477,20 +478,29 @@ def sponsor_role_is_grounded(
     return False
 
 
-def sponsor_address_is_grounded(value: str | int | bool, excerpt: str, body: str) -> bool:
+def sponsor_address_is_grounded(value: str | int | bool, excerpt: str, body: str,
+                               *, sent_question_verified: bool = False) -> bool:
     """Bind a literal address to the applicant's sponsor, never a host/home.
 
-    Initial supplied-only boundary: no bare-address or pronoun inference. Full
+    Bare addresses require a transport-verified question for the same sponsor. Full
     current sentences are checked, so a model cannot clip away uncertainty,
     quotation or an explicit other owner. This is not postal verification.
     """
-    from visa_agent.domain.address_evidence import address_value_is_grounded
+    from visa_agent.domain.address_evidence import (
+        address_detail_is_sufficient,
+        address_value_is_grounded,
+    )
 
     if not isinstance(value, str) or not value.strip() or len(value) > 400:
         return False
     needle = _normal(excerpt)
     if not needle or not address_value_is_grounded(value, excerpt):
         return False
+    if (sent_question_verified and _normal(value) == needle == _normal(body)
+            and address_detail_is_sufficient(value)
+            and not re.search(r"[?？\"“”「」]|\b(?:my|our|his|her|their|if|maybe|not)\b|"
+                              r"我的|他的|她的|如果|不是|不确定", body, re.I)):
+        return True
     sentences = [part.strip() for part in re.split(r"[。!?！？;；\n]|\.(?:\s|$)", body) if part.strip()]
     for sentence in sentences:
         if needle not in _normal(sentence):

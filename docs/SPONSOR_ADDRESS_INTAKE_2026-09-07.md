@@ -1,5 +1,9 @@
 # Personal sponsor address: supplied-fact foundation
 
+**Current status:** the later integration checkpoint at the end now adds
+conditional intake, transport-bound short answers and uncertainty memory. The
+foundation description below is historical, not the latest gate behavior.
+
 ## Scope and authoritative basis
 
 GOV.UK's [Standard Visitor application information](https://www.gov.uk/standard-visitor/apply-standard-visitor-visa)
@@ -79,3 +83,58 @@ release gaps listed below.
 
 No real emails, service restarts, operator approvals, GitHub pushes or deployment
 were performed. The complete delivery goal stays active.
+
+## Subsequent conditional-intake integration
+
+Personal-sponsor cases now require an address with minimum location detail in
+`required_profile_facts` / `profile_fact_complete`. The field is also included
+in critical-fact provenance checks. Self-funded cases do not require it. Silence
+or explicit uncertainty never satisfies that condition.
+
+EN/ZH question planning asks one address question after sponsor identity/location.
+A short literal address is accepted only with a matching actual SENT question,
+same recipient/thread, most recent sent payload, an earlier timezone-aware send
+timestamp, and the same named sponsor/relationship identity. A model cannot set
+the trusted context flag through its patch. Independently sourced full statements
+remain supported without a preceding question.
+
+The bounded short replies “I need to check”, “I don't know”, “not sure” and their
+implemented Chinese equivalents record source event, source text, question event
+and sponsor identity. The missing field is deferred without repeated questions,
+not marked supplied. A later explicit address removes the active deferral.
+Changing sponsor identity/replacing the sponsor or moving to self-funding clears
+the active question/deferral binding while retaining the historical evidence.
+
+Address receipts now repeat the grounded address, and a non-date deferral no
+longer produces a dates-only waiting instruction. Tests exercise actual captured
+sends and SQLite reopening for acceptance, uncertainty, later supply, unsent and
+future questions, wrong sponsor binding, identity change, and final-gate state.
+The focused group passed **34 tests** (0.73s); Ruff and strict Mypy passed.
+Before the final receipt adjustment, the full development suite passed **4,999
+tests / 2 deselected**, 101.05s with the existing Starlette warning.
+
+The receipt-adjusted run reported **5,000 passed / 1 failed / 2 deselected**,
+100.62s. The remaining old test deferred every required field but expected a
+dates-only message. Its expectation now requires the broader truthful waiting
+message, rejects the dates-only claim, and still checks no repeated question and
+no final confirmation. The focused pacing/intake group then passed **107 tests**
+(0.86s). Historical outcomes are retained, not presented as an initially green run.
+
+Final development regression: **5,001 passed / 2 deselected**, 101.99s, one
+existing Starlette warning. The two source-bound provider-report exclusions are
+still outstanding acceptance work, not passes. This result does not close the
+specific repeated-question review follow-up below or the wider delivery scope.
+
+Remaining: wider natural phrasing (including contextual resumption), accurate
+multi-payer/parents ownership, employer/school payer intake, displayed deferred
+status in finalpack QA, and fresh source-bound provider/Gmail acceptance. A
+single sponsor address is not evidence that two separate payers share it.
+No live provider call, real email, approval or deployment was made here.
+
+Code-review follow-up: `question_event_ids` can retain the previous SENT question
+alongside a newly sent one. The contextual-address matcher currently requires
+exactly one matching SENT row, so a legitimate short answer after a new sponsor
+is asked the same question may be rejected. Reproduce this with two actual
+captured sends and bind to the latest question event (not only identical payload
+text) before calling this repeated-question path accepted. The existing
+different-sponsor negative test is not positive coverage for that journey.

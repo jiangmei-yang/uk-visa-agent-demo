@@ -65,3 +65,19 @@ def test_customer_summary_keeps_home_separate_and_hides_inapplicable_sponsor():
     case.profile.funding_source = "self"
     assert "Sponsor address: Not applicable" in _profile_rows(case)
     assert all("12 Example Road" not in row for row in _profile_rows(case))
+
+
+@pytest.mark.parametrize("language", ["en", "zh"])
+def test_deferred_address_receipt_does_not_claim_the_missing_fact_is_travel_dates(monkeypatch, language):
+    from visa_agent.domain.models import Case
+    from visa_agent.workflow import conversation
+
+    case = Case(id="fictional", external_thread_id="fictional", applicant_contact="fictional@example.test",
+                policy_version="2026-02-25", customer_language=language, deferred_fields=["sponsor_address"],
+                latest_customer_message="What is the next step?")
+    # Isolate the reviewed text composition after planning, not workflow/gate authority.
+    monkeypatch.setattr(conversation, "reply_items", lambda case: ([], [], []))
+    monkeypatch.setattr(conversation, "waiting_acknowledgement", lambda case: None)
+    reply = conversation.blocked_customer_message(case)
+    assert "until the dates are supplied" not in reply and "具体日期补齐前" not in reply
+    assert ("details left for checking" if language == "en" else "待核实的资料") in reply

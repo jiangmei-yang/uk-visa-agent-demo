@@ -43,6 +43,7 @@ BASE_REQUIRED_FACTS = {
 CONDITIONAL_CRITICAL_FACTS = {
     "annual_income_gbp",
     "sponsor_name",
+    "sponsor_address",
     "sponsor_relationship",
     "sponsor_is_in_uk",
 }
@@ -62,14 +63,14 @@ def required_profile_facts(case: Case) -> set[str]:
     if case.profile.occupation_status in {"employed", "self_employed"}:
         required.add("annual_income_gbp")
     if case.profile.funding_source == "personal_sponsor":
-        required.update({"sponsor_name", "sponsor_relationship", "sponsor_is_in_uk"})
+        required.update({"sponsor_name", "sponsor_address", "sponsor_relationship", "sponsor_is_in_uk"})
     return required
 
 
 def profile_fact_complete(case: Case, field: str) -> bool:
     """Field completeness shared by the delivery gate and missing-question plan."""
     value = getattr(case.profile, field)
-    if field == "current_address":
+    if field in {"current_address", "sponsor_address"}:
         return address_detail_is_sufficient(value)
     if field == "route_confirmed_standard_visitor":
         return bool(value)

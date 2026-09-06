@@ -184,6 +184,7 @@ def next_fact_questions(case: Case) -> list[str]:
         "sponsor_relationship",
         "sponsor_name",
         "sponsor_is_in_uk",
+        "sponsor_address",
         "planned_arrival_date",
         "planned_departure_date",
         "full_name",
@@ -577,6 +578,8 @@ def received_context(case: Case) -> str:
     if case.customer_language != "zh":
         country_labels = {"China": "Chinese", "Hong Kong": "Hong Kong", "United Kingdom": "British"}
         locations = []
+        if "sponsor_address" in facts and case.profile.funding_source == "personal_sponsor":
+            locations.append(f"your sponsor's address is {facts['sponsor_address']}")
         if "current_address_duration" in facts:
             locations.append(f"you've lived at your current home for {facts['current_address_duration']}")
         if "nationality_country" in facts:
@@ -674,6 +677,8 @@ def received_context(case: Case) -> str:
     if "application_country" in facts:
         country = facts["application_country"]
         parts.append(f"准备在{country_labels.get(country, country)}递交")
+    if "sponsor_address" in facts and case.profile.funding_source == "personal_sponsor":
+        parts.append(f"资助人的地址记为{facts['sponsor_address']}")
     if (
         case.profile.funding_source == "personal_sponsor"
         and {"sponsor_relationship", "sponsor_name", "sponsor_is_in_uk"}.intersection(facts)
@@ -1021,6 +1026,7 @@ QUESTION_TEXT_ZH = {
     "funding_source": "这次旅行的费用由你自己承担，还是有人或单位资助？",
     "sponsor_relationship": "资助人和你是什么关系？",
     "sponsor_name": "资助人的姓名是什么？请按对方证件或银行材料上的写法告诉我。",
+    "sponsor_address": "资助人现在的完整地址是什么？暂时不清楚的话，可以先向对方确认。",
     "sponsor_is_in_uk": "这位资助人目前住在英国吗？回答“在”或“不在”就可以；如果在，后面我会再核对其英国身份材料。",
     "uk_accommodation": "在英国准备住哪里？还没确定的话也可以直接说。",
     "estimated_trip_cost_gbp": "这趟旅行大约打算花多少英镑？先给一个估计就好。",
@@ -1050,6 +1056,7 @@ QUESTION_TEXT_EN = {
     "funding_source": "Who will pay for the trip?",
     "sponsor_relationship": "What is your relationship to the person sponsoring the trip?",
     "sponsor_name": "What is the sponsor's full name, as shown on their ID or financial evidence?",
+    "sponsor_address": "What is your sponsor's full current address? If you are unsure, you can check with them first.",
     "sponsor_is_in_uk": (
         "Does this sponsor currently live in the UK? A simple yes or no is fine; if yes, "
         "we will check their UK status evidence later."
@@ -1718,14 +1725,20 @@ def blocked_customer_message(case: Case) -> str:
         if "current_address_duration" in case.latest_deferred_fields:
             sections.append("现住址住了多久先留待核实，不用猜；可以看看租约或搬家记录，想起后再补。" if zh else
                             "We'll leave the time at your current address for checking. Don't guess; a tenancy agreement or moving records may help when you return to it.")
+        if "sponsor_address" in case.latest_deferred_fields:
+            sections.append("资助人的地址先留待确认，不用猜。问清楚后回复我就好，我们先继续准备其他资料。" if zh else
+                            "We'll leave your sponsor's address for checking. Ask them when convenient and send it later; we can prepare the other details in the meantime.")
     elif (case.deferred_fields and not questions and not issues and not documents and not case.customer_answers
           and not case.pending_question_fields
           and not quiet_preparation_resume(case)
           and customer_requests_next_step(case.latest_customer_message)):
         sections.append(
-            "日期确定后再告诉我就好，已经提供的信息会保留。具体日期补齐前，还不能完成最终核对。"
-            if zh else "Let me know when your dates are decided; the details you've already provided are retained. "
-            "The final check will remain on hold until the dates are supplied."
+            ("日期确定后再告诉我就好，已经提供的信息会保留。具体日期补齐前，还不能完成最终核对。"
+             if zh else "Let me know when your dates are decided; the details you've already provided are retained. "
+             "The final check will remain on hold until the dates are supplied.")
+            if set(case.deferred_fields) <= {"planned_arrival_date", "planned_departure_date"}
+            else ("待核实的资料确认后再补，已经提供的信息会保留；最终核对前还需要补齐。" if zh else
+                  "Send the details left for checking when you have them; the information already supplied is retained. We still need those details before the final check.")
         )
     if case.latest_preparation_action == "resume" and (receipt := preparation_control_receipt(case)):
         if (quiet_preparation_resume(case) and not acknowledgements and not questions

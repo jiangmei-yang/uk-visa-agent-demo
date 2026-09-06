@@ -58,6 +58,8 @@ from visa_agent.workflow.consultant_overview import (
     comprehensive_overview_requested,
 )
 from visa_agent.workflow.conversation import (
+    QUESTION_TEXT_EN,
+    QUESTION_TEXT_ZH,
     clear_natural_confirmation,
     confirmation_has_caveat,
     consultation_only_requested,
@@ -198,6 +200,13 @@ def _sent_before_inbound(sent_at: Any, received_at: datetime) -> bool:
     return sent < received_at
 
 
+def _sponsor_identity(case: Case) -> str | None:
+    profile = case.profile
+    if profile.funding_source != "personal_sponsor" or not profile.sponsor_name or not profile.sponsor_relationship:
+        return None
+    return stable_id("sponsor", repr((profile.sponsor_name, profile.sponsor_relationship)))
+
+
 class WorkflowService:
     def __init__(
         self,
@@ -323,6 +332,20 @@ class WorkflowService:
             if len(matches) == 1 and matches[0]["payload"] == latest_sent_payload:
                 duration_question = matches[0]
         customer_event.known_profile["_residence_duration_question_verified"] = duration_question is not None
+        sponsor_question = None
+        sponsor_identity = _sponsor_identity(case)
+        if (prior_last_requested == ["sponsor_address"] and sponsor_identity
+                and case.sponsor_address_question_identity == sponsor_identity):
+            matches = [row for row in prior_outbox if row["status"] == "SENT"
+                       and _sent_before_inbound(row.get("sent_at"), event.received_at)
+                       and row["event_id"] in case.question_event_ids.get("sponsor_address", [])
+                       and row["recipient"] == case.applicant_contact
+                       and row["external_thread_id"] == case.external_thread_id
+                       and any(text in row["payload"] for text in
+                               (QUESTION_TEXT_EN["sponsor_address"], QUESTION_TEXT_ZH["sponsor_address"]))]
+            if len(matches) == 1 and matches[0]["payload"] == latest_sent_payload:
+                sponsor_question = matches[0]
+        customer_event.known_profile["_sponsor_address_question_verified"] = sponsor_question is not None
         case.latest_customer_message = customer_event.body
         if case.application_records is not None:
             customer_event.known_profile["_application_record_context"] = [
@@ -524,6 +547,16 @@ class WorkflowService:
         update_deferred_questions(case, customer_event.body)
         # Model intent may pause an unanswered question, never mutate a fact or release gate.
         duration_answer = customer_event.body.strip().rstrip("。.!！").casefold()
+        if (sponsor_question is not None and _sponsor_identity(case) == sponsor_identity
+                and case.profile.sponsor_address is None
+                and duration_answer in {"不知道", "暂时不知道", "不清楚", "不确定", "需要问一下",
+                                        "i don't know", "i need to check", "not sure", "i'm not sure"}):
+            if "sponsor_address" not in case.deferred_fields:
+                case.deferred_fields.append("sponsor_address")
+            case.latest_deferred_fields.append("sponsor_address")
+            case.sponsor_address_deferrals.append({"source_event_id": event.id,
+                "source_excerpt": customer_event.body.strip(), "question_event_id": sponsor_question["event_id"],
+                "sponsor_identity": sponsor_identity or ""})
         if (duration_question is not None and case.profile.current_address_duration is None
                 and duration_answer in {"不记得", "记不清", "暂时记不清", "不确定", "需要核实",
                                         "i don't remember", "i need to check", "not sure", "i'm not sure"}):
@@ -933,6 +966,8 @@ class WorkflowService:
             case.last_requested_fields = next_fact_questions(case)
             if "current_address_duration" in case.last_requested_fields:
                 case.residence_duration_question_address = case.profile.current_address
+            if "sponsor_address" in case.last_requested_fields:
+                case.sponsor_address_question_identity = _sponsor_identity(case)
             for field in case.last_requested_fields:
                 delivered_ids = [value for value in case.question_event_ids.get(field, []) if value in sent_events]
                 case.question_event_ids[field] = list(dict.fromkeys(delivered_ids[-1:] + [event.id]))
@@ -1101,10 +1136,14 @@ class WorkflowService:
             for old in case.active_evidence("sponsor_address"):
                 old.superseded = True
         if sponsor_identity_changed or sponsor_replaced_without_complete_identity:
+            case.sponsor_address_question_identity = None
+            case.deferred_fields = [field for field in case.deferred_fields if field != "sponsor_address"]
             for item in [*case.unsent_advice, *case.pending_advice]:
                 if item.topic == "sponsor_support" and item.source_event_id != event.id:
                     item.deferred_by_event_id = event.id
         if case.profile.funding_source != "personal_sponsor" and "funding_source" in update_fields:
+            case.sponsor_address_question_identity = None
+            case.deferred_fields = [field for field in case.deferred_fields if field != "sponsor_address"]
             for field in ("sponsor_name", "sponsor_address", "sponsor_relationship", "sponsor_is_in_uk"):
                 setattr(case.profile, field, None)
                 for old in case.active_evidence(field):
