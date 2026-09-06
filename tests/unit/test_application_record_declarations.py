@@ -213,3 +213,29 @@ def test_old_serialized_ledgers_load_without_inventing_declarations():
     reloaded = ApplicationRecordLedger.model_validate(payload)
     assert not reloaded.declarations and reloaded.fingerprint() == ledger.fingerprint()
     assert reloaded.collection_state("travel") == "partial"
+
+
+def test_redundant_amendment_fields_keep_original_provenance_and_unchanged_confirmations():
+    ledger = transaction(blank(), commands=[trip()])
+    target = next(iter(ledger.current().values()))
+    command = RecordCommand(action="amend", record=TravelInput(fields=TravelFields(
+        country=QuotedText(value="Japan", source_excerpt="Japan"))), target_id=target.record_id,
+        expected_revision_digest=target.digest(), change_excerpt="Correct the country to Japan")
+    updated = transaction(ledger, event="fictional-event-2", body=command.change_excerpt, commands=[command])
+    assert updated.current()[target.record_id] == target
+    assert updated.fingerprint() == ledger.fingerprint() and len(updated.revisions) == 1
+    assert "fictional-event-2" in updated.processed_batches
+    assert transaction(updated, event="fictional-event-2", body=command.change_excerpt, commands=[command]) == updated
+
+
+def test_mixed_redundant_and_changed_fields_retain_each_original_source_correctly():
+    ledger = transaction(blank(), commands=[trip()])
+    target = next(iter(ledger.current().values()))
+    command = RecordCommand(action="amend", record=TravelInput(fields=TravelFields(
+        country=QuotedText(value="Japan", source_excerpt="Japan"),
+        period=QuotedText(value="2023", source_excerpt="2023"))), target_id=target.record_id,
+        expected_revision_digest=target.digest(), change_excerpt="Correct the Japan trip to 2023")
+    updated = transaction(ledger, event="fictional-event-2", body=command.change_excerpt, commands=[command])
+    changed = updated.current()[target.record_id]
+    assert changed.fields["country"] == target.fields["country"]
+    assert changed.fields["period"].source_event_id == "fictional-event-2" and changed.revision == 2

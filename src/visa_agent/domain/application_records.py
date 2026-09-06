@@ -356,7 +356,12 @@ def apply_record_commands(
         next_fields = dict(prior.fields) if prior else {}
         next_fields.update({name: RecordedText(**value.model_dump(), source_event_id=event_id,
                                              source_body_sha256=body_digest)
-                            for name, value in fields.items()})
+                            for name, value in fields.items()
+                            if name not in next_fields or next_fields[name].value != value.value})
+        if prior is not None and command.action == "amend" and next_fields == prior.fields:
+            # Repeating an unchanged value is not a fresh source or a material
+            # correction. The event still receives replay bookkeeping below.
+            continue
         result.revisions.append(RecordRevision(
             record_id=record_id, kind=command.record.kind, revision=prior.revision + 1 if prior else 1,
             active=command.action != "withdraw", fields=next_fields, changed_by_event_id=event_id,

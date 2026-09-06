@@ -60,7 +60,7 @@ _COLLECTION_TOPIC = {
 }
 _STATE = {
     "unknown": re.compile(r"\b(?:unsure|uncertain|cannot remember|can't remember|don't remember|do not remember|need to check)\b|不确定|不確定|记不清|記不清|不记得|不記得|需要核实|需要核實", re.I),
-    "partial": re.compile(r"\b(?:more|not (?:yet )?(?:complete|the full list))\b|还有|還有|没列全|沒列全|不完整", re.I),
+    "partial": re.compile(r"\b(?:more|remaining|not (?:yet )?(?:complete|the full list))\b|还有|還有|其余|其餘|剩下|没列全|沒列全|不完整", re.I),
     "none_declared": re.compile(r"\b(?:no|none|never|don't have|do not have)\b|没有|沒有|从未|從未|未曾", re.I),
     "complete_declared": re.compile(r"\b(?:full|complete|exhaustive|all of|no other|nothing else)\b|全部|列全|没有其他|沒有其他|没有别的|沒有別的", re.I),
 }
@@ -239,9 +239,18 @@ def plan_record_intake(
                 continue
             if re.search(r"\b(?:want|intend|plan|hope|might|would|will)\b|打算|想说|想說|准备说|準備說", context, re.I):
                 continue
+            explicit_uncertainty = bool(_STATE["unknown"].search(context))
+            if explicit_uncertainty and re.search(r"\b(?:not|no longer)\s+(?:unsure|uncertain)|不是不确定|不是不確定", context, re.I):
+                raise ValueError("Negated uncertainty cannot become a deferred collection")
+            if explicit_uncertainty and assertion.state == "partial":
+                # A partial list and an inability to remember can coexist. The
+                # source's explicit uncertainty controls deferral; this neither
+                # invents a record nor asserts absence/exhaustiveness. Keep the
+                # raw model proposal unchanged for diagnostics.
+                assertion = assertion.model_copy(update={"state": "unknown"})
             if assertion.confidence < .8 or not _STATE[assertion.state].search(context):
                 raise ValueError("Application collection assertion does not match its source")
-            if assertion.state in {"none_declared", "complete_declared"} and _STATE["unknown"].search(context):
+            if assertion.state in {"none_declared", "complete_declared"} and explicit_uncertainty:
                 raise ValueError("Uncertain application collection cannot be marked absent or complete")
             if assertion.state == "none_declared" and not _NONE_DECLARATION[assertion.kind].search(context):
                 raise ValueError("Application collection absence is not explicitly stated")

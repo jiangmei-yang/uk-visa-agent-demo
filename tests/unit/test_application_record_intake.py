@@ -218,3 +218,19 @@ def test_one_model_entry_cannot_join_country_from_one_sentence_and_date_from_ano
     body = "I visited Japan in May 2023. I visited Korea in June 2024."
     result = plan(body, [proposed(body, country="Japan", period="June 2024")])
     assert result.requires_review and result.ledger is None
+
+
+@pytest.mark.parametrize("body", ["其余的出境记录我暂时记不清，需要再核实。",
+                                   "I cannot remember the remaining trips in my travel history."])
+def test_explicit_uncertainty_in_a_model_partial_proposal_defers_instead_of_escalating(body):
+    proposal = assertion(body, state="partial")
+    result = plan(body, assertions=[proposal])
+    assert result.changed and not result.requires_review
+    assert result.ledger.collection_state("travel") == "unknown"
+    assert proposal.state == "partial"  # preserve original diagnostic output
+
+
+def test_negated_uncertainty_is_not_stored_as_a_deferral():
+    body = "I am not unsure about my travel history."
+    result = plan(body, assertions=[assertion(body)])
+    assert not result.changed and result.ledger is None

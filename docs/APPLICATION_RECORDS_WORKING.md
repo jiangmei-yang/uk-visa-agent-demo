@@ -120,6 +120,31 @@ an unrelated person's trip alongside an independently supplied date of birth.
 The existing `all` scenario set remains the preceding journey+pacing corpus;
 the new records set is separate until its intake/release work is complete.
 
+### First real-model record probe (failed, retained)
+
+`eval_output/application_record_intake_2026-09-06-v1.json` binds source `f131c4d`
+and 89 files (85 Python modules, this probe and three font assets), plus the
+CasePatch schema. SHA-256:
+`f1d18254a940428bb9c57ccbddf88589864cc2b5ef5bfc86cbeb3d21770a8ffb`.
+Two turns passed, one failed and the fourth could not continue after the workflow
+entered review. **Three** real model calls were made, not four: 15,006 input /
+992 output / 15,998 total tokens. No retry, real Gmail call or real document.
+
+The provider correctly extracted the first records and targeted Japan correction.
+It labelled explicit uncertainty about remaining travel history as `partial`.
+The initial guard escalated that ordinary statement instead of preserving the
+uncertainty, so the next event was held and no fourth extraction occurred. The
+guard now treats an explicitly uncertain partial-list statement as `unknown`,
+without modifying the captured raw proposal or asserting absence/completeness.
+Negated uncertainty retains a negative regression case.
+
+Reading the real second proposal also exposed a redundant unchanged `country`
+field. The ledger now retains the original source for unchanged values, even when
+the model repeats them during a date correction. An all-unchanged amendment leaves
+the material fingerprint intact while retaining replay bookkeeping. Saved raw
+outputs have a pinned offline workflow/captured-SENT replay; this repair is not
+retroactively a passing provider run. A new source-bound run is still required.
+
 ## Rendering defect discovered and repaired
 
 The first Chinese QA render (`output/pdf/application-records-foundation-v1`)
