@@ -5,7 +5,13 @@ requirements reference; recommendations about vendors or libraries are not
 themselves proof of product completion. Automated pass counts are not a substitute
 for these outcomes.
 
-Latest work: [consultant editorial repair](CONSULTANT_EDITORIAL_REPAIR_2026-09-06.md)
+Current unreleased work: [application records](APPLICATION_RECORDS_WORKING.md)
+adds revisioned travel/contact entries, explicit none/unknown/partial/full-list
+assertions, source-bound confirmation invalidation and bundled Chinese PDF glyphs.
+Its trusted-adapter tests do not establish ordinary-email intake or final delivery.
+The running Gmail service remains on the preceding release.
+
+Latest released work: [consultant editorial repair](CONSULTANT_EDITORIAL_REPAIR_2026-09-06.md)
 shortens brief first receipts and school-record help, preserving historical SENT
 discussion across upgrades. Fresh source-bound journey v7 is 22/22 and financial
 v16 is 4/4; implementer review is not independent naturalness evidence. The active
@@ -48,9 +54,15 @@ still records pacing, durable style preference and broader paraphrase gaps;
    transaction-origin analysis, joint accounts, all currencies, sponsor support
    terms and relationship extraction remain incomplete. Explicitly synthetic
    fixture success is still not proof of ordinary-document coverage.
-3. **Requested intake coverage.** Ordinary travel history and UK contacts are not
-   structured, provenance-backed profile fields. A serious-history flag is not
-   equivalent to complete travel history.
+3. **Requested intake coverage.** The active, unreleased
+   [application-record implementation](APPLICATION_RECORDS_WORKING.md) adds typed
+   travel/contact records, field sources, revision history, explicit collection
+   assertions and summary projections. Ordinary-email semantic extraction,
+   declaration-driven question planning and the complete
+   delivery gate are still pending. A serious-history flag is not equivalent to
+   complete travel history. Related current-address duration, known parent and
+   condition-dependent employer/partner/family details must also be checked against
+   the original scope and official form information before claiming a complete pack.
 4. **Independent usability and real transport recovery.** Native Windows setup,
    uncoached interviewer use and real provider failure windows are not established
    by Linux/container or captured-transport tests.

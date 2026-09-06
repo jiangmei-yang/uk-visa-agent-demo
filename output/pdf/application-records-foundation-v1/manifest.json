@@ -1,0 +1,12 @@
+{
+  "fictional-records-en.pdf": {
+    "sha256": "3de51d23ff88a2aec0f4968237fe998a2e12bdec70277e432dbfff823a5d9b21",
+    "language": "en",
+    "record_fingerprint": "79552abc0e52c87fb3cfd498d0d38450f521176df94ebe2ac62b8f5d6fca5bd6"
+  },
+  "fictional-records-zh.pdf": {
+    "sha256": "c5f5d6ea05676cd9b5327794e3b632401429dcfa6a02ca7d6391b9ef80d56860",
+    "language": "zh",
+    "record_fingerprint": "3aa6581ef75d101e6a3f56607de2397fd4169852419fb924b19fffe49646e4ed"
+  }
+}

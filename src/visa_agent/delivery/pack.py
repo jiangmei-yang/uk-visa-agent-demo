@@ -19,6 +19,8 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from reportlab.platypus.flowables import Flowable
 
+from visa_agent.delivery.fonts import UNICODE_FONT, font_for_text
+from visa_agent.domain.application_records import application_record_rows
 from visa_agent.domain.models import (
     Case,
     CaseStatus,
@@ -69,7 +71,7 @@ def _pdf(
         ParagraphStyle(
             "PackTitle",
             parent=styles["Title"],
-            fontName="Helvetica-Bold",
+            fontName=font_for_text(title, "Helvetica-Bold"),
             fontSize=22,
             leading=26,
             textColor=NAVY,
@@ -92,13 +94,15 @@ def _pdf(
             spaceAfter=7 * mm,
         )
     )
+    body_font = font_for_text("\n".join(paragraphs))
     body_style = ParagraphStyle(
         "PackBody",
         parent=styles["BodyText"],
-        fontName="Helvetica",
+        fontName=body_font,
         fontSize=8.5 if compact else 9.5,
         leading=11 if compact else 14,
         textColor=NAVY,
+        wordWrap="CJK" if body_font == UNICODE_FONT else None,
     )
     document = SimpleDocTemplate(
         str(path),
@@ -179,11 +183,14 @@ def _profile_rows(case: Case) -> list[str]:
             profile[field] = "Yes" if value else "No"
         elif isinstance(value, str) and "_" in value:
             profile[field] = value.replace("_", " ").capitalize()
-    return [
+    rows = [
         f"{labels.get(field, field.replace('_', ' ').capitalize())}: "
         f"{value if value is not None else 'Not provided'}"
         for field, value in profile.items()
     ]
+    if case.application_records is not None:
+        rows.extend(application_record_rows(case.application_records))
+    return rows
 
 
 def _document_index_pdf(path: Path, rows: list[str], label: str) -> None:
@@ -211,8 +218,10 @@ def _document_index_pdf(path: Path, rows: list[str], label: str) -> None:
         borderPadding=5,
         spaceAfter=7 * mm,
     )
+    index_font = font_for_text("\n".join(rows))
     cell = ParagraphStyle(
-        "IndexCell", parent=styles["BodyText"], fontSize=7.2, leading=9, textColor=NAVY
+        "IndexCell", parent=styles["BodyText"], fontSize=7.2, leading=9, textColor=NAVY,
+        fontName=index_font, wordWrap="CJK" if index_font == UNICODE_FONT else None,
     )
     small = ParagraphStyle("IndexSmall", parent=cell, fontSize=6.2, leading=7.5, textColor=MUTED)
     header_cell = ParagraphStyle(
@@ -521,6 +530,8 @@ def _materialize_fresh_pack(
             if not evidence.superseded
         ],
     }
+    if case.application_records is not None:
+        answers["application_records"] = case.application_records.customer_snapshot()
     (pack_dir / "05_application_answers.json").write_text(
         json.dumps(answers, indent=2, ensure_ascii=False, sort_keys=True, default=str) + "\n",
         encoding="utf-8",

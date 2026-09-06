@@ -308,3 +308,12 @@ Passing tests is internal evidence, not proof of applicant outcomes or external 
 The committed Agent corpus and evaluator are synthetic. DeepSeek reports cover extraction stress
 and one complete natural-language conversation-to-pack path; they are not real-applicant evidence.
 See [ACCURACY.md](ACCURACY.md) for the separate workflow and live-model scorecards.
+
+## Third-party font notice
+
+PDF generation bundles Noto Sans SC for supported Chinese and other non-Windows-1252
+text. It embeds the needed glyphs rather than depending on an installed system font;
+unsupported characters cause an explicit generation error. The font is licensed under
+SIL Open Font License 1.1, **not** the repository's MIT license. See the bundled
+[copyright and license](src/visa_agent/assets/fonts/OFL-NotoSansSC.txt) and
+[pinned source/build record](src/visa_agent/assets/fonts/README.md).

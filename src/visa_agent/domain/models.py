@@ -4,7 +4,9 @@ from datetime import UTC, date, datetime
 from enum import StrEnum
 from typing import Any, Literal
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
+
+from visa_agent.domain.application_records import ApplicationRecordLedger
 
 
 def utc_now() -> datetime:
@@ -224,6 +226,7 @@ class Case(BaseModel):
     status: CaseStatus = CaseStatus.DRAFT
     stage: WorkflowStage = WorkflowStage.NEW
     profile: CaseProfile = Field(default_factory=CaseProfile)
+    application_records: ApplicationRecordLedger | None = None
     profile_confirmed: bool = False
     final_summary_confirmed: bool = False
     # Customer pacing is independent of eligibility, document validity and human review.
@@ -274,6 +277,12 @@ class Case(BaseModel):
     last_inbound_received_at: datetime | None = None
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
+
+    @model_validator(mode="after")
+    def application_records_belong_to_case(self) -> Case:
+        if self.application_records is not None and self.application_records.case_id != self.id:
+            raise ValueError("Application records belong to a different case")
+        return self
 
     def active_evidence(self, fact_key: str) -> list[Evidence]:
         return [item for item in self.evidence if item.fact_key == fact_key and not item.superseded]

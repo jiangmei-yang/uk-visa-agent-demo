@@ -103,6 +103,8 @@ def clear_natural_confirmation(body: str) -> bool:
 
 def summary_fingerprint(case: Case, *, include_documents: bool) -> str:
     payload: dict[str, object] = {"profile": case.profile.model_dump(mode="json")}
+    if case.application_records is not None and (case.application_records.revisions or case.application_records.declarations):
+        payload["application_records"] = case.application_records.fingerprint()
     if include_documents:
         payload["documents"] = sorted(
             (item.id, item.sha256, item.status.value)
@@ -1834,6 +1836,10 @@ def confirmation_message(case: Case, *, profile_only: bool = False) -> str:
     text = ("\n\n".join(case.customer_answers) + "\n\n" if case.customer_answers else "")
     if case.latest_preparation_action == "resume" and (receipt := preparation_control_receipt(case)):
         text = receipt + "\n\n" + text
+    if case.application_records is not None:
+        from visa_agent.domain.application_records import application_record_rows
+
+        rows.extend(application_record_rows(case.application_records, case.customer_language))
     text += intro + "\n\n" + ("资料摘要\n" if zh else "FACTS SUMMARY\n") + "\n".join(rows)
     if not profile_only:
         text += "\n\n" + ("这次整理使用的材料\n" if zh else "CURRENT DOCUMENTS\n")
