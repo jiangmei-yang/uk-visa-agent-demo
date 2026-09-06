@@ -119,3 +119,19 @@ def test_sent_question_timestamp_is_compared_as_an_instant_across_timezones(tmp_
     replied = dialogue.turn(body, _patch(updates=[("current_address_duration", body, body)]))
     assert replied.case.profile.current_address_duration == body
     assert replied.model.events[0].known_profile["_residence_duration_question_verified"]
+
+
+def test_second_home_question_does_not_compete_with_old_sent_question(tmp_path):
+    dialogue, first_question = asking(tmp_path)
+    body = "about two years"
+    dialogue.turn(body, _patch(updates=[("current_address_duration", body, body)]))
+    address = "My current home address is 34 Another Road, Hong Kong."
+    new_question = dialogue.turn(f"{address} What is the next step?", _patch(updates=[
+        ("current_address", "34 Another Road, Hong Kong", address),
+    ]))
+    assert new_question.case.last_requested_fields == ["current_address_duration"], new_question.body
+    assert first_question.event.id in new_question.case.question_event_ids["current_address_duration"]
+    body = "about three months"
+    result = dialogue.turn(body, _patch(updates=[("current_address_duration", body, body)]))
+    assert result.case.profile.current_address_duration == body
+    assert result.case.active_evidence("current_address_duration")[0].source_event_id == result.event.id

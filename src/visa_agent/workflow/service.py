@@ -283,10 +283,8 @@ class WorkflowService:
                          if field not in case.deferred_fields and hasattr(case.profile, field)
                          and not profile_fact_complete(case, field)]
         prior_last_requested = list(case.last_requested_fields)
-        latest_sent_payload = next(
-            (row["payload"] for row in reversed(prior_outbox) if row["status"] == "SENT"),
-            "",
-        )
+        latest_sent_row = next((row for row in reversed(prior_outbox) if row["status"] == "SENT"), None)
+        latest_sent_payload = latest_sent_row["payload"] if latest_sent_row is not None else ""
         pending_reminder_in_latest_reply = any(
             marker in latest_sent_payload
             for marker in (
@@ -323,8 +321,9 @@ class WorkflowService:
                 and case.profile.current_address
                 and case.residence_duration_question_address == case.profile.current_address):
             matches = [row for row in prior_outbox if row["status"] == "SENT"
+                       and row == latest_sent_row
                        and _sent_before_inbound(row.get("sent_at"), event.received_at)
-                       and row["event_id"] in case.question_event_ids.get("current_address_duration", [])
+                       and row["event_id"] in case.question_event_ids.get("current_address_duration", [])[-1:]
                        and row["recipient"] == case.applicant_contact
                        and row["external_thread_id"] == case.external_thread_id
                        and ("About how long have you lived at your current address?" in row["payload"]
@@ -337,8 +336,9 @@ class WorkflowService:
         if (prior_last_requested == ["sponsor_address"] and sponsor_identity
                 and case.sponsor_address_question_identity == sponsor_identity):
             matches = [row for row in prior_outbox if row["status"] == "SENT"
+                       and row == latest_sent_row
                        and _sent_before_inbound(row.get("sent_at"), event.received_at)
-                       and row["event_id"] in case.question_event_ids.get("sponsor_address", [])
+                       and row["event_id"] in case.question_event_ids.get("sponsor_address", [])[-1:]
                        and row["recipient"] == case.applicant_contact
                        and row["external_thread_id"] == case.external_thread_id
                        and any(text in row["payload"] for text in

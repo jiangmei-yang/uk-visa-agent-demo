@@ -139,3 +139,46 @@ def test_changing_sponsor_clears_previous_deferral_but_retains_history(tmp_path)
     assert "sponsor_address" not in changed.case.deferred_fields
     assert changed.case.sponsor_address_question_identity is None
     assert len(changed.case.sponsor_address_deferrals) == 1
+
+
+@pytest.mark.parametrize("answer_kind", ["address", "uncertain", "old_identical_payload"])
+def test_new_sponsor_address_answer_uses_the_new_sent_question(tmp_path, answer_kind):
+    dialogue, first_question = asking(tmp_path)
+    old_address = "12 Example Road, Hong Kong"
+    dialogue.turn(old_address, _patch(updates=[("sponsor_address", old_address, old_address)]))
+    identity = "My father Fictional Father is paying for my trip."
+    location = "My sponsor does not live in the UK."
+    new_question = dialogue.turn(f"{identity} {location} What is the next step?", _patch(updates=[
+        ("sponsor_relationship", "father", identity),
+        ("sponsor_name", "Fictional Father", identity),
+        ("sponsor_is_in_uk", False, location),
+    ]))
+    assert new_question.case.last_requested_fields == ["sponsor_address"], new_question.body
+    assert first_question.event.id in new_question.case.question_event_ids["sponsor_address"]
+    assert new_question.event.id in new_question.case.question_event_ids["sponsor_address"]
+    if answer_kind == "old_identical_payload":
+        store = SQLiteStore(dialogue.path)
+        try:
+            # Fault injection: only the old question was SENT; identical copy
+            # cannot authorize an answer for the newly saved sponsor identity.
+            store.connection.execute("UPDATE outbox SET status='PENDING' WHERE case_id=? AND event_id!=?",
+                                     (new_question.case.id, first_question.event.id))
+            store.connection.execute("UPDATE outbox SET payload=? WHERE case_id=? AND event_id=?",
+                                     (new_question.body, new_question.case.id, first_question.event.id))
+            store.connection.commit()
+        finally:
+            store.close()
+    if answer_kind == "uncertain":
+        result = dialogue.turn("I need to check.", _patch())
+        assert result.case.sponsor_address_deferrals[-1]["question_event_id"] == new_question.event.id
+        assert result.case.profile.sponsor_address is None
+        return
+    new_address = "34 Another Road, Hong Kong"
+    result = dialogue.turn(new_address, _patch(updates=[("sponsor_address", new_address, new_address)]))
+    if answer_kind == "old_identical_payload":
+        assert result.case.profile.sponsor_address is None
+        assert not result.model.events[0].known_profile["_sponsor_address_question_verified"]
+        return
+    assert result.case.profile.sponsor_address == new_address
+    assert result.model.events[0].known_profile["_sponsor_address_question_verified"]
+    assert result.case.active_evidence("sponsor_address")[0].source_event_id == result.event.id

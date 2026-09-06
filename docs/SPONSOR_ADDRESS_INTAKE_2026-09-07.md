@@ -138,3 +138,30 @@ is asked the same question may be rejected. Reproduce this with two actual
 captured sends and bind to the latest question event (not only identical payload
 text) before calling this repeated-question path accepted. The existing
 different-sponsor negative test is not positive coverage for that journey.
+
+### Latest-question identity repair
+
+The follow-up above was reproduced with the actual captured workflow: ask the
+mother's address, receive it, change to a named father, send the father's address
+question, receive a new short address. The final update was incorrectly rejected
+because both old and new question rows matched. The pre-fix regression failed
+with the new address still null; this was not a model failure.
+
+Contextual address and residence-duration matching now require both the latest
+SENT outbox row and the latest recorded question event for that field, while
+retaining recipient/thread, entity binding and timezone-aware send-before-receive
+checks. Identical question wording is insufficient; historical SENT questions do
+not compete with the newly sent event or authorize an unsent new event.
+
+The expanded captured-workflow group passed **35 tests** (1.48s): new sponsor's
+short address, new sponsor's uncertainty linked to the new question, an old SENT
+question with identical payload while the new question is unsent (rejected), and
+a new home's duration after an earlier residence-duration question. Each positive
+case requires the actual new fact/source event, not just a generic non-error reply.
+This closes that specific reproduced defect, not the broader remaining intake,
+independent usability, provider, Gmail, multi-payer or delivery requirements.
+
+Final development regression for this repair: **5,005 passed / 2 deselected**,
+100.91s, one existing Starlette warning. Ruff and strict Mypy (92 modules) passed.
+The two stale source-bound provider reports are still excluded, not accepted.
+No new model call, live mail, service restart or deployment occurred.
