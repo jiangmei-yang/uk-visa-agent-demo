@@ -156,7 +156,8 @@ def test_other_recipient_is_never_automatically_contacted(tmp_path: Path) -> Non
 
 
 @pytest.mark.parametrize('language', ['zh', 'en'])
-@pytest.mark.parametrize('status', [CaseStatus.READY_FOR_HUMAN_REVIEW, CaseStatus.DELIVERED_AFTER_CONFIRMATION])
+@pytest.mark.parametrize('status', [CaseStatus.READY_FOR_HUMAN_REVIEW, CaseStatus.DELIVERED_AFTER_CONFIRMATION,
+                                  CaseStatus.HUMAN_REVIEW_REQUIRED])
 @pytest.mark.parametrize('revision', [1, 2])
 def test_finalized_correction_gets_one_honest_receipt_without_reopening(tmp_path, language, status, revision):
     from visa_agent.domain.policy import load_policy
@@ -179,12 +180,17 @@ def test_finalized_correction_gets_one_honest_receipt_without_reopening(tmp_path
     sender = AutomaticGmailReplySender(adapter, store, case.applicant_contact)
     dispatcher = OutboxDispatcher(store, sender, channel='gmail', allowed_message_types=('held_update_received',))
     try:
-        assert workflow.process(event)[2] == 'finalized_case_held'
+        reviewing = status == CaseStatus.HUMAN_REVIEW_REQUIRED
+        assert workflow.process(event)[2] == ('human_review_case_held' if reviewing else 'finalized_case_held')
         assert sender.queue_finalized_update_receipts() == 1
         assert sender.queue_finalized_update_receipts() == 0
         assert dispatcher.dispatch_due(now)[0].status == 'SENT'
         body = adapter.calls[0]['body']
-        assert ('目前还没有生成或发送修订版' if language == 'zh' else 'has not been prepared or sent') in body
+        if reviewing:
+            assert ('顾问复核还没有完成' if language == 'zh' else 'review is still open') in body
+            assert ('旧材料包' if language == 'zh' else 'previous pack') not in body
+        else:
+            assert ('目前还没有生成或发送修订版' if language == 'zh' else 'has not been prepared or sent') in body
         assert store.get_case(case.id).model_dump_json() == before
         assert store.has_unreviewed_held_updates(case.id)
         assert store.list_outbox()[0]['in_reply_to'] == '<correction@example.test>'

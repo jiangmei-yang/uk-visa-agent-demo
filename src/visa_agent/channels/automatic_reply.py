@@ -12,6 +12,11 @@ from visa_agent.llm.ports import CasePatch
 from visa_agent.privacy.consent import CONTROL_MESSAGE_TYPES, ConsentLedger
 from visa_agent.storage.sqlite import SQLiteStore
 
+HELD_RECEIPT_STATES = {
+    'FINALIZED_CASE_NEW_EVENT': {CaseStatus.READY_FOR_HUMAN_REVIEW, CaseStatus.DELIVERED_AFTER_CONFIRMATION},
+    'HUMAN_REVIEW_CASE_NEW_EVENT': {CaseStatus.HUMAN_REVIEW_REQUIRED},
+}
+
 
 @dataclass
 class StoredDraft:
@@ -34,11 +39,15 @@ class AutomaticGmailReplySender(GmailReplySender):
         self.allow_guarded_drafts = allow_guarded_drafts
 
     def queue_finalized_update_receipts(self) -> int:
-        """A receipt for retained corrections, never a revised pack or approval."""
+        """Compatibility entry point for retained-update receipts."""
+        return self.queue_held_update_receipts()
+
+    def queue_held_update_receipts(self) -> int:
+        """A receipt for retained updates, never extraction, approval or a pack."""
         queued = 0
         rows = self.store.connection.execute(
-            "SELECT id, case_id, payload_json FROM held_inbound_events "
-            "WHERE reason_code='FINALIZED_CASE_NEW_EVENT' ORDER BY created_at, id",
+            "SELECT id, case_id, reason_code, payload_json FROM held_inbound_events "
+            "WHERE reason_code IN ('FINALIZED_CASE_NEW_EVENT','HUMAN_REVIEW_CASE_NEW_EVENT') ORDER BY created_at, id",
         ).fetchall()
         with self.store.connection:
             for row in sorted(rows, key=lambda item: InboundEvent.model_validate_json(item['payload_json']).received_at):
@@ -48,7 +57,9 @@ class AutomaticGmailReplySender(GmailReplySender):
                 if (case is None or case.primary_channel != 'gmail' or event.channel != 'gmail'
                         or not ConsentLedger(self.store).allowed(case)
                         or addresses != [self.allowed_sender.casefold()]
-                        or case.status not in {CaseStatus.READY_FOR_HUMAN_REVIEW, CaseStatus.DELIVERED_AFTER_CONFIRMATION}
+                        or addresses != [a.casefold() for _, a in getaddresses([case.applicant_contact])]
+                        or event.id != row['id'] or event.external_thread_id != case.external_thread_id
+                        or case.status not in HELD_RECEIPT_STATES[row['reason_code']]
                         or (case.last_inbound_received_at and event.received_at < case.last_inbound_received_at)
                         or self.store.connection.execute(
                             'SELECT 1 FROM review_actions WHERE held_event_id=?', (event.id,),
@@ -58,31 +69,42 @@ class AutomaticGmailReplySender(GmailReplySender):
                 references = ' '.join(dict.fromkeys(f'{event.references or ""} {in_reply_to}'.split()))
                 result = self.store.connection.execute(
                     "INSERT OR IGNORE INTO outbox(id,case_id,event_id,message_type,payload,channel,recipient,"
-                    "external_thread_id,reply_subject,in_reply_to,references_header,case_revision,preparation_control_epoch) VALUES (?,?,?,'held_update_received',"
-                    "'Receipt awaiting checked rendering','gmail',?,?,?,?,?,?,?)",
+                    "external_thread_id,reply_subject,in_reply_to,references_header,case_revision,preparation_control_epoch,processing_consent_epoch) VALUES (?,?,?,'held_update_received',"
+                    "'Receipt awaiting checked rendering','gmail',?,?,?,?,?,?,?,?)",
                     (f'out-{event.id}-held_update_received', case.id, event.id, event.sender,
                      event.external_thread_id, event.subject if event.subject.lower().startswith('re:')
                      else f'Re: {event.subject}', in_reply_to, references, case.delivery_revision,
-                     case.preparation_control_epoch),
+                     case.preparation_control_epoch, ConsentLedger(self.store).epoch(case.id)),
                 )
                 queued += result.rowcount
         return queued
 
     def _held_receipt(self, case_id: str, event_id: str) -> str:
         row = self.store.connection.execute(
-            "SELECT payload_json FROM held_inbound_events WHERE id=? AND case_id=? "
-            "AND reason_code='FINALIZED_CASE_NEW_EVENT' AND NOT EXISTS "
+            "SELECT payload_json, reason_code FROM held_inbound_events WHERE id=? AND case_id=? "
+            "AND reason_code IN ('FINALIZED_CASE_NEW_EVENT','HUMAN_REVIEW_CASE_NEW_EVENT') AND NOT EXISTS "
             "(SELECT 1 FROM review_actions WHERE held_event_id=held_inbound_events.id)",
             (event_id, case_id),
         ).fetchone()
         case = self.store.get_case(case_id)
-        if row is None or case is None or case.status not in {
-            CaseStatus.READY_FOR_HUMAN_REVIEW, CaseStatus.DELIVERED_AFTER_CONFIRMATION,
-        }:
+        if row is None or case is None or case.status not in HELD_RECEIPT_STATES[row['reason_code']]:
             raise PermanentChannelError('Held update receipt no longer matches current review state')
         event = InboundEvent.model_validate_json(row['payload_json'])
+        if (event.id != event_id or event.external_thread_id != case.external_thread_id
+                or event.channel != 'gmail' or case.primary_channel != 'gmail'
+                or [a.casefold() for _, a in getaddresses([event.sender])] !=
+                [a.casefold() for _, a in getaddresses([case.applicant_contact])]):
+            raise PermanentChannelError('Held update receipt does not match applicant and thread')
         zh = bool(re.search(r'[\u4e00-\u9fff]', event.body)) or (
             len(re.findall(r'[A-Za-z]+', event.body)) <= 4 and case.customer_language == 'zh')
+        if row['reason_code'] == 'HUMAN_REVIEW_CASE_NEW_EVENT':
+            return (
+                '收到你这次的补充说明了，已和待核对的资料放在一起。顾问复核还没有完成，'
+                '这封邮件不会自动解除复核或定稿材料包；同一份说明不用重发。'
+                if zh else "I've received your follow-up and kept it with the information awaiting review. "
+                "The adviser review is still open; this message does not clear it or finalise the pack. "
+                "You do not need to send the same explanation again."
+            )
         return (
             '收到这次补充的信息了，已记录下来。旧材料包的下载和后续发送已暂停；'
             '这次更新需要人工复核，目前还没有生成或发送修订版。'
