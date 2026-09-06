@@ -204,7 +204,8 @@ def _profile_rows(case: Case) -> list[str]:
     for field, value in profile.items():
         if isinstance(value, bool):
             profile[field] = "Yes" if value else "No"
-        elif isinstance(value, str) and "_" in value:
+        elif (field in {"visit_purpose", "occupation_status", "funding_source", "sponsor_relationship"}
+              and isinstance(value, str) and "_" in value):
             profile[field] = value.replace("_", " ").capitalize()
     rows = [
         f"{labels.get(field, field.replace('_', ' ').capitalize())}: "
