@@ -1,0 +1,37 @@
+{
+  "scope": "isolated Docker synthetic guided lab over HTTP; no model or mailbox; not visual or human usability QA",
+  "base_url": "http://127.0.0.1:32770",
+  "checks": {
+    "health": true,
+    "home_and_lab": true,
+    "fresh_lab_withholds_pack": true,
+    "fresh_download_blocked": true,
+    "initial_evidence_blocks": true,
+    "out_of_order_confirmation_blocked": true,
+    "correction_still_needs_confirmation": true,
+    "confirmed_synthetic_case_ready": true,
+    "download_available": true,
+    "zip_integrity": true,
+    "expected_deliverables": true,
+    "has_supporting_documents": true
+  },
+  "all_passed": true,
+  "archive_sha256": "95471ed515aa3d3d0f75fc0ae23893cbe6805a1ff33bea459c01ad1d0eb0d72d",
+  "archive_entries": [
+    "00_READ_ME_FIRST.pdf",
+    "01_case_summary.pdf",
+    "02_personalised_document_checklist.pdf",
+    "03_document_index.pdf",
+    "04_cover_letter_draft.pdf",
+    "05_application_answers.json",
+    "06_open_issues.pdf",
+    "supporting_documents/bank_statement.pdf",
+    "supporting_documents/conference_invitation_corrected.pdf",
+    "supporting_documents/family_funds_certified_translation.pdf",
+    "supporting_documents/family_funds_cn.pdf",
+    "supporting_documents/hong_kong_residence_status.pdf",
+    "supporting_documents/passport.pdf",
+    "supporting_documents/school_funding_letter.pdf",
+    "supporting_documents/student_letter.pdf"
+  ]
+}

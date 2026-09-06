@@ -75,9 +75,10 @@ withheld: this is not yet a complete ordinary-document-to-final-pack acceptance 
 
 ## Easiest path for an interviewer
 
-Development evidence: a [fresh isolated container check](docs/CONTAINER_ACCEPTANCE_2026-09-07.md)
-verified startup, the synthetic three-message lab, ZIP download and persistence
-across restart on `dac9169`. This is not live Gmail, Windows-installation or
+Development evidence: a [fresh isolated container check](docs/CONTAINER_ACCEPTANCE_B2F1CFC_2026-09-07.md)
+verified startup, the synthetic three-message lab, ZIP download and identical
+archive bytes across restart on `b2f1cfc`. PDF inspection still found applicability
+labelling and draft-writing gaps. This is not live Gmail, Windows-installation or
 independent nontechnical-usability acceptance; the new record-review tooling is
 still a local operator command rather than a finished guided interface.
 
