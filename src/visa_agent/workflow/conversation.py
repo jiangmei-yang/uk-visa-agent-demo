@@ -141,7 +141,7 @@ FACT_LABELS_ZH = {
     "employer_phone": "现任雇主联系电话",
     "sponsor_address": "资助人地址",
     "sponsor_relationship": "与资助人的关系",
-    "sponsor_is_in_uk": "资助人是否住在英国",
+    "sponsor_is_in_uk": "资助人的英国情况回答",
     "has_serious_history": "是否有拒签、违法或移民记录",
     "route_confirmed_standard_visitor": "是否按 Standard Visitor 路线准备",
 }
@@ -582,6 +582,12 @@ def received_context(case: Case) -> str:
     # the same occupation/funding. Corrections retain their explicit receipt.
     facts = {field: value for field, value in case.latest_received_facts.items()
              if case.latest_changes or not _guidance_acknowledges_fact(case, field)}
+    if (set(facts) == {"sponsor_is_in_uk"} and case.profile.funding_source == "personal_sponsor"
+            and case.profile.sponsor_is_in_uk is not None):
+        # Legacy extraction accepts both presence and residence statements.
+        # The boolean alone cannot justify echoing a residence assertion.
+        return ("好的，资助人是否在英国的回答已记下。" if case.customer_language == "zh" else
+                "Thanks, I've noted your answer about your sponsor's location.")
     if case.customer_language != "zh":
         country_labels = {"China": "Chinese", "Hong Kong": "Hong Kong", "United Kingdom": "British"}
         locations = []
@@ -617,11 +623,8 @@ def received_context(case: Case) -> str:
             if "sponsor_name" in facts and case.profile.sponsor_name:
                 sponsor_details.append(f"the sponsor name is {case.profile.sponsor_name}")
             if "sponsor_is_in_uk" in facts and case.profile.sponsor_is_in_uk is not None:
-                subject = "they" if relation == "parents" else "the sponsor"
                 sponsor_details.append(
-                    f"{subject} {'lives' if subject != 'they' else 'live'} in the UK"
-                    if case.profile.sponsor_is_in_uk
-                    else f"{subject} {'does' if subject != 'they' else 'do'} not live in the UK"
+                    "your answer about your sponsor's location is recorded"
                 )
             if sponsor_details:
                 locations.append(", and ".join(sponsor_details))
@@ -725,9 +728,8 @@ def received_context(case: Case) -> str:
         if "sponsor_name" in facts and case.profile.sponsor_name:
             sponsor_details.append(f"资助人姓名记为{case.profile.sponsor_name}")
         if "sponsor_is_in_uk" in facts and case.profile.sponsor_is_in_uk is not None:
-            subject = "两位" if relation == "parents" else "资助人"
             sponsor_details.append(
-                f"{subject}{'住在' if case.profile.sponsor_is_in_uk else '不住在'}英国"
+                "资助人是否在英国的回答已记下"
             )
         if sponsor_details:
             parts.append("，".join(sponsor_details))
@@ -1493,10 +1495,10 @@ def change_acknowledgement(case: Case) -> str | None:
                                 f" I've recorded the address as {profile.sponsor_address}.")
             if "sponsor_is_in_uk" in case.latest_changes:
                 if profile.sponsor_is_in_uk is None:
-                    message += "是否住在英国还待确认。" if zh else " Whether they live in the UK still needs checking."
+                    message += "资助人与英国有关的情况还待确认。" if zh else " Their connection to the UK still needs checking."
                 else:
-                    message += (f"也记下了资助人{'住在' if profile.sponsor_is_in_uk else '不住在'}英国。" if zh else
-                                f" I've also noted that they {'live' if profile.sponsor_is_in_uk else 'do not live'} in the UK.")
+                    message += ("资助人是否在英国的回答也已记下。" if zh else
+                                " I've also noted your answer about your sponsor's location.")
             return message
     if not zh and set(case.latest_changes) == {"estimated_trip_cost_gbp"}:
         value = case.latest_changes["estimated_trip_cost_gbp"]
