@@ -94,9 +94,10 @@ do not switch scope by deleting its database. Use a separate state directory for
 
 ## Local supervised deployment evidence, 2026-09-04
 
-### Reviewed guidance and optional draft transport
+### Reviewed guidance (current sending mode)
 
-The default remains `--reply-style reviewed`. Reviewed replies now include source-linked answers
+The live `serve` command uses reviewed replies only; it has no `--reply-style` option.
+Reviewed replies include source-linked answers
 to application/process, timing, translation and booking questions, and small case-specific
 preparation suggestions. Advice topic IDs refer to outbound events; only an accepted `SENT` reply
 suppresses that unsolicited topic on later turns. This records sending, not whether a customer read
@@ -131,13 +132,12 @@ still update the same case. Pending/failed drafts do not count as sent questions
 recover only their matching last sent question set. This pacing has no authority to waive required
 facts, confirm a summary or release a pack.
 
-`--reply-style guarded-draft` is an opt-in candidate, not enabled in the installed LaunchAgent.
-Only blocked/intake drafts can pass through, and the sender revalidates them against current state.
-Confirmation summaries, held-update receipts and final-delivery restrictions remain controlled.
-The exact transmitted body and `reply_render_mode` / `reply_render_error` are persisted before send.
-`guarded_draft` identifies the validation path, not proof of original model authorship: the workflow
-may already have used its fallback. Local transport tests cover both passing and rejected drafts;
-this is not a claim of accepted naturalness or live model-prose rollout.
+An earlier experimental `guarded-draft` mode was removed from the live runner after adversarial
+review found that free-form prose could add unsupported claims. Lower-level transport experiments
+remain as tests, not a supported live setting. DeepSeek proposes structured facts and question
+topics; the workflow validates them and selects reviewed case-aware advice. New prose is not
+allowed to waive evidence, invent a fee, or grant consent. The exact transmitted body and rendering
+mode are retained. The closed-enum social-style experiment is not wired into this live service.
 
 A macOS LaunchAgent `com.visa-agent.gmail-user` was installed for the owner's additional test mailbox,
 with a 60-second interval, no subject restriction, an explicit activation boundary and private
@@ -164,9 +164,15 @@ handling, not recipient-side observation of a new conversation using the revised
 
 ## Not yet complete
 
-Open onboarding from arbitrary senders, explicit privacy/processing consent, abuse limits,
-public-service deployment and automatic final-pack release are not implemented by this mode.
+Open onboarding from arbitrary senders, public-service deployment, comprehensive abuse controls
+and automatic final-pack release are not implemented by this mode.
 Do not describe this registered-sender rollout as a fully public autonomous adviser.
+
+Explicit processing notices, scope-bound consent and revocation are implemented; see
+`docs/PROCESSING_CONSENT.md`. They are distinct from the operator's Gmail OAuth permission.
+The installed applicant's consent for the current processing scope remains unknown, so business
+processing is not accepted as live-validated. The applicant must receive the current notice and
+reply in the same thread with its reference; do not edit the database or fabricate their reply.
 
 Automatic `serve` now uses durable incremental discovery instead of the lifetime 100-message
 full-batch limit. It follows bounded pages per cycle, processes at most 100 bodies per cycle,

@@ -6,6 +6,9 @@ at the edges, deterministic rules and delivery gates at the centre.
 > Assessment software using synthetic data only. It does not give legal advice, decide eligibility,
 > submit an application, or predict an outcome.
 
+**面试交付入口：[中文 5 分钟运行说明与要求对照](SUBMISSION.md)** ·
+[English interviewer walkthrough](START_HERE.md)
+
 ## What the demo proves
 
 The featured case is an adult PhD student applying from Hong Kong to attend a London conference.
