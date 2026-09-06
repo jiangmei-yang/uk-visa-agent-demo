@@ -77,12 +77,16 @@ def test_collection_question_is_actually_sent_and_remembered_after_reopen(tmp_pa
         kind="uk_contact", state="none_declared", source_excerpt=statement, confidence=1)]))
     assert "你以前有过出境旅行吗" in second.body
     assert list(second.case.collection_question_event_ids.values()) == [[second.event.id]]
-    third = dialogue.turn("我记不清我的出境记录。", patch(assertions=[CollectionDeclarationProposal(
-        kind="travel", state="unknown", source_excerpt="我记不清我的出境记录。", confidence=1)]))
+    third = dialogue.turn("记不清。", patch())
     assert "你以前有过出境旅行吗" not in third.body
     assert third.case.application_records.collection_state("travel") == "unknown"
     assert "你在英国有亲属或联系人吗" not in third.body
     assert third.case.application_records.collection_state("uk_contact") == "none_declared"
+    assertion = third.case.application_records.latest_declarations()["travel"]
+    assert assertion.source_excerpt == "记不清。"
+    assert assertion.source_event_id == third.event.id
+    assert assertion.question_event_id == second.event.id
+    assert assertion.question_key in second.case.collection_question_event_ids
 
 
 @pytest.mark.parametrize("language", ["zh", "en"])

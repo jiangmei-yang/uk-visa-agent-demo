@@ -7,6 +7,47 @@ The overall acceptance goal remains active.
 
 ## Requirement and design boundary
 
+### 2026-09-07 short collection answers (development only)
+
+The workflow now resolves a bounded whole-message vocabulary (`没有`, `No`,
+`记不清`, `I need to check`, etc.) against one current actually SENT collection
+list question. It checks case, recipient, thread, persisted question identifier,
+current collection snapshot and the exact generated question in the sent payload.
+Send timestamps, not draft creation order, identify the latest sent reply. Missing
+send-order evidence, a newer unrelated reply, multiple targets, a scalar question
+in the same event, quoted-only text, extra/conditional clauses or changed records
+abstain. A missing detail question never turns 'no' into collection-wide absence.
+
+For an unasked collection, a negative means none; for a nonempty partial list,
+'no more' means the applicant declares that list exhaustive, not that its entries
+should be deleted. Uncertainty remains uncertainty. These are trusted contextual
+interpretations, not model-selected targets or new consent/release permissions.
+The declaration retains the customer's current verbatim source/event as well as
+`question_event_id` and `question_key`. Both context fields must be present or
+absent together and are integrity-bound when present. Pre-context declaration
+digests remain compatible so existing revision chains can reopen.
+
+The captured-workflow test now replies only `记不清。` with an empty model patch:
+the actual persisted reply and SQLite-reopened case retain travel uncertainty,
+the current answer source and the sent question link, without asking again or
+discarding the earlier explicit no-UK-contacts statement. This does not prove
+real-model behavior on short replies. Focused contextual, declaration and actual
+workflow tests passed **66 tests** (0.63s), including four added legacy/context
+integrity tests. Full regression and source checks are recorded separately below.
+
+Still required: broader non-vocabulary contextual replies, per-field uncertainty,
+source-bound real-provider testing, universal collection-before-confirmation
+checks and final-pack/revision tests. The preceding release hold remains; no
+Gmail/container restart, real message or deployment was performed.
+
+Short-answer development regression: **4,807 passed / 2 deselected**, 98.95s,
+one existing Starlette warning (`/tmp/visa-contextual-collection-regression.log`).
+The four additional declaration compatibility/integrity tests were added after
+full-suite collection and passed in the 66-test focused run above; this is not a
+claim of a full 4,811-test run. Ruff and strict Mypy passed for 86 source modules.
+The two excluded old source-bound provider reports remain stale; no report was
+rewritten or refreshed without a new provider run.
+
 ### 2026-09-07 reply integration checkpoint (development only)
 
 The collection planner is now called from the blocked DRAFT reply path after

@@ -15,6 +15,41 @@ from visa_agent.domain.application_records import (
 )
 
 
+def test_old_declaration_digest_remains_loadable_without_context_fields():
+    import hashlib
+    import json
+
+    ledger = blank()
+    updated = transaction(ledger, body="I am unsure.", declarations=[declaration(ledger)])
+    original = updated.latest_declarations()["travel"]
+    old_payload = original.model_dump(mode="json", exclude={"question_event_id", "question_key"})
+    old_digest = hashlib.sha256(json.dumps(old_payload, sort_keys=True, ensure_ascii=False,
+                                         separators=(",", ":")).encode()).hexdigest()
+    assert original.digest() == old_digest
+    later = transaction(updated, event="second", body="I am unsure.", declarations=[declaration(updated)])
+    serialized = later.model_dump(mode="json")
+    for item in serialized["declarations"]:
+        item.pop("question_event_id", None)
+        item.pop("question_key", None)
+    assert ApplicationRecordLedger.model_validate(serialized) == later
+
+
+@pytest.mark.parametrize("field", ["question_event_id", "question_key"])
+def test_half_context_link_is_rejected(field):
+    data = declaration(blank()).model_dump()
+    data[field] = "fictional-question"
+    with pytest.raises(ValidationError, match="both question"):
+        CollectionDeclaration.model_validate(data)
+
+
+def test_context_link_is_included_in_declaration_integrity_digest():
+    ledger = blank()
+    command = declaration(ledger).model_copy(update={"question_event_id": "sent-question", "question_key": "question-key"})
+    updated = transaction(ledger, body=command.source_excerpt, declarations=[command])
+    original = updated.latest_declarations()["travel"]
+    assert original.digest() != original.model_copy(update={"question_event_id": "another-question"}).digest()
+
+
 def blank():
     return ApplicationRecordLedger(case_id="fictional-declarations")
 

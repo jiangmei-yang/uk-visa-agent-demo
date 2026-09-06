@@ -154,11 +154,17 @@ class CollectionDeclaration(BaseModel):
     state: DeclarationState
     source_excerpt: str = Field(min_length=1, max_length=1200)
     expected_records_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
+    # For a short contextual answer, retain which actually sent question gave
+    # the answer its meaning. Only the trusted workflow may supply this link.
+    question_event_id: str | None = Field(default=None, min_length=1)
+    question_key: str | None = Field(default=None, min_length=1)
 
     @model_validator(mode="after")
     def nonblank_source(self) -> CollectionDeclaration:
         if not self.source_excerpt.strip():
             raise ValueError("A declaration needs an explicit source statement")
+        if (self.question_event_id is None) != (self.question_key is None):
+            raise ValueError("Contextual declarations need both question event and key")
         return self
 
 
@@ -169,7 +175,13 @@ class DeclarationRevision(CollectionDeclaration):
     predecessor_digest: str | None = None
 
     def digest(self) -> str:
-        return _digest(self.model_dump(mode="json"))
+        payload = self.model_dump(mode="json")
+        if self.question_event_id is None:
+            # Keep pre-context declaration chains loadable. A new contextual
+            # declaration includes both fields in its immutable digest.
+            payload.pop("question_event_id", None)
+            payload.pop("question_key", None)
+        return _digest(payload)
 
 
 def _records_digest(case_id: str, kind: RecordKind, current: dict[str, RecordRevision]) -> str:

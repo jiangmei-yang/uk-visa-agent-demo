@@ -175,9 +175,10 @@ def _travel_field_roles(proposal: ApplicationRecordProposal) -> bool:
 def plan_record_intake(
     event: InboundEvent, ledger: ApplicationRecordLedger | None, *, case_id: str,
     records: list[ApplicationRecordProposal], declarations: list[CollectionDeclarationProposal],
+    contextual_declaration: CollectionDeclaration | None = None,
 ) -> RecordIntakePlan:
     """Called only after workflow identity/consent checks, on the latest body."""
-    if not records and not declarations:
+    if not records and not declarations and contextual_declaration is None:
         return RecordIntakePlan(ledger)
     original = ledger or ApplicationRecordLedger(case_id=case_id)
     body = latest_reply_text(event.body)
@@ -305,13 +306,20 @@ def plan_record_intake(
             if assertion.state == "complete_declared" and re.search(r"\bnot\b|没列全|沒列全|不完整", context, re.I):
                 raise ValueError("Negated completeness cannot become a full-list assertion")
             accepted_declarations.append(assertion)
-        if not commands and not accepted_declarations:
+        if contextual_declaration is not None and (commands or accepted_declarations
+                    or contextual_declaration.source_excerpt != body.strip()
+                    or not contextual_declaration.question_event_id
+                    or contextual_declaration.expected_records_digest != original.records_digest(contextual_declaration.kind)):
+            raise ValueError("Contextual collection answer must match its unchanged question snapshot")
+        if not commands and not accepted_declarations and contextual_declaration is None:
             return RecordIntakePlan(ledger)
         # Resolve declaration digests against the exact post-command snapshot;
         # neither digest nor server-assigned record ID comes from the model.
         preview = apply_record_commands(original, case_id=case_id, event_id=event.id, body=body, commands=commands)
         assertions = [CollectionDeclaration(kind=item.kind, state=item.state, source_excerpt=item.source_excerpt,
                        expected_records_digest=preview.records_digest(item.kind)) for item in accepted_declarations]
+        if contextual_declaration is not None:
+            assertions.append(contextual_declaration)
         updated = apply_record_commands(original, case_id=case_id, event_id=event.id, body=body,
                                          commands=commands, declarations=assertions)
         return RecordIntakePlan(updated, changed=updated.fingerprint() != original.fingerprint())

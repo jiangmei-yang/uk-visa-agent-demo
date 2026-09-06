@@ -92,6 +92,7 @@ from visa_agent.workflow.pending_step_value import (
 )
 from visa_agent.workflow.record_collection_plan import (
     collection_question_text,
+    contextual_collection_declaration,
     plan_collection_follow_up,
 )
 from visa_agent.workflow.record_intake import plan_record_intake, record_intake_receipt
@@ -347,6 +348,7 @@ class WorkflowService:
         record_plan = plan_record_intake(
             customer_event, case.application_records, case_id=case.id,
             records=patch.application_records, declarations=patch.collection_declarations,
+            contextual_declaration=contextual_collection_declaration(case, customer_event.body, prior_outbox),
         )
         if record_plan.changed:
             case.application_records = record_plan.ledger
