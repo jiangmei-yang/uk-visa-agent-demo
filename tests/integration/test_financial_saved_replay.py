@@ -47,7 +47,7 @@ REPORTS = [ROOT / "eval_output" / name for name in (
 )]
 PDFS = ROOT / "output" / "pdf" / "financial-document-eval"
 ROLLOUT = ROOT / "eval_output" / "financial_document_rollout_2026-09-05.json"
-CURRENT_REPORT = ROOT / "eval_output" / "financial_document_deepseek_2026-09-06-v16.json"
+CURRENT_REPORT = ROOT / "eval_output" / "financial_document_deepseek_2026-09-07-v17.json"
 POLICY = load_policy(ROOT / "knowledge" / "uk_standard_visitor_2026-02-25.yaml")
 TODAY = date(2026, 9, 5)
 
@@ -82,9 +82,8 @@ def test_v8_missing_identity_remains_a_review_instead_of_waiving_required_facts(
 
 def test_current_provider_run_is_bound_to_complete_source_prompt_schema_and_pdf_set() -> None:
     report = json.loads(CURRENT_REPORT.read_text())
-    rollout = json.loads(ROLLOUT.read_text())
-    run_entry = next(item for item in rollout["provider_runs"]
-                     if item["report"] == CURRENT_REPORT.name)
+    run_entry = json.loads((ROOT / "eval_output" / "financial_document_current_2026-09-07.json").read_text())
+    assert run_entry["report"] == CURRENT_REPORT.name
     assert hashlib.sha256(CURRENT_REPORT.read_bytes()).hexdigest() == run_entry["sha256"]
     assert report["evidence_contract_version"] == "financial-document-probe-v2"
     assert report["completed"] is True and report["all_passed"] is True
@@ -105,7 +104,11 @@ def test_current_provider_run_is_bound_to_complete_source_prompt_schema_and_pdf_
         name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
         for name in IMPLEMENTATION_FILES
     }
-    assert len(expected_implementation) == 81  # probe plus every one of 80 source files
+    assert set(expected_implementation) == {
+        "scripts/financial_document_probe.py",
+        *(str(path.relative_to(ROOT)) for path in (ROOT / "src/visa_agent").rglob("*.py")),
+    }
+    assert len(expected_implementation) == run_entry["implementation_manifest_entries"]
     assert report["implementation_files_sha256"] == expected_implementation
     assert report["implementation_bundle_sha256"] == CANONICAL_SHA256(expected_implementation)
     assert report["document_schema_sha256"] == CANONICAL_SHA256(
@@ -137,6 +140,16 @@ def test_current_provider_run_is_bound_to_complete_source_prompt_schema_and_pdf_
             proposal, pages, method="saved_provider_replay", version=report["model"]
         )
         assert not result.requires_review and len(result.financial_observations) == 1
+        observation = result.financial_observations[0]
+        assert str(observation.as_of) == "2026-08-31"
+        if row["filename"] == "fictional_employment_letter.pdf":
+            assert observation.period == "annual" and observation.basis == "gross"
+            assert observation.account_reference is None
+        else:
+            assert observation.period == "closing"
+            assert observation.account_reference == (
+                "9876" if row["filename"] == "fictional_sponsor_statement.pdf" else "1234"
+            )
 
 
 @pytest.mark.parametrize("filename", tuple(PROBE_DOCUMENTS))

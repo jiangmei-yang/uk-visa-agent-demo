@@ -1,0 +1,14 @@
+{
+  "scope": "Four retained fictional financial PDFs; new current-source DeepSeek extraction, not Gmail acceptance",
+  "report": "financial_document_deepseek_2026-09-07-v17.json",
+  "sha256": "711dc5d205e3cc5d58cf7d3b1961f0f6b0166a30f94689f59a8fd1d38e20d756",
+  "calls": 4,
+  "passed": 4,
+  "failed": 0,
+  "tokens": 8744,
+  "bound_git_head": "811d5e03d613d096d05341ae2bb6c1b4ba624214",
+  "implementation_manifest_entries": 94,
+  "previous_rollout_left_unchanged": "financial_document_rollout_2026-09-05.json",
+  "mailbox_calls": 0,
+  "real_documents": 0
+}
