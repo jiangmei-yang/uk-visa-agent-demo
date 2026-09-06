@@ -7,7 +7,7 @@ roles remain missing; this helper neither clears old facts nor changes funding.
 import re
 from collections.abc import Mapping, Sequence
 
-SPONSOR_FIELDS = {"sponsor_name", "sponsor_relationship", "sponsor_is_in_uk"}
+SPONSOR_FIELDS = {"sponsor_name", "sponsor_address", "sponsor_relationship", "sponsor_is_in_uk"}
 RELATIONSHIPS = {
     "parents": r"\bparents\b|父母|爸妈|双亲",
     "mother": r"\b(?:mother|mom|mum)\b|母亲|媽媽|妈妈",
@@ -405,6 +405,8 @@ def sponsor_role_is_grounded(
     needle = _normal(excerpt)
     if not needle or needle not in _normal(body):
         return False
+    if field == "sponsor_address":
+        return sponsor_address_is_grounded(value, excerpt, body)
     if field == "sponsor_is_in_uk" and not _sponsor_location_polarity_matches(value, excerpt):
         return False
     sentences = [part for part in re.split(r"[。!?！？;；\n]|\.(?:\s|$)", body) if part.strip()]
@@ -471,5 +473,44 @@ def sponsor_role_is_grounded(
                     return True
             elif ((context == role and OWN_SPONSOR.search(context))
                   or len(_relations(context)) == 1 and _relations(context) == _relations(role)):
+                return True
+    return False
+
+
+def sponsor_address_is_grounded(value: str | int | bool, excerpt: str, body: str) -> bool:
+    """Bind a literal address to the applicant's sponsor, never a host/home.
+
+    Initial supplied-only boundary: no bare-address or pronoun inference. Full
+    current sentences are checked, so a model cannot clip away uncertainty,
+    quotation or an explicit other owner. This is not postal verification.
+    """
+    from visa_agent.domain.address_evidence import address_value_is_grounded
+
+    if not isinstance(value, str) or not value.strip() or len(value) > 400:
+        return False
+    needle = _normal(excerpt)
+    if not needle or not address_value_is_grounded(value, excerpt):
+        return False
+    sentences = [part.strip() for part in re.split(r"[。!?！？;；\n]|\.(?:\s|$)", body) if part.strip()]
+    for sentence in sentences:
+        if needle not in _normal(sentence):
+            continue
+        # Street names may legitimately contain words such as "Example".
+        # Remove the literal address only for the intent check, never evidence.
+        intent = re.sub(re.escape(value), "", sentence, flags=re.I)
+        if (NONCURRENT_OR_OTHER.search(intent) or _QUOTED_MATERIAL.search(sentence)
+                or re.match(r'^[>"“‘「『]', sentence)
+                or re.search(r"\b(?:not|unknown|unsure|unconfirmed|guess|perhaps)\b|"
+                             r"不确定|不清楚|不知道|未确认|不是|并非|猜", intent, re.I)
+                or re.search(r"[?？]", body)):
+            continue
+        # Require the owner's address marker immediately before the supplied
+        # value, rather than merely finding both somewhere in a sentence.
+        marker = r"(?:\bmy sponsor['’]s\s+(?:(?:home|current)\s+)?address\s*(?:is|:)|" \
+                 r"我的?资助人(?:的)?(?:住址|地址)(?:是|为|[:：]))\s*"
+        for match in re.finditer(marker, sentence, re.I):
+            address_text = sentence[match.end():].strip().rstrip(" .。")
+            if (_normal(address_text) == _normal(value)
+                    and _normal(sentence[match.start():]) in needle):
                 return True
     return False

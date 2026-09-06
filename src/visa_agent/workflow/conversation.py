@@ -136,6 +136,7 @@ FACT_LABELS_ZH = {
     "annual_income_gbp": "年收入（英镑）",
     "funding_source": "费用由谁承担",
     "sponsor_name": "资助人姓名",
+    "sponsor_address": "资助人地址",
     "sponsor_relationship": "与资助人的关系",
     "sponsor_is_in_uk": "资助人是否住在英国",
     "has_serious_history": "是否有拒签、违法或移民记录",

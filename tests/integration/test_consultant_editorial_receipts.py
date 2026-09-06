@@ -29,7 +29,7 @@ def test_initial_receipt_does_not_repeat_occupation_explained_by_advice(tmp_path
     assert result.case.proactive_guidance_offered
     # Historical scenarios supplied no current-home duration. Keep the original
     # report immutable and require the new field to remain explicitly empty.
-    expected = {"current_address_duration": None, **row["profile"]}
+    expected = {"current_address_duration": None, "sponsor_address": None, **row["profile"]}
     assert result.case.profile.model_dump(mode="json") == expected
     snapshot = result.case.model_dump(mode="json")
     receipt = received_context(result.case)

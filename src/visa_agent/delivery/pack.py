@@ -167,6 +167,7 @@ def _profile_rows(case: Case) -> list[str]:
         "annual_income_gbp": "Annual income",
         "funding_source": "Funding source",
         "sponsor_name": "Sponsor name",
+        "sponsor_address": "Sponsor address",
         "sponsor_relationship": "Sponsor relationship",
         "sponsor_is_in_uk": "Sponsor is in the UK",
         "has_serious_history": "Serious history declared",
@@ -178,7 +179,7 @@ def _profile_rows(case: Case) -> list[str]:
             and case.residence_duration_deferrals[-1].get("address") == case.profile.current_address):
         profile["current_address_duration"] = "Deferred for checking - not yet supplied"
     if profile["funding_source"] != "personal_sponsor":
-        for field in ("sponsor_name", "sponsor_relationship", "sponsor_is_in_uk"):
+        for field in ("sponsor_name", "sponsor_address", "sponsor_relationship", "sponsor_is_in_uk"):
             profile[field] = "Not applicable"
     for field in ("estimated_trip_cost_gbp", "annual_income_gbp"):
         if isinstance(profile[field], int):

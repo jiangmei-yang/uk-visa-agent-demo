@@ -1075,7 +1075,7 @@ class WorkflowService:
             # person is no longer the payer, but it does not prove the new
             # person's name, relationship or location. Keep any newly grounded
             # sponsor fields from this turn and retire only stale inherited ones.
-            for field in ("sponsor_name", "sponsor_relationship", "sponsor_is_in_uk"):
+            for field in ("sponsor_name", "sponsor_address", "sponsor_relationship", "sponsor_is_in_uk"):
                 if field in update_fields:
                     continue
                 setattr(case.profile, field, None)
@@ -1096,12 +1096,16 @@ class WorkflowService:
             case.profile.sponsor_is_in_uk = None
             for old in case.active_evidence("sponsor_is_in_uk"):
                 old.superseded = True
+        if sponsor_identity_changed and "sponsor_address" not in update_fields:
+            case.profile.sponsor_address = None
+            for old in case.active_evidence("sponsor_address"):
+                old.superseded = True
         if sponsor_identity_changed or sponsor_replaced_without_complete_identity:
             for item in [*case.unsent_advice, *case.pending_advice]:
                 if item.topic == "sponsor_support" and item.source_event_id != event.id:
                     item.deferred_by_event_id = event.id
         if case.profile.funding_source != "personal_sponsor" and "funding_source" in update_fields:
-            for field in ("sponsor_name", "sponsor_relationship", "sponsor_is_in_uk"):
+            for field in ("sponsor_name", "sponsor_address", "sponsor_relationship", "sponsor_is_in_uk"):
                 setattr(case.profile, field, None)
                 for old in case.active_evidence(field):
                     old.superseded = True

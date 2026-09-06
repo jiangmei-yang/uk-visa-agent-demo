@@ -155,6 +155,7 @@ class CaseProfile(BaseModel):
     annual_income_gbp: int | None = None
     funding_source: str | None = None
     sponsor_name: str | None = None
+    sponsor_address: str | None = Field(default=None, min_length=1, max_length=400)
     sponsor_relationship: str | None = None
     sponsor_is_in_uk: bool | None = None
     # Tri-state by design: silence is not an explicit negative declaration.
