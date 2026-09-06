@@ -95,9 +95,9 @@ def record_intake_receipt(plan: RecordIntakePlan, event_id: str, language: str) 
     zh = language == "zh"
     parts: list[str] = []
     labels = ({"period": "旅行时间", "purpose": "旅行目的", "name": "联系人姓名",
-               "relationship": "联系人与你的关系", "address": "联系人地址"} if zh else
+               "relationship": "联系人与你的关系", "address": "联系人地址", "passport_number": "亲属护照号码"} if zh else
               {"period": "travel period", "purpose": "trip purpose", "name": "contact's name",
-               "relationship": "contact's relationship to you", "address": "contact's address"})
+               "relationship": "contact's relationship to you", "address": "contact's address", "passport_number": "relative's passport number"})
     for deferred in plan.ledger.active_field_deferrals():
         if deferred.source_event_id == event_id:
             label = labels.get(deferred.field, deferred.field)

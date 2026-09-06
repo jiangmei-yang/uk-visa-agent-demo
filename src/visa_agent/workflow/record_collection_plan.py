@@ -20,6 +20,7 @@ from visa_agent.domain.application_records import (
     RecordKind,
 )
 from visa_agent.domain.models import Case
+from visa_agent.domain.record_completeness import record_intake_fields
 from visa_agent.workflow.conversation import latest_reply_text
 
 
@@ -73,12 +74,7 @@ def plan_collection_follow_up(
         for record in ledger.current().values():
             if record.kind != kind:
                 continue
-            # Baseline descriptive coverage only; conditional passport/support
-            # requirements must be assessed separately, not blanket-collected.
-            fields = ("country", "period", "purpose") if kind == "travel" else (
-                "name", "relationship", "address",
-            )
-            for field in fields:
+            for field in record_intake_fields(record):
                 if field not in record.fields and (record.record_id, field) not in deferred_fields:
                     pending.append(CollectionFollowUp(
                         key=f"{case_id}:{kind}:{record.record_id}:{record.digest()}:{field}",
@@ -111,6 +107,13 @@ def collection_question_text(
     record = ledger.current()[follow_up.record_id]
     label = next((record.fields[key].value for key in ("country", "name", "relationship")
                   if key in record.fields), "")
+    if follow_up.field == "passport_number":
+        return (
+            f"你提到“{label}”是在英国的亲属。申请时可能需要这位亲属的护照号码，你方便核对后补充吗？暂时不清楚就先留待核实，不用猜，也不需要仅为这一项上传整本护照。\n"
+            "GOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa" if zh else
+            f"You mentioned ‘{label}’ is a relative in the UK. The application may ask for that relative's passport number; could you provide it after checking? If you are unsure, we can leave it for checking. Please don't guess or upload a whole passport just for this detail.\n"
+            "GOV.UK: https://www.gov.uk/standard-visitor/apply-standard-visitor-visa"
+        )
     prompts = ({"period": "大概是什么时候去的", "purpose": "当时主要是去做什么",
                 "name": "对方怎么称呼", "relationship": "对方与你是什么关系", "address": "对方在英国的地址是什么"}
                if zh else {"period": "when approximately did you travel", "purpose": "what was the purpose of that trip",
@@ -152,7 +155,10 @@ def _sent_collection_question(
     current = plan_collection_follow_up(ledger, case_id=case.id)
     matches = [item for item in current.pending
                if latest["event_id"] in case.collection_question_event_ids.get(item.key, [])
-               and any(collection_question_text(item, ledger, language) in latest["payload"] for language in ("en", "zh"))]
+               # Shared source-line dedup may remove an already supplied link,
+               # but must not destroy the actual sent question's context.
+               and any(collection_question_text(item, ledger, language).partition("\nGOV.UK:")[0]
+                       in latest["payload"] for language in ("en", "zh"))]
     if len(matches) != 1:
         return None
     return matches[0], latest

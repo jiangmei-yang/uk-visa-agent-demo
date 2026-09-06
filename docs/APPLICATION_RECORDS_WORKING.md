@@ -7,6 +7,44 @@ The overall acceptance goal remains active.
 
 ## Requirement and design boundary
 
+### 2026-09-07 conditional family-contact detail and deferral
+
+Known family relationships now share one field requirement between intake,
+question planning and review. A missing relative's passport number produces a
+single EN/ZH question explaining conditional applicability, linking to
+[GOV.UK application information](https://www.gov.uk/standard-visitor/apply-standard-visitor-visa),
+allowing uncertainty and discouraging guesses or unnecessary whole-passport uploads.
+Ordinary friends are not blanket-required to provide a passport. The relationship
+vocabulary is bounded; uncertain/complex wording still needs operator assessment.
+
+An actual local WorkflowService/SQLite-reopen/captured-SENT journey exercises a
+fictional sister contact, the sent question, short uncertainty, persistent
+field-specific deferral and a later explicit supplied-number correction. Removing
+a duplicated source URL from the outgoing text no longer destroys short-answer
+context: the exact question paragraph and existing SENT/case/thread/revision
+guards still apply. The later correction clears only active deferral, preserves
+history/source linkage, and does not re-ask the supplied number or release a pack.
+
+The first conversation fixture used a number containing the literal word
+`FICTIONAL`; the noncurrent-statement guard correctly declined that hypothetical
+input. The fixture was corrected to a synthetic `TEST00001`, not the guard.
+This is fake-model/captured-transport evidence, not a live DeepSeek or Gmail test.
+Operator plans also expose intake checks and missing record details; informational
+context cannot approve anything. A guided nontechnical review UI remains open.
+
+Full development regression: **4,868 passed / 2 deselected**, 99.47s, one existing
+Starlette warning (`/tmp/visa-family-contact-intake-regression.log`). The exclusions
+are the two stale source-bound provider reports, not accepted current evidence.
+After adding one operator missing-detail-context test, the focused five-file set
+passed **55 tests** (1.08s); this is not a full 4,869-test result. Ruff and strict
+Mypy passed for 91 source modules. No live email, paid model call, review of an
+actual customer, runtime restart, deployment or new CI result occurred.
+
+Remaining next steps include broader conditional requirements, list-completeness
+semantics after a same-record detail correction (currently invalidated), fresh
+source-bound real-model journeys, visual pack QA, independent user testing and
+authorized recipient-side Gmail acceptance. Overall acceptance remains open.
+
 ### 2026-09-07 explicit local operator command entry point
 
 `visa-agent record-review-plan` and `record-review-apply` now expose the local

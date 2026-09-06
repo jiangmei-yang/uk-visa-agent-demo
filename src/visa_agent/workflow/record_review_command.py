@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from visa_agent.channels.runtime_lock import exclusive_state
 from visa_agent.domain.policy import Policy, load_policy
+from visa_agent.domain.record_completeness import application_record_checks, record_intake_fields
 from visa_agent.domain.record_review import RecordAssessment
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.record_review import review_application_records
@@ -82,6 +83,10 @@ def record_review_command(*, state_dir: Path, policy_path: Path, case_id: str | 
                 "context": {"notice": "Local operator review only. Context is informational, not authority. No message will be sent.",
                             "source_audit_limit": "Registered event linkage only; purged original email bodies cannot be reverified.",
                             "policy_version": policy.version, "source_issues": list(audit.issues),
+                            "intake_checks": application_record_checks(ledger, case_id=case.id),
+                            "missing_details": [{"record_id": item.record_id, "field": field}
+                                                for item in ledger.current().values() for field in record_intake_fields(item)
+                                                if field not in item.fields] if ledger else [],
                             "records": ledger.customer_snapshot() if ledger else None},
                 "decision": {"case_id": case.id, "expected_fingerprint": review_fingerprint(case),
                              "policy_digest": policy_digest(policy), "actor": "", "rationale": "",

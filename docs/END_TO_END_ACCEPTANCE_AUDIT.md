@@ -9,8 +9,11 @@ Current unreleased work: [application records](APPLICATION_RECORDS_WORKING.md)
 adds revisioned travel/contact entries, explicit none/unknown/partial/full-list
 assertions, source-bound confirmation invalidation and bundled Chinese PDF glyphs.
 The bounded inbound planner is now connected to local workflow/store/captured-SENT
-tests; a temporary development hold prevents those new records from passing the
-old scalar-only release gate. This is not complete intake or final delivery.
+tests. The temporary nonempty-record hold has been replaced by source-registration,
+intake and explicit local operator-review gates with fresh customer confirmations.
+A fictional captured-transport journey generates a local ZIP; known-family missing
+passport details now have conditional advice and persistent deferral. This is not
+complete intake, a finished nontechnical review interface or real final delivery.
 The running Gmail service remains on the preceding release.
 
 Latest released work: [consultant editorial repair](CONSULTANT_EDITORIAL_REPAIR_2026-09-06.md)

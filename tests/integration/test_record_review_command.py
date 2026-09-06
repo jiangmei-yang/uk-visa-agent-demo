@@ -39,6 +39,8 @@ def test_plan_is_unapproved_and_apply_changes_no_outbox_or_customer_consent(tmp_
     state, case, kwargs = prepared(tmp_path)
     plan = record_review_command(state_dir=state, policy_path=POLICY, case_id=case.id)
     assert plan["context"]["source_issues"] == []
+    assert all(plan["context"]["intake_checks"].values())
+    assert plan["context"]["missing_details"] == []
     assert plan["decision"]["actor"] == "" and not plan["decision"]["travel_history_scope_checked"]
     assert plan["decision"]["assessments"][0]["relationship_category"] is None
     path = tmp_path / "decision.json"
@@ -56,6 +58,34 @@ def test_plan_is_unapproved_and_apply_changes_no_outbox_or_customer_consent(tmp_
     assert store.get_case(case.id).application_record_review is not None
     assert not store.get_case(case.id).final_summary_confirmed
     store.close()
+
+
+def test_plan_reports_missing_family_detail_without_treating_context_as_approval(tmp_path):
+    from test_application_record_workflow import patch, record
+    from test_consultant_value import Conversation
+
+    dialogue = Conversation(tmp_path)
+    statement = "My sister Example Doe lives at 1 Example Road, London, UK."
+    turn = dialogue.turn(statement, patch(records=[record(statement, {
+        "name": "Example Doe", "relationship": "sister", "address": "1 Example Road, London, UK",
+    }, kind="uk_contact")]))
+    state = tmp_path / "gmail-state"
+    state.mkdir()
+    with sqlite3.connect(dialogue.path) as source, sqlite3.connect(state / "sandbox.db") as destination:
+        source.backup(destination)
+    plan = record_review_command(state_dir=state, policy_path=POLICY, case_id=turn.case.id)
+    assert plan["context"]["missing_details"] == [{
+        "record_id": next(iter(turn.case.application_records.current())), "field": "passport_number",
+    }]
+    assert not plan["context"]["intake_checks"]["application_record_descriptive_fields_complete"]
+    assert not plan["decision"]["assessments"][0]["applicable_details_checked"]
+    # Editing informational output cannot confer authority or repair missing intake.
+    plan["context"]["intake_checks"] = {"application_record_descriptive_fields_complete": True}
+    plan["context"]["missing_details"] = []
+    path = tmp_path / "unapproved.json"
+    path.write_text(json.dumps(plan), encoding="utf-8")
+    with pytest.raises(ValueError):
+        record_review_command(state_dir=state, policy_path=POLICY, decision_path=path)
 
 
 def test_existing_worker_lock_cannot_be_bypassed_by_inspection(tmp_path):

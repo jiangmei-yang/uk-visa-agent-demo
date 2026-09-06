@@ -9,7 +9,7 @@ from datetime import UTC, date, datetime
 
 from visa_agent.domain.models import CaseStatus
 from visa_agent.domain.policy import Policy
-from visa_agent.domain.record_completeness import application_record_checks
+from visa_agent.domain.record_completeness import FAMILY_RELATIONSHIPS, application_record_checks
 from visa_agent.domain.record_review import (
     ApplicationRecordReview,
     RecordAssessment,
@@ -19,11 +19,6 @@ from visa_agent.privacy.consent import ConsentLedger
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.record_source_audit import audit_application_record_sources
 from visa_agent.workflow.review import review_fingerprint
-
-FAMILY_RELATIONSHIPS = frozenset({
-    "sister", "brother", "mother", "father", "wife", "husband", "daughter", "son", "aunt", "uncle", "cousin",
-    "姐姐", "妹妹", "哥哥", "弟弟", "父亲", "父親", "母亲", "母親", "妻子", "丈夫", "女儿", "女兒", "儿子", "兒子",
-})
 
 
 def review_application_records(

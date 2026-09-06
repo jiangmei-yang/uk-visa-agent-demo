@@ -21,7 +21,10 @@ visa-agent record-review-plan --state-dir /absolute/path/to/gmail-state --case-i
 ```
 
 The output includes the current record snapshot, source-registration issues,
-policy digest, exact case fingerprint and an **unapproved** `decision` template.
+intake checks, missing record details, policy digest, exact case fingerprint and
+an **unapproved** `decision` template. Known-family passport details are conditional;
+the same requirement is not applied to every friend/contact. Missing-detail output
+does not cover every possible conditional application requirement.
 It may contain personal information. Keep it local/private and do not commit it
 to GitHub. Normal store migrations/lock-file handling may occur when opening an
 existing state; inspection does not approve a case or create an outbound message.
@@ -67,7 +70,7 @@ No real service is restarted automatically by these commands.
 ## Current limits
 
 This is a command-line operator workflow. A guided authenticated review UI,
-structured missing-detail feedback to the adviser, broader conditional intake,
+complete missing-detail feedback to the adviser, broader conditional intake,
 visual pack checks and real-provider/Gmail recipient acceptance remain unfinished.
 Source registration does not independently reverify purged original email bodies
 or prove that customer statements are true. Do not describe this tooling as a
