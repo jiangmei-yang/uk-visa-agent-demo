@@ -7,6 +7,46 @@ The overall acceptance goal remains active.
 
 ## Requirement and design boundary
 
+### 2026-09-07 natural supplements and prior-error corrections
+
+The two v5 failed Chinese amendments now reach the same grounded target/source
+checks as explicit correction commands. Supported supplement prefixes (including
+bounded English variants) can fill missing fields but cannot overwrite an
+existing different value. A conflicting supplement requires review. Explicit
+“刚才…写错了，请更正为…” wording can replace a value with a new source revision.
+Questions, hypotheses, negated or quoted instructions do not update the record;
+ambiguous same-name contacts and unknown targets require review. This remains a
+bounded interpreter, not evidence that every paraphrase is covered.
+
+The retained real v5 proposals replayed **7/7** through reopened SQLite and captured
+SENT replies (`application_record_intake_2026-09-07-v5-replay-repair.json`). A new
+live extraction run, `application_record_intake_2026-09-07-v6.json`, passed **7/7**,
+seven calls / **37,785 tokens**, no retries, actual mail or real documents. This
+is exposed development evaluation using the probe's fixed scenario clock, not
+independent naturalness scoring or recipient-side acceptance.
+
+Manual reading of all seven replies found that the successful supplement was
+inaccurately called a correction. Receipt generation now distinguishes persisted
+new fields from replacement values using predecessor revisions: it acknowledges
+additional information without claiming prior values were corrected. EN/ZH unit
+checks cover the distinction. The v6 model report therefore predates this receipt
+change; it must not be called a current full-source live run. An explicitly offline
+v6 replay on the revised receipt also passed **7/7**
+(`application_record_intake_2026-09-07-v6-replay-receipt.json`). No extra paid calls
+were made to relabel that replay as real extraction.
+
+The final focused unit/intake/reopened-workflow/family set passed **80 tests**
+(0.47s), with Ruff and strict Mypy (91 modules) passing. The newly retained failed
+v5 output is also covered by a permanent captured-workflow integration test.
+Full development regression evidence follows; original full-scope delivery
+requirements and broader live journeys remain open. Nothing was deployed.
+The full development run preceding the receipt change and three later test cases
+passed **4,908 tests / 2 deselected**, 99.66s, one existing Starlette warning
+(`/tmp/visa-natural-record-amendment-regression.log`). The final widened focused
+set, including application-record workflow integration, passed **89 tests**
+(0.82s). Do not report this as a full 4,911-test run or as refreshing the two
+excluded historical journey/financial reports.
+
 ### 2026-09-07 real-model records v4/v5: retained failures, not acceptance
 
 The exposed real-DeepSeek/captured-transport records journey now includes seven

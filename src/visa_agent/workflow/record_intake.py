@@ -58,6 +58,10 @@ _CONTACT_SELF = re.compile(
 _UK = re.compile(r"\b(?:UK|United Kingdom|Britain|England|Scotland|Wales|Northern Ireland|London)\b|英国|英國|伦敦|倫敦", re.I)
 _RESIDENCE = re.compile(r"\b(?:lives?|resides?|based|address|contact)\b|住|居住|地址|联系人|聯絡人", re.I)
 _CORRECTION = re.compile(r"^(?:(?:please|a)\s+)?(?:correct|correction|amend|update|change|remove|withdraw|delete)\b|^(?:请|請|我想|我要|我来|我來)?(?:更正|改正|修改|删掉|刪掉|删除|刪除|撤回)", re.I)
+_SUPPLEMENT = re.compile(r"^(?:补充|補充)(?:一下)?[，,:：\s]|^(?:to add|one more detail|additional detail)[,:]\s*", re.I)
+_PRIOR_ERROR_CORRECTION = re.compile(
+    r"^(?:我)?(?:刚才|剛才|之前)[^。！？?\n]{1,100}(?:写错|寫錯)(?:了)?[，,]\s*(?:请|請)?(?:更正|改正)(?:为|為|成)",
+)
 _WITHDRAW = re.compile(r"\b(?:remove|withdraw|delete)\b|删掉|刪掉|删除|刪除|撤回", re.I)
 _COLLECTION_TOPIC = {
     "travel": re.compile(r"\b(?:travel history|past trips?|previous trips?|trips? abroad|travelled abroad|traveled abroad|visited abroad)\b|旅行记录|旅行記錄|旅行历史|旅行歷史|出境记录|出境記錄|出国|出國|出境|过去的旅行|過去的旅行", re.I),
@@ -133,6 +137,13 @@ def record_intake_receipt(plan: RecordIntakePlan, event_id: str, language: str) 
                 "travel-history entries" if kind == "travel" else "UK-contact details")
             if all(not record.active for record in revisions):
                 parts.append(f"已从当前摘要中撤下你指出的{label}。" if zh else f"I've removed the {label} you identified from the current summary.")
+            elif all(record.active and (record.revision == 1 or any(
+                    prior.record_id == record.record_id and prior.digest() == record.predecessor_digest
+                    and all(record.fields.get(key) == value for key, value in prior.fields.items())
+                    for prior in plan.ledger.revisions)) for record in revisions) and any(
+                        record.revision > 1 for record in revisions):
+                parts.append(f"收到，补充的{label}已记下，之前的信息也保留着。" if zh else
+                             f"Thanks — I've added the extra {label} and kept the details you already provided.")
             elif any(record.revision > 1 for record in revisions):
                 parts.append(f"已按你的更正更新{label}。" if zh else f"I've updated the {label} with your correction.")
             else:
@@ -212,7 +223,14 @@ def plan_record_intake(
                 continue
             self_owned = bool(_PAST_SELF.search(context) if kind == "travel" else
                               _CONTACT_SELF.search(context) and _UK.search(context) and _RESIDENCE.search(context))
-            correcting = proposal.action != "add" and bool(_CORRECTION.search(context))
+            supplementing = proposal.action == "amend" and bool(_SUPPLEMENT.search(context))
+            natural_correction = proposal.action == "amend" and bool(_PRIOR_ERROR_CORRECTION.search(context))
+            if (supplementing or natural_correction) and (
+                    re.search(re.escape(context) + r"\s*[?？]", body)
+                    or re.search(r"(?:不要|别|別|不是|并非|並非)|\b(?:not|don't|do not|might|would|will)\b", context, re.I)):
+                continue
+            correcting = proposal.action != "add" and bool(
+                _CORRECTION.search(context) or supplementing or natural_correction)
             if proposal.action != "add" and not correcting:
                 continue
             if not self_owned and not correcting:
@@ -251,6 +269,9 @@ def plan_record_intake(
                 if len(targets) != 1:
                     raise ValueError("Application record correction needs a unique existing target")
                 target = targets[0]
+                if supplementing and any(name in target.fields and target.fields[name].value != value.value
+                                         for name, value in fields.items()):
+                    raise ValueError("Supplement conflicts with an existing value; request an explicit correction")
                 if any(re.search(r"(?:\bnot\s+|不是|并非|並非|不要)" + re.escape(value.value),
                                  context, re.I) for value in fields.values()):
                     raise ValueError("Negated application record value cannot be accepted")
