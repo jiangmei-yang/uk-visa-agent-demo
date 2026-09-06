@@ -283,14 +283,44 @@ class ApplicationRecordLedger(BaseModel):
     def latest_declarations(self) -> dict[RecordKind, DeclarationRevision]:
         return {declaration.kind: declaration for declaration in self.declarations}
 
+    def _only_supplemental_changes_since(self, declaration: DeclarationRevision) -> bool:
+        """Keep list scope distinct from detail approval, without rewriting consent.
+
+        Replay the immutable snapshot bound to the original assertion. Only
+        non-identity, non-location contact details preserve that assertion.
+        Identity/location and trip timing changes can change collection scope;
+        additions/withdrawals invalidate it even if later edits undo the change.
+        The full fingerprint still changes and requires fresh review/confirmation.
+        """
+        if declaration.kind != "uk_contact" or declaration.state != "complete_declared":
+            return False
+        current: dict[str, RecordRevision] = {}
+        found = _records_digest(self.case_id, declaration.kind, current) == declaration.expected_records_digest
+        for revision in self.revisions:
+            prior = current.get(revision.record_id)
+            if found and revision.kind == declaration.kind:
+                if prior is None or not revision.active or not prior.active:
+                    return False
+                changed = {field for field in set(prior.fields) | set(revision.fields)
+                           if prior.fields.get(field) != revision.fields.get(field)}
+                allowed = {"phone", "passport_number", "support_details"} if revision.kind == "uk_contact" else set()
+                if not changed <= allowed:
+                    return False
+            current[revision.record_id] = revision
+            if not found:
+                found = _records_digest(self.case_id, declaration.kind, current) == declaration.expected_records_digest
+        return found
+
     def collection_state(self, kind: RecordKind) -> CollectionState:
         declaration = self.latest_declarations().get(kind)
         if declaration is None:
             return "partial" if any(r.kind == kind for r in self.revisions) else "unasked"
-        # Any material edit invalidates a former exhaustive-list assertion. An
-        # explicit uncertainty remains deferred until the applicant updates it.
+        # Supplementing an existing contact's non-scope details does not mean
+        # the applicant has forgotten whether their list is exhaustive.
+        # Explicit uncertainty remains deferred until the applicant updates it.
         if (declaration.state in {"none_declared", "complete_declared"}
-                and declaration.expected_records_digest != self.records_digest(kind)):
+                and declaration.expected_records_digest != self.records_digest(kind)
+                and not self._only_supplemental_changes_since(declaration)):
             return "partial"
         return declaration.state
 

@@ -18,8 +18,8 @@ for every contact's passport or a request to invent unknown parents' details.
 
 The repository still lacks full coverage of those fields. This record feature
 does not by itself close the original product scope or make the pack an official
-completed application. Do not remove the remaining nonempty-record hold just
-because descriptive fields or source identifiers are present.
+completed application. Descriptive fields or source identifiers alone cannot
+satisfy the nonempty-record review gate described below.
 
 ## Required review boundaries
 
@@ -37,6 +37,9 @@ because descriptive fields or source identifiers are present.
   operator action, never an LLM proposal or a customer confirmation inferred by
   the model. Stale snapshots reject the action atomically.
 - Record changes invalidate applicability review and customer confirmations.
+  Supplementing an existing contact's phone/passport/support details can preserve
+  the original exhaustive-list declaration, but never preserves its old review
+  approval. Identity, location or membership changes still invalidate list scope.
   Source-registration audit does not certify factual truth or document validity.
 - Finalisation must still enforce processing consent, complete applicable facts,
   unresolved issues, document checks, human review and explicit final summary
@@ -85,7 +88,11 @@ review and fresh SENT profile/final confirmations. This is local integration
 evidence, not an authenticated real human review, visual PDF audit, live model
 test or real mailbox recipient acceptance.
 
-Still required: guided operator interface, missing-applicable-detail feedback to
-the customer, conditional field intake (including family passport data), the
+Known-family passport intake now provides conditional EN/ZH advice and a
+field-specific uncertainty deferral. This bounded behavior does not implement all
+relationship wording or conditional applicability exceptions.
+
+Still required: guided operator interface, complete missing-applicable-detail feedback to
+the customer, broader conditional field intake, the
 broader home/parent/employer/partner/payer fields, independently checked output
 quality and a fresh source-bound live-provider/Gmail acceptance run.

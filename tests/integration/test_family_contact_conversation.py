@@ -46,7 +46,10 @@ def test_family_passport_question_can_be_deferred_then_supplied_without_reasking
     supplied = dialogue.turn(correction, patch(records=[record(correction, {"passport_number": "TEST00001"},
         kind="uk_contact", action="amend", reference="Example Doe")]))
     ledger = supplied.case.application_records
+    assert ledger.collection_state("uk_contact") == "complete_declared"
+    assert ledger.latest_declarations()["uk_contact"] == asked.case.application_records.latest_declarations()["uk_contact"]
     assert not ledger.active_field_deferrals() and len(ledger.field_deferrals) == 1
     assert next(iter(ledger.current().values())).fields["passport_number"].source_event_id == supplied.event.id
     assert "could you provide it after checking?" not in supplied.body
+    assert "Are there any other UK relatives or contacts to add?" not in supplied.body
     assert supplied.case.delivery_path is None and not supplied.case.final_summary_confirmed

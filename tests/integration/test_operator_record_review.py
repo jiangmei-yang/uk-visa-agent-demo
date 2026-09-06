@@ -84,6 +84,12 @@ def test_family_passport_requirement_is_not_a_blanket_friend_requirement(tmp_pat
         if allowed:
             review_application_records(store, **kwargs)
             assert record_review_is_current(store.get_case(turn.case.id), POLICY)
+            correction = "Please correct Example Doe's phone to 12345."
+            updated = dialogue.turn(correction, patch(records=[record(correction, {"phone": "12345"},
+                kind="uk_contact", action="amend", reference="Example Doe")]))
+            assert updated.case.application_records.collection_state("uk_contact") == "complete_declared"
+            assert not record_review_is_current(updated.case, POLICY)
+            assert not updated.case.final_summary_confirmed and updated.case.delivery_path is None
         else:
             with pytest.raises(ValueError):
                 review_application_records(store, **kwargs)

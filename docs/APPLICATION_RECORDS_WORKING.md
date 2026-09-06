@@ -7,6 +7,36 @@ The overall acceptance goal remains active.
 
 ## Requirement and design boundary
 
+### 2026-09-07 preserve list scope when supplementing contact details
+
+An existing contact's phone, passport number or support-detail update no longer
+invalidates the applicant's original exhaustive-list statement. This is not a new
+declaration, inferred consent or approval: the original declaration/event/hash is
+unchanged, and the full ledger fingerprint still changes. Replaying the immutable
+revision history permits only those non-scope fields after the exact original
+snapshot. Names, relationships, locations, trip edits, additions and withdrawals
+still invalidate list scope, including changes subsequently reverted. A new
+explicit list assertion can establish a fresh baseline.
+
+The actual captured-SENT family journey now checks that supplying a previously
+deferred passport number preserves the original list assertion and does not ask
+whether there are other contacts again. An operator-reviewed friend journey
+supplies a phone correction through inbound interpretation and confirms that
+the list stays complete while the old operator approval becomes stale, with no
+final confirmation or delivery. No real applicant or mailbox was used.
+
+The scoped domain/declaration/family/operator set passed **60 tests** (0.91s).
+After strengthening the actual-reply and stale-review assertions, the two
+integration files passed **15 tests** (0.86s). Ruff and strict Mypy (91 modules)
+passed. Full development regression passed **4,879 tests / 2 deselected**,
+99.45s, one existing Starlette warning (`/tmp/visa-collection-scope-regression.log`).
+That run preceded a behavior-preserving early return for non-contact/non-complete
+declarations and the strengthened integration assertions; the final scoped set
+was rerun and passed **60 tests** (0.92s), with Ruff/Mypy passing. The two stale
+provider reports remain excluded, not rewritten or counted as release evidence.
+This change does not claim broader missing-field extraction, complex relationship
+classification, real-provider behavior, usable operator UI or release acceptance.
+
 ### 2026-09-07 conditional family-contact detail and deferral
 
 Known family relationships now share one field requirement between intake,
