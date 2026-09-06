@@ -20,7 +20,15 @@ configuration assertions. Overall acceptance is **incomplete**.
 The bounded interviewer handoff is in [SUBMISSION.md](SUBMISSION.md). See the
 [earlier September 6 release review](docs/RELEASE_REVIEW_2026-09-06.md) for the preceding consultant
 probe, retained financial failure, source-bound v10 repair and clean-container HTTP checks.
-The latest [durable pacing repair](docs/DURABLE_REPLY_PACING_2026-09-06.md) has
+The latest [editorial and upgrade-continuity repair](docs/CONSULTANT_EDITORIAL_REPAIR_2026-09-06.md)
+has **4,617 passing tests** (96.73s, one existing warning), Ruff and strict Mypy
+passed (80 source files). Fresh journey v7 is **22/22**, financial v16 **4/4**,
+and the fresh-container HTTP pack check **12/12**. Shorter receipts do not erase
+facts; older SENT school-record discussions survive the wording upgrade. The
+overall goal remains active, with structured travel history/UK contacts and
+independent recipient/usability evidence still outstanding.
+
+The preceding [durable pacing repair](docs/DURABLE_REPLY_PACING_2026-09-06.md) has
 **4,587 passing tests** (96.66s, one existing test-client warning), Ruff and strict
 Mypy passed (80 source files). It adds case-scoped persistent brief preferences,
 single-action pacing and guarded recovery of omitted application/next-step

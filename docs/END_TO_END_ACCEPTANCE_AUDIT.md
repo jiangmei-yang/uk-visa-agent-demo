@@ -5,7 +5,14 @@ requirements reference; recommendations about vendors or libraries are not
 themselves proof of product completion. Automated pass counts are not a substitute
 for these outcomes.
 
-Latest update: [durable pacing repair](DURABLE_REPLY_PACING_2026-09-06.md) closes
+Latest work: [consultant editorial repair](CONSULTANT_EDITORIAL_REPAIR_2026-09-06.md)
+shortens brief first receipts and school-record help, preserving historical SENT
+discussion across upgrades. Fresh source-bound journey v7 is 22/22 and financial
+v16 is 4/4; implementer review is not independent naturalness evidence. The active
+goal remains open. Next implementation priority is the provenance-backed travel
+history and UK contacts gap in item 3, followed by wider unscripted journeys.
+
+Preceding update: [durable pacing repair](DURABLE_REPLY_PACING_2026-09-06.md) closes
 the known case-scoped style-memory and single-action gaps, with 4,587 local tests,
 22/22 fresh real-model turns and 4/4 frozen-PDF extractions. Failed/weak-green runs
 remain retained. Some formal wording, broader paraphrases and independent user

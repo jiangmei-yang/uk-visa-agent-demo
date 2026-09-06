@@ -2,8 +2,8 @@
   "scope": "Ordinary financial-document provenance, branch matching and like-for-like consistency review",
   "baseline_commit": "ecd74e7c1c8e95fd1b924cd131a68d727ad35f71",
   "provider": "deepseek-v4-flash",
-  "new_paid_model_calls": 55,
-  "provider_reported_tokens": {"input": 99827, "output": 17370, "total": 117197},
+  "new_paid_model_calls": 59,
+  "provider_reported_tokens": {"input": 107312, "output": 18629, "total": 125941},
   "manual_live_mailbox_sends": 0,
   "real_documents_processed": 0,
   "not_a_naturalness_or_accuracy_score": true,
@@ -23,7 +23,8 @@
     {"report": "financial_document_deepseek_2026-09-06-v12.json", "sha256": "9f1065493f124c4819e7f8c4bdb6f2a70f6daa97ff6cc1278fdb49928983ec2e", "calls": 4, "passed": 4, "failed": 0, "tokens": 8744, "evidence_contract": "v2-complete-source-set", "bound_git_head": "d5fda038c63891338c38a57394de8e69294a27a6", "implementation_manifest_entries": 81},
     {"report": "financial_document_deepseek_2026-09-06-v13.json", "sha256": "f351b549867d340f53fd31792a9a982414b6e5e529d6b74ea527b120087d6f87", "calls": 4, "passed": 4, "failed": 0, "tokens": 8726, "evidence_contract": "v2-complete-source-set", "bound_git_head": "df313540c5118bcaed5e2fcd02757b72e50ec4b8", "implementation_manifest_entries": 81},
     {"report": "financial_document_deepseek_2026-09-06-v14.json", "sha256": "db63ae27c3fea9d89d24414cb5c784d2d324b7b25f42a39af0e5cefeadb9b75c", "calls": 4, "passed": 4, "failed": 0, "tokens": 8744, "evidence_contract": "v2-complete-source-set", "bound_git_head": "fa717804ad7c99b681e427f813e2f64dce36e6f0", "implementation_manifest_entries": 81},
-    {"report": "financial_document_deepseek_2026-09-06-v15.json", "sha256": "6c20dcf6de248fb67cc13bc502cd58bc5a85a88a0705e335332c8918924d0ad5", "calls": 4, "passed": 4, "failed": 0, "tokens": 8744, "evidence_contract": "v2-complete-source-set", "bound_git_head": "b67b2006893203d942ffc7e6c3f4881cc655db5c", "implementation_manifest_entries": 81}
+    {"report": "financial_document_deepseek_2026-09-06-v15.json", "sha256": "6c20dcf6de248fb67cc13bc502cd58bc5a85a88a0705e335332c8918924d0ad5", "calls": 4, "passed": 4, "failed": 0, "tokens": 8744, "evidence_contract": "v2-complete-source-set", "bound_git_head": "b67b2006893203d942ffc7e6c3f4881cc655db5c", "implementation_manifest_entries": 81},
+    {"report": "financial_document_deepseek_2026-09-06-v16.json", "sha256": "71a80b2b8c472d1bc34a4495f0c8372c3c408c487aa656ca9dd55850659216e8", "calls": 4, "passed": 4, "failed": 0, "tokens": 8744, "evidence_contract": "v2-complete-source-set", "bound_git_head": "8e84197bb8e4307553269239c169643fcf3dda16", "implementation_manifest_entries": 81}
   ],
   "historical_report_corrections": [
     {
@@ -62,7 +63,7 @@
       "git HEAD, UTC run timestamps and run ID",
       "provider response model and its SHA-256 per retained result"
     ],
-    "current_fully_bound_report": "financial_document_deepseek_2026-09-06-v15.json",
+    "current_fully_bound_report": "financial_document_deepseek_2026-09-06-v16.json",
     "current_fully_bound_implementation_manifest_entries": 81,
     "historical_results_not_upgraded_by_this_contract": true
   },

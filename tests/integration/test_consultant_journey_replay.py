@@ -24,7 +24,7 @@ def no_network(monkeypatch):
 
 
 @pytest.mark.parametrize("journey", REPORT["scenarios"])
-@pytest.mark.parametrize("version", ["v1", "v2", "v3", "v4", "v5", "v6"])
+@pytest.mark.parametrize("version", ["v1", "v2", "v3", "v4", "v5", "v6", "v7"])
 def test_saved_provider_facts_and_controls_survive_reopening(tmp_path, journey, version):
     report = json.loads(Path(f"eval_output/consultant_journey_2026-09-06-{version}.json").read_text())
     dialogue = Conversation(tmp_path)
@@ -101,7 +101,7 @@ def test_negative_natural_facts_are_not_positive_updates(tmp_path, body):
 
 
 def test_current_journey_report_binds_all_source_and_probe():
-    report = json.loads(Path("eval_output/consultant_journey_2026-09-06-v6.json").read_text())
+    report = json.loads(Path("eval_output/consultant_journey_2026-09-06-v7.json").read_text())
     assert report["completed"] and report["all_passed"]
     assert report["check_contract"] == "consultant-journey-v5"
     assert report["maximum_model_calls"] == len(report["results"]) == 22
