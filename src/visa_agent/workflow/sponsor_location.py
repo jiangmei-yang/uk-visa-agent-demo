@@ -4,6 +4,9 @@ from visa_agent.domain.models import Case, CaseStatus, InboundEvent, WorkflowSta
 from visa_agent.domain.rules import advance_stage
 from visa_agent.domain.sponsor_location import parse_sponsor_location_statements
 
+LOCATION_REVIEW_REASON = ("Sponsor residence and current presence were recorded separately; "
+                         "review UK-status evidence applicability before resuming preparation.")
+
 
 def record_sponsor_location(case: Case, event: InboundEvent) -> bool:
     """Run only inside the consented, owner/order-checked inbound workflow.
@@ -15,6 +18,7 @@ def record_sponsor_location(case: Case, event: InboundEvent) -> bool:
         return False
     statements = parse_sponsor_location_statements(event.body, source_event_id=event.id,
         sponsor_name=case.profile.sponsor_name, sponsor_relationship=case.profile.sponsor_relationship)
+    statements = [item.model_copy(update={"identity_epoch": case.sponsor_location_epoch}) for item in statements]
     new = [item for item in statements if item not in case.sponsor_location_statements]
     if not new:
         return False
@@ -28,7 +32,6 @@ def record_sponsor_location(case: Case, event: InboundEvent) -> bool:
     case.final_summary_confirmed = False
     case.status = CaseStatus.HUMAN_REVIEW_REQUIRED
     advance_stage(case, WorkflowStage.HUMAN_REVIEW_REQUIRED)
-    reason = ("Sponsor residence and current presence were recorded separately; "
-              "review UK-status evidence applicability before resuming preparation.")
-    case.human_review_reason = "; ".join(filter(None, [case.human_review_reason, reason]))
+    if LOCATION_REVIEW_REASON not in (case.human_review_reason or ""):
+        case.human_review_reason = "; ".join(filter(None, [case.human_review_reason, LOCATION_REVIEW_REASON]))
     return True

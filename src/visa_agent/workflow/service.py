@@ -1230,12 +1230,14 @@ class WorkflowService:
             for old in case.active_evidence("sponsor_address"):
                 old.superseded = True
         if sponsor_identity_changed or sponsor_replaced_without_complete_identity:
+            case.sponsor_location_epoch += 1
             case.sponsor_address_question_identity = None
             case.deferred_fields = [field for field in case.deferred_fields if field != "sponsor_address"]
             for item in [*case.unsent_advice, *case.pending_advice]:
                 if item.topic == "sponsor_support" and item.source_event_id != event.id:
                     item.deferred_by_event_id = event.id
         if case.profile.funding_source != "personal_sponsor" and "funding_source" in update_fields:
+            case.sponsor_location_epoch += 1
             case.sponsor_address_question_identity = None
             case.deferred_fields = [field for field in case.deferred_fields if field != "sponsor_address"]
             for field in ("sponsor_name", "sponsor_address", "sponsor_relationship", "sponsor_is_in_uk"):

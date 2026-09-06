@@ -30,7 +30,8 @@ def test_address_and_location_changes_are_not_dropped_by_identity_sentence(langu
                    sponsor_address="34 Another Road, Hong Kong", sponsor_is_in_uk="False")
     reply = change_acknowledgement(case)
     assert "34 Another Road, Hong Kong" in reply
-    assert ("do not live" if language == "en" else "不住在") in reply
+    assert ("answer about your sponsor's location" if language == "en" else "资助人是否在英国的回答") in reply
+    assert ("do not live" if language == "en" else "不住在") not in reply
 
 
 def test_name_spelling_correction_does_not_claim_the_payer_changed():

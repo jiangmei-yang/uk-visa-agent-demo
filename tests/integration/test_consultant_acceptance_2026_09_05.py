@@ -843,7 +843,8 @@ def test_parent_sponsor_guidance_sends_identity_pair_and_accepts_the_natural_sho
     assert not {"sponsor_relationship", "sponsor_name", "sponsor_is_in_uk"}.intersection(
         second.case.last_requested_fields
     )
-    assert all(term in second.body for term in ("父母共同资助", "陈国强、李美兰", "不住在英国"))
+    assert all(term in second.body for term in ("父母共同资助", "陈国强、李美兰", "资助人是否在英国的回答"))
+    assert "不住在英国" not in second.body  # Legacy boolean cannot assert residence.
     assert "这次由谁资助你" not in second.body
     assert second.case.status == CaseStatus.DRAFT
     assert not second.case.profile_confirmed and not second.case.final_summary_confirmed

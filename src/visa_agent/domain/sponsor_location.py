@@ -22,6 +22,7 @@ class SponsorLocationStatement(BaseModel):
     # Caller-supplied current identity binding, not a name inferred from location.
     sponsor_name: str | None = None
     sponsor_relationship: str | None = None
+    identity_epoch: int = 0
 
 
 _EN_OWNER = re.compile(r"my sponsor\s+(.+)", re.I)

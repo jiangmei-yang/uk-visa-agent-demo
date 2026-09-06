@@ -22,6 +22,7 @@ from visa_agent.domain.models import (
 from visa_agent.domain.policy import Policy
 from visa_agent.domain.record_completeness import application_record_checks
 from visa_agent.domain.record_review import record_review_is_current
+from visa_agent.domain.sponsor_location_review import sponsor_location_review_is_current
 
 BASE_REQUIRED_FACTS = {
     "full_name",
@@ -70,6 +71,8 @@ def required_profile_facts(case: Case) -> set[str]:
         required.update({"employer_name", "employer_address", "employer_phone"})
     if case.profile.funding_source == "personal_sponsor":
         required.update({"sponsor_name", "sponsor_address", "sponsor_relationship", "sponsor_is_in_uk"})
+        if sponsor_location_review_is_current(case):
+            required.discard("sponsor_is_in_uk")
     return required
 
 
@@ -184,7 +187,10 @@ def build_requirements(case: Case, policy: Policy) -> list[Requirement]:
                 "sponsor_funds",
                 "relationship_evidence",
             }
-            if case.profile.sponsor_is_in_uk is True:
+            if (case.profile.sponsor_is_in_uk is True or case.sponsor_location_statements
+                    and (not sponsor_location_review_is_current(case, policy)
+                         or case.sponsor_location_review is not None
+                         and case.sponsor_location_review.uk_status_evidence_required)):
                 required_sponsor_kinds.add("sponsor_uk_status")
             present_sponsor_kinds = {
                 doc.kind
@@ -422,6 +428,8 @@ def evaluate_gate(case: Case, policy: Policy, today: date) -> GateResult:
         "policy_snapshot_is_current": policy.is_current(today),
     }
     records_match_case = case.application_records is None or case.application_records.case_id == case.id
+    if case.profile.funding_source == "personal_sponsor" and case.sponsor_location_statements:
+        checks["sponsor_location_applicability_review_current"] = sponsor_location_review_is_current(case, policy)
     checks.update(application_record_checks(case.application_records if records_match_case else None, case_id=case.id))
     if not records_match_case:
         checks["application_records_case_binding"] = False
