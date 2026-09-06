@@ -181,4 +181,5 @@ def test_new_sponsor_address_answer_uses_the_new_sent_question(tmp_path, answer_
         return
     assert result.case.profile.sponsor_address == new_address
     assert result.model.events[0].known_profile["_sponsor_address_question_verified"]
+    assert result.model.events[0].requested_fields == ["sponsor_address"]
     assert result.case.active_evidence("sponsor_address")[0].source_event_id == result.event.id

@@ -20,7 +20,9 @@ RELATIONSHIPS = {
     "employer": r"\bemployer\b|雇主",
 }
 NONCURRENT_OR_OTHER = re.compile(
-    r"\b(?:if|unless|maybe|might|could|would|whether|previously|formerly|example)\b|"
+    r"\b(?:if|unless|maybe|might|could|would|whether|previously|formerly)\b|"
+    r"\b(?:for\s+example|as\s+an?\s+example|an?\s+example)\b|"
+    r"(?:^|[,;:]\s*)example\b|"
     r"\b(?:used to|last year|no longer)\b|如果|假如|若|除非|可能|也许|以前|之前|曾经|过去|例如|"
     r"\b(?:(?:my|our)\s+)?(?:friend|client|customer|colleague|coworker)\s+"
     r"(?:said|says|wrote|writes|asked|asks)\b|"
@@ -107,6 +109,16 @@ _SPONSOR_INSIDE_UK = re.compile(
 
 def _normal(text: str) -> str:
     return " ".join(text.casefold().split()).strip(" .。;；")
+
+
+def _current_payer_clause(text: str) -> str:
+    """Discard only the displaced relative in an explicit payment contrast."""
+    relative = "(?:" + "|".join(RELATIONSHIPS.values()) + ")"
+    pattern = r"\s+instead of my\s+" + relative + r"[.。\s]*$"
+    match = re.search(pattern, text, re.I)
+    if match and PAYING_FOR_APPLICANT.search(text[:match.start()]):
+        return text[:match.start()]
+    return text
 
 
 def _relations(text: str) -> set[str]:
@@ -408,6 +420,7 @@ def sponsor_role_is_grounded(
     if field == "sponsor_address":
         return sponsor_address_is_grounded(value, excerpt, body,
             sent_question_verified=known_profile.get("_sponsor_address_question_verified") is True)
+    needle = _normal(_current_payer_clause(excerpt))
     if field == "sponsor_is_in_uk" and not _sponsor_location_polarity_matches(value, excerpt):
         return False
     sentences = [part for part in re.split(r"[。!?！？;；\n]|\.(?:\s|$)", body) if part.strip()]
@@ -419,7 +432,7 @@ def sponsor_role_is_grounded(
     # sentence and remain sentence-scoped.
     safe_sentences = [part for part in sentences if not NONCURRENT_OR_OTHER.search(part)]
     clauses = [normal for sentence in safe_sentences for part in re.split(
-        r"[,，]|\b(?:and|but)\b|但是|不过|但", sentence, flags=re.I,
+        r"[,，]|\b(?:and|but)\b|但是|不过|但", _current_payer_clause(sentence), flags=re.I,
     ) if (normal := _normal(part))]
     contexts = [part for part in clauses if needle in part]
     if not contexts and any(needle in _normal(part) for part in safe_sentences):

@@ -26,6 +26,32 @@ def validate(body: str, updates: list[FactUpdate], **context) -> CasePatch:
     return validate_case_patch(event(body, **context), CasePatch(updates=updates, ambiguities=[]))
 
 
+def test_literal_example_surname_is_not_a_hypothetical_marker():
+    body = "My mother Mei Example is paying for my trip."
+    result = validate(body, [update("sponsor_name", "Mei Example", body),
+                             update("sponsor_relationship", "mother", body)])
+    assert {item.field: item.value for item in result.updates} == {
+        "sponsor_name": "Mei Example", "sponsor_relationship": "mother"}
+
+
+@pytest.mark.parametrize("prefix", ["For example, ", "Example: ", "As an example, "])
+def test_explicit_example_framing_still_does_not_supply_sponsor(prefix):
+    body = prefix + "my mother Mei Example is paying for my trip."
+    assert not validate(body, [update("sponsor_name", "Mei Example", body),
+                               update("sponsor_relationship", "mother", body)]).updates
+
+
+@pytest.mark.parametrize("full_excerpt", [True, False])
+def test_payment_replacement_binds_new_relative_not_displaced_relative(full_excerpt):
+    body = "My father Jian Example is paying for my trip instead of my mother."
+    excerpt = body if full_excerpt else "My father Jian Example is paying for my trip"
+    result = validate(body, [update("sponsor_name", "Jian Example", excerpt),
+                             update("sponsor_relationship", "father", excerpt)])
+    assert {item.field: item.value for item in result.updates} == {
+        "sponsor_name": "Jian Example", "sponsor_relationship": "father"}
+    assert not validate(body, [update("sponsor_relationship", "mother", body)]).updates
+
+
 @pytest.mark.parametrize(("body", "funding", "relationship", "location"), [
     ("我在香港上班，去英国探望姐姐，住她家。旅行费用自己付。", "旅行费用自己付", "探望姐姐", "去英国探望姐姐"),
     ("I work in Hong Kong. I will visit my sister in the UK and stay with her. I pay my own travel costs.",

@@ -346,6 +346,13 @@ class WorkflowService:
             if len(matches) == 1 and matches[0]["payload"] == latest_sent_payload:
                 sponsor_question = matches[0]
         customer_event.known_profile["_sponsor_address_question_verified"] = sponsor_question is not None
+        if sponsor_question is not None:
+            # Only this question was in the last actual reply. Older unanswered
+            # fields remain in case memory, but must not compete as this turn's
+            # requested extraction context for a short answer.
+            customer_event.requested_fields = ["sponsor_address"]
+        elif duration_question is not None:
+            customer_event.requested_fields = ["current_address_duration"]
         case.latest_customer_message = customer_event.body
         if case.application_records is not None:
             customer_event.known_profile["_application_record_context"] = [

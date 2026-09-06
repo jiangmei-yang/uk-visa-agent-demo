@@ -32,6 +32,36 @@ from visa_agent.workflow.conversation import reply_items
 ROOT = Path(__file__).resolve().parents[1]
 CONTACT = "fictional-journey@example.test"
 TODAY = date(2026, 9, 6)
+SPONSOR_SCENARIOS: dict[str, list[dict[str, Any]]] = {
+    "sponsor-address-and-replacement": [
+        {"body": "I'm preparing for a UK holiday. I hold a Chinese passport and will apply from Hong Kong. "
+                 "I'm a student. My mother Mei Example is paying for my trip. My sponsor does not live in the UK. "
+                 "Travel dates are not decided yet.",
+         "profile": {"funding_source": "personal_sponsor", "sponsor_name": "Mei Example",
+                     "sponsor_relationship": "mother", "sponsor_is_in_uk": False, "sponsor_address": None},
+         "no_intake": True, "deferred_dates": True},
+        {"body": "What is the next step?", "expected_questions": ["sponsor_address"], "deferred_dates": True},
+        {"body": "I need to check.", "profile": {"sponsor_address": None},
+         "deferred_sponsor_address": True, "never_ask": ["sponsor_address"], "deferred_dates": True},
+        {"body": "My sponsor's address is 12 Example Road, Hong Kong.",
+         "profile": {"sponsor_address": "12 Example Road, Hong Kong"},
+         "deferred_sponsor_address": False, "never_ask": ["sponsor_address"],
+         "address_source_event": "sponsor-address-and-replacement-4", "deferred_dates": True},
+        {"body": "My father Jian Example is paying for my trip instead of my mother. "
+                 "My sponsor does not live in the UK. What is the next step?",
+         "profile": {"sponsor_name": "Jian Example", "sponsor_relationship": "father",
+                     "sponsor_is_in_uk": False, "sponsor_address": None},
+         "expected_questions": ["sponsor_address"], "deferred_sponsor_address": False, "deferred_dates": True},
+        {"body": "34 Another Road, Hong Kong",
+         "profile": {"sponsor_address": "34 Another Road, Hong Kong"},
+         "address_source_event": "sponsor-address-and-replacement-6", "never_ask": ["sponsor_address"],
+         "deferred_dates": True},
+        {"body": "更正一下，我的资助人的地址是香港示例路56号。",
+         "profile": {"sponsor_address": "香港示例路56号"},
+         "address_source_event": "sponsor-address-and-replacement-7", "never_ask": ["sponsor_address"],
+         "deferred_dates": True},
+    ],
+}
 RECORD_SCENARIOS: dict[str, list[dict[str, Any]]] = {
     "application-record-intake": [
         {"body": "我2023年夏天去过日本旅游。我2024年5月去过韩国旅游。"
@@ -169,6 +199,10 @@ PACING_SCENARIOS: dict[str, list[dict[str, Any]]] = {
 
 
 class ExtractionOnly(DeepSeekStructuredLLM):
+    def extract_case_patch(self, event: InboundEvent) -> CasePatch:
+        self.extraction_event = event.model_dump(mode="json")
+        return super().extract_case_patch(event)
+
     render_message = staticmethod(deterministic_fallback_message)
 
 
@@ -180,6 +214,7 @@ class SavedExtraction:
         self.usage_history: list[Any] = []
 
     def extract_case_patch(self, event: InboundEvent) -> CasePatch:
+        self.extraction_event = event.model_dump(mode="json")
         return CasePatch.model_validate_json(self.last_extraction_content)
 
     render_message = staticmethod(deterministic_fallback_message)
@@ -214,6 +249,13 @@ def check_turn(spec: dict[str, Any], case: Any, reply: str) -> dict[str, bool]:
         checks["no_fabricated_dates"] = all(getattr(case.profile, k) is None for k in fields)
     if spec.get("no_intake"):
         checks["answers_without_intake"] = not questions
+    if "expected_questions" in spec:
+        checks["asks_required_next_detail"] = case.last_requested_fields == spec["expected_questions"]
+    if "deferred_sponsor_address" in spec:
+        checks["sponsor_address_deferral_state"] = ("sponsor_address" in case.deferred_fields) == spec["deferred_sponsor_address"]
+    if "address_source_event" in spec:
+        evidence = case.active_evidence("sponsor_address")
+        checks["current_sponsor_address_source"] = len(evidence) == 1 and evidence[0].source_event_id == spec["address_source_event"]
     if "paused" in spec:
         checks["preparation_control"] = case.preparation_paused == spec["paused"]
     if "saved_style" in spec:
@@ -252,15 +294,17 @@ def main() -> None:
     parser.add_argument("--allow-model-calls", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--replay", type=Path, help="Offline saved proposals; no provider or mailbox calls")
-    parser.add_argument("--scenario-set", choices=["journey", "pacing", "all", "records", "residence"], default="journey")
+    parser.add_argument("--scenario-set", choices=["journey", "pacing", "all", "records", "residence", "sponsor"], default="journey")
     args = parser.parse_args()
     if not args.allow_model_calls and not args.replay:
         parser.error("Explicit --allow-model-calls required: fictional extractions, no retries")
     if args.output.exists():
         parser.error("Existing evidence must not be overwritten")
     saved = json.loads(args.replay.read_text()) if args.replay else None
-    scenarios = (RESIDENCE_SCENARIOS if args.scenario_set == "residence" else RECORD_SCENARIOS if args.scenario_set == "records" else SCENARIOS if args.scenario_set == "journey" else PACING_SCENARIOS
+    scenarios = (SPONSOR_SCENARIOS if args.scenario_set == "sponsor" else RESIDENCE_SCENARIOS if args.scenario_set == "residence" else RECORD_SCENARIOS if args.scenario_set == "records" else SCENARIOS if args.scenario_set == "journey" else PACING_SCENARIOS
                  if args.scenario_set == "pacing" else {**SCENARIOS, **PACING_SCENARIOS})
+    if saved and saved.get("scenarios") != scenarios:
+        parser.error("Saved scenario contract differs; do not attach old proposals to changed customer messages")
     key = (None if saved else read_secret("DEEPSEEK_API_KEY", file_environment_name="DEEPSEEK_API_KEY_FILE",
                       default_file=ROOT / ".secrets/deepseek_api_key.txt"))
     if not key and not saved:
@@ -327,6 +371,7 @@ def main() -> None:
                 finally:
                     row["usage"] = model.usage_history
                     row["raw_model_content"] = model.last_extraction_content
+                    row["extraction_event"] = getattr(model, "extraction_event", None)
                     store.close()
                 row["passed"] = row["completed"] and all(row.get("checks", {}).values())
                 report["results"].append(row)
