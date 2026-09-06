@@ -101,13 +101,20 @@ def test_negative_natural_facts_are_not_positive_updates(tmp_path, body):
 
 
 def test_current_journey_report_binds_all_source_and_probe():
-    report = json.loads(Path("eval_output/consultant_journey_2026-09-06-v7.json").read_text())
+    report = json.loads(Path("eval_output/consultant_journey_2026-09-07-v8.json").read_text())
     assert report["completed"] and report["all_passed"]
     assert report["check_contract"] == "consultant-journey-v5"
     assert report["maximum_model_calls"] == len(report["results"]) == 22
     assert report["mailbox_calls"] == report["real_documents"] == report["model_retries"] == 0
-    files = [Path("scripts/consultant_journey_probe.py"), *Path("src/visa_agent").rglob("*.py")]
-    assert report["source_sha256"] == {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
+    assert report["source_manifest_version"] == 2
+    assert report["source_sha256"] == PROBE["evidence_sources"](Path("."))
+    assert "replay_source" not in report
+    assert all(row["completed"] and row["passed"] and row["raw_model_content"]
+               and len(row["usage"]) == 1 for row in report["results"])
+    assert report["workflow_configuration"] == {
+        "model_rendering": False, "extraction_attempts": 1,
+        "transport": "capture_only", "policy_clock": PROBE["TODAY"].isoformat(),
+    }
     assert report["scenarios"] == json.loads(json.dumps({**PROBE["SCENARIOS"], **PROBE["PACING_SCENARIOS"]}))
 
 
