@@ -76,3 +76,26 @@ Passing this scenario does not establish consultant-like naturalness or broad
 language robustness. Independent unscripted journeys, multi-payer completeness,
 remaining application fields, finalpack QA, operator UX, real Gmail and GitHub
 release acceptance remain open.
+
+## Subsequent receipt editing (offline)
+
+Using exactly the saved V3 proposals, the current workflow replay passes **7/7**
+(`eval_output/sponsor_address_2026-09-07-v3-replay-receipts.json`). No additional
+model or mailbox calls occurred. The replacement receipt now says “Understood—
+your father (Jian Example) will now help fund this trip.” The subsequent actual
+address question is unchanged. Mid-journey address receipts use “I've noted that”
+instead of repeatedly announcing a starting point.
+
+The new EN/ZH editorial tests require actual identity, retain simultaneous address
+and location corrections, avoid claiming a payer change for a spelling-only name
+correction, and keep unrelated changed facts visible through the generic receipt.
+Missing identity is never invented to make a fluent sentence. The focused group
+passed **25 tests** (0.96s); Ruff and strict Mypy passed for 92 modules.
+
+This is a focused correction, not acceptance of every response. The overloaded
+opening, broader intake and overall release gaps above remain. V3 is historical
+live evidence; the new report is explicitly an offline replay on edited source.
+
+Full development regression after the receipt edit: **5,020 passed / 2 deselected**,
+101.98s, one existing Starlette warning. The same two stale source-bound provider
+reports remain excluded and unaccepted. No Gmail deployment or GitHub push.

@@ -640,7 +640,8 @@ def received_context(case: Case) -> str:
         received = locations + [values[facts[key]] for key, values in phrases.items()
                                 if facts.get(key) in values]
         if received:
-            message = "Thanks, I've got the starting point: " + "; ".join(received) + "."
+            prefix = "Thanks, I've noted that " if set(facts) == {"sponsor_address"} else "Thanks, I've got the starting point: "
+            message = prefix + "; ".join(received) + "."
             if set(facts) == {"nationality_country"} and not case.profile.application_country:
                 message += (
                     " Where you apply matters because applying outside your passport country may require "
@@ -1426,6 +1427,34 @@ def change_acknowledgement(case: Case) -> str | None:
     if not case.latest_changes:
         return None
     zh = case.customer_language == "zh"
+    sponsor_changes = {"funding_source", "sponsor_name", "sponsor_relationship", "sponsor_address", "sponsor_is_in_uk"}
+    if (case.profile.funding_source == "personal_sponsor"
+            and set(case.latest_changes) <= sponsor_changes
+            and {"sponsor_name", "sponsor_relationship"}.intersection(case.latest_changes)):
+        profile = case.profile
+        # Compose only supported current details; keep the generic receipt for
+        # mixed unrelated changes so no corrected field disappears from view.
+        relation = _SPONSOR_RELATION_LABELS.get(profile.sponsor_relationship or "")
+        if relation and profile.sponsor_name:
+            if "sponsor_relationship" in case.latest_changes or "funding_source" in case.latest_changes:
+                message = (f"明白，现在由你的{relation[0]}（{profile.sponsor_name}）资助这次旅行。" if zh else
+                           f"Understood—your {relation[1]} ({profile.sponsor_name}) will now help fund this trip.")
+            else:
+                message = (f"好的，资助人的姓名已更正为{profile.sponsor_name}。" if zh else
+                           f"Thanks—I've corrected your sponsor's name to {profile.sponsor_name}.")
+            if "sponsor_address" in case.latest_changes:
+                if profile.sponsor_address is None:
+                    message += "地址还需要重新确认。" if zh else " The address still needs to be confirmed."
+                else:
+                    message += (f"地址记为{profile.sponsor_address}。" if zh else
+                                f" I've recorded the address as {profile.sponsor_address}.")
+            if "sponsor_is_in_uk" in case.latest_changes:
+                if profile.sponsor_is_in_uk is None:
+                    message += "是否住在英国还待确认。" if zh else " Whether they live in the UK still needs checking."
+                else:
+                    message += (f"也记下了资助人{'住在' if profile.sponsor_is_in_uk else '不住在'}英国。" if zh else
+                                f" I've also noted that they {'live' if profile.sponsor_is_in_uk else 'do not live'} in the UK.")
+            return message
     if not zh and set(case.latest_changes) == {"estimated_trip_cost_gbp"}:
         value = case.latest_changes["estimated_trip_cost_gbp"]
         if value.isdecimal():
