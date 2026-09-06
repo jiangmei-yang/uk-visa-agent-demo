@@ -548,7 +548,25 @@ def update_deferred_questions(case: Case, body: str) -> None:
 
 
 def received_context(case: Case) -> str:
-    facts = case.latest_received_facts
+    supplied = case.latest_received_facts
+    if (prefers_brief_reply(case) and case.proactive_guidance_offered and not case.latest_changes
+            and len(supplied) >= 3 and set(supplied) <= {
+                "nationality", "nationality_country", "application_country", "visit_purpose",
+                "occupation_status", "funding_source",
+            } and {"nationality_country", "application_country"} <= set(supplied)):
+        # For a short first step, confirm the application context rather than
+        # reading the whole intake form back. Facts and evidence stay untouched.
+        labels = {"China": "中国", "Hong Kong": "香港", "United Kingdom": "英国"}
+        country, location = supplied["nationality_country"], supplied["application_country"]
+        if case.customer_language == "zh":
+            return f"明白，{labels.get(country, country)}护照，在{labels.get(location, location)}申请。"
+        adjective = {"China": "Chinese", "United Kingdom": "British"}.get(country, country)
+        return f"Got it—{adjective} passport, applying from {location}."
+    # A useful answer already acknowledges the facts it explains. Keep the
+    # remaining receipt (e.g. application location), not a second recital of
+    # the same occupation/funding. Corrections retain their explicit receipt.
+    facts = {field: value for field, value in case.latest_received_facts.items()
+             if case.latest_changes or not _guidance_acknowledges_fact(case, field)}
     if case.customer_language != "zh":
         country_labels = {"China": "Chinese", "Hong Kong": "Hong Kong", "United Kingdom": "British"}
         locations = []
@@ -825,7 +843,13 @@ def _guidance_already_acknowledges_single_new_fact(case: Case) -> bool:
     changed = set(case.latest_received_facts) | set(case.latest_changes)
     if len(changed) != 1:
         return False
-    field = next(iter(changed))
+    return _guidance_acknowledges_fact(case, next(iter(changed)))
+
+
+def _guidance_acknowledges_fact(case: Case, field: str) -> bool:
+    """Presentation-only deduplication against the selected reviewed advice."""
+    if not case.proactive_guidance_offered:
+        return False
     if field not in {"visit_purpose", "occupation_status", "funding_source"}:
         return False
     value = str(getattr(case.profile, field) or "")

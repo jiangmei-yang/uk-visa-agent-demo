@@ -195,6 +195,24 @@ def school_record_reported(text: str) -> bool:
 
 
 def school_record_guidance(language: str) -> str:
+    """Work with the available record without claiming UKVI acceptance."""
+    return (
+        "可以先从这份学校网上在读记录准备起。核对姓名、学校名称、当前在读状态和出具日期，"
+        "再向学校确认验证链接或学籍部门联系方式，方便核验。\n\n"
+        "保留原文件和校方回复；缺项请学校补充或说明，不要自行修改。"
+        "能否作为在读证明仍需核对内容，不能保证仅凭这份记录就足够。"
+        if language == "zh" else
+        "You can start preparing with the university's online enrolment record. "
+        "Check your name, the university, current enrolment status and issue date, "
+        "then ask the university for a verification link or registry contact.\n\n"
+        "Keep the original file and the university's response. If details are missing, "
+        "ask the university to supply or explain them rather than editing the record yourself. "
+        "Its contents still need to be checked; this does not guarantee the record is enough on its own."
+    )
+
+
+def _legacy_school_record_guidance(language: str) -> str:
+    """Recognise pre-upgrade SENT evidence; never render this old wording anew."""
     # The record checks are practical suggestions, not a list of UKVI-mandated
     # fields or a claim that a portal export substitutes for a provider's letter.
     return (
@@ -227,7 +245,8 @@ def sent_school_record_context(case: Case, outbox: list[dict[str, Any]]) -> bool
     return bool(event and any(
         row["case_id"] == case.id and row["event_id"] == event and row["status"] == "SENT"
         and row.get("provider_message_id") and row.get("sent_at")
-        and any(school_record_guidance(language) in row["payload"] for language in ("zh", "en"))
+        and any(render(language) in row["payload"] for language in ("zh", "en")
+                for render in (school_record_guidance, _legacy_school_record_guidance))
         for row in outbox
     ))
 

@@ -445,7 +445,7 @@ def test_same_turn_known_context_is_not_described_as_unknown(tmp_path):
                 ("planned_arrival_date", "2026-10-10", "arrive on 10 October 2026"),
                 ("planned_departure_date", "2026-10-17", "leave on 17 October 2026"),
             ],
-            ("you're studying", "letter confirming your enrolment", "bank statements", "accessible funds"),
+            ("self-funded student", "letter confirming your enrolment", "bank statements", "accessible funds"),
         ),
         (
             "zh",
@@ -460,7 +460,7 @@ def test_same_turn_known_context_is_not_described_as_unknown(tmp_path):
                 ("planned_arrival_date", "2026-10-10", "2026年10月10日到英国"),
                 ("planned_departure_date", "2026-10-17", "2026年10月17日离开"),
             ],
-            ("你目前在工作", "向公司人事索取", "职位、薪资和入职时间"),
+            ("你现在在职", "向公司人事索取", "职位、薪资和入职时间"),
         ),
         (
             "en",
@@ -475,7 +475,7 @@ def test_same_turn_known_context_is_not_described_as_unknown(tmp_path):
                 ("planned_arrival_date", "2026-10-10", "arrive on 10 October 2026"),
                 ("planned_departure_date", "2026-10-17", "leave on 17 October 2026"),
             ],
-            ("you're currently employed", "asking HR", "role, salary and how long"),
+            ("your employment and income", "asking HR", "role, salary and how long"),
         ),
         (
             "zh",
@@ -493,7 +493,7 @@ def test_same_turn_known_context_is_not_described_as_unknown(tmp_path):
                 ("planned_arrival_date", "2026-10-10", "2026年10月10日到英国"),
                 ("planned_departure_date", "2026-10-17", "2026年10月17日离开"),
             ],
-            ("由你父亲资助", "资助说明", "具体费用", "资金材料与关系材料分开"),
+            ("由父亲资助", "资助说明", "具体费用", "资金材料与关系材料分开"),
         ),
         (
             "en",
@@ -545,7 +545,7 @@ def test_same_turn_known_context_is_not_described_as_unknown(tmp_path):
                 ("planned_arrival_date", "2026-10-10", "arrive on 10 October 2026"),
                 ("planned_departure_date", "2026-10-17", "leave on 17 October 2026"),
             ],
-            ("visiting family or friends", "short invitation", "accommodation plans", "should not describe your host as funding"),
+            ("visit to family or friends", "short invitation", "accommodation plans", "should not describe your host as funding"),
         ),
         (
             "zh",
@@ -586,6 +586,11 @@ def test_known_circumstances_receive_case_specific_human_advice_in_both_language
     result = CapturedJourney(tmp_path).turn(body, patch(updates=updates))
 
     assert result.case.customer_language == language
+    # The tailored guidance may acknowledge a fact without a duplicate intake
+    # receipt. Verify the structured fact too, not one fixed receipt phrasing.
+    for field, value, _ in updates:
+        if field in {"visit_purpose", "occupation_status", "funding_source"}:
+            assert getattr(result.case.profile, field) == value
     assert all(term.casefold() in result.body.casefold() for term in expected), result.body
     questions = QUESTION_TEXT_ZH if language == "zh" else QUESTION_TEXT_EN
     assert questions["planned_arrival_date"] not in result.body

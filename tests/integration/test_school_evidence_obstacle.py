@@ -16,7 +16,11 @@ from test_consultant_value import Conversation, _patch
 from visa_agent.llm.ports import CasePatch
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.adviser_guidance import DOCUMENTS_URL
-from visa_agent.workflow.document_preparation import SCHOOL_RECORD_TOPIC, school_record_guidance
+from visa_agent.workflow.document_preparation import (
+    SCHOOL_RECORD_TOPIC,
+    _legacy_school_record_guidance,
+    school_record_guidance,
+)
 
 LANGUAGE = {
     "zh": {
@@ -158,6 +162,23 @@ def test_current_school_obstacle_gets_record_specific_help_independently_of_clas
     result = _sent(dialogue, dialogue.turn(body, _proposal(label, body)))
     _assert_practical_record_help(result, original)
     assert len(dialogue.gmail.calls) == 2
+
+
+@pytest.mark.parametrize("language", ["zh", "en"])
+def test_upgrade_keeps_old_delivered_school_discussion_after_reopening(tmp_path, language, monkeypatch):
+    dialogue, original = _start(tmp_path, language)
+    words = LANGUAGE[language]
+    with monkeypatch.context() as old_release:
+        old_release.setattr("visa_agent.workflow.document_preparation.school_record_guidance",
+                            _legacy_school_record_guidance)
+        old_release.setattr("visa_agent.workflow.service.school_record_guidance",
+                            _legacy_school_record_guidance)
+        sent = _sent(dialogue, dialogue.turn(words["obstacle"], _patch()))
+    assert _legacy_school_record_guidance(language) in sent.body
+    result = _sent(dialogue, dialogue.turn(words["next"], _patch()))
+    _assert_practical_record_help(result, original, links=False)
+    assert result.case.next_step_advice.requirement_id == "status_evidence"
+    assert _legacy_school_record_guidance(language) not in result.body
 
 
 @pytest.mark.parametrize("language", ["zh", "en"])

@@ -4,8 +4,10 @@ SENT positives use the real isolated outbox dispatcher, not assigned SENT flags.
 This is offline unit evidence, not delivery to a school or a real applicant.
 """
 
+import json
 from contextlib import closing
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 
@@ -14,6 +16,7 @@ from visa_agent.domain.models import Case, InboundEvent
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.document_preparation import (
     SCHOOL_RECORD_TOPIC,
+    _legacy_school_record_guidance,
     reviewed_school_record,
     school_record_followup,
     school_record_guidance,
@@ -45,7 +48,7 @@ class Capture:
         return "synthetic-school-provider-id"
 
 
-def delivered(tmp_path, language="zh", *, links=True):
+def delivered(tmp_path, language="zh", *, links=True, legacy=False):
     path = tmp_path / "school-memory.db"
     stamp = datetime(2026, 9, 5, 12, tzinfo=UTC)
     event = InboundEvent(id="school-original-event", external_thread_id="school-thread",
@@ -54,7 +57,8 @@ def delivered(tmp_path, language="zh", *, links=True):
     case = Case(id="school-unit-case", external_thread_id=event.external_thread_id,
         applicant_contact=event.sender, primary_channel="gmail", customer_language=language,
         policy_version="2026-02-25", guidance_events={SCHOOL_RECORD_TOPIC: event.id})
-    body = "Hello.\n\n" + school_record_guidance(language)
+    render = _legacy_school_record_guidance if legacy else school_record_guidance
+    body = "Hello.\n\n" + render(language)
     if links:
         body += "\nGOV.UK: https://www.gov.uk/standard-visitor"
     capture = Capture()
@@ -74,25 +78,28 @@ def delivered(tmp_path, language="zh", *, links=True):
 
 @pytest.mark.parametrize("language", ["zh", "en"])
 @pytest.mark.parametrize("links", [False, True])
-def test_actual_complete_sent_context_survives_reopen_links_and_language_switch(tmp_path, language, links):
-    case, rows = delivered(tmp_path, language, links=links)
+@pytest.mark.parametrize("legacy", [False, True])
+def test_actual_complete_sent_context_survives_reopen_links_and_language_switch(tmp_path, language, links, legacy):
+    case, rows = delivered(tmp_path, language, links=links, legacy=legacy)
     assert sent_school_record_context(case, rows)
     case.customer_language = "en" if language == "zh" else "zh"
     assert sent_school_record_context(case, rows)
 
 
 @pytest.mark.parametrize("status", ["PENDING", "FAILED", "RETRY", "SENDING", "AMBIGUOUS"])
-def test_only_sent_status_can_supply_context(tmp_path, status):
-    case, rows = delivered(tmp_path)
+@pytest.mark.parametrize("legacy", [False, True])
+def test_only_sent_status_can_supply_context(tmp_path, status, legacy):
+    case, rows = delivered(tmp_path, legacy=legacy)
     assert not sent_school_record_context(case, [dict(rows[0], status=status)])
 
 
 @pytest.mark.parametrize("change", ["other_case", "other_event", "no_event_marker", "truncated_start",
                                    "truncated_end", "first_paragraph_only", "missing_provider", "missing_sent_at"])
-def test_incomplete_or_unbound_delivery_cannot_supply_school_context(tmp_path, change):
-    case, rows = delivered(tmp_path)
+@pytest.mark.parametrize("legacy", [False, True])
+def test_incomplete_or_unbound_delivery_cannot_supply_school_context(tmp_path, change, legacy):
+    case, rows = delivered(tmp_path, legacy=legacy)
     row = dict(rows[0])
-    controlled = school_record_guidance("zh")
+    controlled = (_legacy_school_record_guidance if legacy else school_record_guidance)("zh")
     if change == "other_case":
         row["case_id"] = "neighbour-case"
     elif change == "other_event":
@@ -110,6 +117,14 @@ def test_incomplete_or_unbound_delivery_cannot_supply_school_context(tmp_path, c
     elif change == "missing_sent_at":
         row["sent_at"] = None
     assert not sent_school_record_context(case, [row])
+
+
+def test_legacy_wording_matches_retained_provider_reply_not_newly_invented_memory():
+    report = json.loads(Path("eval_output/consultant_journey_2026-09-06-v6.json").read_text())
+    reply = next(row["reply"] for row in report["results"]
+                 if row["journey"] == "student-obstacle-and-change" and row["turn"] == 3)
+    assert _legacy_school_record_guidance("zh") in reply
+    assert school_record_guidance("zh") not in reply
 
 
 @pytest.mark.parametrize("body", [ZH, EN])
