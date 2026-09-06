@@ -2,8 +2,8 @@
   "scope": "Ordinary financial-document provenance, branch matching and like-for-like consistency review",
   "baseline_commit": "ecd74e7c1c8e95fd1b924cd131a68d727ad35f71",
   "provider": "deepseek-v4-flash",
-  "new_paid_model_calls": 35,
-  "provider_reported_tokens": {"input": 62402, "output": 11093, "total": 73495},
+  "new_paid_model_calls": 43,
+  "provider_reported_tokens": {"input": 77372, "output": 13611, "total": 90983},
   "manual_live_mailbox_sends": 0,
   "real_documents_processed": 0,
   "not_a_naturalness_or_accuracy_score": true,
@@ -18,7 +18,9 @@
     {"report": "financial_document_deepseek_2026-09-05-v7.json", "sha256": "4b7582997ce02de8353a2bf515600965fd2d7a2e58256f6c0b862921c39f234b", "calls": 4, "passed": 4, "failed": 0, "tokens": 8585, "evidence_contract": "v2-complete-source-set", "bound_git_head": "1c2b3ed136090b2599eda3956b6df4dc0f05f7bb", "implementation_manifest_entries": 80},
     {"report": "financial_document_deepseek_2026-09-06-v8.json", "sha256": "90d98d5db4b5ba9f7836522e0063baa61edc6ade704b25eb20b8fdc6b0a8f612", "calls": 4, "passed": 3, "failed": 1, "tokens": 8475, "evidence_contract": "v2-complete-source-set", "bound_git_head": "0168b69f2cb576c41063a1799b9744f8d8222a14", "implementation_manifest_entries": 80},
     {"report": "financial_document_deepseek_2026-09-06-v9.json", "sha256": "cd60433083fcccaaaf7220d1a91e6dfc6f663c3d42d1c004adbf35ded8e590ef", "calls": 4, "passed": 4, "failed": 0, "tokens": 8744, "evidence_contract": "v2-complete-source-set", "bound_git_head": "33a3a678e70cbf20ac7c2b4f7a03e0bc850c75bb", "implementation_manifest_entries": 80},
-    {"report": "financial_document_deepseek_2026-09-06-v10.json", "sha256": "ccbd68af0047c236ddbd560b2a0c799e104d3b495ea9e2377ca274315c5131de", "calls": 4, "passed": 4, "failed": 0, "tokens": 8726, "evidence_contract": "v2-complete-source-set", "bound_git_head": "75a44927d95db38615284fa2f6b135fc73fc4675", "implementation_manifest_entries": 80}
+    {"report": "financial_document_deepseek_2026-09-06-v10.json", "sha256": "ccbd68af0047c236ddbd560b2a0c799e104d3b495ea9e2377ca274315c5131de", "calls": 4, "passed": 4, "failed": 0, "tokens": 8726, "evidence_contract": "v2-complete-source-set", "bound_git_head": "75a44927d95db38615284fa2f6b135fc73fc4675", "implementation_manifest_entries": 80},
+    {"report": "financial_document_deepseek_2026-09-06-v11.json", "sha256": "956141cda8cd58b37eca4603f5d58d3a43690b246e3d67592ad9f87c3199c114", "calls": 4, "passed": 4, "failed": 0, "tokens": 8744, "evidence_contract": "v2-complete-source-set", "bound_git_head": "cfa06014a7dad2b0b15f1395652183aa79c84797", "implementation_manifest_entries": 81},
+    {"report": "financial_document_deepseek_2026-09-06-v12.json", "sha256": "9f1065493f124c4819e7f8c4bdb6f2a70f6daa97ff6cc1278fdb49928983ec2e", "calls": 4, "passed": 4, "failed": 0, "tokens": 8744, "evidence_contract": "v2-complete-source-set", "bound_git_head": "d5fda038c63891338c38a57394de8e69294a27a6", "implementation_manifest_entries": 81}
   ],
   "historical_report_corrections": [
     {
@@ -57,8 +59,8 @@
       "git HEAD, UTC run timestamps and run ID",
       "provider response model and its SHA-256 per retained result"
     ],
-    "current_fully_bound_report": "financial_document_deepseek_2026-09-06-v10.json",
-    "current_fully_bound_implementation_manifest_entries": 80,
+    "current_fully_bound_report": "financial_document_deepseek_2026-09-06-v12.json",
+    "current_fully_bound_implementation_manifest_entries": 81,
     "historical_results_not_upgraded_by_this_contract": true
   },
   "full_suite": {"passed": 4457, "failed": 0, "warnings": 1, "seconds": 79.44},

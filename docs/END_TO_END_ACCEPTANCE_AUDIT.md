@@ -5,6 +5,12 @@ requirements reference; recommendations about vendors or libraries are not
 themselves proof of product completion. Automated pass counts are not a substitute
 for these outcomes.
 
+Latest update: [multi-turn consultant repair](CONSULTANT_JOURNEY_REPAIR_2026-09-06.md)
+retains failed and weak-green real-model results, repairs scoped fact loss and
+empty replies, and passes a stronger 12-turn development probe. Its manual review
+still records pacing, durable style preference and broader paraphrase gaps;
+4,525 passing tests do not close the overall acceptance items below.
+
 ## Technical work still required
 
 1. **Applicant processing consent before ordinary personal-material processing.**

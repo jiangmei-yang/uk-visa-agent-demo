@@ -1,0 +1,39 @@
+{
+  "observed_at": "2026-09-06T05:10:20.763813+00:00",
+  "evidence": "offline HTTP fixture replay",
+  "model_calls": 0,
+  "mailbox_calls": 0,
+  "checks": {
+    "healthy": true,
+    "fresh_synthetic_lab": true,
+    "cannot_skip_confirmation_steps": true,
+    "initial_evidence_blocks_delivery": true,
+    "duplicate_click_preserves_state": true,
+    "correction_still_requires_confirmation": true,
+    "confirmed_pack_released": true,
+    "repeat_download_identical": true,
+    "zip_crc_valid": true,
+    "pack_has_customer_deliverables": true,
+    "internal_audit_not_sent_to_customer": true,
+    "pack_matches_confirmed_case": true
+  },
+  "all_passed": true,
+  "zip_sha256": "69508420e47d5f843bf89eeb088347fa1d0e1cb2252d91c8108fb98bbdb18582",
+  "zip_members": [
+    "00_READ_ME_FIRST.pdf",
+    "01_case_summary.pdf",
+    "02_personalised_document_checklist.pdf",
+    "03_document_index.pdf",
+    "04_cover_letter_draft.pdf",
+    "05_application_answers.json",
+    "06_open_issues.pdf",
+    "supporting_documents/bank_statement.pdf",
+    "supporting_documents/conference_invitation_corrected.pdf",
+    "supporting_documents/family_funds_certified_translation.pdf",
+    "supporting_documents/family_funds_cn.pdf",
+    "supporting_documents/hong_kong_residence_status.pdf",
+    "supporting_documents/passport.pdf",
+    "supporting_documents/school_funding_letter.pdf",
+    "supporting_documents/student_letter.pdf"
+  ]
+}

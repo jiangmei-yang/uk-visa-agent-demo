@@ -20,7 +20,15 @@ configuration assertions. Overall acceptance is **incomplete**.
 The bounded interviewer handoff is in [SUBMISSION.md](SUBMISSION.md). See the
 [September 6 release review](docs/RELEASE_REVIEW_2026-09-06.md) for the latest consultant
 probe, retained financial failure, source-bound v10 repair and clean-container HTTP checks.
-The latest local suite has **4,471 passing tests** (89.13s, one existing test-client warning);
+The latest [multi-turn repair](docs/CONSULTANT_JOURNEY_REPAIR_2026-09-06.md) has
+**4,525 passing tests** (91.64s, one existing test-client warning), Ruff and strict
+Mypy passed (80 source files). It retains a 2/12 initial checker result (3/12 after
+correcting a date-comparison test bug), a weak 12/12 run rejected in manual review,
+and a new strengthened-contract **12/12** real-model run. Four frozen fictional
+PDF extractions and 12 fresh-container HTTP checks also passed. This is exposed
+development coverage, not a perfect-agent or independent naturalness score.
+
+The preceding release suite had **4,471 passing tests** (89.13s, one existing test-client warning);
 Ruff and strict Mypy passed. See the [release review](docs/RELEASE_REVIEW_2026-09-06.md)
 and the earlier [consultant reply acceptance review](docs/CONSULTANT_ACCEPTANCE_REVIEW_2026-09-05.md),
 [financial-document evidence repair](docs/FINANCIAL_DOCUMENT_EVIDENCE.md),

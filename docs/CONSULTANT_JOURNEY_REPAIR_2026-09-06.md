@@ -72,3 +72,50 @@ post-validator. Diverse paraphrases, independent uncoached users, ordinary mixed
 documents, cross-email context and real transport recovery still require broader
 acceptance. Source-bound PDF extraction is separately retested before release;
 the prior financial report is not silently relabelled as current evidence.
+
+Manual review still identifies conversational polish to do: brief preferences
+currently apply to the current reply, not a durable customer style preference;
+the student opener offers a pair of useful documents when the customer asked for
+one thing; later unsolicited process descriptions and administrative introductions
+can still be longer than necessary. These are not scored as "perfect" merely
+because the strengthened automated checks passed.
+
+## Latest real-model evidence
+
+Contract-v3 run: **12/12 turns**, zero extraction fallback, every turn persisted
+across reopening and captured exactly once as SENT. Source-bound four-document
+run v12: **4/4**. Both bind source commit `d5fda038c63891338c38a57394de8e69294a27a6`.
+The 80 source files and journey probe are checked against the v3 manifest in tests;
+the financial test separately checks all 80 source files, its probe, prompt/schema
+and frozen PDF hashes. This is a fresh model run, not a re-score of old responses.
+
+All three journey runs are retained: 36 extraction calls, 134,325 provider-reported
+tokens (129,293 input, 5,032 output). Two financial refresh runs added eight calls
+and 17,488 tokens. No mailbox calls, real applicant documents or retries were used.
+Four existing one-page fictional PDFs were rendered with `pdftoppm` and inspected;
+their fictional labels and values were legible, with no edits to the frozen PDFs.
+
+The fresh disposable HTTP check passed all **12 checks**, including duplicate and
+out-of-order requests, confirmation gates, ZIP integrity, repeat-download identity
+and exclusion of internal audit files. The generated ZIP hash stayed
+`69508420e47d5f843bf89eeb088347fa1d0e1cb2252d91c8108fb98bbdb18582`.
+
+- [Current journey report](../eval_output/consultant_journey_2026-09-06-v3.json)
+- [Current PDF extraction report](../eval_output/financial_document_deepseek_2026-09-06-v12.json)
+- [Fresh HTTP acceptance](../eval_output/consultant_journey_release_smoke_2026-09-06.json)
+
+## Local regression and deployment
+
+- Full suite: **4,525 passed in 91.64s**, one existing Starlette/httpx deprecation
+  warning; no source-binding test excluded. Ruff and strict Mypy passed (80 files).
+- Focused saved-journey, preference and financial replay: **63 passed in 1.24s**.
+- Docker is healthy; all 80 runtime source hashes match the workspace. Manifest
+  digest: `e78c4b49419281197a2fe0191ec4389fbbda1673c1ec74e6c72cec9cb148745b`.
+- Existing runtime volume was reused. The original ZIP stayed
+  `8bc0681a837437d30675da7650cd9c61e1ecc69532ea969c77ceb383c458f724`.
+- Existing Gmail worker reloaded as PID 52199 and was idle at
+  `2026-09-06T05:12:09.017948+00:00`, with zero error-log lines. The database dump
+  digest before/after was identical:
+  `e50176d0c1de0e690a1f37a1c81ad9d56b45eb01241fe359a74bc28bfadec900`.
+  Its one case, nine processed events, nine SENT rows and zero deliveries were
+  preserved. No applicant consent, case fact or outbound mail was fabricated.

@@ -1,5 +1,6 @@
 """Replay the retained failed provider run; no fresh model calls or mailbox I/O."""
 
+import hashlib
 import json
 import runpy
 from pathlib import Path
@@ -13,8 +14,17 @@ REPORT = json.loads(Path("eval_output/consultant_journey_2026-09-06-v1.json").re
 PROBE = runpy.run_path("scripts/consultant_journey_probe.py")
 
 
+@pytest.fixture(autouse=True)
+def no_network(monkeypatch):
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Saved journey replay must not contact a provider or mailbox")
+
+    monkeypatch.setattr("socket.create_connection", forbidden)
+    monkeypatch.setattr("socket.socket.connect", forbidden)
+
+
 @pytest.mark.parametrize("journey", REPORT["scenarios"])
-@pytest.mark.parametrize("version", ["v1", "v2"])
+@pytest.mark.parametrize("version", ["v1", "v2", "v3"])
 def test_saved_provider_facts_and_controls_survive_reopening(tmp_path, journey, version):
     report = json.loads(Path(f"eval_output/consultant_journey_2026-09-06-{version}.json").read_text())
     dialogue = Conversation(tmp_path)
@@ -88,3 +98,21 @@ def test_negative_natural_facts_are_not_positive_updates(tmp_path, body):
         "source_excerpt": body, "confidence": 1} for f, v in fields.items()], "ambiguities": []})
     case = Conversation(tmp_path).turn(body, patch).case
     assert all(getattr(case.profile, field) is None for field in fields)
+
+
+def test_current_journey_report_binds_all_source_and_probe():
+    report = json.loads(Path("eval_output/consultant_journey_2026-09-06-v3.json").read_text())
+    assert report["completed"] and report["all_passed"]
+    assert report["check_contract"] == "consultant-journey-v3"
+    assert report["maximum_model_calls"] == len(report["results"]) == 12
+    assert report["mailbox_calls"] == report["real_documents"] == report["model_retries"] == 0
+    files = [Path("scripts/consultant_journey_probe.py"), *Path("src/visa_agent").rglob("*.py")]
+    assert report["source_sha256"] == {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
+    assert report["scenarios"] == json.loads(json.dumps(PROBE["SCENARIOS"]))
+
+
+def test_original_failures_and_weak_green_report_remain_unchanged():
+    assert hashlib.sha256(Path("eval_output/consultant_journey_2026-09-06-v1.json").read_bytes()).hexdigest() == (
+        "18d80d007dc654999c6f664049bf6c477d5d40940a7c5d88ed4a62136e0cc174")
+    assert hashlib.sha256(Path("eval_output/consultant_journey_2026-09-06-v2.json").read_bytes()).hexdigest() == (
+        "5fbfb49bd6c63bda01e240f9545b3690c518155bae4892616bd090ebb073d520")
