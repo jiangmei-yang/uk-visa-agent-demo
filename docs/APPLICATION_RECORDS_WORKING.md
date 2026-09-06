@@ -7,6 +7,46 @@ The overall acceptance goal remains active.
 
 ## Requirement and design boundary
 
+### 2026-09-07 operator record review and local ZIP journey
+
+The constant nonempty-record hold has been replaced by a saved-review binding;
+the implementation and limitations are detailed in `RECORD_REVIEW_REQUIREMENTS.md`.
+This is not a production approval feature: only the trusted local transaction
+exists, with caller-owned operator authentication/service locking still required.
+No model patch can supply its fields. No actual customer was reviewed or emailed.
+
+Review requires complete collection/detail intake, registered case sources,
+current policy and permission, a current case fingerprint and one applicability
+assessment per record. It saves review/history atomically and clears applicant
+confirmations without generating a message or pack. Policy/profile/record/document/
+evidence content changes stale it; normal customer confirmation does not.
+Known family/contact mismatch and missing family passport information fail;
+the ordinary-friend case does not blanket-require a passport.
+
+The new actual-workflow/captured-transport test starts from the synthetic Gmail
+fixture with documents, adds a trip, reviews it, sends a new profile summary,
+accepts its confirmation, sends final summary and only then generates a ZIP.
+Deleting the trip's registered source subsequently blocks pack reuse without
+deleting its existing archive. This is functional PDF/ZIP generation evidence,
+not visual output quality, real-provider behavior or real recipient delivery.
+
+The first full development run had **2 failures / 4,846 passes / 2 deselections**,
+97.78s, one existing Starlette warning (`/tmp/visa-operator-record-review-regression.log`).
+One concurrency fixture copied a completed snapshot to a blank database without
+its source registrations; it now copies the original synthetic registration rows
+too. One isolated persistence-order test deliberately stubs all gates and now
+also explicitly stubs the new source audit, without claiming real gate coverage.
+The affected tests plus the expanded operator journey passed 15 tests (1.08s).
+Ruff and strict Mypy passed for 90 modules. Final full regression is below.
+
+Final operator-review development regression: **4,849 passed / 2 deselected**,
+100.32s, one existing Starlette warning, `/tmp/visa-operator-record-review-regression-v2.log`.
+An additional configured-but-ungranted processing-permission case was added after
+full-suite collection; the complete operator-review file then passed 14 tests
+(0.77s). Do not relabel this as a full 4,850-test run. The two old provider bindings
+remain stale and were not rewritten. No authenticated real operator action, live
+provider call, real email send, runtime restart or deployment was performed.
+
 ### 2026-09-07 source-registration audit prerequisite
 
 Official application-information requirements were rechecked; conditional field

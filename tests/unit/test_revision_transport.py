@@ -11,6 +11,7 @@ from visa_agent.delivery import pack
 from visa_agent.domain.models import Case, CaseProfile, CaseStatus, GateResult, WorkflowStage
 from visa_agent.domain.policy import load_policy
 from visa_agent.storage.sqlite import SQLiteStore
+from visa_agent.workflow.record_source_audit import RecordSourceAudit
 
 
 class CaptureSender:
@@ -171,6 +172,8 @@ def test_registration_refusal_does_not_mutate_case_or_persist_ready_path(
     # The workflow integration tests exercise real gates. These stubs exercise only
     # failure ordering after rendering has succeeded, without manufacturing valid PDFs.
     monkeypatch.setattr(pack, "evaluate_gate", lambda *_: GateResult(allowed=True, checks={}, reasons=[]))
+    monkeypatch.setattr("visa_agent.workflow.record_source_audit.audit_application_record_sources",
+                        lambda *_: RecordSourceAudit((), ()))  # this test stubs gates, not source verification
     monkeypatch.setattr(pack, "_pdf", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(pack, "_document_index_pdf", lambda *_args, **_kwargs: None)
 

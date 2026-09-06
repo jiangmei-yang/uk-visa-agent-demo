@@ -336,6 +336,11 @@ def _generate_pack(
     gate = evaluate_gate(case, policy, today)
     if not gate.allowed:
         return None, gate.reasons
+    from visa_agent.workflow.record_source_audit import audit_application_record_sources
+
+    source_audit = audit_application_record_sources(store, case)
+    if not source_audit.registered_sources_match:
+        return None, ["Application record source registration requires review: " + "; ".join(source_audit.issues)]
     registered = store.connection.execute(
         "SELECT path, sha256, case_revision FROM deliveries WHERE case_id=?", (case.id,),
     ).fetchone()

@@ -7,6 +7,7 @@ from typing import Any, Literal
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 from visa_agent.domain.application_records import ApplicationRecordLedger
+from visa_agent.domain.record_review import ApplicationRecordReview
 
 
 def utc_now() -> datetime:
@@ -227,6 +228,8 @@ class Case(BaseModel):
     stage: WorkflowStage = WorkflowStage.NEW
     profile: CaseProfile = Field(default_factory=CaseProfile)
     application_records: ApplicationRecordLedger | None = None
+    application_record_review: ApplicationRecordReview | None = None
+    application_record_review_history: list[ApplicationRecordReview] = Field(default_factory=list)
     profile_confirmed: bool = False
     final_summary_confirmed: bool = False
     # Customer pacing is independent of eligibility, document validity and human review.

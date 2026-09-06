@@ -288,7 +288,7 @@ def test_nested_delivery_and_case_writes_roll_back_as_one_unit(store: SQLiteStor
 def test_pack_serializes_pause_against_materialization_and_both_persistence_writes(
     complete_case, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    _, prepared, _ = complete_case
+    source_store, prepared, _ = complete_case
     # A separate, not-yet-materialized fixture; never erase the original delivery registry
     # to manufacture permission to rebuild its immutable archive.
     store = SQLiteStore(tmp_path / "unmaterialized-lock-test.db")
@@ -296,6 +296,13 @@ def test_pack_serializes_pause_against_materialization_and_both_persistence_writ
                                        "stage": WorkflowStage.FINAL_CONFIRMATION})
     store.save_case(case)
     locked_at: list[str] = []
+    # Carry the real synthetic source registrations along with the copied
+    # snapshot; this isolated database must not pretend provenance is optional.
+    source_rows = source_store.connection.execute(
+        "SELECT event_id,case_id,processed_at FROM processed_events WHERE case_id=?", (case.id,),
+    ).fetchall()
+    store.connection.executemany("INSERT INTO processed_events(event_id,case_id,processed_at) VALUES (?,?,?)",
+                                 [tuple(row) for row in source_rows])
     original_zip = pack._write_zip
     original_save = store.save_case
     contender = sqlite3.connect(store.path, timeout=0)

@@ -20,6 +20,7 @@ from visa_agent.domain.models import (
 )
 from visa_agent.domain.policy import Policy
 from visa_agent.domain.record_completeness import application_record_checks
+from visa_agent.domain.record_review import record_review_is_current
 
 BASE_REQUIRED_FACTS = {
     "full_name",
@@ -415,10 +416,7 @@ def evaluate_gate(case: Case, policy: Policy, today: date) -> GateResult:
     if not records_match_case:
         checks["application_records_case_binding"] = False
     if case.application_records is not None and case.application_records.current():
-        # Nonempty records still need conditional applicability/review work.
-        # Explicit none declarations no longer hit a constant hold; legacy
-        # missing collections fail the universal declaration check above.
-        checks["application_record_intake_release_checked"] = False
+        checks["application_record_intake_release_checked"] = record_review_is_current(case, policy)
     reasons = [label.replace("_", " ") for label, passed in checks.items() if not passed]
     if scope_reason and not in_scope:
         reasons.insert(0, scope_reason)

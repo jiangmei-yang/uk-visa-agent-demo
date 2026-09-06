@@ -98,6 +98,7 @@ from visa_agent.workflow.record_collection_plan import (
     plan_collection_follow_up,
 )
 from visa_agent.workflow.record_intake import plan_record_intake, record_intake_receipt
+from visa_agent.workflow.record_source_audit import audit_application_record_sources
 
 PROFILE_CONFIRMATION_LINES = {
     "profile confirmed",
@@ -608,6 +609,10 @@ class WorkflowService:
         case.last_inbound_received_at = event.received_at
         case.updated_at = datetime.now(UTC)
         gate = evaluate_gate(case, self.policy, self.today_provider())
+        if gate.allowed and not audit_application_record_sources(self.store, case).registered_sources_match:
+            gate.allowed = False
+            gate.checks["application_record_sources_registered"] = False
+            gate.reasons.append("Application record source registration requires review before finalization")
         if self.store.has_unreviewed_held_updates(case.id, completing_event_id=event.id):
             gate.allowed = False
             gate.checks["all_held_updates_reviewed"] = False

@@ -1,6 +1,8 @@
 # Application-record review: remaining implementation contract
 
-Development design, **not an implemented approval flow or a release claim**.
+Development contract, **not a release claim**. The trusted local transaction is
+now implemented; operator-facing authenticated UI/CLI and remaining broader
+application-field coverage are not complete.
 Official source checked 2026-09-07:
 [Standard Visitor application information](https://www.gov.uk/standard-visitor/apply-standard-visitor-visa).
 
@@ -52,6 +54,37 @@ recompute a full original email's hash or reread its full content**. Literal
 excerpts were checked during intake; retained excerpts/hashes and registered
 events support traceability, not proof of truth or a fresh full-message review.
 This limitation must be visible to reviewers rather than hidden behind a green
-label. The audit currently neither persists a review decision nor replaces the
-development hold; operator flow, source-bound decision invalidation and final
-event-to-ZIP acceptance remain unfinished.
+label. The audit itself neither persists a review decision nor grants release.
+
+## Implemented local operator transaction
+
+`workflow/record_review.py::review_application_records` checks an exact saved-case
+fingerprint under an atomic write lock, current processing permission/policy,
+active draft state, held updates, complete collection intake and registered
+sources. It requires one substantive assessment for each current record and an
+explicit travel-scope check where travel records exist. UK contacts must be
+classified; known family relationship labels cannot be treated as ordinary
+contacts, and a family classification requires supplied passport information.
+This is bounded guard logic around a human decision, not universal relationship
+understanding. The function asserts an operator name; callers must authenticate
+the operator and own the service state lock. It is not a public/model endpoint.
+
+The saved decision and its history bind profile, record ledger, documents,
+evidence content, collection-question links, preparation/revision state and full
+policy content. Material changes make the old decision stale. Customer evidence
+confirmation flags are deliberately excluded from this binding to avoid an
+endless review-confirm-review loop. The transaction clears prior profile/final
+confirmation context and does not create any outbox message or delivery.
+
+The nonempty-record gate now requires a matching saved review instead of an
+always-false development placeholder. Final-ready workflow and pack generation
+also check source registration; pack reuse cannot bypass the latter. A captured
+Gmail-protocol journey with fictional documents now reaches ZIP only after a
+review and fresh SENT profile/final confirmations. This is local integration
+evidence, not an authenticated real human review, visual PDF audit, live model
+test or real mailbox recipient acceptance.
+
+Still required: operator-facing workflow, missing-applicable-detail feedback to
+the customer, conditional field intake (including family passport data), the
+broader home/parent/employer/partner/payer fields, independently checked output
+quality and a fresh source-bound live-provider/Gmail acceptance run.
