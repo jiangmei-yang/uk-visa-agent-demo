@@ -32,6 +32,28 @@ from visa_agent.workflow.conversation import reply_items
 ROOT = Path(__file__).resolve().parents[1]
 CONTACT = "fictional-journey@example.test"
 TODAY = date(2026, 9, 6)
+RECORD_SCENARIOS: dict[str, list[dict[str, Any]]] = {
+    "application-record-intake": [
+        {"body": "我2023年夏天去过日本旅游。我2024年5月去过韩国旅游。"
+                 "我姐姐陈示例住在英国伦敦示例路1号。这次英国行程还没定日期。",
+         "records": [{"kind": "travel", "country": "日本", "period": "2023年夏天", "purpose": "旅游"},
+                     {"kind": "travel", "country": "韩国", "period": "2024年5月", "purpose": "旅游"},
+                     {"kind": "uk_contact", "name": "陈示例", "relationship": "姐姐", "address": "英国伦敦示例路1号"}],
+         "deferred_dates": True, "profile": {"sponsor_name": None, "current_address": None}},
+        {"body": "请更正日本那次旅行的时间，是2023年秋天。韩国那次没变。",
+         "records": [{"kind": "travel", "country": "日本", "period": "2023年秋天", "purpose": "旅游"},
+                     {"kind": "travel", "country": "韩国", "period": "2024年5月", "purpose": "旅游"},
+                     {"kind": "uk_contact", "name": "陈示例", "relationship": "姐姐", "address": "英国伦敦示例路1号"}],
+         "deferred_dates": True},
+        {"body": "其余的出境记录我暂时记不清，需要再核实。这次去英国的日期也还是没定。",
+         "collection_states": {"travel": "unknown"}, "record_count": 3, "deferred_dates": True},
+        {"body": "My friend visited France in June 2022. I am only describing his trip, not mine. "
+                 "My date of birth is 1997.7.1.",
+         "profile": {"date_of_birth": "1997-07-01"}, "record_count": 3,
+         "collection_states": {"travel": "unknown"}, "deferred_dates": True,
+         "never_ask": ["date_of_birth"]},
+    ],
+}
 SCENARIOS: dict[str, list[dict[str, Any]]] = {
     "student-obstacle-and-change": [
         {"body": "我想趁下个学期结束去伦敦玩几天。我是中国护照，在香港念硕士，也准备在香港办。"
@@ -177,6 +199,15 @@ def check_turn(spec: dict[str, Any], case: Any, reply: str) -> dict[str, bool]:
         checks["respects_explicit_brief_request"] = (
             len(prose) <= 280 if spec["brief"] == "zh" else len(prose.split()) <= 130
         )
+    if "records" in spec:
+        actual = ([{"kind": record.kind, **{key: value.value for key, value in record.fields.items()}}
+                   for record in case.application_records.current().values()] if case.application_records else [])
+        checks["exact_record_fields_without_cross_entry_mix"] = actual == spec["records"]
+    if "record_count" in spec:
+        checks["record_count_unchanged"] = bool(case.application_records) and len(case.application_records.current()) == spec["record_count"]
+    if "collection_states" in spec:
+        checks["preserves_explicit_collection_state"] = bool(case.application_records) and all(
+            case.application_records.collection_state(kind) == state for kind, state in spec["collection_states"].items())
     return checks
 
 
@@ -185,21 +216,22 @@ def main() -> None:
     parser.add_argument("--allow-model-calls", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--replay", type=Path, help="Offline saved proposals; no provider or mailbox calls")
-    parser.add_argument("--scenario-set", choices=["journey", "pacing", "all"], default="journey")
+    parser.add_argument("--scenario-set", choices=["journey", "pacing", "all", "records"], default="journey")
     args = parser.parse_args()
     if not args.allow_model_calls and not args.replay:
         parser.error("Explicit --allow-model-calls required: fictional extractions, no retries")
     if args.output.exists():
         parser.error("Existing evidence must not be overwritten")
     saved = json.loads(args.replay.read_text()) if args.replay else None
-    scenarios = (SCENARIOS if args.scenario_set == "journey" else PACING_SCENARIOS
+    scenarios = (RECORD_SCENARIOS if args.scenario_set == "records" else SCENARIOS if args.scenario_set == "journey" else PACING_SCENARIOS
                  if args.scenario_set == "pacing" else {**SCENARIOS, **PACING_SCENARIOS})
     key = (None if saved else read_secret("DEEPSEEK_API_KEY", file_environment_name="DEEPSEEK_API_KEY_FILE",
                       default_file=ROOT / ".secrets/deepseek_api_key.txt"))
     if not key and not saved:
         parser.error("Missing DeepSeek key")
     policy = load_policy(ROOT / "knowledge/uk_standard_visitor_2026-02-25.yaml")
-    paths = [Path(__file__).resolve(), *sorted((ROOT / "src/visa_agent").rglob("*.py"))]
+    paths = [Path(__file__).resolve(), *sorted((ROOT / "src/visa_agent").rglob("*.py")),
+             *sorted(path for path in (ROOT / "src/visa_agent/assets").rglob("*") if path.is_file())]
     report: dict[str, Any] = {
         "scope": "fictional multi-turn development scenarios; real DeepSeek extraction; captured transport",
         "mailbox_calls": 0, "real_documents": 0,
@@ -208,6 +240,7 @@ def main() -> None:
         "evaluation_date": TODAY.isoformat(), "run_started_at": datetime.now(UTC).isoformat(),
         "git_head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "source_sha256": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths},
+        "case_patch_schema_sha256": hashlib.sha256(json.dumps(CasePatch.model_json_schema(), sort_keys=True).encode()).hexdigest(),
         "scenarios": scenarios, "completed": False, "all_passed": False, "results": [],
     }
     if saved:
@@ -249,6 +282,7 @@ def main() -> None:
                         "persisted_case_matches": store.get_case(case.id).model_dump() == case.model_dump()})
                     row.update({"completed": True, "checks": checks, "plan": plan, "reply": reply,
                         "profile": case.profile.model_dump(mode="json"), "requested_fields": case.last_requested_fields,
+                        "application_records": case.application_records.model_dump(mode="json") if case.application_records else None,
                         "deferred_fields": case.deferred_fields, "topics": case.customer_question_topics,
                         "reply_style": case.reply_style, "reply_style_source_event_id": case.reply_style_source_event_id,
                         "reply_style_source_excerpt": case.reply_style_source_excerpt})

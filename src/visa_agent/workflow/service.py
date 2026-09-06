@@ -13,6 +13,7 @@ from pypdf.errors import PdfReadError
 
 from visa_agent.documents.natural import DocumentReader, read_fixture_pdf
 from visa_agent.documents.processor import sha256_file
+from visa_agent.domain.application_records import RECORD_KINDS
 from visa_agent.domain.models import (
     Case,
     CaseStatus,
@@ -89,6 +90,7 @@ from visa_agent.workflow.pending_step_value import (
     pending_question_reminder,
     pending_question_support_action,
 )
+from visa_agent.workflow.record_intake import plan_record_intake, record_intake_receipt
 
 PROFILE_CONFIRMATION_LINES = {
     "profile confirmed",
@@ -287,6 +289,14 @@ class WorkflowService:
             }
         )
         case.latest_customer_message = customer_event.body
+        if case.application_records is not None:
+            customer_event.known_profile["_application_record_context"] = [
+                {"kind": record.kind, "fields": {name: fact.value for name, fact in record.fields.items()}}
+                for record in case.application_records.current().values()
+            ]
+            customer_event.known_profile["_application_collection_states"] = {
+                kind: case.application_records.collection_state(kind) for kind in RECORD_KINDS
+            }
         remember_reply_style(case, event.id)
         if school_record_resolved(customer_event.body) or school_record_unavailable(customer_event.body):
             # Retire only this discussion, not applicant facts, evidence or other
@@ -330,6 +340,15 @@ class WorkflowService:
         )
         patch = self.llm.extract_case_patch(customer_event)
         self._require_processing(case, processing_epoch)
+        record_plan = plan_record_intake(
+            customer_event, case.application_records, case_id=case.id,
+            records=patch.application_records, declarations=patch.collection_declarations,
+        )
+        if record_plan.changed:
+            case.application_records = record_plan.ledger
+        if record_plan.requires_review:
+            patch.requires_human_review = True
+            patch.ambiguities.append(record_plan.reason or "Application record statement needs review")
         continuation_requested = has_advice_continuation_request(customer_event.body)
         current_questions = [item for item in patch.customer_questions if not (
             continuation_requested and is_advice_continuation(item.source_excerpt)
@@ -438,6 +457,7 @@ class WorkflowService:
         update_deferred_questions(case, customer_event.body)
         if (set(case.customer_question_topics) == {"off_topic"}
                 and not patch.updates and not patch.question_deferrals and not event.attachment_paths
+                and not record_plan.changed and not record_plan.requires_review
                 and patch.preparation_intent is None and not case.preparation_paused
                 and not case.latest_deferred_fields
                 and not has_explicit_confirmation_line(
@@ -523,6 +543,9 @@ class WorkflowService:
         queue_advice(case, event.id, customer_event.body, current_questions, answer_plan,
                      application_guidance_event_id=(case.guidance_events.get("application_overview_v1")
                          if case.guidance_events.get("application_overview_v1") in sent_events else None))
+        record_receipt = record_intake_receipt(record_plan, event.id, case.customer_language)
+        if record_receipt:
+            case.customer_answers.append(record_receipt)
         profile_changed = prior_profile != summary_fingerprint(case, include_documents=False)
         if profile_changed:
             case.profile_confirmed = False
@@ -653,7 +676,7 @@ class WorkflowService:
         # Separate answers to the customer's current question from proactive
         # guidance below. Supplying one fact alongside a FAQ does not ask us to
         # resume the rest of the intake form.
-        has_information_answer = bool(case.customer_answers) or document_list_requested(case)
+        has_information_answer = any(answer != record_receipt for answer in case.customer_answers) or document_list_requested(case)
         actionable_preparation_guidance = False
         current_preparation_guidance: list[str] = []
         if plan == "blocked" and not case.preparation_paused and not waiting_acknowledgement(case):

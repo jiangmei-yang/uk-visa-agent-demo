@@ -2,7 +2,7 @@
 
 Working branch: `codex/application-records`. The running Gmail service and released
 main branch remain on the preceding editorial release. This is not a completed
-intake feature, nor proof of ordinary-email extraction or final-pack acceptance.
+intake feature, nor proof of real-recipient email or final-pack acceptance.
 The overall acceptance goal remains active.
 
 ## Requirement and design boundary
@@ -30,7 +30,8 @@ reinterpreted event IDs and invalid partial batches are rejected atomically.
 commands and `case_with_record_commands` adapter are for the trusted workflow;
 they are not exposed as an LLM or external API. Current applicant ownership,
 negation, hypothetical/report scope and correction intent must be validated by
-the still-pending natural-language planner before commands reach this layer.
+the bounded natural-language proposal planner before commands reach this layer.
+This guard is deliberately not a general coreference or truth-verification system.
 
 ## Implemented in this checkpoint
 
@@ -58,6 +59,66 @@ the still-pending natural-language planner before commands reach this layer.
   including a previously empty legacy ledger. SQLite reopening retains the
   state, sources and pause preference. Exact event replay does not invalidate a
   later confirmation. These are trusted-adapter checks, not live-email evidence.
+
+## Inbound workflow connected, release still held
+
+`CasePatch` now carries bounded record and collection-assertion proposals. The
+model cannot choose ledger IDs, hashes, consent or release states. Shared extraction
+instructions cover both providers; DeepSeek's combined-response ceiling is 4,000
+tokens and an explicit `finish_reason=length` is rejected even when JSON parses.
+This is a ceiling, not a target token usage. Schema/provider failures use the
+existing bounded retry and review path, not partial record acceptance.
+
+After current sender/thread/processing checks, the workflow passes the latest
+unquoted body through the record planner. Source scope, explicit past/current
+ownership, literal field roles, correction action and unique existing target are
+checked before atomic persistence. Current record values (without internal IDs or
+hashes) and collection states are included as model context, never fresh evidence.
+Ambiguous current corrections retain the old ledger and the current customer
+message and require human review. Independent scalar updates retain their existing
+guard. An exact workflow event replay performs no new extraction or send.
+
+Local tests now exercise real WorkflowService, reopening SQLite, reviewed sender,
+outbox dispatch and captured SENT bodies. They cover Chinese/English records and
+corrections, uncertainty across unrelated messages, a contact distinct from an
+applicant address/payer, foreign stories, ambiguous corrections, replay and no
+extraction before a configured processing grant. The model proposals and transport
+in these tests are substituted; this is not a live provider/recipient claim.
+
+Manual reading of the first captured replies found identical generic receipts and
+no next step: receipt text had been counted as an information answer. Receipts now
+follow the actual persisted category/action/state, not rejected proposals, and do
+not suppress the ordinary progressive question plan. An already asked question is
+not repeated merely because the customer sends a record correction. Broader
+naturalness, exact-value correction receipts and collection-specific intake remain
+open; these examples are not an independent usability score.
+
+**Temporary development hold:** any collected application record/assertion fails
+`application_record_intake_release_checked`. This prevents new incomplete records
+from passing the old scalar-only delivery gate while applicability, detail checks
+and question planning are unfinished. It is not the requested final gate. Legacy
+cases without collections still expose the original intake omission and must be
+migrated through genuine applicant statements, not defaulted to none. Do not deploy
+this branch until the hold has been replaced with completed universal intake and
+provenance checks, corresponding fixtures, revision/outbox/ZIP tests and fresh evidence.
+
+Failures retained in the development record: the first semantic run had 9 failures
+(including the English month May treated as uncertainty and a Chinese friend's
+trip treated as the applicant's). Fixes retain their negative regression cases.
+The first full inbound regression had 1 failure / 4,752 passes / 2 deselections:
+the schema contract lacked the newly defined proposal lists. The contract now also
+checks their bounded sizes and absence of model-supplied ledger/release authority.
+The next full development regression passes **4,758 / 2 deselected**, 97.91s,
+with the existing Starlette warning. Ruff and strict Mypy cover 85 source files.
+The two old source-bound provider reports remain excluded, not relabelled as current.
+
+`scripts/consultant_journey_probe.py --scenario-set records` adds a four-turn,
+fictional real-model development probe with captured transport, no model retry,
+preserved failures, full Python/font-asset hashes and a CasePatch schema hash.
+It checks exact record fields, correction preservation, unknown-state memory and
+an unrelated person's trip alongside an independently supplied date of birth.
+The existing `all` scenario set remains the preceding journey+pacing corpus;
+the new records set is separate until its intake/release work is complete.
 
 ## Rendering defect discovered and repaired
 
@@ -100,9 +161,10 @@ frozen. No new paid model calls or Gmail sends were made in this checkpoint.
 
 Before release, all of the following still need implementation and evidence:
 
-1. A bounded model-proposal schema and current-applicant semantic guard; include
-   direct answers, multiple records, third parties, quotations, hypotheticals,
-   ambiguous corrections and retry/model-failure behavior.
+1. Broaden the bounded proposal guard and verify real-model behavior, including
+   direct short answers, same-sentence multiple trips, natural target references,
+   pronoun-linked contact details, alternate date wording and correction recovery.
+   Do not turn an unsupported but genuine statement into silent information loss.
 2. Connect the explicit collection-state ledger to validated inbound interpretation
    and question planning. Silence and a summary acknowledgement cannot supply a
    missing declaration; persisted uncertainty must actually suppress repeat asks.

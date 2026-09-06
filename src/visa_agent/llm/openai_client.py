@@ -6,6 +6,7 @@ from importlib import import_module
 from typing import Any, cast
 
 from visa_agent.domain.models import Case, InboundEvent
+from visa_agent.llm.application_records import RECORD_EXTRACTION_INSTRUCTIONS
 from visa_agent.llm.ports import CasePatch
 from visa_agent.workflow.conversation import change_acknowledgement, received_context, reply_items
 
@@ -167,7 +168,8 @@ EXTRACTION_INSTRUCTIONS = (
     "requests share off_topic or unsupported, preserve distinct excerpts for each so no request "
     "loses its scope. Include at most four proposals in total. "
     "Do not turn a question into a fact update, ambiguity or human-review requirement merely "
-    "because you cannot answer it; extract any independently stated facts as usual."
+    "because you cannot answer it; extract any independently stated facts as usual. "
+    + RECORD_EXTRACTION_INSTRUCTIONS
 )
 
 

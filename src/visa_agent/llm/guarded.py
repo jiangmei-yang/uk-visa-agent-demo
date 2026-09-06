@@ -962,6 +962,10 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
             proposed.preparation_intent,
             allow_contextual_resume=bool(event.known_profile.get("_preparation_paused")),
         ),
+        # Proposals have no state authority here. The case-bound record planner
+        # must validate current source/owner/action/target before any persistence.
+        application_records=proposed.application_records,
+        collection_declarations=proposed.collection_declarations,
     )
 
 

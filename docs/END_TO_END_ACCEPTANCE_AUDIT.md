@@ -8,7 +8,9 @@ for these outcomes.
 Current unreleased work: [application records](APPLICATION_RECORDS_WORKING.md)
 adds revisioned travel/contact entries, explicit none/unknown/partial/full-list
 assertions, source-bound confirmation invalidation and bundled Chinese PDF glyphs.
-Its trusted-adapter tests do not establish ordinary-email intake or final delivery.
+The bounded inbound planner is now connected to local workflow/store/captured-SENT
+tests; a temporary development hold prevents those new records from passing the
+old scalar-only release gate. This is not complete intake or final delivery.
 The running Gmail service remains on the preceding release.
 
 Latest released work: [consultant editorial repair](CONSULTANT_EDITORIAL_REPAIR_2026-09-06.md)
@@ -57,8 +59,9 @@ still records pacing, durable style preference and broader paraphrase gaps;
 3. **Requested intake coverage.** The active, unreleased
    [application-record implementation](APPLICATION_RECORDS_WORKING.md) adds typed
    travel/contact records, field sources, revision history, explicit collection
-   assertions and summary projections. Ordinary-email semantic extraction,
-   declaration-driven question planning and the complete
+   assertions and summary projections. The bounded inbound planner now has local
+   captured-transport coverage. Broader real-model semantic extraction,
+   declaration-driven question planning and replacement of the temporary hold by the complete
    delivery gate are still pending. A serious-history flag is not equivalent to
    complete travel history. Related current-address duration, known parent and
    condition-dependent employer/partner/family details must also be checked against

@@ -94,13 +94,17 @@ class DeepSeekStructuredLLM:
             ],
             response_format={"type": "json_object"},
             temperature=0,
-            max_tokens=1_200,
+            # Combined intake now includes bounded travel/contact collections.
+            # This is a ceiling, not a target length or permission to invent data.
+            max_tokens=4_000,
             extra_body={"thinking": {"type": "disabled"}},
         )
         self._record_usage(response, operation)
         output_text = cast(str | None, response.choices[0].message.content)
         if getattr(self, "capture_raw_responses", False):
             self.last_extraction_content = output_text
+        if getattr(response.choices[0], "finish_reason", None) == "length":
+            raise ValueError("DeepSeek intake response was truncated; partial records cannot be accepted")
         if output_text is None or not output_text.strip():
             raise ValueError("DeepSeek returned no CasePatch content")
         return CasePatch.model_validate_json(output_text)

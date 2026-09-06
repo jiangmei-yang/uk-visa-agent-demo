@@ -66,7 +66,7 @@ def test_deepseek_extraction_uses_json_chat_without_openai_only_fields() -> None
     assert arguments["model"] == "deepseek-v4-flash"
     assert arguments["response_format"] == {"type": "json_object"}
     assert arguments["temperature"] == 0
-    assert arguments["max_tokens"] == 1_200
+    assert arguments["max_tokens"] == 4_000
     assert "JSON Schema" in arguments["messages"][0]["content"]
     assert '"email_body": "My name is Ada Lovelace"' in arguments["messages"][1]["content"]
     assert arguments["extra_body"] == {"thinking": {"type": "disabled"}}
@@ -81,6 +81,30 @@ def test_deepseek_extraction_uses_json_chat_without_openai_only_fields() -> None
             "total_tokens": 96,
         }
     ]
+
+
+def test_truncated_intake_is_rejected_even_if_the_provider_returned_parseable_json() -> None:
+    class TruncatedCompletions(FakeCompletions):
+        def create(self, **kwargs: Any) -> Any:
+            response = super().create(**kwargs)
+            response.choices[0].finish_reason = "length"
+            return response
+
+    patch = CasePatch(updates=[], ambiguities=[])
+    completions = TruncatedCompletions(patch)
+    adapter = DeepSeekStructuredLLM.__new__(DeepSeekStructuredLLM)
+    adapter.client = SimpleNamespace(chat=SimpleNamespace(completions=completions))
+    adapter.model = "fictional-record-provider"
+    adapter.last_usage = None
+    adapter.usage_history = []
+    adapter.capture_raw_responses = True
+    event = InboundEvent(id="fictional-truncated", external_thread_id="fictional-truncated-thread",
+        sender="fictional@example.test", subject="Travel history", body="I visited Japan.",
+        received_at=datetime(2026, 9, 6, tzinfo=UTC))
+    with pytest.raises(ValueError, match="truncated"):
+        adapter.extract_case_patch(event)
+    assert adapter.last_extraction_content == json.dumps(patch.model_dump())
+    assert len(adapter.usage_history) == 1
 
 
 def test_document_diagnostic_capture_retains_success_and_invalid_json() -> None:

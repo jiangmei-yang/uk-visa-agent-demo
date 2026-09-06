@@ -23,7 +23,7 @@ def test_case_patch_schema_contains_no_state_field() -> None:
     properties = CasePatch.model_json_schema()["properties"]
     assert set(properties) == {
         "updates", "ambiguities", "requires_human_review", "question_deferrals", "customer_questions",
-        "preparation_intent",
+        "preparation_intent", "application_records", "collection_declarations",
     }
     intent = CasePatch.model_json_schema()['$defs']['QuestionDeferral']['properties']
     assert set(intent) == {'field', 'source_excerpt', 'confidence'}
@@ -37,6 +37,14 @@ def test_case_patch_schema_contains_no_state_field() -> None:
         'sponsor_support', 'document_checklist', 'next_step', 'unsupported', 'off_topic',
     }
     assert properties['customer_questions']['maxItems'] == 4
+    assert properties['application_records']['maxItems'] == 20
+    assert properties['collection_declarations']['maxItems'] == 2
+    record = CasePatch.model_json_schema()['$defs']['ApplicationRecordProposal']
+    assert record['additionalProperties'] is False
+    assert set(record['properties']) == {'action', 'record', 'source_excerpt', 'target_reference', 'confidence'}
+    declaration = CasePatch.model_json_schema()['$defs']['CollectionDeclarationProposal']
+    assert declaration['additionalProperties'] is False
+    assert set(declaration['properties']) == {'kind', 'state', 'source_excerpt', 'confidence'}
 
 
 def test_legacy_email_named_case_snapshot_migrates_to_channel_neutral_fields() -> None:

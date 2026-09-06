@@ -5,6 +5,10 @@ from typing import Literal, Protocol
 from pydantic import BaseModel, ConfigDict, Field
 
 from visa_agent.domain.models import Case, InboundEvent
+from visa_agent.llm.application_records import (
+    ApplicationRecordProposal,
+    CollectionDeclarationProposal,
+)
 
 
 class FactUpdate(BaseModel):
@@ -63,6 +67,8 @@ class CasePatch(BaseModel):
     question_deferrals: list[QuestionDeferral] = Field(default_factory=list, max_length=2)
     customer_questions: list[CustomerQuestion] = Field(default_factory=list, max_length=4)
     preparation_intent: PreparationIntent | None = None
+    application_records: list[ApplicationRecordProposal] = Field(default_factory=list, max_length=20)
+    collection_declarations: list[CollectionDeclarationProposal] = Field(default_factory=list, max_length=2)
 
 
 class LLMClient(Protocol):
