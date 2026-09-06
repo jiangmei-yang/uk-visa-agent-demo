@@ -1029,6 +1029,42 @@ def deterministic_fallback_message(case: Case, plan: str) -> str:
                 "We will not finalise the pack until that review is complete. You do not need to resend anything "
                 "already received."
             )
+        employer_conflicts = [field for field in ("employer_name", "employer_address", "employer_phone")
+            if f"Conflicting current employer statements for {field}; clarification is required."
+            in (case.human_review_reason or "")]
+        if employer_conflicts:
+            zh = case.customer_language == "zh"
+            labels = {"employer_name": ("现任雇主", "current employer"),
+                      "employer_address": ("雇主地址", "employer's address"),
+                      "employer_phone": ("雇主联系电话", "employer's contact number")}
+            details = ("、" if zh else ", ").join(labels[field][0 if zh else 1] for field in employer_conflicts)
+            supplied = set(case.latest_changes) | set(case.latest_received_facts)
+            if set(employer_conflicts) <= supplied:
+                clarification = (
+                    f"你这次补充的{details}已记下，会和之前不一致的说法一起交给顾问核对。"
+                    "现在还没有解除复核，也不会直接定稿；已收到的资料不用重发。"
+                    if zh else
+                    f"I've received your clarification about your {details}. It will need to be checked "
+                    "against the earlier conflicting statements. The review is still open, so the pack "
+                    "will not be finalised yet. You do not need to resend documents already received."
+                )
+            else:
+                clarification = (
+                    f"关于{details}，你提供的说法还没有对齐，我先不替你选其中一个。"
+                    "方便说明哪项是目前适用的信息吗？如果是换了工作，或同时有多家雇主，请说明各自的情况；"
+                    "如果有多个办公地址或联系电话，也请注明分别对应哪里。\n\n"
+                    "补充说明后还需要顾问核对，材料包暂不定稿；已收到的资料不用重发。"
+                    if zh else
+                    f"The information about your {details} does not yet agree, so I won't choose one version for you. "
+                    "Could you explain which applies now? If you changed jobs or have more than one employer, "
+                    "please explain the separate roles; if there are several office addresses or contact numbers, "
+                    "say what each belongs to.\n\n"
+                    "An adviser still needs to check the clarification before the pack is finalised. "
+                    "You do not need to resend documents already received."
+                )
+            # Retain serious-history instructions; a contact clarification never
+            # resolves or hides an independent risk requiring review.
+            message = message + "\n\n" + clarification if history_reported else clarification
         acknowledgement = change_acknowledgement(case.model_copy(update={"latest_changes": {
             key: value for key, value in case.latest_changes.items() if key != "has_serious_history"
         }}))
