@@ -576,6 +576,8 @@ def received_context(case: Case) -> str:
     if case.customer_language != "zh":
         country_labels = {"China": "Chinese", "Hong Kong": "Hong Kong", "United Kingdom": "British"}
         locations = []
+        if "current_address_duration" in facts:
+            locations.append(f"you've lived at your current home for {facts['current_address_duration']}")
         if "nationality_country" in facts:
             country = facts["nationality_country"]
             locations.append(f"you hold a {country_labels.get(country, country)} passport")
@@ -662,6 +664,8 @@ def received_context(case: Case) -> str:
             recorded.append("your updated travel dates")
         return "I've recorded " + ", ".join(recorded) + "." if recorded else ""
     parts = []
+    if "current_address_duration" in facts:
+        parts.append(f"你在现住址住了{facts['current_address_duration']}")
     country_labels = {"China": "中国", "Hong Kong": "香港", "United Kingdom": "英国"}
     if "nationality_country" in facts:
         country = facts["nationality_country"]

@@ -19,7 +19,7 @@ from typing import Any
 from visa_agent.channels.automatic_reply import AutomaticGmailReplySender
 from visa_agent.channels.gmail import GmailAdapter
 from visa_agent.channels.outbound import OutboxDispatcher
-from visa_agent.domain.models import InboundEvent
+from visa_agent.domain.models import CaseStatus, InboundEvent
 from visa_agent.domain.policy import load_policy
 from visa_agent.llm.deepseek_client import DeepSeekStructuredLLM
 from visa_agent.llm.guarded import GuardedLLM, deterministic_fallback_message
@@ -65,6 +65,22 @@ RECORD_SCENARIOS: dict[str, list[dict[str, Any]]] = {
          "collection_states": {"travel": "unknown", "uk_contact": "complete_declared"},
          "record_count": 3, "deferred_dates": True,
          "forbidden_reply": "除了已记下的人，你在英国还有其他亲属或联系人吗"},
+    ],
+}
+RESIDENCE_SCENARIOS: dict[str, list[dict[str, Any]]] = {
+    "residence-correction-and-move": [
+        {"body": "I'm preparing for a UK holiday. My current home address is 1 Example Road, Hong Kong. "
+                 "I've lived at my current address for about two years. Travel dates are not decided yet.",
+         "profile": {"current_address": "1 Example Road, Hong Kong", "current_address_duration": "about two years"},
+         "deferred_dates": True},
+        {"body": "Correction: I've lived at my current address for about three years, not two.",
+         "profile": {"current_address_duration": "about three years"}, "deferred_dates": True},
+        {"body": "I've moved. My current home address is 2 Example Road, Hong Kong. "
+                 "The time I gave before was for the old home, not this one.",
+         "profile": {"current_address": "2 Example Road, Hong Kong", "current_address_duration": None},
+         "deferred_dates": True},
+        {"body": "我在现在的住址住了大概两个月，之前说的三年是旧住址。英国出行日期还是没定。",
+         "profile": {"current_address_duration": "大概两个月"}, "deferred_dates": True},
     ],
 }
 SCENARIOS: dict[str, list[dict[str, Any]]] = {
@@ -190,6 +206,7 @@ def check_turn(spec: dict[str, Any], case: Any, reply: str) -> dict[str, bool]:
         "at_most_one_main_question": len(reply_items(case)[1]) <= 1,
         "never_reasks_supplied_facts": not questions.intersection(spec.get("never_ask", [])),
         "no_unrequested_release": not (case.profile_confirmed or case.final_summary_confirmed or case.delivery_path),
+        "no_unexpected_human_hold": case.status != CaseStatus.HUMAN_REVIEW_REQUIRED,
     }
     if spec.get("deferred_dates"):
         fields = {"planned_arrival_date", "planned_departure_date"}
@@ -235,14 +252,14 @@ def main() -> None:
     parser.add_argument("--allow-model-calls", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--replay", type=Path, help="Offline saved proposals; no provider or mailbox calls")
-    parser.add_argument("--scenario-set", choices=["journey", "pacing", "all", "records"], default="journey")
+    parser.add_argument("--scenario-set", choices=["journey", "pacing", "all", "records", "residence"], default="journey")
     args = parser.parse_args()
     if not args.allow_model_calls and not args.replay:
         parser.error("Explicit --allow-model-calls required: fictional extractions, no retries")
     if args.output.exists():
         parser.error("Existing evidence must not be overwritten")
     saved = json.loads(args.replay.read_text()) if args.replay else None
-    scenarios = (RECORD_SCENARIOS if args.scenario_set == "records" else SCENARIOS if args.scenario_set == "journey" else PACING_SCENARIOS
+    scenarios = (RESIDENCE_SCENARIOS if args.scenario_set == "residence" else RECORD_SCENARIOS if args.scenario_set == "records" else SCENARIOS if args.scenario_set == "journey" else PACING_SCENARIOS
                  if args.scenario_set == "pacing" else {**SCENARIOS, **PACING_SCENARIOS})
     key = (None if saved else read_secret("DEEPSEEK_API_KEY", file_environment_name="DEEPSEEK_API_KEY_FILE",
                       default_file=ROOT / ".secrets/deepseek_api_key.txt"))

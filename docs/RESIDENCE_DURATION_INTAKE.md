@@ -61,6 +61,47 @@ live model call, mailbox message or deployment was performed in this output step
 Full-pack visual QA, multilingual customer summary review and fresh source-bound
 live/container acceptance remain necessary.
 
+## 2026-09-07 real-model correction/move experiment
+
+The four-turn `residence` scenario in `consultant_journey_probe.py` covers an
+initial approximate duration, explicit “three years, not two” correction, a new
+home without a new duration, then a Chinese duration while trip dates remain
+undecided. It uses real DeepSeek extraction, reopened isolated SQLite and captured
+SENT transport; no mailbox or real documents. These are exposed development
+scenarios using the probe's fixed clock, not independent usability evaluation.
+
+`eval_output/residence_duration_2026-09-07-v1.json` retains the failed attempt:
+three calls / **15,949 tokens**. Turn 2's correctly extracted new duration was
+discarded because the local guard treated trailing rejection of the old amount as
+negation of the entire sentence. Turn 3 stored the new address but entered a human
+hold when the model called missing new-home duration an ambiguity; the old checks
+incorrectly marked that turn passing. Turn 4 made no model call and the probe
+recorded `StopIteration` because the held flow had no normal reply row.
+
+The guard now distinguishes a bounded trailing old-amount contrast from an
+affirmative duration, while still rejecting selection of the negated amount,
+questions, negative assertions and hypotheticals. The prompt explains that an
+omitted new-home duration is ordinary intake, not inherently an ambiguity. No
+model uncertainty or human-review flag is forcibly cleared by this change.
+The probe now checks for unexpected HUMAN_REVIEW_REQUIRED state on every turn.
+
+`eval_output/residence_duration_2026-09-07-v2.json` then passed **4/4**, four calls /
+**21,496 tokens**. Manual reply reading still found an overlong initial response
+with repeated booking cautions, and no explicit receipt for the final supplied
+duration. The receipt omission is now fixed; the long first response remains an
+open naturalness defect, not a successful naturalness score.
+
+The live v2 report predates the receipt edit; the explicit offline replay
+`residence_duration_2026-09-07-v2-replay-receipt.json` passed **4/4** on the edited
+code, with no new model calls. A permanent saved-real-proposal integration test
+checks case-local source events, updated/retired evidence, correct duration in
+each applicable reply, no unintended hold/delivery and retained date uncertainty.
+The final duration/proposal/workflow group passed **26 tests** (0.49s). Earlier
+consultant/record replay coverage passed 46 tests with one stale report-binding
+check deselected (1.97s), before the final receipt change. Ruff passes; strict
+Mypy passed for 92 modules before the receipt edit. No full-suite run, deployment
+or actual Gmail recipient acceptance is claimed for this experiment.
+
 ## Implemented foundation
 
 `CaseProfile.current_address_duration` preserves the supplied text with a bounded

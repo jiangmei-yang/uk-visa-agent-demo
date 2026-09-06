@@ -16,8 +16,13 @@ def residence_duration_is_grounded(value: object, excerpt: str, body: str, *, se
     if len(sentences) != 1:
         return False
     context = sentences[0]
+    # A trailing contrast rejects the OLD amount, not the preceding affirmative
+    # duration. Keep the original excerpt unchanged; field/value linkage below
+    # still rejects a model selecting the amount after 'not'.
+    intent_context = re.sub(r",\s*not\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
+                            r"(?:\s+(?:years?|months?))?\s*$", "", context, flags=re.I)
     if re.search(r"[\"“”「」]|\b(?:if|unless|might|would|will|not|never|said|says|told|unsure)\b|"
-                 r"如果|假如|假设|假設|不是|并非|並非|不确定|不確定|记不清|記不清|没住|沒住|打算|计划|計劃", context, re.I):
+                 r"如果|假如|假设|假設|不是|并非|並非|不确定|不確定|记不清|記不清|没住|沒住|打算|计划|計劃", intent_context, re.I):
         return False
     if re.search(re.escape(context) + r"\s*[?？]", body):
         return False
