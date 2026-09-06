@@ -37,3 +37,10 @@ review, broader letter design and real Gmail delivery remain outstanding.
 Old provider reports and CI do not cover this changed runtime; their freshness
 gates must be satisfied before a new release claim. No Gmail reload or send was
 performed for this change.
+
+The no-exclusion full-suite run completed with **5,151 passed, 2 failed and one
+existing Starlette warning in 102.82 seconds**. Both failures were old provider
+report source bindings. The later fresh consultant v9 run and its full 46-test
+module resolved the journey binding separately; the suite had already collected
+the v8 reference. Financial freshness is still pending. Do not report this as a
+new all-green full-suite run.
