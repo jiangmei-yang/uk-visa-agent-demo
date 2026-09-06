@@ -56,6 +56,10 @@ def test_demo_generates_source_linked_pack_and_is_idempotent(tmp_path: Path) -> 
         assert "Sponsor name: Not applicable" in summary_text
         assert "The estimated trip cost is GBP 2,200" in cover_text
         assert "Adviser note: verify every statement" in cover_text
+        assert "I am currently a student." in cover_text
+        assert "Adviser note: confirm whether the employer or educational institution" in cover_text
+        assert "recorded occupation status" not in cover_text
+        assert "recorded funding arrangement" not in cover_text
     snapshot = json.loads(
         next((first.package_path.parent / first.case.id / "audit").glob("case_snapshot.json"))
         .read_text(encoding="utf-8")

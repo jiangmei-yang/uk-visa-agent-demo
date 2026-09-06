@@ -153,6 +153,35 @@ def _write_zip(source_dir: Path, target: Path) -> None:
             archive.writestr(info, path.read_bytes())
 
 
+def _cover_letter_context(case: Case) -> str:
+    """Render bounded occupation/funding facts, not inferred support promises."""
+    profile = case.profile
+    occupation = {
+        "student": "I am currently a student.",
+        "self_employed": "I am self-employed.",
+        "employed": (f"I work for {profile.employer_name}." if profile.employer_name
+                     else "I am currently employed."),
+    }.get(profile.occupation_status or "",
+          "Adviser note: confirm the applicant's current occupation before using this draft.")
+    if profile.funding_source == "self":
+        funding = "I plan to pay for this visit myself."
+    elif profile.funding_source == "personal_sponsor":
+        funding = (
+            f"{profile.sponsor_name} is the person I have identified to sponsor this visit."
+            if profile.sponsor_name else
+            "Adviser note: confirm the personal sponsor's name before using this draft."
+        )
+    elif profile.funding_source == "employer_or_school":
+        # The category does not identify which organization is paying, even
+        # when occupation or employer details happen to be available.
+        funding = ("Adviser note: confirm whether the employer or educational institution "
+                   "is funding the visit, its name and the support it will provide before "
+                   "completing this paragraph.")
+    else:
+        funding = "Adviser note: confirm who will fund the visit before using this draft."
+    return f"{occupation} {funding}"
+
+
 def _profile_rows(case: Case) -> list[str]:
     labels = {
         "date_of_birth": "Date of birth",
@@ -533,9 +562,7 @@ def _materialize_fresh_pack(
             f"for {str(case.profile.visit_purpose).replace('_', ' ')}.",
             f"During the visit I plan to stay at {case.profile.uk_accommodation}. The estimated "
             f"trip cost is GBP {case.profile.estimated_trip_cost_gbp:,}.",
-            f"My recorded occupation status is {str(case.profile.occupation_status).replace('_', ' ')}. "
-            f"The recorded funding arrangement is "
-            f"{str(case.profile.funding_source).replace('_', ' ')}.",
+            _cover_letter_context(case),
             "The accompanying index identifies the supporting documents and their review status. "
             "Please consider this draft together with the source documents.",
             f"Yours faithfully, {case.profile.full_name}.",
