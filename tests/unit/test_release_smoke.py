@@ -9,6 +9,12 @@ import pytest
 SCRIPT = runpy.run_path(str(Path(__file__).parents[2] / "scripts/release_smoke.py"))
 
 
+def test_guided_reply_keeps_email_line_breaks_and_wraps_long_links():
+    from visa_agent.review_ui import render_lab_page
+
+    assert ".adviser-reply p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }" in render_lab_page()
+
+
 @pytest.mark.parametrize("url", [
     "https://127.0.0.1:8000", "http://example.com", "http://127.0.0.1.example.com",
     "http://user:password@127.0.0.1", "http://127.0.0.1/api/lab",

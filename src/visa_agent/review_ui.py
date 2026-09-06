@@ -497,7 +497,7 @@ LAB_CSS = """
 .lab-attachments span { padding: 4px 7px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); background: var(--canvas); font-size: 11px; }
 .adviser-reply { margin: 12px 0 0 34px; padding: 16px 18px; border-radius: 10px; color: var(--ink); background: var(--primary-soft); }
 .adviser-reply strong { display: block; margin-bottom: 5px; color: var(--primary-dark); font-size: 12px; }
-.adviser-reply p { margin: 0; }
+.adviser-reply p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
 .lab-controls { position: sticky; top: 18px; padding: 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
 .lab-controls h2 { font-size: 16px; }
 .lab-controls > p { margin: 6px 0 16px; color: var(--muted); font-size: 12px; }
