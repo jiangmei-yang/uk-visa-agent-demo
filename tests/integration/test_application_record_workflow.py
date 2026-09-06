@@ -42,6 +42,49 @@ def patch(*, records=(), assertions=(), updates=()):
     return result
 
 
+def test_collection_question_is_actually_sent_and_remembered_after_reopen(tmp_path):
+    from datetime import date
+
+    dialogue = Conversation(tmp_path)
+    first = dialogue.turn("我想准备英国旅游签证。", patch())
+    store = SQLiteStore(dialogue.path)
+    try:
+        case = store.get_case(first.case.id)
+        # Seed a fictional late-intake state; this is not evidence of extraction
+        # or applicant confirmation. Deferred future dates must not stop intake.
+        case.profile.full_name = "Fictional Example"
+        case.profile.date_of_birth = date(1997, 7, 1)
+        case.profile.nationality_country = "China"
+        case.profile.application_country = "China"
+        case.profile.visit_purpose = "tourism"
+        case.profile.uk_accommodation = "Hotel in London"
+        case.profile.estimated_trip_cost_gbp = 2000
+        case.profile.current_address = "1 Fictional Road, Beijing, China"
+        case.profile.occupation_status = "student"
+        case.profile.funding_source = "self"
+        case.profile.has_serious_history = False
+        case.profile.route_confirmed_standard_visitor = True
+        case.deferred_fields = ["planned_arrival_date", "planned_departure_date"]
+        store.save_case(case)
+    finally:
+        store.close()
+    guidance = dialogue.turn("我的资料先按这些整理。", patch())
+    assert not guidance.case.collection_question_event_ids  # material guidance takes priority
+    quiet = dialogue.turn("收到，我正在整理资料。", patch())
+    assert not quiet.case.collection_question_event_ids
+    statement = "我在英国没有亲属或联系人。"
+    second = dialogue.turn(statement, patch(assertions=[CollectionDeclarationProposal(
+        kind="uk_contact", state="none_declared", source_excerpt=statement, confidence=1)]))
+    assert "你以前有过出境旅行吗" in second.body
+    assert list(second.case.collection_question_event_ids.values()) == [[second.event.id]]
+    third = dialogue.turn("我记不清我的出境记录。", patch(assertions=[CollectionDeclarationProposal(
+        kind="travel", state="unknown", source_excerpt="我记不清我的出境记录。", confidence=1)]))
+    assert "你以前有过出境旅行吗" not in third.body
+    assert third.case.application_records.collection_state("travel") == "unknown"
+    assert "你在英国有亲属或联系人吗" not in third.body
+    assert third.case.application_records.collection_state("uk_contact") == "none_declared"
+
+
 @pytest.mark.parametrize("language", ["zh", "en"])
 def test_plain_message_to_persisted_record_correction_and_actual_sent_receipt(tmp_path, language):
     dialogue = Conversation(tmp_path)

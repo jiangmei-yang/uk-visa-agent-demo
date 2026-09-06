@@ -7,6 +7,69 @@ The overall acceptance goal remains active.
 
 ## Requirement and design boundary
 
+### 2026-09-07 reply integration checkpoint (development only)
+
+The collection planner is now called from the blocked DRAFT reply path after
+scalar intake is answered/deferred, with no competing question/material action.
+Case JSON persists `collection_question_event_ids`; only corresponding SENT
+outbox events suppress a later prompt. Unsent draft metadata does not count as
+having asked. Questions have EN/ZH reviewed text, quote the saved record identity
+for missing details and allow uncertainty without invented exact dates. Detail
+prompts must match the current ledger/revision. No processing grant, profile
+confirmation, release permission or real mailbox action is created by this code.
+
+First development full regression exposed **14 failures / 4,768 passes / 2
+deselections** (99.66s): an over-eager collection prompt interrupted quiet replies,
+correction-only messages and existing confirmation context. This was a behavior
+regression, not a reason to relax those tests. The trigger now requires a current
+record change, a supported continuation or an answer to a pending scalar question,
+and preserves the existing confirmed-profile flow while the universal gate is
+unfinished. The five affected integration files now pass **185 tests** (7.86s).
+
+The new captured-SENT integration case seeds a fictional late-intake profile,
+allows material guidance first, proves a quiet receipt does not start questions,
+then accepts an explicit no-UK-contacts statement and asks about past travel.
+The next reply declares uncertainty; after SQLite reopening it does not reask
+travel or ask for UK contacts that were explicitly denied. This is a real local
+workflow/guard/outbox path with substituted extraction and transport, not proof
+of provider interpretation, consent provenance for seeded facts or live Gmail.
+
+Still open: contextual short replies and per-field deferral memory, collection
+priority versus repeated document actions, universal intake before profile/final
+confirmation (including legacy cases), applicability/provenance checking and
+replacement of the development release hold. This checkpoint must not deploy or
+be described as a complete collection-to-ZIP journey.
+
+Final development regression for the reply integration: **4,785 passed / 2
+deselected**, 97.20s, one existing Starlette deprecation warning, recorded in
+`/tmp/visa-collection-plan-regression-v2.log`. Ruff and strict Mypy passed for 86
+source modules. The two excluded legacy source-bound provider reports remain
+stale, not refreshed or relabelled. This is not release acceptance; no fresh
+provider call, GitHub CI run or live-recipient delivery was performed.
+
+### 2026-09-07 collection-planning checkpoint (not wired or released)
+
+`workflow/record_collection_plan.py` now produces case-bound, deterministic
+follow-up identifiers for unasked/partial collections and baseline missing
+record details. Explicit unknown collections are deferred, not repeatedly
+queried or defaulted to none. A caller can exclude previously asked identifiers;
+SQLite/JSON reload and a legacy missing ledger becoming an empty ledger retain
+the same identifiers. An explicit full-list assertion does not hide missing
+record details; a stale none assertion does not hide a later trip. The planner
+rejects a foreign case ledger and never mutates declarations or grants release.
+
+This is an independent planning primitive, **not yet connected to the reply
+workflow or durable question history**. Baseline field coverage is not a legal
+applicability check, precision check, provenance audit or completed delivery
+gate. The existing development hold remains in place. Per-field uncertainty,
+contextual short answers, question wording and final confirmation/ZIP integration
+remain to be implemented. No Gmail process or container was changed.
+
+Verification: 10 new planner tests; 113 passing tests across planner, declaration,
+intake, captured workflow and saved-provider replay suites (0.79s). Scoped Ruff
+and Mypy passed after fixing an import-order issue and explicit Literal narrowing.
+No new live-provider call or full-suite/current-provider acceptance is claimed.
+
 The user's original design explicitly lists UK relatives/contacts and travel
 history under structured intake. The current profile has neither collection;
 `has_serious_history` is a separate declaration, not ordinary travel history.

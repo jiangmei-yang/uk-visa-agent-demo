@@ -90,6 +90,10 @@ from visa_agent.workflow.pending_step_value import (
     pending_question_reminder,
     pending_question_support_action,
 )
+from visa_agent.workflow.record_collection_plan import (
+    collection_question_text,
+    plan_collection_follow_up,
+)
 from visa_agent.workflow.record_intake import plan_record_intake, record_intake_receipt
 
 PROFILE_CONFIRMATION_LINES = {
@@ -861,6 +865,30 @@ class WorkflowService:
                 case.question_event_ids[field] = list(dict.fromkeys(delivered_ids[-1:] + [event.id]))
         else:
             case.last_requested_fields = []
+        if (
+            plan == "blocked" and case.status == CaseStatus.DRAFT
+            and not case.preparation_paused and not waiting_acknowledgement(case)
+            and not quiet_preparation_resume(case)
+            and not consultation_only_requested(customer_event.body)
+            and not reply_style_only(customer_event.body)
+            and not case.last_requested_fields and case.next_step_advice is None
+            and not has_information_answer and not actionable_preparation_guidance
+            and "off_topic" not in case.customer_question_topics
+            and not case.profile_confirmed
+            and (record_plan.changed or continuation_requested
+                 or bool(set(case.latest_received_facts).intersection(prior_pending)))
+            and all(profile_fact_complete(case, field) or field in case.deferred_fields
+                    for field in required_profile_facts(case))
+        ):
+            collection_plan = plan_collection_follow_up(case.application_records, case_id=case.id)
+            asked = frozenset(key for key, ids in case.collection_question_event_ids.items()
+                              if any(source in sent_events for source in ids))
+            follow_up = collection_plan.next_unasked(asked)
+            if follow_up is not None:
+                case.customer_answers.append(collection_question_text(
+                    follow_up, case.application_records, case.customer_language,
+                ))
+                case.collection_question_event_ids[follow_up.key] = [event.id]
         self._render_and_commit(case, event, plan, processing_epoch)
         return case, False, plan
 
