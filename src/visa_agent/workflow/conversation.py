@@ -585,6 +585,13 @@ def received_context(case: Case) -> str:
     if case.customer_language != "zh":
         country_labels = {"China": "Chinese", "Hong Kong": "Hong Kong", "United Kingdom": "British"}
         locations = []
+        for field, phrase in (
+            ("employer_name", "your current employer is"),
+            ("employer_address", "your employer's address is"),
+            ("employer_phone", "your employer's contact number is"),
+        ):
+            if field in facts:
+                locations.append(f"{phrase} {facts[field]}")
         if "sponsor_address" in facts and case.profile.funding_source == "personal_sponsor":
             locations.append(f"your sponsor's address is {facts['sponsor_address']}")
         if "current_address_duration" in facts:
@@ -647,7 +654,8 @@ def received_context(case: Case) -> str:
         received = locations + [values[facts[key]] for key, values in phrases.items()
                                 if facts.get(key) in values]
         if received:
-            prefix = "Thanks, I've noted that " if set(facts) == {"sponsor_address"} else "Thanks, I've got the starting point: "
+            detail_fields = {"sponsor_address", "employer_name", "employer_address", "employer_phone"}
+            prefix = "Thanks, I've noted that " if set(facts) <= detail_fields else "Thanks, I've got the starting point: "
             message = prefix + "; ".join(received) + "."
             if set(facts) == {"nationality_country"} and not case.profile.application_country:
                 message += (
@@ -676,6 +684,13 @@ def received_context(case: Case) -> str:
             recorded.append("your updated travel dates")
         return "I've recorded " + ", ".join(recorded) + "." if recorded else ""
     parts = []
+    for field, phrase in (
+        ("employer_name", "你目前的雇主是"),
+        ("employer_address", "雇主地址记为"),
+        ("employer_phone", "雇主联系电话记为"),
+    ):
+        if field in facts:
+            parts.append(f"{phrase}{facts[field]}")
     if "current_address_duration" in facts:
         parts.append(f"你在现住址住了{facts['current_address_duration']}")
     country_labels = {"China": "中国", "Hong Kong": "香港", "United Kingdom": "英国"}
@@ -776,6 +791,9 @@ def _single_question_context(case: Case, question_fields: list[str]) -> str:
         key = "sponsor_identity"
     else:
         key = question_fields[0]
+    # The reviewed home-address question already explains purpose and ownership.
+    if key == "current_address":
+        return ""
     if case.customer_language == "zh":
         if key == "sponsor_identity" and _current_parent_sponsor_hint(case):
             return "接着把实际资助人确认清楚，这样资助信、资金材料和关系证明才能对应起来。"
@@ -1564,6 +1582,16 @@ def change_acknowledgement(case: Case) -> str | None:
         for key, value in case.latest_changes.items()
     )
     message = f"好的，已按你说的改为：{changes}。" if zh else f"Thanks for clarifying. I've updated {changes}."
+    if set(case.latest_changes) <= {"employer_name", "employer_address", "employer_phone"}:
+        phrases = {
+            "employer_name": ("雇主名称", "your employer's name"),
+            "employer_address": ("雇主地址", "your employer's address"),
+            "employer_phone": ("雇主联系电话", "your employer's contact number"),
+        }
+        corrections = [(f"{phrases[key][0]}改为{value}" if zh else f"{phrases[key][1]} to {value}")
+                       for key, value in case.latest_changes.items()]
+        message = ("好的，" + "，".join(corrections) + "。" if zh else
+                   "Thanks—I've corrected " + ", and ".join(corrections) + ".")
     if "employer_name" in case.latest_changes:
         sources = {item.source_event_id for item in case.active_evidence("employer_name")}
         pending_ids = {document.id for document in case.documents
@@ -1739,6 +1767,11 @@ def blocked_customer_message(case: Case) -> str:
                                         and not case.customer_answers and not documents
                                         and not personal_overview)
                 else ([] if case.customer_answers or documents or personal_overview else [greeting, intro]))
+    if (case.latest_deferred_fields
+            and set(case.latest_deferred_fields) <= {"employer_name", "employer_address", "employer_phone"}
+            and not acknowledgements and not case.customer_answers and not documents and not personal_overview):
+        # The concrete deferral receipt below is the opening, not a new welcome.
+        sections = []
     if not questions and not issues and not documents and not case.customer_answers and not acknowledgements:
         # Do not announce more questions when this turn has none, or restart a greeting
         # before the only useful response: acknowledgement of explicitly undecided dates.

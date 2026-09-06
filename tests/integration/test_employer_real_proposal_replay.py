@@ -23,3 +23,13 @@ def test_saved_employer_journey_preserves_deferral_identity_and_sources(tmp_path
     assert address["requested_fields"] == ["employer_address"]
     assert address["known_profile"]["_employer_question_verified"] == "employer_address"
     assert all(not row["usage"] for row in report["results"])
+    rows = report["results"]
+    assert "12 Example Road, Hong Kong" in rows[3]["reply"]
+    assert "Hello" not in rows[3]["reply"]
+    assert "Hello" not in rows[4]["reply"]
+    assert "I'll leave that employer detail for checking" in rows[4]["reply"]
+    assert "+852 2000 1234" in rows[5]["reply"]
+    assert "Employer Name:" not in rows[6]["reply"]
+    assert "Southstar Ltd" in rows[6]["reply"]
+    assert "Next, I need your home address" not in rows[7]["reply"]
+    assert "+852 2000 9012" in rows[8]["reply"]
