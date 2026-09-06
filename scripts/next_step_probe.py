@@ -26,6 +26,7 @@ from unittest.mock import patch
 
 from visa_agent.domain.models import Case, CaseStatus, InboundEvent
 from visa_agent.domain.policy import load_policy
+from visa_agent.llm.application_records import CollectionDeclarationProposal
 from visa_agent.llm.deepseek_client import DeepSeekStructuredLLM
 from visa_agent.llm.guarded import validate_case_patch
 from visa_agent.llm.ports import CasePatch, CustomerQuestion
@@ -33,6 +34,7 @@ from visa_agent.secrets import read_secret
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.conversation import explained_document_label
 from visa_agent.workflow.customer_questions import APPLICATION_SOURCE, grounded_customer_answers
+from visa_agent.workflow.record_intake import plan_record_intake
 from visa_agent.workflow.service import WorkflowService
 
 _helper_spec = importlib.util.spec_from_file_location(
@@ -41,6 +43,7 @@ _helper_spec = importlib.util.spec_from_file_location(
 assert _helper_spec is not None and _helper_spec.loader is not None
 transport = importlib.util.module_from_spec(_helper_spec)
 _helper_spec.loader.exec_module(transport)
+_base_seed_case = transport.seed_case
 REPOSITORY = transport.REPOSITORY
 POLICY = transport.POLICY
 MODEL = transport.MODEL
@@ -104,8 +107,25 @@ def load_items(corpus_bytes: bytes, split: str) -> list[dict[str, Any]]:
 
 
 def seed_case(item: dict[str, Any], policy_version: str) -> Case:
-    """Same fixed fictional adult, unknown deferred dates, no documents or consent."""
-    return transport.seed_case(item, policy_version)
+    """Fixed fictional adult and explicit no-record statements, no documents/consent.
+
+    This probe isolates document next-step behavior after collection intake. The
+    source statement is part of its seeded provenance, not a production default.
+    The original preparation probe's seed and historical reports are untouched.
+    """
+    case = _base_seed_case(item, policy_version)
+    event = InboundEvent(id=f"{case.id}-fixture-records", external_thread_id=case.external_thread_id,
+                         sender=case.applicant_contact, channel=case.primary_channel,
+                         subject="Explicit fictional next-step seed", received_at=datetime(2026, 9, 1, tzinfo=UTC),
+                         body="I have no travel history. I have no UK contacts.")
+    plan = plan_record_intake(event, None, case_id=case.id, records=[], declarations=[
+        CollectionDeclarationProposal(kind="travel", state="none_declared", source_excerpt="I have no travel history.", confidence=1),
+        CollectionDeclarationProposal(kind="uk_contact", state="none_declared", source_excerpt="I have no UK contacts.", confidence=1),
+    ])
+    if plan.requires_review or not plan.changed:
+        raise ValueError("The explicit fictional record seed did not validate")
+    case.application_records = plan.ledger
+    return case
 
 
 def patch_checks(item: dict[str, Any], proposed: CasePatch) -> dict[str, bool]:
@@ -311,6 +331,7 @@ def _transport_hooks() -> Iterator[None]:
     # The helper instance is private to this evaluator; patch only extension seams,
     # never the provider call or returned model patch. Restore hooks after each use.
     with (patch.object(transport, "patch_checks", patch_checks),
+          patch.object(transport, "seed_case", seed_case),
           patch.object(transport, "exercise_workflow", exercise_workflow),
           patch.object(transport, "validate_case_patch", validate_case_patch)):
         yield

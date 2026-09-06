@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import re
 
+from visa_agent.domain.application_records import RecordKind
 from visa_agent.domain.models import Case, InboundEvent
+from visa_agent.llm.application_records import CollectionDeclarationProposal
 from visa_agent.llm.ports import CasePatch, FactUpdate
 
 BLOCK = re.compile(r"<!-- DEMO_FACTS\n(.*?)\n-->", re.DOTALL)
@@ -69,7 +71,16 @@ class OfflineFixtureLLM:
                     confidence=1.0,
                 )
             )
-        return CasePatch(updates=updates, ambiguities=[])
+        # Reproducible fixture proposals still require an explicit visible
+        # statement; absence of a fixture field is never a negative declaration.
+        statements: tuple[tuple[RecordKind, str], ...] = (
+            ("travel", "I have no travel history."), ("uk_contact", "I have no UK contacts."),
+        )
+        declarations = [CollectionDeclarationProposal(
+            kind=kind, state="none_declared", source_excerpt=sentence, confidence=1,
+        ) for kind, sentence in statements
+            if sentence in event.body]
+        return CasePatch(updates=updates, ambiguities=[], collection_declarations=declarations)
 
     def render_message(self, case: Case, plan: str) -> str:
         if plan == "blocked":

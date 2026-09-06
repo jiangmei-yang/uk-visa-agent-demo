@@ -7,6 +7,88 @@ The overall acceptance goal remains active.
 
 ## Requirement and design boundary
 
+### 2026-09-07 universal intake gate migration (in progress, do not deploy)
+
+`domain/record_completeness.py` now checks both collection declarations for
+every case, including a missing/empty legacy ledger. Explicit full/none statements
+are required independently for travel and UK contacts. Separate checks report
+missing baseline descriptive fields and active field deferrals; a full-list
+statement never masks either. These are intake checks, not legal applicability,
+truth verification or a substitute for source-bound review of nonempty records.
+
+The old constant hold no longer blocks a pair of explicit none declarations.
+Nonempty records still retain the development applicability/review hold until
+that work is finished. The workflow remains in INTAKE and does not offer a fresh
+profile summary when collection statements/details are missing or deferred.
+When the customer asks for the next step after scalar intake is answered/deferred,
+a pending collection question can now take priority over another document action,
+with its SENT question memory recorded. Existing confirmed legacy cases are not
+exempt from the new gate; no migration fills their missing declarations with none.
+
+The synthetic first email now visibly states `I have no travel history. I have no
+UK contacts.` The offline fixture adapter proposes those declarations only when
+those exact visible statements are present; the usual source/ownership guard still
+processes them. No declaration defaults were added to Case or production model
+output. This restores the offline featured journey's block/correction/confirmation/
+ZIP test with actual fictional inbound statements, not direct case mutation.
+This backend test is not a visual pack audit or live-provider/Gmail evidence.
+
+First full migration run (before the sample/adapter repair and next-step changes):
+**146 failures / 4,650 passes / 29 setup errors / 2 deselections**, 93.29s, existing
+Starlette warning, `/tmp/visa-universal-collection-regression.log`. Many dependent
+pack/outbox tests inherit the first email and could not create their old 'ready'
+fixture. That does not justify removing the gate. The updated featured journey,
+universal intake unit tests and record workflow then passed 17 focused tests;
+after next-step integration the two focused files passed 16 tests (0.65s).
+
+The complete migration is still in progress. Remaining failure classification,
+legacy confirmation/consultation behavior, nonempty-record applicability/source
+review and complete event-to-ZIP coverage must be finished before release. The
+two legacy provider-report hashes remain stale; no new live API call, message,
+Gmail worker/container restart or deployment was performed.
+
+Migration follow-up: the second full run (after the sample repair, before the
+remaining completed-intake fixture updates) had **48 failures / 4,784 passes / 2
+deselections**, 96.74s, no setup errors, one existing warning. It is retained at
+`/tmp/visa-universal-collection-regression-v2.log`. No failure report was relabelled
+as success. The remaining cases were inspected rather than globally defaulted.
+
+An explicit, named synthetic helper now supplies source-checked no-record
+declarations only in the pre-populated off-topic/next-step/confirmation/pause
+fixtures that assume completed intake. Empty/legacy cases are not covered by an
+autouse fixture or production default. The home-address confirmation test supplies
+the missing declarations in an actual fictional inbound body/patch. The next-step
+probe's document-focused seed now explicitly includes those source statements,
+and its private transport hook uses that same seed for execution and verification;
+the separate preparation probe and its historical reports remain unchanged.
+This changes the next-step probe's seed contract and requires fresh source-bound
+provider evidence; existing historical runs cannot be claimed current.
+
+A genuine regression in pack rejection was fixed: an in-memory case-ID mutation
+with an old record ledger now fails the gate with a case-binding reason instead
+of raising an unhandled ValueError before the path guard returns. No out-of-tree
+files or staged delivery are written. The console contract now expects 15 basic
+checks, reflecting the three new intake checks (nonempty records may add a hold).
+
+Focused results after migration: off-topic/next-step 122 passing; scope/pause/
+composition/pack-path/console 106 passing; next-step probe/pacing 80 passing.
+A new legacy-case test explicitly removes the record ledger from an otherwise
+confirmed scalar profile: next-step asks the collection question, final delivery
+stays blocked, and a subsequent `No.` cannot be interpreted from its unsent draft.
+It passed separately. Full final migration regression is recorded below.
+
+Outstanding release work also includes regenerating/visually checking the static
+sample outputs, whose pre-feature content is not current evidence for these new
+gate checks. Do not deploy the development branch or label all requirements done.
+
+Final migration development regression: **4,833 passed / 2 deselected**, 96.86s,
+one existing Starlette warning, `/tmp/visa-universal-collection-regression-v3.log`.
+Ruff and strict Mypy passed for 87 source modules; scoped script/test lint also
+passed. This run includes the new legacy-case and universal-check tests. The two
+excluded old provider-report bindings remain stale, not refreshed or relabelled.
+All release limitations above remain; no provider, Gmail or deployed-container
+acceptance is inferred from this development pass.
+
 ### 2026-09-07 per-record missing-detail uncertainty (development only)
 
 Short uncertainty answers to an actually SENT missing-detail question now create

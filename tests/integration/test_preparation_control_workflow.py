@@ -4,6 +4,7 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pytest
+from record_fixture import with_explicit_no_record_fixture
 
 from visa_agent.documents.natural import DocumentReadResult
 from visa_agent.domain.models import Case, CaseStatus, InboundEvent
@@ -60,6 +61,7 @@ def seed(path: Path, *, complete: bool = False) -> Case:
         case.profile.current_address = "Room 4, Example Hall, 88 Synthetic Road, Hong Kong"
         case.profile.has_serious_history = False
         case.profile.route_confirmed_standard_visitor = True
+        case = with_explicit_no_record_fixture(case)
     store = SQLiteStore(path)
     store.save_case(case)
     store.close()

@@ -17,6 +17,7 @@ from visa_agent.channels.gmail import GmailAdapter
 from visa_agent.channels.outbound import OutboxDispatcher
 from visa_agent.domain.models import CaseStatus, InboundEvent
 from visa_agent.domain.policy import load_policy
+from visa_agent.llm.application_records import CollectionDeclarationProposal
 from visa_agent.llm.guarded import GuardedLLM, deterministic_fallback_message
 from visa_agent.llm.ports import CasePatch
 from visa_agent.storage.sqlite import SQLiteStore
@@ -450,8 +451,13 @@ def test_same_partial_home_answer_gets_specific_clarification_then_complete_answ
     # number/postcode requirement, but the customer must actually supply it.
     full_address = "Room 4, Building W, Mumbai, India"
     complete_statement = f"My home address is {full_address}."
-    complete, summary = dialogue.turn(complete_statement,
-        _patch(updates=[("current_address", full_address, complete_statement)]),
+    final_patch = _patch(updates=[("current_address", full_address, complete_statement)])
+    final_patch.collection_declarations = [
+        CollectionDeclarationProposal(kind="travel", state="none_declared", source_excerpt="I have no travel history.", confidence=1),
+        CollectionDeclarationProposal(kind="uk_contact", state="none_declared", source_excerpt="I have no UK contacts.", confidence=1),
+    ]
+    complete, summary = dialogue.turn(complete_statement + " I have no travel history. I have no UK contacts.",
+        final_patch,
         expected_plan="awaiting_profile_confirmation")
     assert complete.profile.current_address == full_address
     assert "current_address" not in complete.pending_question_fields

@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pytest
+from record_fixture import with_explicit_no_record_fixture
 
 from visa_agent.channels.automatic_reply import AutomaticGmailReplySender
 from visa_agent.channels.gmail import GmailAdapter
@@ -48,7 +49,7 @@ class CapturedModel:
 
 
 def _seed(*, paused: bool = False) -> Case:
-    return Case(
+    return with_explicit_no_record_fixture(Case(
         id="synthetic-step-case", external_thread_id="synthetic-step-thread",
         primary_channel="gmail", applicant_contact="fictional@example.test", policy_version=POLICY.version,
         profile=CaseProfile(full_name="Sample Applicant", date_of_birth=date(1998, 5, 12),
@@ -58,7 +59,7 @@ def _seed(*, paused: bool = False) -> Case:
             has_serious_history=False, route_confirmed_standard_visitor=True),
         deferred_fields=["planned_arrival_date", "planned_departure_date"],
         preparation_paused=paused, preparation_control_epoch=2 if paused else 0,
-    )
+    ))
 
 
 def _patch(*questions: tuple[str, str], **kwargs: object) -> CasePatch:
@@ -88,6 +89,22 @@ def _turn(path: Path, case: Case, body: str, patch: CasePatch, number: int = 1) 
     assert not saved.final_summary_confirmed and saved.delivery_path is None and plan != "ready"
     store.close()
     return saved, row["payload"], plan
+
+
+def test_legacy_confirmed_scalar_profile_still_needs_explicit_collection_intake(tmp_path):
+    initial = _seed()
+    initial.application_records = None  # genuine legacy gap, not a completed-intake fixture
+    initial.profile_confirmed = True
+    body = "What should I prepare next for my UK visa?"
+    case, reply, plan = _turn(tmp_path / "legacy.db", initial, body, _patch(("next_step", body)))
+    assert plan == "blocked" and case.application_records is None
+    assert case.next_step_advice.kind == "question"
+    assert "Have you travelled abroad before?" in reply
+    assert case.last_requested_fields == []  # do not reask deferred future dates
+    assert case.collection_question_event_ids
+    # A question merely queued in the outbox has not been seen by the customer.
+    later, _, _ = _turn(tmp_path / "legacy.db", case, "No.", _patch(), number=2)
+    assert later.application_records is None
 
 
 def test_mixed_faq_and_next_document_are_both_delivered_without_reasking_unknown_dates(tmp_path: Path) -> None:

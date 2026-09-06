@@ -19,6 +19,7 @@ from visa_agent.domain.models import (
     WorkflowStage,
 )
 from visa_agent.domain.policy import Policy
+from visa_agent.domain.record_completeness import application_record_checks
 
 BASE_REQUIRED_FACTS = {
     "full_name",
@@ -409,13 +410,14 @@ def evaluate_gate(case: Case, policy: Policy, today: date) -> GateResult:
         "applicant_explicitly_confirmed_final_summary": case.final_summary_confirmed,
         "policy_snapshot_is_current": policy.is_current(today),
     }
-    if case.application_records is not None and (
-        case.application_records.revisions or case.application_records.declarations
-    ):
-        # Development hold: collection applicability/detail/review intake is
-        # still being implemented. A new record must not silently pass the old
-        # scalar-only gate. This is NOT a completed universal intake gate; legacy
-        # missing collections must be addressed before this branch is released.
+    records_match_case = case.application_records is None or case.application_records.case_id == case.id
+    checks.update(application_record_checks(case.application_records if records_match_case else None, case_id=case.id))
+    if not records_match_case:
+        checks["application_records_case_binding"] = False
+    if case.application_records is not None and case.application_records.current():
+        # Nonempty records still need conditional applicability/review work.
+        # Explicit none declarations no longer hit a constant hold; legacy
+        # missing collections fail the universal declaration check above.
         checks["application_record_intake_release_checked"] = False
     reasons = [label.replace("_", " ") for label, passed in checks.items() if not passed]
     if scope_reason and not in_scope:

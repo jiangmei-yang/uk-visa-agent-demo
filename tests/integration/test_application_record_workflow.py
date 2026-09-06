@@ -188,7 +188,7 @@ def test_new_record_cannot_fall_through_the_old_scalar_only_delivery_gate(tmp_pa
     result = dialogue.turn(body, patch(assertions=[CollectionDeclarationProposal(
         kind="travel", state="none_declared", source_excerpt=body, confidence=1)]))
     gate = evaluate_gate(result.case, POLICY, TODAY)
-    assert gate.checks["application_record_intake_release_checked"] is False and not gate.allowed
+    assert gate.checks["application_collections_explicitly_declared"] is False and not gate.allowed
     store = SQLiteStore(dialogue.path)
     try:
         rows = store.list_outbox()

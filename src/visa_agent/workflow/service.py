@@ -23,6 +23,7 @@ from visa_agent.domain.models import (
     InboundEvent,
     Issue,
     IssueSeverity,
+    NextStepAdvice,
     ProvenanceState,
     WorkflowStage,
 )
@@ -624,7 +625,10 @@ class WorkflowService:
                 case.stage = WorkflowStage.DOCUMENT_REVIEW
             elif failed_checks == {"applicant_explicitly_confirmed_final_summary"}:
                 case.stage = WorkflowStage.FINAL_CONFIRMATION
-            elif not gate.checks["required_profile_facts_complete"]:
+            elif (not gate.checks["required_profile_facts_complete"]
+                  or not gate.checks["application_collections_explicitly_declared"]
+                  or not gate.checks["application_record_descriptive_fields_complete"]
+                  or not gate.checks["application_record_details_not_deferred"]):
                 case.stage = WorkflowStage.INTAKE
             elif not case.profile_confirmed:
                 case.stage = WorkflowStage.PROFILE_CONFIRMATION
@@ -637,6 +641,9 @@ class WorkflowService:
             case.status != CaseStatus.HUMAN_REVIEW_REQUIRED
             and not case.preparation_paused
             and gate.checks["required_profile_facts_complete"]
+            and gate.checks["application_collections_explicitly_declared"]
+            and gate.checks["application_record_descriptive_fields_complete"]
+            and gate.checks["application_record_details_not_deferred"]
             and gate.checks["route_in_scope"]
             and not case.open_blockers()
             and not case.profile_confirmed
@@ -663,6 +670,18 @@ class WorkflowService:
                 case, self.policy, gate, today=self.today_provider(),
                 school_record_context=sent_school_record_context(case, prior_outbox),
             )
+            if (case.status == CaseStatus.DRAFT and not case.preparation_paused
+                    and all(profile_fact_complete(case, field) or field in case.deferred_fields
+                            for field in required_profile_facts(case))):
+                collection_plan = plan_collection_follow_up(case.application_records, case_id=case.id)
+                asked = frozenset(key for key, ids in case.collection_question_event_ids.items()
+                                  if any(source in sent_events for source in ids))
+                collection_question = collection_plan.next_unasked(asked)
+                if collection_question is not None:
+                    case.next_step_advice = NextStepAdvice(kind="question", message=collection_question_text(
+                        collection_question, case.application_records, case.customer_language,
+                    ))
+                    case.collection_question_event_ids[collection_question.key] = [event.id]
             case.next_step_advice = case.next_step_advice.model_copy(update={
                 "message": _without_repeated_source_lines(
                     _without_previously_sent_source_lines(
@@ -884,7 +903,6 @@ class WorkflowService:
             and not case.last_requested_fields and case.next_step_advice is None
             and not has_information_answer and not actionable_preparation_guidance
             and "off_topic" not in case.customer_question_topics
-            and not case.profile_confirmed
             and (record_plan.changed or continuation_requested
                  or bool(set(case.latest_received_facts).intersection(prior_pending)))
             and all(profile_fact_complete(case, field) or field in case.deferred_fields

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from record_fixture import with_explicit_no_record_fixture
 
 from visa_agent.channels.automatic_reply import AutomaticGmailReplySender
 from visa_agent.channels.gmail import GmailAdapter
@@ -105,6 +106,8 @@ class Conversation:
             self.initial.profile.planned_arrival_date = date(2026, 11, 1)
             self.initial.profile.planned_departure_date = date(2026, 11, 8)
             self.initial.deferred_fields = []
+        if only_dates_missing or complete_profile:
+            self.initial = with_explicit_no_record_fixture(self.initial)
         evaluate_gate(self.initial, load_policy(POLICY_PATH), TODAY)
         store = SQLiteStore(self.path)
         try:

@@ -8,6 +8,7 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pytest
+from record_fixture import with_explicit_no_record_fixture
 
 from visa_agent.domain.models import Case, CaseProfile, InboundEvent
 from visa_agent.domain.policy import load_policy
@@ -113,6 +114,7 @@ def _synthetic_turn(tmp_path, language, body, questions=(), *, resume=None, paus
             occupation_status="student", funding_source="self", current_address="Room 4, Example Hall, 88 Synthetic Road, Hong Kong",
             uk_accommodation="London, not booked", estimated_trip_cost_gbp=1500,
             has_serious_history=False, route_confirmed_standard_visitor=True))
+    initial = with_explicit_no_record_fixture(initial)
     event = InboundEvent(id="synthetic-scope-event", external_thread_id=initial.external_thread_id,
         sender=initial.applicant_contact, channel="gmail", subject="UK visitor preparation",
         body=body, received_at=datetime(2026, 9, 4, 15, tzinfo=UTC))
