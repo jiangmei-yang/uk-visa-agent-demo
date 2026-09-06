@@ -7,6 +7,50 @@ The overall acceptance goal remains active.
 
 ## Requirement and design boundary
 
+### 2026-09-07 per-record missing-detail uncertainty (development only)
+
+Short uncertainty answers to an actually SENT missing-detail question now create
+a `RecordFieldDeferral`, not a list-wide declaration and never a replacement
+value. It records case/record/field, the asked record revision, current answer
+excerpt/event/body hash and the sent question event/key. The ledger validates
+that the referenced historical record belongs to this case and that this field
+was genuinely missing. Intake checks the current answer source and snapshot,
+rejects conflicting mixed changes atomically and handles an exact replay without
+duplicating the deferral. New deferrals alter the material summary fingerprint.
+
+Active deferrals suppress only that record's missing field. An unrelated field
+correction does not reactivate it; later supplying the deferred field resolves its
+active state while retaining history. Withdrawal also removes it from active
+planning. The customer JSON projection exposes `deferred_details`, and extraction
+context receives current record values/field uncertainty without internal IDs or
+hashes. This is not yet a visually verified final-pack rendering of deferrals.
+
+The local captured-SENT/reopened-SQLite dialogue now continues from list-wide
+uncertainty to an explicitly complete Japan travel list with missing time/purpose.
+The actual reply asks time; `I can't remember.` defers only time and the next
+reply asks purpose. A purpose correction preserves time uncertainty; a later
+explicit May 2023 correction resolves it. The list declaration stays distinct
+from field sufficiency. Neither model calls nor transport are live in this test.
+
+The shared contextual resolver now recognizes either EN/ZH generated question
+text, allowing a language switch, and abstains when different sent events have
+an identical timestamp rather than selecting an arbitrary ID. Generic `No` to
+a detail question does not declare absence or uncertainty. Current-source,
+cross-case, stale-target, unsupported/already-supplied-field and quoted/conditional
+negative tests were added. Initial fixture failures (9) were missing required
+`received_at`, fixed in the fixture; the focused four-file run then passed 49
+tests (0.75s). Ruff/Mypy pass for 86 modules. Full regression is recorded below.
+
+Still incomplete: arbitrary short field-value updates, explicit per-field
+uncertainty not phrased as a contextual short answer, universal intake/provenance
+and final-confirmation gates, reviewed rendering and final delivery. No live
+Gmail/container restart, deployment or real mail was performed.
+
+Per-field deferral full development regression: **4,825 passed / 2 deselected**,
+99.12s, one existing Starlette warning, in `/tmp/visa-field-deferral-regression.log`.
+The two excluded legacy source-bound provider reports remain stale. All current
+new tests were included in this run. This is not real-provider or release evidence.
+
 ### 2026-09-07 short collection answers (development only)
 
 The workflow now resolves a bounded whole-message vocabulary (`没有`, `No`,

@@ -93,6 +93,7 @@ from visa_agent.workflow.pending_step_value import (
 from visa_agent.workflow.record_collection_plan import (
     collection_question_text,
     contextual_collection_declaration,
+    contextual_record_field_deferral,
     plan_collection_follow_up,
 )
 from visa_agent.workflow.record_intake import plan_record_intake, record_intake_receipt
@@ -302,6 +303,12 @@ class WorkflowService:
             customer_event.known_profile["_application_collection_states"] = {
                 kind: case.application_records.collection_state(kind) for kind in RECORD_KINDS
             }
+            current_records = case.application_records.current()
+            customer_event.known_profile["_application_deferred_details"] = [
+                {"kind": current_records[item.record_id].kind, "field": item.field, "state": "unknown",
+                 "record": {name: fact.value for name, fact in current_records[item.record_id].fields.items()}}
+                for item in case.application_records.active_field_deferrals()
+            ]
         remember_reply_style(case, event.id)
         if school_record_resolved(customer_event.body) or school_record_unavailable(customer_event.body):
             # Retire only this discussion, not applicant facts, evidence or other
@@ -349,6 +356,7 @@ class WorkflowService:
             customer_event, case.application_records, case_id=case.id,
             records=patch.application_records, declarations=patch.collection_declarations,
             contextual_declaration=contextual_collection_declaration(case, customer_event.body, prior_outbox),
+            contextual_field_deferral=contextual_record_field_deferral(case, customer_event.body, event.id, prior_outbox),
         )
         if record_plan.changed:
             case.application_records = record_plan.ledger

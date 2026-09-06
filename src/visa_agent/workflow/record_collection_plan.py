@@ -6,6 +6,7 @@ absence declaration or asks the applicant to guess. Basic field coverage here
 does not establish policy applicability, precision, verification or consent.
 """
 
+import hashlib
 import re
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -15,6 +16,7 @@ from visa_agent.domain.application_records import (
     ApplicationRecordLedger,
     CollectionDeclaration,
     DeclarationState,
+    RecordFieldDeferral,
     RecordKind,
 )
 from visa_agent.domain.models import Case
@@ -54,6 +56,7 @@ def plan_collection_follow_up(
     ledger = ledger if ledger is not None else ApplicationRecordLedger(case_id=case_id)
     pending: list[CollectionFollowUp] = []
     deferred: list[RecordKind] = []
+    deferred_fields = {(item.record_id, item.field) for item in ledger.active_field_deferrals()}
     for kind in RECORD_KINDS:
         state = ledger.collection_state(kind)
         if state == "unknown":
@@ -76,7 +79,7 @@ def plan_collection_follow_up(
                 "name", "relationship", "address",
             )
             for field in fields:
-                if field not in record.fields:
+                if field not in record.fields and (record.record_id, field) not in deferred_fields:
                     pending.append(CollectionFollowUp(
                         key=f"{case_id}:{kind}:{record.record_id}:{record.digest()}:{field}",
                         kind=kind, reason="missing_detail", record_id=record.record_id,
@@ -119,30 +122,27 @@ def collection_question_text(
             f"For the entry you mentioned, ‘{label}’, {prompts[follow_up.field]}? If you are unsure, we can leave it for checking.")
 
 
-def contextual_collection_declaration(
-    case: Case, body: str, outbox: list[dict[str, Any]],
-) -> CollectionDeclaration | None:
-    """Resolve only exact short answers to one current, actually SENT list question.
-
-    No model-supplied target or context is used. A newer sent reply, stale record
-    snapshot, multiple question targets or a hypothetical/extra clause abstains.
-    Detail answers need a different per-field deferral contract; never convert
-    'no' to a list-wide absence when the question asked for an address or date.
-    """
+def _short_answer(body: str) -> tuple[str, str, bool, bool]:
     source = latest_reply_text(body).strip()
     normalized = re.sub(r"[。.!！?？\s]+$", "", source).casefold()
     unknown = normalized in {"记不清", "不记得", "不确定", "暂时不确定", "需要核实",
                              "i don't remember", "i cannot remember", "i can't remember",
                              "not sure", "i'm not sure", "unsure", "i need to check"}
     negative = normalized in {"没有", "没有了", "没了", "都没有", "no", "none", "no others", "that's all"}
-    if not unknown and not negative:
-        return None
+    return source, normalized, unknown, negative
+
+
+def _sent_collection_question(
+    case: Case, outbox: list[dict[str, Any]],
+) -> tuple[CollectionFollowUp, dict[str, Any]] | None:
     sent = [row for row in outbox if row["case_id"] == case.id and row["status"] == "SENT"]
     if not sent:
         return None
     if any(not row.get("sent_at") for row in sent):
         return None  # no reliable send ordering; do not guess from draft creation time
     latest = max(sent, key=lambda row: (row["sent_at"], row["id"]))
+    if len({row["event_id"] for row in sent if row["sent_at"] == latest["sent_at"]}) != 1:
+        return None
     if (latest.get("recipient") != case.applicant_contact
             or latest.get("external_thread_id") != case.external_thread_id):
         return None
@@ -151,12 +151,23 @@ def contextual_collection_declaration(
     ledger = case.application_records or ApplicationRecordLedger(case_id=case.id)
     current = plan_collection_follow_up(ledger, case_id=case.id)
     matches = [item for item in current.pending
-               if item.reason in {"unasked", "partial"}
-               and latest["event_id"] in case.collection_question_event_ids.get(item.key, [])
-               and collection_question_text(item, ledger, case.customer_language) in latest["payload"]]
+               if latest["event_id"] in case.collection_question_event_ids.get(item.key, [])
+               and any(collection_question_text(item, ledger, language) in latest["payload"] for language in ("en", "zh"))]
     if len(matches) != 1:
         return None
-    question = matches[0]
+    return matches[0], latest
+
+
+def contextual_collection_declaration(
+    case: Case, body: str, outbox: list[dict[str, Any]],
+) -> CollectionDeclaration | None:
+    """Resolve an exact short answer to one current SENT list question, never consent."""
+    source, normalized, unknown, negative = _short_answer(body)
+    match = _sent_collection_question(case, outbox) if unknown or negative else None
+    if match is None or match[0].reason == "missing_detail":
+        return None
+    question, latest = match
+    ledger = case.application_records or ApplicationRecordLedger(case_id=case.id)
     if negative and normalized == "that's all" and question.reason == "unasked":
         return None
     state: DeclarationState = "unknown" if unknown else "none_declared" if question.reason == "unasked" else "complete_declared"
@@ -165,5 +176,25 @@ def contextual_collection_declaration(
     return CollectionDeclaration(
         kind=question.kind, state=state, source_excerpt=source,
         expected_records_digest=ledger.records_digest(question.kind),
+        question_event_id=latest["event_id"], question_key=question.key,
+    )
+
+
+def contextual_record_field_deferral(
+    case: Case, body: str, event_id: str, outbox: list[dict[str, Any]],
+) -> RecordFieldDeferral | None:
+    """Defer one missing detail on explicit uncertainty, not a generic 'no'."""
+    source, _, unknown, _ = _short_answer(body)
+    match = _sent_collection_question(case, outbox) if unknown else None
+    if match is None or match[0].reason != "missing_detail" or case.application_records is None:
+        return None
+    question, latest = match
+    if question.record_id is None or question.field is None:
+        return None
+    target = case.application_records.current()[question.record_id]
+    return RecordFieldDeferral(
+        case_id=case.id, record_id=target.record_id, record_digest=target.digest(), field=question.field,
+        source_excerpt=source, source_event_id=event_id,
+        source_body_sha256=hashlib.sha256(latest_reply_text(body).encode()).hexdigest(),
         question_event_id=latest["event_id"], question_key=question.key,
     )

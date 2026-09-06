@@ -5,6 +5,7 @@ unresolved current record statement is retained for human review, never guessed.
 No function here grants processing consent, completeness approval or release.
 """
 
+import hashlib
 import re
 from dataclasses import dataclass
 
@@ -14,6 +15,7 @@ from visa_agent.domain.application_records import (
     ApplicationRecordLedger,
     CollectionDeclaration,
     RecordCommand,
+    RecordFieldDeferral,
     RecordInput,
     apply_record_commands,
 )
@@ -92,6 +94,15 @@ def record_intake_receipt(plan: RecordIntakePlan, event_id: str, language: str) 
         return ""
     zh = language == "zh"
     parts: list[str] = []
+    labels = ({"period": "旅行时间", "purpose": "旅行目的", "name": "联系人姓名",
+               "relationship": "联系人与你的关系", "address": "联系人地址"} if zh else
+              {"period": "travel period", "purpose": "trip purpose", "name": "contact's name",
+               "relationship": "contact's relationship to you", "address": "contact's address"})
+    for deferred in plan.ledger.active_field_deferrals():
+        if deferred.source_event_id == event_id:
+            label = labels.get(deferred.field, deferred.field)
+            parts.append(f"这条记录的{label}先留待核实，不用猜；其他已提供的信息会保留。" if zh else
+                         f"We can leave this entry's {label} for checking; please don't guess. The other details you supplied are retained.")
     for kind in ("travel", "uk_contact"):
         declaration = plan.ledger.latest_declarations().get(kind)
         revisions = [record for record in plan.ledger.revisions if record.kind == kind
@@ -176,9 +187,10 @@ def plan_record_intake(
     event: InboundEvent, ledger: ApplicationRecordLedger | None, *, case_id: str,
     records: list[ApplicationRecordProposal], declarations: list[CollectionDeclarationProposal],
     contextual_declaration: CollectionDeclaration | None = None,
+    contextual_field_deferral: RecordFieldDeferral | None = None,
 ) -> RecordIntakePlan:
     """Called only after workflow identity/consent checks, on the latest body."""
-    if not records and not declarations and contextual_declaration is None:
+    if not records and not declarations and contextual_declaration is None and contextual_field_deferral is None:
         return RecordIntakePlan(ledger)
     original = ledger or ApplicationRecordLedger(case_id=case_id)
     body = latest_reply_text(event.body)
@@ -311,7 +323,15 @@ def plan_record_intake(
                     or not contextual_declaration.question_event_id
                     or contextual_declaration.expected_records_digest != original.records_digest(contextual_declaration.kind)):
             raise ValueError("Contextual collection answer must match its unchanged question snapshot")
-        if not commands and not accepted_declarations and contextual_declaration is None:
+        if contextual_field_deferral is not None and (
+            commands or accepted_declarations or contextual_declaration is not None
+            or contextual_field_deferral.case_id != case_id
+            or contextual_field_deferral.source_event_id != event.id
+            or contextual_field_deferral.source_excerpt != body.strip()
+            or contextual_field_deferral.source_body_sha256 != hashlib.sha256(body.encode()).hexdigest()
+        ):
+            raise ValueError("Contextual field deferral must match this current answer")
+        if not commands and not accepted_declarations and contextual_declaration is None and contextual_field_deferral is None:
             return RecordIntakePlan(ledger)
         # Resolve declaration digests against the exact post-command snapshot;
         # neither digest nor server-assigned record ID comes from the model.
@@ -322,6 +342,16 @@ def plan_record_intake(
             assertions.append(contextual_declaration)
         updated = apply_record_commands(original, case_id=case_id, event_id=event.id, body=body,
                                          commands=commands, declarations=assertions)
+        if contextual_field_deferral is not None:
+            target = updated.current().get(contextual_field_deferral.record_id)
+            if target is None or target.digest() != contextual_field_deferral.record_digest:
+                raise ValueError("Contextual field deferral has a stale record target")
+            same_event = [item for item in updated.field_deferrals if item.source_event_id == event.id]
+            if same_event and same_event != [contextual_field_deferral]:
+                raise ValueError("Contextual field deferral event cannot be reinterpreted")
+            if not same_event:
+                updated.field_deferrals.append(contextual_field_deferral)
+            updated = ApplicationRecordLedger.model_validate(updated.model_dump(mode="json"))
         return RecordIntakePlan(updated, changed=updated.fingerprint() != original.fingerprint())
     except ValueError as error:
         return RecordIntakePlan(ledger, requires_review=True, reason=str(error))

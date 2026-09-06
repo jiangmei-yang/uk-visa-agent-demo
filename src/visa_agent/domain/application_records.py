@@ -190,12 +190,28 @@ def _records_digest(case_id: str, kind: RecordKind, current: dict[str, RecordRev
     }})
 
 
+class RecordFieldDeferral(BaseModel):
+    """A current answer defers one missing field; it never supplies a value."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    case_id: str = Field(min_length=1)
+    record_id: str = Field(min_length=1)
+    record_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
+    field: str = Field(min_length=1)
+    source_excerpt: str = Field(min_length=1)
+    source_event_id: str = Field(min_length=1)
+    source_body_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    question_event_id: str = Field(min_length=1)
+    question_key: str = Field(min_length=1)
+
+
 class ApplicationRecordLedger(BaseModel):
     model_config = ConfigDict(extra="forbid")
     case_id: str = Field(min_length=1)
     revisions: list[RecordRevision] = Field(default_factory=list)
     declarations: list[DeclarationRevision] = Field(default_factory=list)
     processed_batches: dict[str, str] = Field(default_factory=dict)
+    field_deferrals: list[RecordFieldDeferral] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def intact_history(self) -> ApplicationRecordLedger:
@@ -226,6 +242,15 @@ class ApplicationRecordLedger(BaseModel):
                     or (declaration.state == "complete_declared" and not snapshot[1])):
                 raise ValueError("Collection declaration contradicts its record snapshot")
             prior_declarations[declaration.kind] = declaration
+        for deferral in self.field_deferrals:
+            target = next((record for record in self.revisions
+                           if record.record_id == deferral.record_id and record.digest() == deferral.record_digest), None)
+            if (deferral.case_id != self.case_id or target is None or not target.active
+                    or deferral.field in target.fields or not deferral.source_excerpt.strip()):
+                raise ValueError("Field deferral must refer to a missing field in this case's record history")
+            schema = TravelFields if target.kind == "travel" else UKContactFields
+            if deferral.field not in schema.model_fields:
+                raise ValueError("Field deferral has an unsupported field")
         return self
 
     def current(self, *, include_withdrawn: bool = False) -> dict[str, RecordRevision]:
@@ -242,7 +267,15 @@ class ApplicationRecordLedger(BaseModel):
         if self.declarations:
             payload["declarations"] = {kind: declaration.model_dump(mode="json")
                                        for kind, declaration in self.latest_declarations().items()}
+        if self.field_deferrals:
+            payload["field_deferrals"] = [item.model_dump(mode="json") for item in self.field_deferrals]
         return _digest(payload)
+
+    def active_field_deferrals(self) -> list[RecordFieldDeferral]:
+        current = self.current()
+        latest = {(item.record_id, item.field): item for item in self.field_deferrals}
+        return [item for item in latest.values()
+                if item.record_id in current and item.field not in current[item.record_id].fields]
 
     def records_digest(self, kind: RecordKind) -> str:
         return _records_digest(self.case_id, kind, self.current(include_withdrawn=True))
@@ -272,6 +305,7 @@ class ApplicationRecordLedger(BaseModel):
             } for kind in RECORD_KINDS},
             "records": [record.model_dump(mode="json", exclude={"predecessor_digest", "change_excerpt"})
                         for record in self.current().values()],
+            "deferred_details": [item.model_dump(mode="json") for item in self.active_field_deferrals()],
         }
 
 

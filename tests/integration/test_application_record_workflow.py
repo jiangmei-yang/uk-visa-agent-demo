@@ -87,6 +87,37 @@ def test_collection_question_is_actually_sent_and_remembered_after_reopen(tmp_pa
     assert assertion.source_event_id == third.event.id
     assert assertion.question_event_id == second.event.id
     assert assertion.question_key in second.case.collection_question_event_ids
+    body = "I visited Japan. That is my full travel history."
+    detail_question = dialogue.turn(body, patch(
+        records=[record("I visited Japan.", {"country": "Japan"})],
+        assertions=[CollectionDeclarationProposal(kind="travel", state="complete_declared",
+                    source_excerpt="That is my full travel history.", confidence=1)],
+    ))
+    assert "when approximately did you travel" in detail_question.body
+    before = summary_fingerprint(detail_question.case, include_documents=True)
+    deferred = dialogue.turn("I can't remember.", patch())
+    assert deferred.case.application_records.collection_state("travel") == "complete_declared"
+    memory = deferred.case.application_records.active_field_deferrals()
+    assert len(memory) == 1 and memory[0].field == "period"
+    assert memory[0].question_event_id == detail_question.event.id
+    assert memory[0].source_event_id == deferred.event.id
+    assert "when approximately did you travel" not in deferred.body
+    assert "what was the purpose" in deferred.body
+    assert "please don't guess" in deferred.body
+    assert summary_fingerprint(deferred.case, include_documents=True) != before
+    corrected = dialogue.turn("Please correct the Japan trip purpose: tourism.", patch(records=[record(
+        "Please correct the Japan trip purpose: tourism.", {"purpose": "tourism"}, action="amend", reference="Japan",
+    )]))
+    assert len(corrected.case.application_records.active_field_deferrals()) == 1
+    assert "when approximately did you travel" not in corrected.body
+    assert corrected.model.events[0].known_profile["_application_deferred_details"] == [
+        {"kind": "travel", "field": "period", "state": "unknown", "record": {"country": "Japan"}},
+    ]
+    resolved = dialogue.turn("Please correct the Japan trip to May 2023.", patch(records=[record(
+        "Please correct the Japan trip to May 2023.", {"period": "May 2023"}, action="amend", reference="Japan",
+    )]))
+    assert not resolved.case.application_records.active_field_deferrals()
+    assert len(resolved.case.application_records.field_deferrals) == 1  # audit history retained
 
 
 @pytest.mark.parametrize("language", ["zh", "en"])
