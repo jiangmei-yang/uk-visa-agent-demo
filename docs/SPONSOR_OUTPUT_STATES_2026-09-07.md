@@ -35,7 +35,9 @@ clipping or overlap. This is a QA artifact, not a customer delivery.
 
 The first full-suite run captured the older sponsor-address test before it was
 updated and failed that assertion plus two model-report freshness checks. A fresh
-full-suite rerun was started after the test update. The two report checks were
+full-suite rerun after the test update completed with **5,135 passed, 2 failed,
+one existing Starlette warning in 104.72 seconds**, with no exclusions. Both
+remaining failures are the source-binding checks below. The two report checks were
 also rerun separately and both correctly reject the changed `delivery/pack.py`
 hash. Existing consultant v8 and financial v17 reports remain unchanged; they are
 not fresh model evidence for this modified runtime. Do not deselect those checks
