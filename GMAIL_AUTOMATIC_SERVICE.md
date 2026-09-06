@@ -1,5 +1,11 @@
 # Controlled automatic Gmail service
 
+Subsequent September 7 delivery reload: the runtime covered by CI run 34062260806
+is now loaded into the registered worker. Case/outbox/processing-consent rows were
+unchanged in bidirectional comparisons with consistent backups, and a completed
+idle cycle was observed. See [the dated reload](docs/GMAIL_DELIVERY_RELOAD_2026-09-07.md).
+Unknown applicant consent and unverified recipient-side final delivery remain open.
+
 Latest candidate reload, September 7: the registered worker was restarted with
 the runtime source covered by candidate CI, backed-up case/sync databases and
 unchanged registration. A completed idle cycle and independent process liveness
