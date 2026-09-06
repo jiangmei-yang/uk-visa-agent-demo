@@ -131,6 +131,7 @@ FACT_LABELS_ZH = {
     "uk_accommodation": "在英国的住宿安排",
     "estimated_trip_cost_gbp": "旅行预算（英镑）",
     "current_address": "现居住地址",
+    "current_address_duration": "在现住址居住多久",
     "occupation_status": "工作或学习情况",
     "annual_income_gbp": "年收入（英镑）",
     "funding_source": "费用由谁承担",
@@ -188,6 +189,7 @@ def next_fact_questions(case: Case) -> list[str]:
         "estimated_trip_cost_gbp",
         "annual_income_gbp",
         "current_address",
+        "current_address_duration",
         "has_serious_history",
         "route_confirmed_standard_visitor",
     ]
@@ -1017,6 +1019,7 @@ QUESTION_TEXT_ZH = {
     "estimated_trip_cost_gbp": "这趟旅行大约打算花多少英镑？先给一个估计就好。",
     "annual_income_gbp": "你目前有收入吗？有的话，大约每年多少英镑？没有收入也可以直接说明。",
     "current_address": "你目前实际居住的地址是什么？这里需要的是住址，不是工作地点。",
+    "current_address_duration": "你在现在的住址大概住了多久？按你记得的时间说就好，暂时记不清也可以告诉我。",
     "has_serious_history": (
         "正式核对前还要确认一项常规背景信息：你以前是否有英国或其他国家、地区的拒签、"
         "逾期停留、遣返，或刑事、重大民事记录？如果有，先告诉我大致类型和时间，我会转人工顾问复核。"
@@ -1048,6 +1051,7 @@ QUESTION_TEXT_EN = {
     "estimated_trip_cost_gbp": "Roughly how much do you expect the trip to cost in pounds? An estimate is fine.",
     "annual_income_gbp": "Do you currently have an income? If so, roughly how much per year in pounds? It's fine to say if you have none.",
     "current_address": "What is your current home address? This will be needed for the application form, rather than your workplace address.",
+    "current_address_duration": "About how long have you lived at your current address? Use the precision you remember; it is fine to say if you need to check.",
     "has_serious_history": (
         "Before the final check, I need to ask a standard background question: have you ever had a visa refusal, "
         "overstayed, been removed or deported, or had a criminal or serious civil matter in the UK or elsewhere? "
@@ -1704,6 +1708,9 @@ def blocked_customer_message(case: Case) -> str:
                 "住宿安排先记为待确认，不需要为了申请现在就订酒店；正式提交前再按实际计划更新。"
                 if zh else "I have marked the accommodation as undecided. You do not need to book a hotel now just for the application; update the intended arrangement before submitting."
             )
+        if "current_address_duration" in case.latest_deferred_fields:
+            sections.append("现住址住了多久先留待核实，不用猜；可以看看租约或搬家记录，想起后再补。" if zh else
+                            "We'll leave the time at your current address for checking. Don't guess; a tenancy agreement or moving records may help when you return to it.")
     elif (case.deferred_fields and not questions and not issues and not documents and not case.customer_answers
           and not case.pending_question_fields
           and not quiet_preparation_resume(case)

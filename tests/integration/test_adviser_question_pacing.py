@@ -451,12 +451,14 @@ def test_same_partial_home_answer_gets_specific_clarification_then_complete_answ
     # number/postcode requirement, but the customer must actually supply it.
     full_address = "Room 4, Building W, Mumbai, India"
     complete_statement = f"My home address is {full_address}."
-    final_patch = _patch(updates=[("current_address", full_address, complete_statement)])
+    duration_statement = "I have lived at my current address for two years."
+    final_patch = _patch(updates=[("current_address", full_address, complete_statement),
+                                 ("current_address_duration", "two years", duration_statement)])
     final_patch.collection_declarations = [
         CollectionDeclarationProposal(kind="travel", state="none_declared", source_excerpt="I have no travel history.", confidence=1),
         CollectionDeclarationProposal(kind="uk_contact", state="none_declared", source_excerpt="I have no UK contacts.", confidence=1),
     ]
-    complete, summary = dialogue.turn(complete_statement + " I have no travel history. I have no UK contacts.",
+    complete, summary = dialogue.turn(complete_statement + " " + duration_statement + " I have no travel history. I have no UK contacts.",
         final_patch,
         expected_plan="awaiting_profile_confirmation")
     assert complete.profile.current_address == full_address

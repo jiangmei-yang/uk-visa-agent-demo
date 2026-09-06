@@ -40,6 +40,7 @@ def complete_except_route(language: str = "en") -> Case:
     item.profile.uk_accommodation = "10 Sample Street, London"
     item.profile.estimated_trip_cost_gbp = 2_000
     item.profile.current_address = "Flat 8, 10 Sample Street, Hong Kong"
+    item.profile.current_address_duration = "two years"  # explicit fictional completed-profile fixture
     item.profile.occupation_status = "student"
     item.profile.funding_source = "self"
     item.profile.has_serious_history = False

@@ -813,7 +813,8 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
         if update.field == "current_address_duration":
             from visa_agent.domain.residence_duration import residence_duration_is_grounded
 
-            if not residence_duration_is_grounded(update.value, update.source_excerpt, latest_reply_text(event.body)):
+            if not residence_duration_is_grounded(update.value, update.source_excerpt, latest_reply_text(event.body),
+                    sent_question_verified=event.known_profile.get("_residence_duration_question_verified") is True):
                 continue
         if (update.field == "current_address" and isinstance(update.value, str)
                 and address_excerpt_is_other_location(update.source_excerpt, update.value)):

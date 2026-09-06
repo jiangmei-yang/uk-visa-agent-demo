@@ -3,9 +3,13 @@
 import re
 
 
-def residence_duration_is_grounded(value: object, excerpt: str, body: str) -> bool:
+def residence_duration_is_grounded(value: object, excerpt: str, body: str, *, sent_question_verified: bool = False) -> bool:
     if not isinstance(value, str) or not value.strip() or value not in excerpt or excerpt not in body:
         return False
+    if sent_question_verified and body.strip().rstrip("。.") == value.strip() and excerpt.strip().rstrip("。.") == value.strip():
+        # Reuse the duration grammar without manufacturing an evidence excerpt.
+        check = f"I have lived at my current address for {value}."
+        return residence_duration_is_grounded(value, check, check)
     # Interpret the enclosing current sentence so a clipped quote cannot drop
     # its owner, negation or hypothetical qualification.
     sentences = [part.strip() for part in re.split(r"[。！？!?;；\n]|\.(?:\s|$)", body) if excerpt.rstrip("。.!?") in part]

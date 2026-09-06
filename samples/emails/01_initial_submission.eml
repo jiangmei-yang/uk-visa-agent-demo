@@ -14,6 +14,7 @@ attend a conference in London. My university will pay for the flight and hotel,
 and I will pay my personal expenses. I have reviewed the profile below.
 
 I have no travel history. I have no UK contacts.
+I have lived at my current address for two years.
 
 PROFILE CONFIRMED
 
@@ -29,6 +30,7 @@ visit_purpose=conference
 uk_accommodation=Northstar Hotel, London
 estimated_trip_cost_gbp=2200
 current_address=88 Synthetic Road, Hong Kong
+current_address_duration=two years
 occupation_status=student
 annual_income_gbp=18000
 funding_source=employer_or_school

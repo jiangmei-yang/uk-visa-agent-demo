@@ -5,6 +5,37 @@ Status: **incomplete, unreleased**. GOV.UK application information checked
 has lived there: [official application information](https://www.gov.uk/standard-visitor/apply-standard-visitor-visa).
 This does not justify deriving an exact move-in date from an approximate duration.
 
+## 2026-09-07 required gate and sent-question integration
+
+The duration is now in `BASE_REQUIRED_FACTS`: all cases, including legacy cases,
+need it before final readiness; existing provenance and confirmation checks apply.
+EN/ZH missing-question text is ordered after the home address. The synthetic first
+demo email visibly states `I have lived at my current address for two years.` and
+the offline adapter quotes that statement, not an invented hidden default.
+The actual guided web lab still passes its staged blockers/confirmation/download
+tests with the updated fixture.
+
+Short duration answers require a single matching actually SENT question in the
+same case/recipient/thread, the current last question and unchanged current-home
+binding. The model only proposes the literal value; it cannot assert that a
+question was sent. A bounded short uncertainty response records its source event,
+excerpt, question event and address, stays missing at the gate and suppresses
+repeat asking. Changing the address clears stale question/deferral context while
+retaining deferral history. Unsigned question hints, unsent questions and old-home
+context cannot ground short answers.
+
+Five captured-workflow tests cover supplied duration, retention and address
+changes; actually sent short answers; persistent uncertainty; unsent question
+and different-address rejection. With the explicit pre-populated next-step fixture
+updated, the duration/next-step/family group passed **29 tests** (1.11s). The duration
+question tests explicitly clear that fixture's duration and collect it through
+the actual inbound turn; no production case receives a default value.
+
+**Release remains unfinished.** Full-regression fixture migration, broader short
+uncertainty and duration wording, friendly output labels/rendering, and a fresh
+real-model/clean-container run still need evidence. The historical foundation
+notes below describe the preceding stage, not a current exemption from the gate.
+
 ## Implemented foundation
 
 `CaseProfile.current_address_duration` preserves the supplied text with a bounded
@@ -39,20 +70,40 @@ excluded and stale.
 
 ## Required before calling this intake complete
 
-- Add paced EN/ZH duration questions and short-answer grounding tied to the
-  actually sent question, not merely a model's requested-field hint.
-- Retain uncertainty without fabricating a duration or repeatedly asking.
-- Add the field to required fact/provenance/final confirmation gates for all
-  applicable cases, including old cases. Do not default old cases to an invented
-  duration just to preserve passing fixture outputs.
-- Update fictional seed email/PDF inputs explicitly before migrating dependent
-  completed-intake fixtures, and validate the clean container demo again.
+- Broaden the bounded EN/ZH short-answer and uncertainty vocabulary and test
+  mixed answers/corrections; current supplied duration precision is preserved.
+- Complete and verify the migrated fictional fixtures under full regression,
+  then validate the clean container demo again. Real/legacy cases without the
+  duration remain incomplete; no production migration supplies an invented value.
 - Include readable labels/values and unknown states in customer summaries and
   output artifacts, then visually verify any changed PDFs.
 - Test simultaneous address/duration corrections, broad real-model phrasing and
   address identity/formatting cases; refresh source-bound live reports.
 
-The field is currently **supplied-only and not a new release requirement**.
-Consequently the current release gate does not prove this official information
-has been collected. This is a known acceptance gap, not optional application
-information or a finished application pack. The overall delivery goal stays open.
+The first gate-enabled full run had **72 failures / 4,868 passes / 2 deselections**,
+99.25s (`/tmp/visa-residence-duration-gate.log`). Most were explicitly completed-
+intake synthetic fixtures that lacked the newly required field. Those presets now
+state a duration explicitly. The address-dialogue test instead adds a real
+fictional inbound sentence and typed proposal before expecting confirmation;
+the missing-duration tests continue to omit it. The production fixture quotes a
+visible email sentence. No autouse fixture, real-case backfill or relaxed gate
+was introduced. The first migrated subset had 421 passes / 5 failures; fixes for
+the remaining dialogue fixtures and probe verifier then passed 89 tests (2.95s).
+
+The next-step evaluator now wraps its shared replay verifier with the same
+private fixture hooks used by generation/replay. It still verifies exact input
+events and seed profiles and rejects reports made with different seeds; existing
+historical reports are not edited. The original preparation-control probe remains
+unchanged. Fresh next-step source-bound reports are required for the changed seed.
+
+Final gate-enabled development regression: **4,942 passed / 2 deselected**,
+99.20s, one existing Starlette warning (`/tmp/visa-residence-duration-gate-v2.log`).
+Ruff and strict Mypy (92 modules) passed after the final changes. The exclusions
+are the two older source-bound consultant/financial provider reports; those are
+still stale and were not relabelled as current. No live provider calls, Gmail
+messages, operator approvals or deployment occurred in this integration.
+
+At the foundation checkpoint the field was supplied-only and not a release
+requirement. That gap is now addressed by the integration above; the remaining
+items and regression migration must be completed before release. The overall
+delivery goal stays open.

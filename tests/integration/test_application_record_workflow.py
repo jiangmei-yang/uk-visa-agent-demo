@@ -61,6 +61,7 @@ def test_collection_question_is_actually_sent_and_remembered_after_reopen(tmp_pa
         case.profile.uk_accommodation = "Hotel in London"
         case.profile.estimated_trip_cost_gbp = 2000
         case.profile.current_address = "1 Fictional Road, Beijing, China"
+        case.profile.current_address_duration = "two years"  # explicit synthetic scalar-intake premise
         case.profile.occupation_status = "student"
         case.profile.funding_source = "self"
         case.profile.has_serious_history = False

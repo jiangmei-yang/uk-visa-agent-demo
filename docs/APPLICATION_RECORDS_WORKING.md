@@ -12,9 +12,10 @@ The overall acceptance goal remains active.
 The missing residence-duration requirement is now represented as a source-bound,
 literal profile field with current-home role checks and retirement after address
 changes. See [implemented evidence and required integration](RESIDENCE_DURATION_INTAKE.md).
-It remains supplied-only: automatic questions, durable deferral, universal release
-gating, explicit fixture migration and readable output are still required. Do not
-claim complete intake or treat a passed current gate as covering this field.
+The subsequent integration adds actual-SENT short-answer context, deferral with
+source/address history, universal required-fact gating and explicitly supplied
+fictional fixture values. Friendly output/visual QA, broader phrasing and fresh
+provider/container validation remain open. Do not claim complete intake.
 
 ### 2026-09-07 deferred-detail summary and PDF visibility
 

@@ -32,6 +32,7 @@ def _case(language: str = "en") -> Case:
             nationality_country="China", application_country="Hong Kong", visit_purpose="tourism",
             occupation_status="student", funding_source="self", estimated_trip_cost_gbp=1600,
             current_address="Room 4, Example Hall, 88 Synthetic Road, Hong Kong", uk_accommodation="Planned stay in London",
+            current_address_duration="two years",  # explicit synthetic completed-intake premise
             has_serious_history=False, route_confirmed_standard_visitor=True,
         ), deferred_fields=["planned_arrival_date", "planned_departure_date"],
     )

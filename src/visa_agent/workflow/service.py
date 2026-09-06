@@ -296,6 +296,19 @@ class WorkflowService:
                 },
             }
         )
+        duration_question = None
+        if (prior_last_requested == ["current_address_duration"]
+                and case.profile.current_address
+                and case.residence_duration_question_address == case.profile.current_address):
+            matches = [row for row in prior_outbox if row["status"] == "SENT"
+                       and row["event_id"] in case.question_event_ids.get("current_address_duration", [])
+                       and row["recipient"] == case.applicant_contact
+                       and row["external_thread_id"] == case.external_thread_id
+                       and ("About how long have you lived at your current address?" in row["payload"]
+                            or "你在现在的住址大概住了多久？" in row["payload"])]
+            if len(matches) == 1 and matches[0]["payload"] == latest_sent_payload:
+                duration_question = matches[0]
+        customer_event.known_profile["_residence_duration_question_verified"] = duration_question is not None
         case.latest_customer_message = customer_event.body
         if case.application_records is not None:
             customer_event.known_profile["_application_record_context"] = [
@@ -496,6 +509,16 @@ class WorkflowService:
         self._apply_patch(case, customer_event, patch.model_dump()["updates"])
         update_deferred_questions(case, customer_event.body)
         # Model intent may pause an unanswered question, never mutate a fact or release gate.
+        duration_answer = customer_event.body.strip().rstrip("。.!！").casefold()
+        if (duration_question is not None and case.profile.current_address_duration is None
+                and duration_answer in {"不记得", "记不清", "暂时记不清", "不确定", "需要核实",
+                                        "i don't remember", "i need to check", "not sure", "i'm not sure"}):
+            if "current_address_duration" not in case.deferred_fields:
+                case.deferred_fields.append("current_address_duration")
+            case.latest_deferred_fields.append("current_address_duration")
+            case.residence_duration_deferrals.append({"source_event_id": event.id,
+                "source_excerpt": customer_event.body.strip(), "question_event_id": duration_question["event_id"],
+                "address": case.profile.current_address or ""})
         for deferral in patch.question_deferrals:
             if getattr(case.profile, deferral.field) is None:
                 if deferral.field not in case.deferred_fields:
@@ -894,6 +917,8 @@ class WorkflowService:
             else:
                 case.question_plan = candidates
             case.last_requested_fields = next_fact_questions(case)
+            if "current_address_duration" in case.last_requested_fields:
+                case.residence_duration_question_address = case.profile.current_address
             for field in case.last_requested_fields:
                 delivered_ids = [value for value in case.question_event_ids.get(field, []) if value in sent_events]
                 case.question_event_ids[field] = list(dict.fromkeys(delivered_ids[-1:] + [event.id]))
@@ -1022,6 +1047,8 @@ class WorkflowService:
                 and "current_address_duration" not in update_fields):
             # Time at the former home is not evidence for the new address.
             case.profile.current_address_duration = None
+            case.residence_duration_question_address = None
+            case.deferred_fields = [field for field in case.deferred_fields if field != "current_address_duration"]
             for old in case.active_evidence("current_address_duration"):
                 old.superseded = True
         sponsor_replaced_without_complete_identity = (

@@ -59,6 +59,7 @@ def seed(path: Path, *, complete: bool = False) -> Case:
         case.profile.uk_accommodation = "London"
         case.profile.estimated_trip_cost_gbp = 1500
         case.profile.current_address = "Room 4, Example Hall, 88 Synthetic Road, Hong Kong"
+        case.profile.current_address_duration = "two years"  # only the explicit complete fixture
         case.profile.has_serious_history = False
         case.profile.route_confirmed_standard_visitor = True
         case = with_explicit_no_record_fixture(case)

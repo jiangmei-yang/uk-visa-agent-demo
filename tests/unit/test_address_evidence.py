@@ -60,6 +60,7 @@ def _case(address):
                     planned_arrival_date=date(2026, 11, 5), planned_departure_date=date(2026, 11, 12),
                     uk_accommodation="Planned hotel in London", estimated_trip_cost_gbp=2400,
                     occupation_status="student", funding_source="self", current_address=address,
+                    current_address_duration="two years",  # isolate the address-detail gate
                     has_serious_history=False, route_confirmed_standard_visitor=True))
 
 

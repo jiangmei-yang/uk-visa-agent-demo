@@ -48,6 +48,7 @@ def pending_question_reminder(case: Case) -> str:
         "estimated_trip_cost_gbp": "旅行预算",
         "annual_income_gbp": "目前的收入情况",
         "current_address": "现居住地址",
+        "current_address_duration": "在现住址居住的时长",
     }
     labels_en = {
         "full_name": "passport name",
@@ -62,6 +63,7 @@ def pending_question_reminder(case: Case) -> str:
         "estimated_trip_cost_gbp": "trip budget",
         "annual_income_gbp": "current income",
         "current_address": "home address",
+        "current_address_duration": "time living at your current address",
     }
     if case.customer_language == "zh":
         label = labels_zh.get(field, "待补信息")

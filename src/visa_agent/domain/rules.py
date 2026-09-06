@@ -33,6 +33,7 @@ BASE_REQUIRED_FACTS = {
     "uk_accommodation",
     "estimated_trip_cost_gbp",
     "current_address",
+    "current_address_duration",
     "occupation_status",
     "funding_source",
     "has_serious_history",

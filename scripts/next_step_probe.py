@@ -114,10 +114,11 @@ def seed_case(item: dict[str, Any], policy_version: str) -> Case:
     The original preparation probe's seed and historical reports are untouched.
     """
     case = _base_seed_case(item, policy_version)
+    case.profile.current_address_duration = "two years"  # explicit synthetic document-focused premise
     event = InboundEvent(id=f"{case.id}-fixture-records", external_thread_id=case.external_thread_id,
                          sender=case.applicant_contact, channel=case.primary_channel,
                          subject="Explicit fictional next-step seed", received_at=datetime(2026, 9, 1, tzinfo=UTC),
-                         body="I have no travel history. I have no UK contacts.")
+                         body="I have no travel history. I have no UK contacts. I have lived at my current address for two years.")
     plan = plan_record_intake(event, None, case_id=case.id, records=[], declarations=[
         CollectionDeclarationProposal(kind="travel", state="none_declared", source_excerpt="I have no travel history.", confidence=1),
         CollectionDeclarationProposal(kind="uk_contact", state="none_declared", source_excerpt="I have no UK contacts.", confidence=1),
@@ -361,8 +362,9 @@ def load_replay(report_bytes: bytes, *, corpus_bytes: bytes, items: list[dict[st
     # The shared verifier checks all original provenance, seeds, schema identity,
     # errors and hashes. Translate the action label only in an in-memory copy.
     translated = {**report, "results": [_control_item(row) for row in rows]}
-    transport.load_replay(json.dumps(translated).encode(), corpus_bytes=corpus_bytes,
-                          items=[_control_item(item) for item in items], policy_version=policy_version)
+    with _transport_hooks():
+        transport.load_replay(json.dumps(translated).encode(), corpus_bytes=corpus_bytes,
+                              items=[_control_item(item) for item in items], policy_version=policy_version)
     return report
 
 

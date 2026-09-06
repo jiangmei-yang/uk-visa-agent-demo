@@ -258,6 +258,8 @@ class Case(BaseModel):
     latest_changes: dict[str, str] = Field(default_factory=dict)
     latest_received_facts: dict[str, str] = Field(default_factory=dict)
     deferred_fields: list[str] = Field(default_factory=list)
+    residence_duration_question_address: str | None = None
+    residence_duration_deferrals: list[dict[str, str]] = Field(default_factory=list)
     latest_deferred_fields: list[str] = Field(default_factory=list)
     latest_customer_message: str = ""
     latest_document_names: list[str] = Field(default_factory=list)

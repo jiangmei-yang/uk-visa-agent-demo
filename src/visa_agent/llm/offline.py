@@ -53,6 +53,10 @@ class OfflineFixtureLLM:
             else:
                 parsed = text_value
             source_excerpt = line.strip()
+            if field == "current_address_duration":
+                sentence = f"I have lived at my current address for {text_value}."
+                if sentence in event.body:
+                    source_excerpt = sentence
             if (
                 field == "funding_source"
                 and (pattern := FUNDING_EXCERPTS.get(text_value))

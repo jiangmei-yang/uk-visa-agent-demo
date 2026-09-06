@@ -56,6 +56,7 @@ def _seed(*, paused: bool = False) -> Case:
             nationality_country="China", application_country="Hong Kong", visit_purpose="tourism",
             occupation_status="student", funding_source="self", uk_accommodation="London",
             estimated_trip_cost_gbp=1500, current_address="Room 4, Example Hall, 88 Synthetic Road, Hong Kong",
+            current_address_duration="two years",  # explicit pre-populated fictional intake, not a production default
             has_serious_history=False, route_confirmed_standard_visitor=True),
         deferred_fields=["planned_arrival_date", "planned_departure_date"],
         preparation_paused=paused, preparation_control_epoch=2 if paused else 0,
