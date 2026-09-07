@@ -23,6 +23,7 @@ class SponsorLocationStatement(BaseModel):
     sponsor_name: str | None = None
     sponsor_relationship: str | None = None
     identity_epoch: int = 0
+    context_question_event_id: str | None = None
 
 
 _EN_OWNER = re.compile(r"my sponsor\s+(.+)", re.I)

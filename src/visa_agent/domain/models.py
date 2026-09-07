@@ -271,6 +271,7 @@ class Case(BaseModel):
     # Source observations only; legacy location booleans are never backfilled.
     sponsor_location_statements: list[SponsorLocationStatement] = Field(default_factory=list)
     sponsor_location_epoch: int = 0
+    sponsor_location_question_binding: str | None = None
     sponsor_location_review: SponsorLocationReview | None = None
     sponsor_location_review_history: list[SponsorLocationReview] = Field(default_factory=list)
     employment_document_reviews: list[dict[str, str]] = Field(default_factory=list)

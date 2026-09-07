@@ -36,6 +36,7 @@ from visa_agent.domain.rules import (
     run_consistency_checks,
 )
 from visa_agent.domain.sponsor_location import parse_sponsor_location_statements
+from visa_agent.domain.sponsor_location_review import sponsor_location_binding
 from visa_agent.llm.guarded import ensure_guarded, validate_case_patch
 from visa_agent.llm.ports import CasePatch, FactUpdate, LLMClient
 from visa_agent.privacy.consent import ConsentLedger, ProcessingConsentRequired
@@ -102,7 +103,7 @@ from visa_agent.workflow.record_collection_plan import (
 )
 from visa_agent.workflow.record_intake import plan_record_intake, record_intake_receipt
 from visa_agent.workflow.record_source_audit import audit_application_record_sources
-from visa_agent.workflow.sponsor_location import record_sponsor_location
+from visa_agent.workflow.sponsor_location import pending_location_dimension, record_sponsor_location
 
 PROFILE_CONFIRMATION_LINES = {
     "profile confirmed",
@@ -348,6 +349,17 @@ class WorkflowService:
             if len(matches) == 1 and matches[0]["payload"] == latest_sent_payload:
                 sponsor_question = matches[0]
         customer_event.known_profile["_sponsor_address_question_verified"] = sponsor_question is not None
+        from visa_agent.workflow.conversation import _profile_question_text
+
+        location_dimension = None
+        if (prior_last_requested == ["sponsor_is_in_uk"] and latest_sent_row is not None
+                and case.sponsor_location_question_binding == sponsor_location_binding(case)
+                and latest_sent_row["event_id"] in case.question_event_ids.get("sponsor_is_in_uk", [])[-1:]
+                and latest_sent_row["recipient"] == case.applicant_contact
+                and latest_sent_row["external_thread_id"] == case.external_thread_id
+                and _sent_before_inbound(latest_sent_row.get("sent_at"), event.received_at)
+                and _profile_question_text(case, "sponsor_is_in_uk") in latest_sent_payload):
+            location_dimension = pending_location_dimension(case)
         employer_question = None
         employer_field = prior_last_requested[0] if len(prior_last_requested) == 1 else ""
         employer_context = {"field": employer_field, "employer_name": case.profile.employer_name or ""}
@@ -567,6 +579,7 @@ class WorkflowService:
         update_deferred_questions(case, customer_event.body)
         if (set(case.customer_question_topics) == {"off_topic"}
                 and not parse_sponsor_location_statements(customer_event.body, source_event_id=event.id)
+                and location_dimension is None
                 and not patch.updates and not patch.question_deferrals and not event.attachment_paths
                 and not record_plan.changed and not record_plan.requires_review
                 and patch.preparation_intent is None and not case.preparation_paused
@@ -589,7 +602,8 @@ class WorkflowService:
             self._render_and_commit(case, event, "blocked", processing_epoch)
             return case, False, "blocked"
         self._apply_patch(case, customer_event, patch.model_dump()["updates"])
-        record_sponsor_location(case, customer_event)
+        record_sponsor_location(case, customer_event, verified_dimension=location_dimension,
+            verified_question_event_id=latest_sent_row["event_id"] if location_dimension and latest_sent_row else None)
         for literal_fact_key in literal_employer_fields:
             for evidence in case.active_evidence(literal_fact_key):
                 if evidence.source_event_id == event.id:
@@ -1024,6 +1038,8 @@ class WorkflowService:
             else:
                 case.question_plan = candidates
             case.last_requested_fields = next_fact_questions(case)
+            if "sponsor_is_in_uk" in case.last_requested_fields and pending_location_dimension(case) is not None:
+                case.sponsor_location_question_binding = sponsor_location_binding(case)
             if "current_address_duration" in case.last_requested_fields:
                 case.residence_duration_question_address = case.profile.current_address
             if "sponsor_address" in case.last_requested_fields:
