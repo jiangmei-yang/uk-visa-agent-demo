@@ -14,7 +14,8 @@ from visa_agent.workflow.service import WorkflowService
 
 
 @pytest.mark.parametrize("language,answer,expected", [("en", "No", False), ("en", "Yes.", True),
-                                                     ("zh", "不在", False), ("zh", "在的。", True)])
+                                                     ("zh", "不在", False), ("zh", "在的。", True),
+                                                     ("en", "I need to check.", None), ("zh", "还不清楚", None)])
 @pytest.mark.parametrize("fault", [None, "unsent", "recipient", "thread", "late", "identity", "payload"])
 def test_short_answer_requires_actual_current_dimension_question(tmp_path, language, answer, expected, fault):
     now = datetime.now(UTC)
@@ -47,7 +48,13 @@ def test_short_answer_requires_actual_current_dimension_question(tmp_path, langu
         service = WorkflowService(store, POLICY, GuardedLLM(Model(_patch()), max_attempts=1), today_provider=lambda: TODAY)
         saved, _, _ = service.process(event)
         rows = [row for row in saved.sponsor_location_statements if row.source_event_id == event.id]
-        if fault is None:
+        if fault is None and expected is None:
+            assert not rows
+            assert "sponsor_is_in_uk" in saved.deferred_fields
+            assert "sponsor_is_in_uk" not in saved.last_requested_fields
+            assert saved.sponsor_location_deferrals[-1]["dimension"] == "current_presence"
+            assert saved.sponsor_location_deferrals[-1]["question_event_id"] == "question"
+        elif fault is None:
             assert len(rows) == 1
             assert rows[0].dimension == "current_presence" and rows[0].value == expected
             assert rows[0].source_excerpt == answer
@@ -56,3 +63,13 @@ def test_short_answer_requires_actual_current_dimension_question(tmp_path, langu
             assert rows == []
         assert not saved.profile_confirmed and not saved.final_summary_confirmed
         assert saved.delivery_path is None
+        if fault is None and expected is None:
+            # A later explicit answer supplies the missing dimension, not a
+            # reinterpretation of the earlier uncertainty as a negative fact.
+            later = event.model_copy(update={"id": "later-answer", "body": "My sponsor is not in the UK now.",
+                "received_at": now + timedelta(minutes=1)})
+            updated, _, _ = service.process(later)
+            assert "sponsor_is_in_uk" not in updated.deferred_fields
+            assert len(updated.sponsor_location_deferrals) == 1
+            assert len(updated.sponsor_location_statements) == 2
+            assert updated.sponsor_location_statements[-1].source_event_id == "later-answer"

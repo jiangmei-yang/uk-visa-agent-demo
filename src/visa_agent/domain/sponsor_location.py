@@ -57,12 +57,15 @@ def parse_sponsor_location_statements(
         raise ValueError("A source event is required")
     # Do not turn quoted/reported examples into live facts. This deliberately
     # leaves mixed quoted/unquoted messages for a richer parser/clarification.
-    if re.search(r'[>"“”‘「」『』?？]', body):
+    if re.search(r'[>"“”‘「」『』]', body):
         return []
     result: list[SponsorLocationStatement] = []
-    for raw in re.split(r"[。\n]|\.(?:\s|$)", body):
+    # Preserve question punctuation in its own sentence so a declarative-looking
+    # question cannot become a fact. An unrelated question must not erase facts
+    # elsewhere in the same email.
+    for raw in re.split(r"(?<=[?？])\s*|[。\n]|\.(?:\s|$)", body):
         sentence = raw.strip()
-        if not sentence:
+        if not sentence or re.search(r"[?？]", sentence):
             continue
         en = _EN_OWNER.fullmatch(sentence)
         zh = _ZH_OWNER.fullmatch(sentence)

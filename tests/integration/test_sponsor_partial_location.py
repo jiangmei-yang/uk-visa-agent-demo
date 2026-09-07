@@ -18,11 +18,14 @@ from visa_agent.workflow.service import WorkflowService
     ("zh", "我的资助人不住在英国。", "我的资助人现在在英国。", "目前人在英国"),
     ("zh", "我的资助人现在在英国。", "我的资助人不住在英国。", "平时住在英国"),
 ])
+@pytest.mark.parametrize("with_question", [False, True])
 def test_partial_location_continues_intake_then_reviews_complete_information(tmp_path, monkeypatch,
-                                                                           language, first, second, missing):
+                                                                           language, first, second, missing, with_question):
     def deny(*args, **kwargs):
         raise AssertionError("No network in fictional regression")
     monkeypatch.setattr("socket.socket.connect", deny)
+    if with_question:
+        first += " 接下来需要什么材料？" if language == "zh" else " What should I prepare next?"
     path = tmp_path / "partial.db"
     case = Case(id="partial", external_thread_id="partial", applicant_contact=APPLICANT,
         primary_channel="gmail", policy_version=POLICY.version, customer_language=language,

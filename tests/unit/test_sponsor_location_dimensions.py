@@ -55,3 +55,29 @@ def test_legacy_boolean_cannot_deserialize_into_typed_location_evidence():
         SponsorLocationStatement.model_validate({"sponsor_is_in_uk": False})
     with pytest.raises(ValueError):
         parse_sponsor_location_statements("My sponsor is in the UK.", source_event_id=" ")
+
+
+@pytest.mark.parametrize("body", [
+    "My sponsor does not live in the UK. What should I prepare next?",
+    "What should I prepare next? My sponsor does not live in the UK.",
+    "我的资助人不住在英国。接下来需要什么材料？",
+    "接下来需要什么材料？我的资助人不住在英国。",
+    "My sponsor does not live in the UK. My sponsor is in the UK?",
+    "我的资助人不住在英国。我的资助人现在在英国？",
+])
+def test_independent_question_does_not_erase_explicit_fact(body):
+    rows = parse_sponsor_location_statements(body, source_event_id="mixed")
+    assert [(row.dimension, row.value) for row in rows] == [("residence", False)]
+    assert rows[0].source_excerpt in body and "?" not in rows[0].source_excerpt and "？" not in rows[0].source_excerpt
+
+
+@pytest.mark.parametrize("body", [
+    "My sponsor is in the UK?", "我的资助人住在英国？",
+    "If my sponsor is in the UK, what do I need?",
+    "My sponsor is in the UK, or is that just an example?",
+    "如果我的资助人住在英国，需要什么？",
+    '"My sponsor is in the UK." Is that what you mean?',
+    "My sponsor is in the UK but I am unsure. What next?",
+])
+def test_question_or_uncertain_clause_cannot_become_fact(body):
+    assert parse_sponsor_location_statements(body, source_event_id="question") == []

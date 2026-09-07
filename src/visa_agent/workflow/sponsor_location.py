@@ -47,10 +47,32 @@ def record_sponsor_location(case: Case, event: InboundEvent, *,
     statements = parse_sponsor_location_statements(event.body, source_event_id=event.id,
         sponsor_name=case.profile.sponsor_name, sponsor_relationship=case.profile.sponsor_relationship)
     short = short_location_answer(event.body)
-    if (not statements and short is not None and verified_dimension is not None
+    verified_context = (verified_dimension is not None
             and verified_question_event_id
             and verified_dimension == pending_location_dimension(case)
-            and case.sponsor_location_question_binding == sponsor_location_binding(case)):
+            and case.sponsor_location_question_binding == sponsor_location_binding(case))
+    uncertain = event.body.strip().rstrip("。.!！").strip().casefold() in {
+        "不知道", "暂时不知道", "还不清楚", "不清楚", "不确定", "需要问一下",
+        "i don't know", "i need to check", "not sure", "i'm not sure",
+    }
+    if verified_context and uncertain:
+        case.sponsor_location_deferrals.append({"source_event_id": event.id,
+            "source_excerpt": event.body.strip(), "question_event_id": str(verified_question_event_id),
+            "dimension": str(verified_dimension), "binding": sponsor_location_binding(case)})
+        if "sponsor_is_in_uk" not in case.deferred_fields:
+            case.deferred_fields.append("sponsor_is_in_uk")
+        if "sponsor_is_in_uk" not in case.latest_deferred_fields:
+            case.latest_deferred_fields.append("sponsor_is_in_uk")
+        case.profile.sponsor_is_in_uk = None
+        for evidence in case.active_evidence("sponsor_is_in_uk"):
+            evidence.superseded = True
+        case.latest_received_facts.pop("sponsor_is_in_uk", None)
+        case.latest_changes.pop("sponsor_is_in_uk", None)
+        case.profile_confirmed = False
+        case.final_summary_confirmed = False
+        return True
+    if not statements and short is not None and verified_context:
+        assert verified_dimension is not None
         statements = [SponsorLocationStatement(dimension=verified_dimension, value=short,
             source_event_id=event.id, source_excerpt=event.body.strip(),
             context_question_event_id=verified_question_event_id,
@@ -59,7 +81,10 @@ def record_sponsor_location(case: Case, event: InboundEvent, *,
     new = [item for item in statements if item not in case.sponsor_location_statements]
     if not new:
         return False
+    answered_pending = any(item.dimension == pending_location_dimension(case) for item in new)
     case.sponsor_location_statements.extend(new)
+    if answered_pending:
+        case.deferred_fields = [field for field in case.deferred_fields if field != "sponsor_is_in_uk"]
     case.profile.sponsor_is_in_uk = None
     for evidence in case.active_evidence("sponsor_is_in_uk"):
         evidence.superseded = True
