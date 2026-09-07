@@ -87,6 +87,16 @@ def clear_natural_confirmation(body: str) -> bool:
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     if confirmation_has_caveat(text):
         return False
+    field = r"(?:姓名|生日|出生日期|出行日期|日期|住址|收入|资金来源|旅行记录|资料|信息|摘要|材料清单)"
+    reviewed_summary = (
+        r"我已(?:经)?(?:逐项)?核对(?:了)?(?:这封邮件里(?:的)?|上面(?:的)?|上述)?"
+        r"(?:资料摘要|资料|信息|摘要|材料清单)[，,]\s*"
+        rf"(?:{field}[、，,和及])*{field}(?:均|都)?(?:准确|正确|无误)"
+        r"(?:[，,]没有遗漏(?:或更改)?)?[。.!！\s]*"
+        r"(?:(?:请|可以|麻烦)(?:帮我)?继续(?:整理|准备)?(?:材料)?[。.!！\s]*)?"
+    )
+    if len(text) <= 240 and re.fullmatch(reviewed_summary, text):
+        return True
     return any(
         len(line) <= 180
         and bool(
