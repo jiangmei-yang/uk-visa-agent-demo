@@ -140,6 +140,7 @@ def main() -> None:
     parser.add_argument("--migrate-service-interaction", action="store_true",
                         help="Explicitly switch an existing store to service_request for NEW mail only")
     parser.add_argument("--state-dir", type=Path, required=True)
+    parser.add_argument("--case", help="Exact existing case for reviewed delivery or reconciliation")
     parser.add_argument(
         "--watch", action="store_true", help="Repeat prepare or controlled serve cycles"
     )
@@ -150,6 +151,10 @@ def main() -> None:
         help="Synthetic crash test: terminate after provider acceptance, before local SENT commit",
     )
     args = parser.parse_args()
+    if args.action in {"send-reviewed", "reconcile"} and not args.case:
+        parser.error("Reviewed delivery/reconciliation requires an explicit --case")
+    if args.case and args.action not in {"send-reviewed", "reconcile"}:
+        parser.error("--case applies only to reviewed delivery/reconciliation")
     if args.migrate_service_interaction and args.processing_interaction != "service_request":
         parser.error("Service migration requires --processing-interaction service_request")
     if args.crash_after_send and args.action != "send-reviewed":
@@ -194,14 +199,26 @@ def main() -> None:
 def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
              fixture_without_processing_consent: bool = False) -> None:
     """One cycle. The explicit fixture-only override is intentionally absent from CLI."""
+    if args.action in {"send-reviewed", "reconcile"} and not getattr(args, "case", None):
+        parser.error("Select an explicit existing case before delivery or reconciliation")
     binding = {"sender": args.sender, "mailbox": args.mailbox, "subject": args.subject}
     if args.after is not None:
         binding["after"] = args.after
     binding_path = args.state_dir / "binding.json"
+    if getattr(args, "case", None) and (
+        not binding_path.is_file() or not (args.state_dir / "sandbox.db").is_file()
+    ):
+        parser.error("Case-scoped delivery requires an existing bound state directory")
     if binding_path.exists():
         previous_binding = json.loads(binding_path.read_text())
         if previous_binding != binding:
-            if (getattr(args, "migrate_service_interaction", False) and args.sender is None
+            if (getattr(args, "case", None) and args.action in {"send-reviewed", "reconcile"}
+                    and args.sender is not None and previous_binding.get("sender") is None
+                    and previous_binding.get("mailbox") == args.mailbox
+                    and previous_binding.get("subject") == args.subject
+                    and (args.after is None or args.after == previous_binding.get("after"))):
+                pass  # A case-scoped operation never narrows or rewrites the intake binding.
+            elif (getattr(args, "migrate_service_interaction", False) and args.sender is None
                     and previous_binding.get("sender") is not None
                     and previous_binding.get("mailbox") == args.mailbox
                     and previous_binding.get("subject") is None and args.subject is None
@@ -226,8 +243,21 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
     store = SQLiteStore(args.state_dir / "sandbox.db")
     journal = None
     try:
+        selected_case_id = getattr(args, "case", None)
+        if selected_case_id is not None:
+            selected_case = store.get_case(selected_case_id)
+            if (selected_case is None or selected_case.primary_channel != "gmail"
+                    or [address.casefold() for _, address in getaddresses([selected_case.applicant_contact])]
+                    != [(args.sender or "").casefold()]):
+                parser.error("Selected Gmail case does not belong to the specified sender")
         ledger = ConsentLedger(store)
-        if not fixture_without_processing_consent and args.action in {"prepare", "serve", "send-reviewed"}:
+        if not fixture_without_processing_consent and args.action == "send-reviewed":
+            registered_scope = ledger.scope()
+            if (registered_scope is None or registered_scope.provider != "deepseek"
+                    or registered_scope.model != args.model
+                    or registered_scope.interaction != getattr(args, "processing_interaction", "explicit_consent")):
+                parser.error("Use the registered provider/model/interaction; reviewed sending cannot reconfigure processing")
+        if not fixture_without_processing_consent and args.action in {"prepare", "serve"}:
             ledger.configure(ProcessingScope(provider="DeepSeek", model=args.model,
                 interaction=getattr(args, "processing_interaction", "explicit_consent")),
                 migrate_service=getattr(args, "migrate_service_interaction", False))
@@ -450,6 +480,8 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
 
             class ScopedSender(GmailReplySender):
                 def send(self, request: ReplyRequest) -> str:
+                    if selected_case_id is not None and request.thread_id != selected_case.external_thread_id:
+                        raise PermanentChannelError("Selected case thread boundary failed")
                     if [address for _, address in getaddresses([request.recipient])] != [
                         args.sender
                     ] or (args.subject is not None and request.subject != "Re: " + args.subject):
@@ -460,7 +492,7 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
                     return result
 
             sender = ScopedSender(adapter)
-            dispatcher = OutboxDispatcher(store, sender, channel="gmail")
+            dispatcher = OutboxDispatcher(store, sender, channel="gmail", case_id=selected_case_id)
             results = (
                 dispatcher.reconcile_sending(sender, datetime.now(UTC))
                 if args.action == "reconcile"
@@ -468,6 +500,8 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
             )
             print("Dispatch:", [item.status for item in results])
         for row in [] if args.watch else store.list_outbox():
+            if selected_case_id is not None and row["case_id"] != selected_case_id:
+                continue
             print(
                 json.dumps(
                     {k: row.get(k) for k in ("id", "status", "message_type", "payload")},

@@ -80,6 +80,7 @@ class OutboxDispatcher:
         base_backoff_seconds: int = 60,
         channel: str | None = None,
         allowed_message_types: tuple[str, ...] | None = None,
+        case_id: str | None = None,
     ) -> None:
         if max_attempts < 1:
             raise ValueError("max_attempts must be at least 1")
@@ -89,11 +90,12 @@ class OutboxDispatcher:
         self.base_backoff_seconds = base_backoff_seconds
         self.channel = channel
         self.allowed_message_types = allowed_message_types
+        self.case_id = case_id
 
     def dispatch_due(self, now: datetime, limit: int = 20) -> list[DispatchOutcome]:
         outcomes: list[DispatchOutcome] = []
         self._withhold_superseded_ready()
-        for row in self.store.claim_pending_outbox(now, limit, self.channel, self.allowed_message_types):
+        for row in self.store.claim_pending_outbox(now, limit, self.channel, self.allowed_message_types, self.case_id):
             outbox_id = str(row["id"])
             attempt = int(row["attempt_count"]) + 1
             try:
@@ -151,6 +153,9 @@ class OutboxDispatcher:
             return
         channel_clause = " AND old.channel=?" if self.channel is not None else ""
         values: tuple[object, ...] = () if self.channel is None else (self.channel,)
+        if self.case_id is not None:
+            channel_clause += " AND old.case_id=?"
+            values += (self.case_id,)
         with self.store.atomic_write():
             self.store.connection.execute(
                 "UPDATE outbox AS old SET status='FAILED', next_attempt_at=NULL, "
@@ -169,7 +174,7 @@ class OutboxDispatcher:
         limit: int = 20,
     ) -> list[DispatchOutcome]:
         outcomes: list[DispatchOutcome] = []
-        for row in self.store.list_sending_outbox(limit, self.channel):
+        for row in self.store.list_sending_outbox(limit, self.channel, self.case_id):
             outbox_id = str(row["id"])
             rfc_message_id = f"<{outbox_id}@visa-agent.local>"
             try:
