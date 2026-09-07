@@ -7,6 +7,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: astral-sh/setup-uv@v10.0.1
@@ -16,7 +17,8 @@ jobs:
       - run: uv sync --extra dev --locked
       - run: make lint
       - run: make typecheck
-      - run: make test
+      - name: Run complete regression with hang diagnostics
+        run: uv run pytest -o faulthandler_timeout=60 --durations=20 --junitxml=/tmp/visa-regression.xml
       - run: make demo
       - run: make stability
         env:
