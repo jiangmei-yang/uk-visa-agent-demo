@@ -1,0 +1,14 @@
+{
+  "scope": "Four unchanged fictional PDFs; current-source run after natural summary-confirmation repair",
+  "report": "financial_document_deepseek_2026-09-07-v32.json",
+  "sha256": "fc4dccf2d30d1d6e47e1233246e6bb95fb2a3ec0f423206ac856a2f83ed120ed",
+  "calls": 4,
+  "passed": 4,
+  "failed": 0,
+  "tokens": 9635,
+  "bound_git_head": "8ca6efb311a0f96ad451e038d16e33bded3d0484",
+  "implementation_manifest_entries": 109,
+  "previous_receipt_left_unchanged": "financial_document_current_2026-09-07-v31.json",
+  "mailbox_calls": 0,
+  "real_documents": 0
+}

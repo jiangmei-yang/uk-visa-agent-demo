@@ -1,0 +1,384 @@
+{
+  "evidence_contract_version": "financial-document-probe-v2",
+  "scope": "4 selected fictional financial PDFs; one DeepSeek extraction each",
+  "model": "deepseek-v4-flash",
+  "maximum_model_calls": 4,
+  "mailbox_calls": 0,
+  "real_documents": 0,
+  "completed": true,
+  "all_passed": true,
+  "results": [
+    {
+      "filename": "fictional_employment_letter.pdf",
+      "sha256": "64146476e2b61f5d5305e7436c81b6dfe976a213adacbdf6e6c69edee2e23e80",
+      "checks": {
+        "frozen_fictional_source": true,
+        "expected_kind": true,
+        "accepted_extraction": true,
+        "one_financial_observation": true,
+        "expected_financial_kind": true,
+        "expected_subject": true,
+        "expected_amount": true,
+        "expected_currency": true
+      },
+      "passed": true,
+      "read_result": {
+        "kind": "employment_letter",
+        "requires_review": false,
+        "review_reason": null,
+        "financial_observations": [
+          {
+            "kind": "salary",
+            "subject_name": "Kai Example",
+            "amount": "42000.00",
+            "currency": "GBP",
+            "period": "annual",
+            "basis": "gross",
+            "as_of": "2026-08-31",
+            "account_reference": null,
+            "subject_page": 1,
+            "subject_excerpt": "Employee: Kai Example",
+            "amount_page": 1,
+            "amount_excerpt": "Gross annual salary: GBP 42,000.00.",
+            "date_page": 1,
+            "date_excerpt": "Letter date: 2026-08-31",
+            "account_page": null,
+            "account_excerpt": null,
+            "confidence": 1.0
+          }
+        ]
+      },
+      "raw_model_response": "{\n  \"kind\": \"employment_letter\",\n  \"language\": \"en\",\n  \"classification_page\": 1,\n  \"classification_excerpt\": \"North Harbour Trading Ltd - Employment Letter\",\n  \"confidence\": 1.0,\n  \"facts\": [\n    {\n      \"field\": \"full_name\",\n      \"value\": \"Kai Example\",\n      \"page\": 1,\n      \"excerpt\": \"Employee: Kai Example\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"financial_observations\": [\n    {\n      \"kind\": \"salary\",\n      \"subject_name\": \"Kai Example\",\n      \"amount\": \"42000.00\",\n      \"currency\": \"GBP\",\n      \"period\": \"annual\",\n      \"basis\": \"gross\",\n      \"as_of\": \"2026-08-31\",\n      \"account_reference\": null,\n      \"subject_page\": 1,\n      \"subject_excerpt\": \"Employee: Kai Example\",\n      \"amount_page\": 1,\n      \"amount_excerpt\": \"Gross annual salary: GBP 42,000.00.\",\n      \"date_page\": 1,\n      \"date_excerpt\": \"Letter date: 2026-08-31\",\n      \"account_page\": null,\n      \"account_excerpt\": null,\n      \"confidence\": 1.0\n    }\n  ],\n  \"requires_review\": false,\n  \"review_reason\": null\n}",
+      "usage": [
+        {
+          "operation": "extract_document",
+          "input_tokens": 2087,
+          "output_tokens": 303,
+          "total_tokens": 2390
+        }
+      ],
+      "provider_response_model": "deepseek-v4-flash",
+      "provider_response_model_sha256": "f61ff5cf8e1cc88da6944d6bcd3e2e7da5ff27dd3288a8781908018cb8240cd6"
+    },
+    {
+      "filename": "fictional_bank_statement_a.pdf",
+      "sha256": "70d27a0e37878bbba55a787ac705066ad27333a07222f29ecacb73302118e1f7",
+      "checks": {
+        "frozen_fictional_source": true,
+        "expected_kind": true,
+        "accepted_extraction": true,
+        "one_financial_observation": true,
+        "expected_financial_kind": true,
+        "expected_subject": true,
+        "expected_amount": true,
+        "expected_currency": true
+      },
+      "passed": true,
+      "read_result": {
+        "kind": "bank_statement",
+        "requires_review": false,
+        "review_reason": null,
+        "financial_observations": [
+          {
+            "kind": "closing_balance",
+            "subject_name": "Kai Example",
+            "amount": "12500.50",
+            "currency": "GBP",
+            "period": "closing",
+            "basis": "unspecified",
+            "as_of": "2026-08-31",
+            "account_reference": "1234",
+            "subject_page": 1,
+            "subject_excerpt": "Account holder: Kai Example.",
+            "amount_page": 1,
+            "amount_excerpt": "Closing balance GBP 12,500.50 as of 2026-08-31.",
+            "date_page": 1,
+            "date_excerpt": "Closing balance GBP 12,500.50 as of 2026-08-31.",
+            "account_page": 1,
+            "account_excerpt": "Account ending: 1234.",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "raw_model_response": "{\n  \"kind\": \"bank_statement\",\n  \"language\": \"en\",\n  \"classification_page\": 1,\n  \"classification_excerpt\": \"North Harbour Bank - Current Account Statement\",\n  \"confidence\": 1.0,\n  \"facts\": [\n    {\n      \"field\": \"full_name\",\n      \"value\": \"Kai Example\",\n      \"page\": 1,\n      \"excerpt\": \"Account holder: Kai Example.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"financial_observations\": [\n    {\n      \"kind\": \"closing_balance\",\n      \"subject_name\": \"Kai Example\",\n      \"amount\": \"12500.50\",\n      \"currency\": \"GBP\",\n      \"period\": \"closing\",\n      \"basis\": \"unspecified\",\n      \"as_of\": \"2026-08-31\",\n      \"account_reference\": \"1234\",\n      \"subject_page\": 1,\n      \"subject_excerpt\": \"Account holder: Kai Example.\",\n      \"amount_page\": 1,\n      \"amount_excerpt\": \"Closing balance GBP 12,500.50 as of 2026-08-31.\",\n      \"date_page\": 1,\n      \"date_excerpt\": \"Closing balance GBP 12,500.50 as of 2026-08-31.\",\n      \"account_page\": 1,\n      \"account_excerpt\": \"Account ending: 1234.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"requires_review\": false,\n  \"review_reason\": null\n}",
+      "usage": [
+        {
+          "operation": "extract_document",
+          "input_tokens": 2088,
+          "output_tokens": 333,
+          "total_tokens": 2421
+        }
+      ],
+      "provider_response_model": "deepseek-v4-flash",
+      "provider_response_model_sha256": "f61ff5cf8e1cc88da6944d6bcd3e2e7da5ff27dd3288a8781908018cb8240cd6"
+    },
+    {
+      "filename": "fictional_bank_statement_b.pdf",
+      "sha256": "adae3cdd2a6740f5fac82bac11f0c2e4801e2a25fa24c565356bc35688a77f63",
+      "checks": {
+        "frozen_fictional_source": true,
+        "expected_kind": true,
+        "accepted_extraction": true,
+        "one_financial_observation": true,
+        "expected_financial_kind": true,
+        "expected_subject": true,
+        "expected_amount": true,
+        "expected_currency": true
+      },
+      "passed": true,
+      "read_result": {
+        "kind": "bank_statement",
+        "requires_review": false,
+        "review_reason": null,
+        "financial_observations": [
+          {
+            "kind": "closing_balance",
+            "subject_name": "Kai Example",
+            "amount": "13000.00",
+            "currency": "GBP",
+            "period": "closing",
+            "basis": "unspecified",
+            "as_of": "2026-08-31",
+            "account_reference": "1234",
+            "subject_page": 1,
+            "subject_excerpt": "Account holder: Kai Example.",
+            "amount_page": 1,
+            "amount_excerpt": "Closing balance GBP 13,000.00 as of 2026-08-31.",
+            "date_page": 1,
+            "date_excerpt": "Closing balance GBP 13,000.00 as of 2026-08-31.",
+            "account_page": 1,
+            "account_excerpt": "Account ending: 1234.",
+            "confidence": 1.0
+          }
+        ]
+      },
+      "raw_model_response": "{\n  \"kind\": \"bank_statement\",\n  \"language\": \"en\",\n  \"classification_page\": 1,\n  \"classification_excerpt\": \"North Harbour Bank - Corrected Current Account Statement\",\n  \"confidence\": 1.0,\n  \"facts\": [\n    {\n      \"field\": \"full_name\",\n      \"value\": \"Kai Example\",\n      \"page\": 1,\n      \"excerpt\": \"Account holder: Kai Example.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"financial_observations\": [\n    {\n      \"kind\": \"closing_balance\",\n      \"subject_name\": \"Kai Example\",\n      \"amount\": \"13000.00\",\n      \"currency\": \"GBP\",\n      \"period\": \"closing\",\n      \"basis\": \"unspecified\",\n      \"as_of\": \"2026-08-31\",\n      \"account_reference\": \"1234\",\n      \"subject_page\": 1,\n      \"subject_excerpt\": \"Account holder: Kai Example.\",\n      \"amount_page\": 1,\n      \"amount_excerpt\": \"Closing balance GBP 13,000.00 as of 2026-08-31.\",\n      \"date_page\": 1,\n      \"date_excerpt\": \"Closing balance GBP 13,000.00 as of 2026-08-31.\",\n      \"account_page\": 1,\n      \"account_excerpt\": \"Account ending: 1234.\",\n      \"confidence\": 1.0\n    }\n  ],\n  \"requires_review\": false,\n  \"review_reason\": null\n}",
+      "usage": [
+        {
+          "operation": "extract_document",
+          "input_tokens": 2090,
+          "output_tokens": 335,
+          "total_tokens": 2425
+        }
+      ],
+      "provider_response_model": "deepseek-v4-flash",
+      "provider_response_model_sha256": "f61ff5cf8e1cc88da6944d6bcd3e2e7da5ff27dd3288a8781908018cb8240cd6"
+    },
+    {
+      "filename": "fictional_sponsor_statement.pdf",
+      "sha256": "e255b307ec708735dfda4ce81f69c3425a61afd871b270d1c4dcc278325dddea",
+      "checks": {
+        "frozen_fictional_source": true,
+        "expected_kind": true,
+        "accepted_extraction": true,
+        "one_financial_observation": true,
+        "expected_financial_kind": true,
+        "expected_subject": true,
+        "expected_amount": true,
+        "expected_currency": true
+      },
+      "passed": true,
+      "read_result": {
+        "kind": "sponsor_funds",
+        "requires_review": false,
+        "review_reason": null,
+        "financial_observations": [
+          {
+            "kind": "closing_balance",
+            "subject_name": "Mina Example",
+            "amount": "88000.00",
+            "currency": "HKD",
+            "period": "closing",
+            "basis": "unspecified",
+            "as_of": "2026-08-31",
+            "account_reference": "9876",
+            "subject_page": 1,
+            "subject_excerpt": "Account holder: Mina Example. Account ending: 9876.",
+            "amount_page": 1,
+            "amount_excerpt": "Closing balance HKD 88,000.00 as of 2026-08-31.",
+            "date_page": 1,
+            "date_excerpt": "Closing balance HKD 88,000.00 as of 2026-08-31.",
+            "account_page": 1,
+            "account_excerpt": "Account ending: 9876.",
+            "confidence": 0.99
+          }
+        ]
+      },
+      "raw_model_response": "{\n  \"kind\": \"sponsor_funds\",\n  \"language\": \"en\",\n  \"classification_page\": 1,\n  \"classification_excerpt\": \"Harbour Test Bank - Sponsor Funds Statement\",\n  \"confidence\": 0.99,\n  \"facts\": [],\n  \"financial_observations\": [\n    {\n      \"kind\": \"closing_balance\",\n      \"subject_name\": \"Mina Example\",\n      \"amount\": \"88000.00\",\n      \"currency\": \"HKD\",\n      \"period\": \"closing\",\n      \"basis\": \"unspecified\",\n      \"as_of\": \"2026-08-31\",\n      \"account_reference\": \"9876\",\n      \"subject_page\": 1,\n      \"subject_excerpt\": \"Account holder: Mina Example. Account ending: 9876.\",\n      \"amount_page\": 1,\n      \"amount_excerpt\": \"Closing balance HKD 88,000.00 as of 2026-08-31.\",\n      \"date_page\": 1,\n      \"date_excerpt\": \"Closing balance HKD 88,000.00 as of 2026-08-31.\",\n      \"account_page\": 1,\n      \"account_excerpt\": \"Account ending: 9876.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"requires_review\": false,\n  \"review_reason\": null\n}",
+      "usage": [
+        {
+          "operation": "extract_document",
+          "input_tokens": 2104,
+          "output_tokens": 295,
+          "total_tokens": 2399
+        }
+      ],
+      "provider_response_model": "deepseek-v4-flash",
+      "provider_response_model_sha256": "f61ff5cf8e1cc88da6944d6bcd3e2e7da5ff27dd3288a8781908018cb8240cd6"
+    }
+  ],
+  "run_started_at": "2026-09-07T10:02:01.573248+00:00",
+  "git_head": "8ca6efb311a0f96ad451e038d16e33bded3d0484",
+  "selected_documents": [
+    "fictional_employment_letter.pdf",
+    "fictional_bank_statement_a.pdf",
+    "fictional_bank_statement_b.pdf",
+    "fictional_sponsor_statement.pdf"
+  ],
+  "document_source_manifest": {
+    "fictional_employment_letter.pdf": {
+      "sha256": "64146476e2b61f5d5305e7436c81b6dfe976a213adacbdf6e6c69edee2e23e80",
+      "fictional_evaluation_document": true,
+      "fictional_label": "FICTIONAL SPECIMEN FOR SOFTWARE EVALUATION - NO REAL PERSON OR EMPLOYER",
+      "fictional_label_sha256": "bd54878abacbbdb42e91e01d4540fb170d9ddc287a2f39fa1df0ad477f70c069"
+    },
+    "fictional_bank_statement_a.pdf": {
+      "sha256": "70d27a0e37878bbba55a787ac705066ad27333a07222f29ecacb73302118e1f7",
+      "fictional_evaluation_document": true,
+      "fictional_label": "FICTIONAL SPECIMEN FOR SOFTWARE EVALUATION - NOT A REAL ACCOUNT",
+      "fictional_label_sha256": "1a5d841682f57a02b952ed54fc15b517ef260b725ed4b4e79d095c96bdf41b55"
+    },
+    "fictional_bank_statement_b.pdf": {
+      "sha256": "adae3cdd2a6740f5fac82bac11f0c2e4801e2a25fa24c565356bc35688a77f63",
+      "fictional_evaluation_document": true,
+      "fictional_label": "FICTIONAL SPECIMEN FOR SOFTWARE EVALUATION - NOT A REAL ACCOUNT",
+      "fictional_label_sha256": "1a5d841682f57a02b952ed54fc15b517ef260b725ed4b4e79d095c96bdf41b55"
+    },
+    "fictional_sponsor_statement.pdf": {
+      "sha256": "e255b307ec708735dfda4ce81f69c3425a61afd871b270d1c4dcc278325dddea",
+      "fictional_evaluation_document": true,
+      "fictional_label": "FICTIONAL SPECIMEN FOR SOFTWARE EVALUATION - NOT A REAL ACCOUNT",
+      "fictional_label_sha256": "1a5d841682f57a02b952ed54fc15b517ef260b725ed4b4e79d095c96bdf41b55"
+    }
+  },
+  "document_source_sha256": {
+    "fictional_employment_letter.pdf": "64146476e2b61f5d5305e7436c81b6dfe976a213adacbdf6e6c69edee2e23e80",
+    "fictional_bank_statement_a.pdf": "70d27a0e37878bbba55a787ac705066ad27333a07222f29ecacb73302118e1f7",
+    "fictional_bank_statement_b.pdf": "adae3cdd2a6740f5fac82bac11f0c2e4801e2a25fa24c565356bc35688a77f63",
+    "fictional_sponsor_statement.pdf": "e255b307ec708735dfda4ce81f69c3425a61afd871b270d1c4dcc278325dddea"
+  },
+  "document_source_bundle_sha256": "37112ac1fd02ff2d3349a357a4a9025e49890dadc5125558fd08177d0d1c430b",
+  "implementation_files_sha256": {
+    "scripts/financial_document_probe.py": "198985457997d483161ed664d1401c8dc41f636e59590e7a6e06a1d0dfd46bb8",
+    "src/visa_agent/__init__.py": "a3350ee5bcd581ebdb734128829da5e6772eae8346faaa85e2bf608d27d95149",
+    "src/visa_agent/case_data.py": "06dcf00b0073b70b25468b7a0da891942a3ef45bcbd52e141194628b4823951c",
+    "src/visa_agent/channels/__init__.py": "4a9e7ea09deca6b1c25e049b68a2c34aadbd57475fc072d0e198086255ba173e",
+    "src/visa_agent/channels/automatic_reply.py": "311d0dd270159d514a3c50b56c8fcaa061e952edee89f1bb6267dcea211a9024",
+    "src/visa_agent/channels/email_fixture.py": "ee68e7eb2aa4a312dc6846d159bd45574b4faf4e1ad623cb5d17133ff1b97877",
+    "src/visa_agent/channels/email_ingestion.py": "fbddd383aea363fbf97f1f82fbc711b99853b9e48ab584bd5249fe888b1cb12b",
+    "src/visa_agent/channels/gmail.py": "873de8bead906bfe4edf766440f274cf152a1d3a123c31c6c7b0e371397e0ab6",
+    "src/visa_agent/channels/gmail_auth.py": "ba7277ade4bf0f5485e36ef9ce7f7c46d7b36146fb601d0d9f9a808eb9d7e89c",
+    "src/visa_agent/channels/gmail_intake.py": "a6e14b64b1090e648160c0042616eb8e8c5f6a096752308a407318fa859cf939",
+    "src/visa_agent/channels/gmail_pipeline.py": "3ec2aaf045a78046f59c98b1491ed806a4fc24c39007255c4c0ed02ea16f41c3",
+    "src/visa_agent/channels/gmail_sync.py": "00ecb0c5e22f56abcc411815199369fa2d6fa759bff38555cf9503bbda183342",
+    "src/visa_agent/channels/inbound_worker.py": "d57f44edfaae82ee31309bdb31ada06a3be4e25856e464277bdfa60d9bbc2370",
+    "src/visa_agent/channels/outbound.py": "6e25fbc4f265abdc13a2f5beec5e3404ce7505bc7bd8ed1d12a1564c896f09b7",
+    "src/visa_agent/channels/outbound_fixture.py": "f83c59dfe9013d59d3fc336061931c8ac5b9d5dae6c87a84a3200bc2edfa2d82",
+    "src/visa_agent/channels/runtime_lock.py": "c03396b333e6627731f8a61b6b14438ff3d6c55370759fdd39af46a45bd26fb5",
+    "src/visa_agent/channels/twilio_receiver.py": "a4267a306c01d2757657d73d0dff1f1c9f06237e8df4e9fb1f028fc705b13600",
+    "src/visa_agent/channels/twilio_status.py": "f75351716055ba4a5c001d00e76c64187589eb462c05684f7c73dc96c4f80271",
+    "src/visa_agent/channels/twilio_whatsapp.py": "adf1233212ffd745242360085fbe087cc2846a42480f5bebbbe0d52e77b18575",
+    "src/visa_agent/channels/whatsapp_service.py": "abe8ffa7cb2ddc50cb95f8500c5f06a0dc375c4cbd7db17d644bba910b54933b",
+    "src/visa_agent/cli.py": "941f3f30492d813d5aadf2c0127b5a7740cf639fa4f3a77c1bcdd0c47132f6b2",
+    "src/visa_agent/config.py": "a00bd6949e4c747ba19f9b00e28fdf3efdcca1eb237e6f0b1f0f05b92d094516",
+    "src/visa_agent/delivery/__init__.py": "c228e85c7a38888d18198814f142ac9a6262de6ee17ccc377066e308c1df9735",
+    "src/visa_agent/delivery/fonts.py": "0cb75969466a07a71f1110ee0f3d84a8a18bad096f5db8ccf61d6395d2517587",
+    "src/visa_agent/delivery/pack.py": "5d06fc1c31f5d99f04098642ed7f6065ebbb580e2543a1000258f7f9a9d8b4c0",
+    "src/visa_agent/delivery/simulation.py": "047338e2988533f4aa14c3f3601a3564a13c7e36f038e60f2aa2516562f04889",
+    "src/visa_agent/demo.py": "6b09553b1dc0a716833e6bf62753c865dc912fc6e45c5e8aa91f96b8022d6402",
+    "src/visa_agent/documents/__init__.py": "dae296ed7a7312a7792c2dc59d13be7b6905c5daf4b728d5ca37c80224fed7b1",
+    "src/visa_agent/documents/natural.py": "8c810be38ae3ac3fae7b3b556c5044c70ec34e59d1ddc0e1b5a621ad3818be40",
+    "src/visa_agent/documents/processor.py": "e5230265b42a9073f4264d2056e35ae8eca0bdecf55da2d99bebfcddce92efdc",
+    "src/visa_agent/documents/samples.py": "a6d31928403c7a4a99e51e85c38ab518fdb768d87fb4136d46c84c90f2167e21",
+    "src/visa_agent/documents/simulation.py": "7e304e5c339e4d4fdedf0644bc5d8d163d1290e4aa7ac003526a354bc85070fc",
+    "src/visa_agent/domain/__init__.py": "d5cd2e4964d34671b4b71a2c0796c5985b105b0fc0a9b5c72082c90e3625cecd",
+    "src/visa_agent/domain/address_evidence.py": "45acb50fb5ce26a0bac90ef96a4859360d34c3b00d0de15103a1cf68c97d8c51",
+    "src/visa_agent/domain/application_records.py": "8f692f06c7faebab35a5402aadeae73f5547032e1d6748a53995204469f0a340",
+    "src/visa_agent/domain/date_evidence.py": "efeae43509fc7985bf6127f855b2cd8c438f76c3759614bb15eef3269f9e9825",
+    "src/visa_agent/domain/employer_evidence.py": "b906529fd8a5d8293a0bf3250fe8ac0d1125c4be3e7d855635f7dc027fc6a2ba",
+    "src/visa_agent/domain/financial_evidence.py": "3584818cb03aec2c46be614180936a916607b1c722ad09fffbf20f01474dbe05",
+    "src/visa_agent/domain/financial_review.py": "19dbb5d2e73d95cd53f00de76364822dfac196217d526d08bf30a33e8cde3606",
+    "src/visa_agent/domain/locations.py": "2e831bd608afd399ac648b4bca05a7c5e009f7266666e22bdd9312bcf3651f00",
+    "src/visa_agent/domain/models.py": "ad74aebc10b4a09c0278eac332e3bcfe6a3d088923a400a468a60d74df4738e4",
+    "src/visa_agent/domain/policy.py": "98103fa5d39e67df9e50a7364e43a11f96b98be1bc04e4ffc40e98422f331e5b",
+    "src/visa_agent/domain/record_completeness.py": "374a7b7550da707964bc965f0a8bb6d4517c95c616c8d2a80c3056076e845645",
+    "src/visa_agent/domain/record_review.py": "7960e4125a3e5951b09c15cb270315b1ec1b67619921abe58f2bae98436f8452",
+    "src/visa_agent/domain/residence_duration.py": "05903dac1829258747c6d5582c93a139045996e6e55ccdc9555d85d0b363bd56",
+    "src/visa_agent/domain/rules.py": "754b23fc45bdcfdd4a5b7d73308dd654b952e7df15b947fb1782376787b6b1d5",
+    "src/visa_agent/domain/simulation.py": "ff7f92c68628a2f078edb8885848367c82e5728c7d8b82789293c9b8cdb8f2aa",
+    "src/visa_agent/domain/sponsor_evidence.py": "6fdaf26bef2bade9fa8872a53f1cdb0b8d5a89b95a723316b6552655f73baf4d",
+    "src/visa_agent/domain/sponsor_location.py": "7bec47e1244974a6e3b585ce264787614c70e576485bc775b08473e1641d135f",
+    "src/visa_agent/domain/sponsor_location_review.py": "534cc9e74e6c95a6c1805e3c82b7bd3523d7cc9f245e4332dd165ea43817dd99",
+    "src/visa_agent/lab.py": "6af7780373d780dfd95a26e65409f9aac20164218bf90eec733e4aea6eb14570",
+    "src/visa_agent/llm/__init__.py": "5607d3f7ccee9ab958fec329b1f27093830199ec9c38a45446c93e4537fa7c42",
+    "src/visa_agent/llm/application_records.py": "e0a22bd5febfb1ee1fc72564556f29f3b71c8016f47820cfcaba00abf2694b00",
+    "src/visa_agent/llm/deepseek_client.py": "e8fb5fcd46912ebf9e2519d74f7d7cf8d1c8748143f05bbe4d22352b679508ea",
+    "src/visa_agent/llm/evaluation.py": "6393a9f5bc43f43ae5c5bad4e8e813a5aafe87acd1ff0cd454de6f59972a9f26",
+    "src/visa_agent/llm/guarded.py": "e04acc6c290c6e71b2f8d52beb3e8b5d070e2fd51672b5cb9e652259f7163469",
+    "src/visa_agent/llm/offline.py": "da82f3840f36c6cad0c0d62a61447d9850911f6995b589afc2d0d6f445996db9",
+    "src/visa_agent/llm/openai_client.py": "0cca1260f780eb67f8ea2abd51fe5bc36ec5c85be6b0f8f748e89b9fc9a62699",
+    "src/visa_agent/llm/ports.py": "81630515c17fbbfadf769c310f61427c0bb5a3001903461b77d19e55780e59aa",
+    "src/visa_agent/llm/question_understanding.py": "2d9a6c9381f9342513af4e89ecf2b127fa6670988ede1bc954c07460fec55fb9",
+    "src/visa_agent/llm/reply_style.py": "7aca465240d7496deafc2fbab4cb3eed341437ac087ca37a9b20de6300a4b235",
+    "src/visa_agent/privacy/__init__.py": "3b88bb325c56e34aa2e644b42039826fbdb20b1230b28c281b082cb6f48918c2",
+    "src/visa_agent/privacy/consent.py": "b9bbe09f1029aa1a72b28249085cba95b2502c7fbf4164700ec771895bf6f690",
+    "src/visa_agent/privacy/customer_copy.py": "c2a3a237830179789c1dd4307671603e2f06becbd96ca71117ea2874a1b18ca4",
+    "src/visa_agent/privacy/public_consultation.py": "2d9919f21dd4d43b2ee3e51320f415d94d731577928530d5e041fc6a5972b35d",
+    "src/visa_agent/public_webhook.py": "c51893541eb5923847a057b4bfc896b20a7360c19b3462b6a130a0611ebc5c3d",
+    "src/visa_agent/review_ui.py": "dd40c9452e3d294593c8a30d1a3dfb276176c2377f3400f2c76bba2041085b32",
+    "src/visa_agent/secrets.py": "5a7f15fb96b1a544209a6380c57a3e39f9ac5c8c93cbd54cf2f50ded7b4fbd36",
+    "src/visa_agent/startup.py": "c6e9d3a83701715286d23ed66241feb00db6375eda63efb5a7737fffc74f8846",
+    "src/visa_agent/storage/__init__.py": "7296f379f4b997d52f354cdd5e6ce5314187146e117f02f04b6fa86f39bf6cd6",
+    "src/visa_agent/storage/simulation.py": "4ecf9762bdfe2210ec407a6a8a12b98b9e02903149d26ed6f524b09c49434211",
+    "src/visa_agent/storage/sqlite.py": "86fbd7cbab6915d6956756762db727c55789c6a0fa86635e80dbe5fe03564d4b",
+    "src/visa_agent/web.py": "f5e480ef8443d2b46a64ba46a8dea606e2377727c049683ebf72fb3a7fa03680",
+    "src/visa_agent/workflow/__init__.py": "a273d6ddf1c05279ae2d32d46583ba5b9e94e145f4f5f816d131a723896dac7e",
+    "src/visa_agent/workflow/advice_continuation.py": "4689be647f04ca0e0ab733992d9fa7cecd5caef89806ac0a521314535e0cc96f",
+    "src/visa_agent/workflow/advice_preferences.py": "02000b0001a2c4c279654e39a288f35d1bcead4d1af1ebedfe2cba8727109fe7",
+    "src/visa_agent/workflow/advice_queue.py": "0cd78589b4c2a2b07d7926aefc2ed4bce91597aeabfd5c7163a60b06ab0b2712",
+    "src/visa_agent/workflow/adviser_guidance.py": "07c46b0bbf933c011e52f61f5d2299ebc975c9f7f15e99e851fa14384d27f931",
+    "src/visa_agent/workflow/application_records.py": "04b235b15b94056cdb249e784a1c4eaf033a8f0786293ecda80a1572e427a590",
+    "src/visa_agent/workflow/consultant_overview.py": "afde135ccea07ca1b70c9197660b0c2da143e9156013bcf4fa81d0cfeef215cf",
+    "src/visa_agent/workflow/conversation.py": "e287fcff4a8df59d734a5374e79647dd10a60e6e2364e8c01551d01862e65f6a",
+    "src/visa_agent/workflow/customer_questions.py": "ab437ab5dfc9a390ccbe0e175da0458f85538a702f4e41f30a5cc42917bbbf99",
+    "src/visa_agent/workflow/document_preparation.py": "c30a8466859f980afb1c30da00561dcd3bced9edde4be8609ff956c1c2c98830",
+    "src/visa_agent/workflow/document_purpose.py": "4f349cd2804843492326e7d7c4f939362ba4cb22fd97a8fa2d30fe1e8e4e6add",
+    "src/visa_agent/workflow/document_review.py": "a03db7d73f213e0cffeb7a5ef63a0b3ebc9d703572f72d3c5e92bcf98da5d13b",
+    "src/visa_agent/workflow/explicit_answer_scope.py": "4d3f0e2cd522b43cff457c080a6d47e968b8c7459a10c9fce73c06f3cda44670",
+    "src/visa_agent/workflow/explicit_visit_purpose.py": "c944b7d73c26b2e3f34c1898315389469ee26fe0c7f4d6bc339b067fa48383bc",
+    "src/visa_agent/workflow/financial_replacement.py": "823eb9a38271b0c8e1fb3bebce0b1cde1d7f56585b193ffa2a03d6f691eb1b7c",
+    "src/visa_agent/workflow/funding_wording.py": "f393622327a03fddf6f02e9c7633e9b90e5e415269f6c548a9d09438ad70c714",
+    "src/visa_agent/workflow/guidance_freshness.py": "288c11413e5fb926d303419d9c8d581c206717dad258fcf42ec7f9ac9a8b7094",
+    "src/visa_agent/workflow/income_clarification.py": "ee54b3e51720101645ced4869ae074d1d0aac6b614e307ba4bbfac8cce408728",
+    "src/visa_agent/workflow/intent_matching.py": "23c5012180be07aa86e1ae662e26e5e4ede2d05da2d53d85272e90d8b9e7545c",
+    "src/visa_agent/workflow/next_step.py": "6e6f180f047bb4782121b782fcede9a9b16fc3f2e5115997b8bac9e3329cd4ac",
+    "src/visa_agent/workflow/pending_step_value.py": "c47b3c798d83e0c9bef32a35c21cdba9c88cad24ffd36f03327acfe0222f921b",
+    "src/visa_agent/workflow/preparation_control.py": "693ba32086844d4207ae90fd1680467093ac875e1e52fd2990c63a0fc641dc16",
+    "src/visa_agent/workflow/preparation_obstacles.py": "d9c3aa1a68719d754213510910463f2be8392cd9bda520f4956ed3836fb52fa1",
+    "src/visa_agent/workflow/reception.py": "6c92f8ac922c64f950f1ee1fcf3c06c728134ed265d87231f13bdaf237b036dc",
+    "src/visa_agent/workflow/record_collection_plan.py": "28099d3527b47e93c518a058d6d0923d5cf5b2cce907a2cf335b3cf9b2f989c6",
+    "src/visa_agent/workflow/record_intake.py": "b735ce6bd87a4569fbab29f3330b23de2205eb954948609abaff73e2142f52bd",
+    "src/visa_agent/workflow/record_review.py": "bb7ae84490eb35c53447f0ba96707e23990771a37cfbec94f7a324222ee113de",
+    "src/visa_agent/workflow/record_review_command.py": "c5f8eec84d06f6d1dad9b530b9aebbcb54fc7565cad33ea19c0c7b939750ba7f",
+    "src/visa_agent/workflow/record_source_audit.py": "22b04a1f8d6080bc454d9da8b49d9c604bce83c3259d8adc9fddbfdad449660c",
+    "src/visa_agent/workflow/review.py": "dfec36adfd58c81dfabfc71afac4898ebfb6d90b82315fef3d58457f50ca72b6",
+    "src/visa_agent/workflow/service.py": "1106f17a0686f4e7c6671341f0a0cefe6e3645077d467f81cc619d78ee69bebb",
+    "src/visa_agent/workflow/sponsor_guidance.py": "bddcd9599034d3c85a8efea6435e85a32a26fda3fe506c7c016bee4f326b2472",
+    "src/visa_agent/workflow/sponsor_location.py": "c56e87880d8c00accbfa3e83d8cbba65299dc895ff5fa1580fbefea0d68b5236",
+    "src/visa_agent/workflow/sponsor_location_command.py": "cbb07abb938983781530a558b83f76f2872cf986971464a440cf7009344f49c5",
+    "src/visa_agent/workflow/sponsor_location_review.py": "7dec8b7b4e434bb65b3e4143ce03f38f47aecf46f151473ea785ed053ad9a810",
+    "src/visa_agent/workflow/sponsor_location_summary.py": "7b46f7d3f7e7dc0f1a0b8e80cf73d26057134718418d4212dc94c310e6e748d1"
+  },
+  "implementation_bundle_sha256": "7a7574199e1a6e25b36fd11f6c8d502780524dee159b12746f6286440a778349",
+  "document_schema_sha256": "0c5ca049420783abc37485b61484a192325b45ec3e0cd5de495a2799c0f08efd",
+  "document_prompt_sha256": "c9f8e547235e8bf5bd5d1fa992ca47bf83b93a6b8de50c5daae5556132b0a12a",
+  "request_config_sha256": "0fb6b7f5ff92f024fd56f548e1df617ec9011e020c8f95534638dae93d74c036",
+  "run_id": "1aeb03481d2bfc8e3ffdf74ade2c73ea8495b548557e9ec3a0a79c89282f7c0e",
+  "provider_response_models": [
+    "deepseek-v4-flash"
+  ],
+  "provider_response_models_sha256": {
+    "deepseek-v4-flash": "f61ff5cf8e1cc88da6944d6bcd3e2e7da5ff27dd3288a8781908018cb8240cd6"
+  },
+  "run_completed_at": "2026-09-07T10:02:09.679219+00:00"
+}

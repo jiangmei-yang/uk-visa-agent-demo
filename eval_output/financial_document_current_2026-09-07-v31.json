@@ -1,0 +1,14 @@
+{
+  "scope": "Four unchanged fictional PDFs; fresh extraction after Gmail live-flow intake repairs",
+  "report": "financial_document_deepseek_2026-09-07-v31.json",
+  "sha256": "f99bca6aa4c199a0d1c3d42a2f183b5cb359b8aacc6a458e8fc3eff95cb0a0a7",
+  "calls": 4,
+  "passed": 4,
+  "failed": 0,
+  "tokens": 9626,
+  "bound_git_head": "d40273610593815bab5e21c0d7be5056ac195647",
+  "implementation_manifest_entries": 109,
+  "previous_receipt_left_unchanged": "financial_document_current_2026-09-07-v29.json",
+  "mailbox_calls": 0,
+  "real_documents": 0
+}
