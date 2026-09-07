@@ -12,7 +12,7 @@ import re
 from datetime import date
 
 from visa_agent.domain.locations import location_key
-from visa_agent.domain.models import Case
+from visa_agent.domain.models import Case, DocumentStatus
 from visa_agent.workflow.guidance_freshness import CHECKED_AT, REVIEW_AFTER
 from visa_agent.workflow.intent_matching import explicit_nonvisitor_route, normalize_intent_text
 
@@ -53,7 +53,7 @@ def comprehensive_overview_requested(case: Case, body: str) -> bool:
     for current_clause in _current_clauses(body):
         text = re.sub(r"\s+", " ", normalize_intent_text(current_clause)).strip()
         if not text or re.search(
-            r"(?:不用|不要|无需|不需要|别).{0,18}(?:清单|材料|资料|文件|说清楚)|"
+            r"(?:不用|不要|无需|不需要|不想|不打算|别).{0,18}(?:清单|材料|资料|文件|说清楚)|"
             r"\b(?:do not|don't|no need to|not asking (?:for|about))\b.{0,28}"
             r"(?:checklist|documents?|evidence|full list)",
             text,
@@ -317,6 +317,11 @@ def _en_funding_evidence(case: Case) -> list[str]:
 
 
 def _zh_first_action(case: Case) -> str:
+    if case.profile.occupation_status == "student" and any(
+        doc.kind == "student_letter" and doc.status == DocumentStatus.ACCEPTED_FOR_REVIEW
+        for doc in case.documents
+    ):
+        return "在读证明已经收到，不用重新申请。接下来只需针对尚缺的材料和指出的具体问题补充。"
     if case.profile.visit_purpose == "conference":
         funding = (
             "；如果费用由学校或公司承担，同时请资助部门写清承担项目和支付方式"
@@ -333,8 +338,10 @@ def _zh_first_action(case: Case) -> str:
             if case.profile.funding_source == "self" else ""
         )
         return (
-            "先向学校申请在读证明。日期还没定不影响先做这一项；"
-            "拿到后先核对姓名、在读状态、出具日期和学校联系信息。" + funding
+            "先向学校申请在读证明。"
+            + ("日期还没定不影响先做这一项；" if not (
+                case.profile.planned_arrival_date and case.profile.planned_departure_date) else "")
+            + "拿到后先核对姓名、在读状态、出具日期和学校联系信息。" + funding
         )
     if case.profile.occupation_status == "employed":
         funding = (
@@ -348,6 +355,12 @@ def _zh_first_action(case: Case) -> str:
 
 
 def _en_first_action(case: Case) -> str:
+    if case.profile.occupation_status == "student" and any(
+        doc.kind == "student_letter" and doc.status == DocumentStatus.ACCEPTED_FOR_REVIEW
+        for doc in case.documents
+    ):
+        return ("I've received your enrolment letter, so you don't need to request it again. "
+                "Next, focus on the remaining missing documents and specific issues identified.")
     if case.profile.visit_purpose == "conference":
         funding = (
             " If your school or employer is paying, also ask its funding team to state the covered costs and payment method."
@@ -360,7 +373,10 @@ def _en_first_action(case: Case) -> str:
         return "First ask the funding department to confirm the covered costs and payment method before it issues the formal letter."
     if case.profile.occupation_status == "student":
         action = (
-            "Request the enrolment letter first. You can do that before fixing the travel dates; when it is ready, "
+            "Request the enrolment letter first. "
+            + ("You can do that before fixing the travel dates; " if not (
+                case.profile.planned_arrival_date and case.profile.planned_departure_date) else "")
+            + "When it is ready, "
             "check your name, current status, issue date and the school's contact details."
         )
         if case.profile.funding_source == "self":

@@ -1,0 +1,33 @@
+# 当前源码验证记录
+
+应用源码：`0b188d5f9d27c3de382ca89360646c5e6860674b`。
+
+## 模型验证
+
+- `eval_output/consultant_journey_2026-09-07-v20.json`：完整 journey + pacing 场景，22 轮实际 DeepSeek 提取通过，发送端为捕获传输，并非真实 Gmail。
+- `eval_output/financial_document_deepseek_2026-09-07-v27.json`：4 份固定虚构 PDF 的真实模型提取与证据校验通过，9,185 tokens；没有真实客户文件或邮箱调用。
+- 两组报告均绑定当前应用源码、提示词及各自场景。离线回归继续核验绑定，不能仅凭历史通过替代当前版本。
+- v19 是仅 journey 的 12 轮通过记录，不作为完整 22 轮的证据；保留原文件。财务 v25 的失败记录及后续 v26 的通过记录也保留。
+
+## 回归修正
+
+接待改动后，旧批量咨询测试用 `Hello` 触发个人资料授权，导致同一初始化步骤出现 12 项失败。现在将初始化文本改为明确请求准备个人材料，保留原有授权通知、发送、回放和资料访问断言。普通问候仍走接待路径。
+
+批量咨询、当前对话报告和财务保存结果回放共 67 项通过；Ruff 和 104 个源码文件的 mypy 检查通过。
+
+随后运行 `.venv/bin/pytest -q -o addopts='' --tb=short`，不排除任何测试：**5,606 passed，1 warning，109.85 秒，退出码 0**。警告为 Starlette TestClient 对 httpx 的弃用提示。应用源码未在该轮验证期间修改；日志保存在本机 `/tmp/visa-regression-0b188d5.log`。这证明本地回归通过，不等于远端 CI 已通过。
+
+## 隔离容器
+
+使用 `git archive 0b188d5 | docker build -t uk-visa-agent:0b188d5-verification -`，只打包受版本控制的文件，不带工作区密钥或客户数据。
+
+- 镜像 `d8a69943eb2b` 构建成功。
+- 新容器 `visa-verification-0b188d5` 使用 `--network none`；不挂载宿主目录，未连接邮箱或模型。
+- 运行默认首次初始化和网页启动命令，设置数据库及输出在可写 `/app/runtime`。
+- 首页 HTTP 200、健康接口 HTTP 200、Docker 状态 healthy。
+- 生成 1 个示例 ZIP，15 个成员，ZIP 完整性检查无损坏。
+- 档案摘要两页均已渲染并目视检查，无裁切或文字重叠。
+- 重启前后数据库 SHA-256 均为 `f7a52e0538060775a0d33d54eff1cdebcdba7116243f571f0cadfd6e8e5c9726`，未重建既有档案；重启后健康接口仍为 HTTP 200。
+- 验证容器已停止，保留以便复核；没有停止真实 Gmail worker。
+
+这些结果证明离线安装与示例包可运行，不证明真实客户材料已获复核。真实 Gmail 最终 ZIP 到达、完整录屏和 GitHub 最新发布仍需独立完成。

@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from datetime import date
 
-from visa_agent.domain.date_evidence import date_is_grounded
+from visa_agent.domain.date_evidence import canonical_date_value, date_is_grounded
 
 
 def _normalise(value: str) -> str:
@@ -19,6 +20,21 @@ def _normalise(value: str) -> str:
 def _exact(value: str) -> str:
     """Match a complete normalized value, not a substring of another token."""
     return rf"(?<![\w]){re.escape(_normalise(value))}(?![\w])"
+
+
+def _statement_period_end(as_of: str, excerpt: str) -> bool:
+    """Bind closing balance to a fully printed period end, never its start."""
+    match = re.fullmatch(
+        r"(?:statement period|period covered)\s*:\s*(.+?)\s+(?:to|through|[-–])\s+(.+)",
+        _normalise(excerpt),
+    )
+    if match is None:
+        return False
+    try:
+        start, end = (date.fromisoformat(canonical_date_value(part)) for part in match.groups())
+        return start <= end and end == date.fromisoformat(as_of)
+    except ValueError:
+        return False
 
 
 def financial_fields_are_coherent(
@@ -103,7 +119,8 @@ def financial_fields_are_coherent(
         if kind == "closing_balance"
         else r"\b(?:letter date|letter dated|dated|pay statement date|pay date|issued on)\b|信函日期|工资单日期|签发日期"
     )
-    if re.search(date_role, date_text) is None or not date_is_grounded(as_of, date_excerpt):
+    explicit_date = re.search(date_role, date_text) is not None and date_is_grounded(as_of, date_excerpt)
+    if not (explicit_date or (kind == "closing_balance" and _statement_period_end(as_of, date_excerpt))):
         return False
 
     if account_reference is None:

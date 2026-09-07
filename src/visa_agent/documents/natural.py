@@ -8,12 +8,13 @@ import shutil
 import subprocess
 import tempfile
 import unicodedata
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Literal, Protocol
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pypdf import PdfReader
 
 from visa_agent.documents.processor import inspect_pdf
@@ -175,13 +176,44 @@ def _money_is_grounded(item: FinancialObservation, pages: list[str]) -> bool:
     )
 
 
+def _complete_omitted_financial_fields(item: FinancialObservation, pages: list[str]) -> FinancialObservation:
+    """Recover omitted keys only from complete, literal labelled quotations.
+
+    Explicit nulls, supplied values, unquoted text and ambiguous excerpts are not
+    repaired. The normal financial checks still validate every completed value.
+    """
+    if item.confidence < 0.95 or item.kind != "closing_balance":
+        return item
+    updates: dict[str, object] = {}
+    if "as_of" not in item.model_fields_set and _grounded(item.date_excerpt, item.date_page, pages):
+        match = re.fullmatch(r"as of\s+(\d{4}-\d{2}-\d{2})\.?", item.date_excerpt.strip(), re.I)
+        if match:
+            with suppress(ValueError):
+                updates["as_of"] = date.fromisoformat(match[1])
+    if ("account_reference" not in item.model_fields_set and item.account_page is not None
+            and item.account_excerpt is not None
+            and _grounded(item.account_excerpt, item.account_page, pages)):
+        match = re.fullmatch(r"Account ending:\s*([A-Za-z0-9]{2,20})\.?", item.account_excerpt.strip(), re.I)
+        if match:
+            updates["account_reference"] = match[1]
+    return item.model_copy(update=updates) if updates else item
+
+
 def validate_document(
     proposal: DocumentProposal, pages: list[str], *, method: str, version: str
 ) -> DocumentReadResult:
     if not _grounded(proposal.classification_excerpt, proposal.classification_page, pages):
         raise ValueError("Document classification lacks a source excerpt on the stated page")
     facts: dict[str, tuple[str, int, str]] = {}
+    accepted_confidences: list[float] = []
     for item in proposal.facts:
+        # Optional profile inferences must not erase independently grounded document
+        # evidence. Discard uncertain inferences, never promote them to case facts.
+        # Identity, dates and financial evidence keep their strict validation below.
+        if item.field in {"occupation_status", "funding_source"} and (
+            item.confidence < 0.95 or not _grounded(item.excerpt, item.page, pages)
+        ):
+            continue
         if item.confidence < 0.95 or not _grounded(item.excerpt, item.page, pages):
             raise ValueError("Document fact lacks sufficiently grounded page evidence")
         if item.field.endswith("_date") or item.field == "date_of_birth":
@@ -196,8 +228,10 @@ def validate_document(
         if item.field in facts and facts[item.field][0] != item.value:
             raise ValueError("Conflicting document facts require review")
         facts[item.field] = (item.value, item.page, item.excerpt)
+        accepted_confidences.append(item.confidence)
     financial_observations = []
     for financial_item in proposal.financial_observations:
+        financial_item = _complete_omitted_financial_fields(financial_item, pages)
         if not _money_is_grounded(financial_item, pages):
             raise ValueError("A financial observation lacks a grounded subject, amount or currency")
         financial_observations.append(financial_item)
@@ -257,7 +291,7 @@ def validate_document(
         facts,
         method,
         version,
-        min([proposal.confidence] + [item.confidence for item in proposal.facts]
+        min([proposal.confidence] + accepted_confidences
             + [financial_item.confidence for financial_item in financial_observations]),
         proposal.requires_review
         or proposal.confidence < 0.95
@@ -303,13 +337,20 @@ class NaturalPDFReader:
             raise ValueError("PDF text exceeds the bounded model input; no silent truncation")
         # Do not treat protocol-like lines embedded in customer documents as instructions.
         method = "bounded_pdf_ocr_extraction" if scanned else "bounded_pdf_text_extraction"
+        validating = False
         try:
             proposal = self.model.extract_document(pages)
+            validating = True
             return validate_document(proposal, pages, method=method, version=self.model.version)
-        except Exception:
+        except Exception as error:
             # Retain the file for review, without treating provider failure as valid evidence.
+            code = ("DOCUMENT_GROUNDING_REJECTED" if validating else
+                    "DOCUMENT_SCHEMA_INVALID" if isinstance(error, ValidationError) else
+                    "DOCUMENT_PROVIDER_TIMEOUT" if isinstance(error, TimeoutError)
+                    or type(error).__name__ == "APITimeoutError" else "DOCUMENT_READER_FAILURE")
             return DocumentReadResult(
-                "unknown", "other", len(pages), {}, method, self.model.version, 0, True
+                "unknown", "other", len(pages), {}, method, self.model.version, 0, True,
+                f"{code}: extraction did not produce a reliable structured document; retry or review is required."
             )
 
     @staticmethod

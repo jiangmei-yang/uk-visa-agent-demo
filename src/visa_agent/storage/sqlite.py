@@ -111,6 +111,12 @@ CREATE TABLE IF NOT EXISTS processing_scope (
     scope_id TEXT NOT NULL,
     scope_json TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS processing_service_cutover (
+    singleton INTEGER PRIMARY KEY CHECK(singleton=1),
+    received_after TEXT NOT NULL,
+    previous_scope_id TEXT NOT NULL,
+    service_scope_id TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS processing_consent (
     case_id TEXT PRIMARY KEY,
     status TEXT NOT NULL DEFAULT 'unknown',
@@ -792,6 +798,7 @@ class SQLiteStore:
         limit: int = 20,
         channel: str | None = None,
         allowed_message_types: tuple[str, ...] | None = None,
+        case_id: str | None = None,
     ) -> list[dict[str, Any]]:
         with self.connection:
             channel_filter = " AND channel = ?" if channel is not None else ""
@@ -804,6 +811,9 @@ class SQLiteStore:
                     return []
                 type_filter = " AND message_type IN (" + ",".join("?" for _ in allowed_message_types) + ")"
                 values.extend(allowed_message_types)
+            case_filter = " AND case_id = ?" if case_id is not None else ""
+            if case_id is not None:
+                values.append(case_id)
             parameters = (*values, limit)
             rows = self.connection.execute(
                 f"""WITH due AS (
@@ -812,6 +822,7 @@ class SQLiteStore:
                          AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
                          {channel_filter}
                          {type_filter}
+                         {case_filter}
                        ORDER BY created_at, id
                        LIMIT ?
                    )
@@ -920,17 +931,21 @@ class SQLiteStore:
             )
 
     def list_sending_outbox(
-        self, limit: int = 20, channel: str | None = None
+        self, limit: int = 20, channel: str | None = None, case_id: str | None = None
     ) -> list[dict[str, Any]]:
         channel_filter = " AND channel = ?" if channel is not None else ""
-        parameters: tuple[object, ...] = (channel, limit) if channel is not None else (limit,)
+        case_filter = " AND case_id = ?" if case_id is not None else ""
+        parameters: tuple[object, ...] = (
+            *((channel,) if channel is not None else ()),
+            *((case_id,) if case_id is not None else ()), limit,
+        )
         rows = self.connection.execute(
             f"""SELECT id, case_id, event_id, message_type, payload, channel, recipient,
                       external_thread_id, send_deadline, reply_subject, status, attempt_count,
                       next_attempt_at, last_error, sent_at, provider_message_id, in_reply_to,
                       references_header, created_at, case_revision, preparation_control_epoch,
                       processing_consent_epoch
-               FROM outbox WHERE status = 'SENDING' {channel_filter}
+               FROM outbox WHERE status = 'SENDING' {channel_filter} {case_filter}
                ORDER BY created_at, id LIMIT ?""",
             parameters,
         ).fetchall()

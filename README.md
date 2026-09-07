@@ -23,9 +23,11 @@ but it cannot select requirements, mutate workflow stages, clear issues, or auth
 Its PDF extraction primarily uses labelled fixtures; arbitrary PDFs and scans are not yet fully
 supported and unclassified PDFs are held for manual review. The real Gmail trial now accepts
 ordinary, unmarked enquiries, follows Chinese/English, asks a few questions at a time, and supports
-context-bound natural confirmation. A supervised service automatically replies to one registered
-test sender; final-pack dispatch still requires explicit reviewed sending. This is not public
-intake or unattended production. See [service boundaries](GMAIL_AUTOMATIC_SERVICE.md) and
+context-bound natural confirmation. The service can accept ordinary messages from any sender
+addressed to its configured mailbox, using `--accept-new-senders`, with separate customer/thread
+records and automatic-message filtering. No test subject or sender preregistration is required;
+final-pack dispatch still requires explicit reviewed sending. This is not unattended production.
+See [Gmail setup and migration](docs/GMAIL_SERVICE_INTERACTION.md), [service boundaries](GMAIL_AUTOMATIC_SERVICE.md) and
 [live successes, failures and remaining work](GMAIL_LIVE_EVIDENCE.md).
 
 The latest [adviser reply experiment](NEXT_STEP_ADVICE.md) combines sourced answers with one

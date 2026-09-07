@@ -222,6 +222,10 @@ _SEMANTIC_VALUE_PATTERNS: dict[str, dict[str, tuple[re.Pattern[str], ...]]] = {
                 r"^(?:(?:主要|主要目的)(?:是|为|為)?|"
                 r"(?:想|打算|计划|計劃))?(?:去|前往|到)?(?:英国|英國)?"
                 r"(?:旅游|旅遊|观光|觀光|度假|自由行)$|"
+                r"^(?:想|打算|计划|計劃|准备|準備)"
+                r"(?:(?:今年|明年|年底|年初|上半年|下半年|暑假|寒假|春天|夏天|秋天|冬天)|\d{4}年)?"
+                r"(?:\d{1,2}月)?(?:去|到|前往)(?:伦敦|倫敦|英国|英國)"
+                r"(?:旅游|旅遊|观光|觀光|度假|自由行)|"
                 r"(?:^|我.{0,18})(?:去|到)(?:伦敦|倫敦|英国|英國)玩(?:几天|幾天|一周|一星期)",
                 re.I,
             ),
@@ -1002,6 +1006,12 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
 
 
 def deterministic_fallback_message(case: Case, plan: str) -> str:
+    from visa_agent.workflow.reception import reception_message
+
+    if not case.latest_document_names and (reception := reception_message(
+        case.latest_customer_message, case.customer_language,
+    )):
+        return reception
     if case.status == CaseStatus.HUMAN_REVIEW_REQUIRED:
         message = (
             "这部分我还不能可靠判断，需要人工核实后才能继续，不能直接给你确定答复。你发来的信息和文件都已保留，暂时不用重新发送。"
@@ -1160,6 +1170,14 @@ class GuardedLLM:
         )
 
     def render_message(self, case: Case, plan: str) -> str:
+        from visa_agent.workflow.reception import reception_message
+
+        if not case.latest_document_names and (reception := reception_message(
+            case.latest_customer_message, case.customer_language,
+        )):
+            self.last_render_fallback = False
+            self.last_render_error = None
+            return reception
         if not self.allow_model_rendering:
             # The default live Gmail path sends the reviewed deterministic
             # composer. Do not pay for a model draft that the channel boundary

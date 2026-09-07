@@ -86,6 +86,14 @@ def _consent_preflight(adapter: GmailAdapter, ingestion: EmailIngestionBoundary,
             journal.acknowledge(identifier, "rejected", result.failure_code)
             continue
         journal.record_thread(identifier, raw.provider_thread_id)
+        owner = store.get_case_by_thread(raw.provider_thread_id)
+        if owner is not None and (
+            owner.primary_channel != result.event.channel
+            or [a.casefold() for _, a in getaddresses([owner.applicant_contact])] !=
+               [a.casefold() for _, a in getaddresses([result.event.sender])]
+        ):
+            journal.acknowledge(identifier, "rejected", "THREAD_OWNER_MISMATCH")
+            continue
         if store.event_processed(identifier):
             # Migration/re-scan is not a new applicant request or a new grant.
             case = store.get_case_by_thread(raw.provider_thread_id)
@@ -115,14 +123,24 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("prepare", "serve", "send-reviewed", "reconcile", "status"))
     parser.add_argument("--after", type=int, help="Required activation Unix timestamp for automatic service")
-    parser.add_argument("--sender", required=True)
+    sender_mode = parser.add_mutually_exclusive_group(required=True)
+    sender_mode.add_argument("--sender")
+    sender_mode.add_argument("--accept-new-senders", action="store_true",
+                             help="Accept ordinary mail addressed to this service from any single sender")
     parser.add_argument("--mailbox", required=True)
     parser.add_argument(
         "--subject",
         help="Optional exact subject; omit to accept ordinary subjects from the allowed sender",
     )
     parser.add_argument("--model", default="deepseek-v4-flash")
+    parser.add_argument("--processing-interaction", choices=("explicit_consent", "service_request"),
+                        default="explicit_consent",
+                        help="service_request removes the consent-code exchange for a fresh deployment; "
+                             "does not create applicant consent or override existing notices")
+    parser.add_argument("--migrate-service-interaction", action="store_true",
+                        help="Explicitly switch an existing store to service_request for NEW mail only")
     parser.add_argument("--state-dir", type=Path, required=True)
+    parser.add_argument("--case", help="Exact existing case for reviewed delivery or reconciliation")
     parser.add_argument(
         "--watch", action="store_true", help="Repeat prepare or controlled serve cycles"
     )
@@ -133,9 +151,17 @@ def main() -> None:
         help="Synthetic crash test: terminate after provider acceptance, before local SENT commit",
     )
     args = parser.parse_args()
+    if args.action in {"send-reviewed", "reconcile"} and not args.case:
+        parser.error("Reviewed delivery/reconciliation requires an explicit --case")
+    if args.case and args.action not in {"send-reviewed", "reconcile"}:
+        parser.error("--case applies only to reviewed delivery/reconciliation")
+    if args.migrate_service_interaction and args.processing_interaction != "service_request":
+        parser.error("Service migration requires --processing-interaction service_request")
     if args.crash_after_send and args.action != "send-reviewed":
         parser.error("Crash injection is only available for a reviewed synthetic send")
-    if any(c in args.sender + args.mailbox + (args.subject or "") for c in '\r\n"'):
+    if args.accept_new_senders and args.action not in {"serve", "prepare", "status"}:
+        parser.error("Reviewed delivery/reconciliation must select an explicit --sender")
+    if any(c in (args.sender or "") + args.mailbox + (args.subject or "") for c in '\r\n"'):
         parser.error("Addresses and subject must not contain quotes or line breaks")
     if args.subject is not None and not args.subject.strip():
         parser.error("An exact non-empty subject is required for this bounded conversation")
@@ -143,7 +169,7 @@ def main() -> None:
         parseaddr(address)[1] != address
         or "@" not in address
         or any(char.isspace() for char in address)
-        for address in (args.sender, args.mailbox)
+        for address in (args.sender, args.mailbox) if address is not None
     ):
         parser.error("Supply one plain mailbox address for sender and mailbox")
     if args.action == "serve" and (args.after is None or args.after <= 0):
@@ -173,13 +199,37 @@ def main() -> None:
 def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
              fixture_without_processing_consent: bool = False) -> None:
     """One cycle. The explicit fixture-only override is intentionally absent from CLI."""
+    if args.action in {"send-reviewed", "reconcile"} and not getattr(args, "case", None):
+        parser.error("Select an explicit existing case before delivery or reconciliation")
     binding = {"sender": args.sender, "mailbox": args.mailbox, "subject": args.subject}
     if args.after is not None:
         binding["after"] = args.after
     binding_path = args.state_dir / "binding.json"
+    if getattr(args, "case", None) and (
+        not binding_path.is_file() or not (args.state_dir / "sandbox.db").is_file()
+    ):
+        parser.error("Case-scoped delivery requires an existing bound state directory")
     if binding_path.exists():
-        if json.loads(binding_path.read_text()) != binding:
-            parser.error("This state directory belongs to another sandbox conversation")
+        previous_binding = json.loads(binding_path.read_text())
+        if previous_binding != binding:
+            if (getattr(args, "case", None) and args.action in {"send-reviewed", "reconcile"}
+                    and args.sender is not None and previous_binding.get("sender") is None
+                    and previous_binding.get("mailbox") == args.mailbox
+                    and previous_binding.get("subject") == args.subject
+                    and (args.after is None or args.after == previous_binding.get("after"))):
+                pass  # A case-scoped operation never narrows or rewrites the intake binding.
+            elif (getattr(args, "migrate_service_interaction", False) and args.sender is None
+                    and previous_binding.get("sender") is not None
+                    and previous_binding.get("mailbox") == args.mailbox
+                    and previous_binding.get("subject") is None and args.subject is None
+                    and (args.after or 0) >= previous_binding.get("after", 0)):
+                archive = args.state_dir / "binding-before-open-intake.json"
+                if archive.exists():
+                    parser.error("A previous intake migration already exists; review it first")
+                archive.write_text(json.dumps(previous_binding))
+                binding_path.write_text(json.dumps(binding))
+            else:
+                parser.error("This state directory belongs to another sandbox conversation")
     else:
         binding_path.write_text(json.dumps(binding))
     service = build_gmail_service(
@@ -193,9 +243,24 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
     store = SQLiteStore(args.state_dir / "sandbox.db")
     journal = None
     try:
+        selected_case_id = getattr(args, "case", None)
+        if selected_case_id is not None:
+            selected_case = store.get_case(selected_case_id)
+            if (selected_case is None or selected_case.primary_channel != "gmail"
+                    or [address.casefold() for _, address in getaddresses([selected_case.applicant_contact])]
+                    != [(args.sender or "").casefold()]):
+                parser.error("Selected Gmail case does not belong to the specified sender")
         ledger = ConsentLedger(store)
-        if not fixture_without_processing_consent and args.action in {"prepare", "serve", "send-reviewed"}:
-            ledger.configure(ProcessingScope(provider="DeepSeek", model=args.model))
+        if not fixture_without_processing_consent and args.action == "send-reviewed":
+            registered_scope = ledger.scope()
+            if (registered_scope is None or registered_scope.provider != "deepseek"
+                    or registered_scope.model != args.model
+                    or registered_scope.interaction != getattr(args, "processing_interaction", "explicit_consent")):
+                parser.error("Use the registered provider/model/interaction; reviewed sending cannot reconfigure processing")
+        if not fixture_without_processing_consent and args.action in {"prepare", "serve"}:
+            ledger.configure(ProcessingScope(provider="DeepSeek", model=args.model,
+                interaction=getattr(args, "processing_interaction", "explicit_consent")),
+                migrate_service=getattr(args, "migrate_service_interaction", False))
         # Resolve previous uncertain sends even if intake/model processing fails this cycle.
         # This only observes provider state; dispatch still waits for successful intake.
         if args.action == "serve":
@@ -214,13 +279,16 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
         if args.action in {"prepare", "serve"}:
             active_policy = load_policy(Path("knowledge/uk_standard_visitor_2026-02-25.yaml"))
             ingestion = EmailIngestionBoundary(store, args.state_dir / "attachments")
-            query = f"from:{args.sender} to:{args.mailbox}"
+            query = f"to:{args.mailbox}"
+            if args.sender is not None:
+                query = f"from:{args.sender} " + query
             if args.after is not None:
                 query += f" after:{args.after}"
             if args.subject:
                 query += f' subject:"{args.subject}"'
             if args.action == "serve" or not fixture_without_processing_consent:
-                journal = GmailSyncJournal(args.state_dir / "sync.db", json.dumps(binding, sort_keys=True))
+                journal_name = "sync-all-senders.db" if args.sender is None else "sync.db"
+                journal = GmailSyncJournal(args.state_dir / journal_name, json.dumps(binding, sort_keys=True))
                 if not discover_messages(adapter, journal, query):
                     print("Intake discovery continues next cycle; no dispatch")
                     return
@@ -412,6 +480,8 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
 
             class ScopedSender(GmailReplySender):
                 def send(self, request: ReplyRequest) -> str:
+                    if selected_case_id is not None and request.thread_id != selected_case.external_thread_id:
+                        raise PermanentChannelError("Selected case thread boundary failed")
                     if [address for _, address in getaddresses([request.recipient])] != [
                         args.sender
                     ] or (args.subject is not None and request.subject != "Re: " + args.subject):
@@ -422,7 +492,7 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
                     return result
 
             sender = ScopedSender(adapter)
-            dispatcher = OutboxDispatcher(store, sender, channel="gmail")
+            dispatcher = OutboxDispatcher(store, sender, channel="gmail", case_id=selected_case_id)
             results = (
                 dispatcher.reconcile_sending(sender, datetime.now(UTC))
                 if args.action == "reconcile"
@@ -430,6 +500,8 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
             )
             print("Dispatch:", [item.status for item in results])
         for row in [] if args.watch else store.list_outbox():
+            if selected_case_id is not None and row["case_id"] != selected_case_id:
+                continue
             print(
                 json.dumps(
                     {k: row.get(k) for k in ("id", "status", "message_type", "payload")},

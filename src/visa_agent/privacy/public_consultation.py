@@ -10,10 +10,13 @@ def public_consultation(body: str, today: date) -> str | None:
     from visa_agent.workflow.conversation import latest_reply_text
     from visa_agent.workflow.customer_questions import grounded_customer_answer_plan
     from visa_agent.workflow.guidance_freshness import CHECKED_AT, REVIEW_AFTER
+    from visa_agent.workflow.reception import reception_message
 
     text = latest_reply_text(body).strip()
     if not text or len(text) > 700:
         return None
+    if reception := reception_message(text, reply_language(text)):
+        return reception
     # Requests to assess an individual's records are not public consultation.
     if re.search(
         r"\d{4}|@|护照号|身份证|出生|生日|我叫|姓名|住址|账号|账户余额|我的材料|附件|帮我核对|"
@@ -30,6 +33,9 @@ def public_consultation(body: str, today: date) -> str | None:
         r"(?:a |the )?(?:UK|British)(?: visitor| tourist)? visa[?.!]*", text, re.I,
     ))
     holiday = bool(re.fullmatch(r"(?:去)?旅游[。！!]*|(?:a )?holiday[.!]*|tourism[.!]*", text, re.I))
+    # Only use purpose inside the already full-matched public enquiry, never a
+    # keyword in quoted, negated, personal or unrelated text.
+    holiday = holiday or (introductory and bool(re.search(r"旅游|\btourist\b", text, re.I)))
     if introductory or holiday:
         if not CHECKED_AT <= today <= REVIEW_AFTER:
             return ("可以先了解准备流程。具体材料要求我需要先复核最新官方说明；暂时不用发送证件或账户资料。"

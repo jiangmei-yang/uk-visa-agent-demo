@@ -45,6 +45,7 @@ packages = ["src/visa_agent"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "-q --strict-markers"
 
 [tool.ruff]

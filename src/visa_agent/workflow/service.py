@@ -1441,6 +1441,11 @@ class WorkflowService:
                     )
                 )
 
+        if reread_attempt_id is None:
+            from visa_agent.workflow.financial_replacement import apply_statement_replacement
+
+            apply_statement_replacement(case, event)
+
     def _record_unreadable_document(
         self,
         case: Case,

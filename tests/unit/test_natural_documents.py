@@ -70,6 +70,34 @@ def test_natural_evidence_retains_page_excerpt_and_model_provenance() -> None:
     assert not result.requires_review
 
 
+@pytest.mark.parametrize("kind", ["student_letter", "itinerary_description"])
+@pytest.mark.parametrize("field", ["funding_source", "occupation_status"])
+@pytest.mark.parametrize("invalid", ["uncertain", "unquoted"])
+def test_optional_inference_does_not_erase_grounded_document(kind, field, invalid):
+    text = "Student travel record for Lin Chen. Own savings."
+    candidate = DocumentProposal(
+        kind=kind, language="en", classification_page=1,
+        classification_excerpt="Student travel record", confidence=0.99,
+        facts=[
+            DocumentFact(field="full_name", value="Lin Chen", page=1,
+                         excerpt="for Lin Chen", confidence=1),
+            DocumentFact(field=field, value="self" if field == "funding_source" else "student",
+                         page=1, excerpt="Own savings" if invalid == "uncertain" else "Invented",
+                         confidence=0.9 if invalid == "uncertain" else 1),
+        ],
+    )
+    result = validate_document(candidate, [text], method="text", version="regression")
+    assert result.kind == kind
+    assert set(result.facts) == {"full_name"}
+    assert result.confidence == 0.99
+    assert not result.requires_review
+    candidate.requires_review = True
+    candidate.review_reason = "Explicit specimen warning"
+    held = validate_document(candidate, [text], method="text", version="regression")
+    assert held.requires_review
+    assert held.review_reason == "Explicit specimen warning"
+
+
 @pytest.mark.parametrize(
     "change", ["invented_excerpt", "wrong_page", "invented_date", "low_confidence", "invented_name"]
 )
@@ -107,7 +135,13 @@ def test_ordinary_pdf_needs_no_machine_markers(tmp_path: Path) -> None:
     assert not result.requires_review
 
 
-def test_provider_failure_retains_document_for_review(tmp_path: Path) -> None:
+@pytest.mark.parametrize("failure,code", [
+    ("timeout", "DOCUMENT_PROVIDER_TIMEOUT"),
+    ("schema", "DOCUMENT_SCHEMA_INVALID"),
+    ("grounding", "DOCUMENT_GROUNDING_REJECTED"),
+    ("other", "DOCUMENT_READER_FAILURE"),
+])
+def test_provider_failure_retains_document_for_review(tmp_path: Path, failure, code) -> None:
     path = tmp_path / "letter.pdf"
     pdf = canvas.Canvas(str(path))
     pdf.drawString(40, 750, TEXT)
@@ -117,10 +151,18 @@ def test_provider_failure_retains_document_for_review(tmp_path: Path) -> None:
         version = "unavailable"
 
         def extract_document(self, pages: list[str]) -> DocumentProposal:
-            raise TimeoutError("provider unavailable")
+            if failure == "grounding":
+                return proposal().model_copy(update={"classification_excerpt": "do-not-disclose"})
+            if failure == "schema":
+                return DocumentProposal.model_validate({"private_input": "do-not-disclose"})
+            if failure == "timeout":
+                raise TimeoutError("do-not-disclose")
+            raise ValueError("do-not-disclose")
 
     result = NaturalPDFReader(Model())(path)
     assert result.requires_review and result.facts == {}
+    assert code in result.review_reason
+    assert "do-not-disclose" not in result.review_reason
 
 
 def test_missing_invitee_is_held_even_when_model_claims_confidence() -> None:

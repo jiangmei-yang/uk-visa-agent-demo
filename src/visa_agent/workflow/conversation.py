@@ -1406,7 +1406,27 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
     zh = case.customer_language == "zh"
     issues = []
     for issue in case.open_blockers():
-        if zh and issue.code == "DATE_CONFLICT":
+        if issue.code == "EVIDENCE_CONFLICT_FULL_NAME":
+            name_variants = sorted({str(item.value) for item in case.active_evidence("full_name")})
+            variants = " / ".join(name_variants)
+            issues.append(
+                f"姓名写法不一致：目前收到的资料分别写了 {variants}。请核对护照上的拼写；"
+                "如果是证明文件写错了，请补发更正版。如果文件属于资助人，请告诉我你们的关系。"
+                if zh else
+                f"The names differ across your information: {variants}. Please check the passport spelling. "
+                "If a supporting document has an error, please send a corrected copy; "
+                "if it belongs to a sponsor, please explain your relationship."
+            )
+        elif issue.code.startswith("FINANCIAL_OWNER_MISMATCH_"):
+            names = ", ".join(doc.filename for doc in case.documents if doc.id in issue.related_document_ids)
+            issues.append(
+                f"{names or '资金证明'}上的持有人姓名与档案不一致，目前不能当作对应人员的资金证明。"
+                "请确认这份文件属于谁，或补发持有人信息正确的版本。"
+                if zh else
+                f"The holder's name on {names or 'the financial evidence'} does not match the recorded person. "
+                "Please tell me whose document it is, or send a copy with the correct holder details."
+            )
+        elif zh and issue.code == "DATE_CONFLICT":
             evidence = case.active_evidence("invitation_event_end_date")
             end = str(evidence[-1].value) if evidence else "邀请函所列日期"
             issues.append(
@@ -1419,12 +1439,37 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
                 if doc.status == DocumentStatus.NEEDS_CERTIFIED_TRANSLATION
             )
             issues.append(f"还缺认证翻译：{names}。请同时保留原文，我会把翻译和原件对应起来。")
+        elif "fictional specimen" in issue.detail.casefold() and "not valid" in issue.detail.casefold():
+            names = ", ".join(doc.filename for doc in case.documents if doc.id in issue.related_document_ids)
+            issues.append(
+                f"{names or '这份文件'}注明不能用于申请，不能作为正式证明。请补发由对应机构出具的有效文件；"
+                "其他已收到的材料不用重发。"
+                if zh else
+                f"{names or 'This document'} is marked as not valid for an application. "
+                "Please provide a valid document issued by the relevant institution; "
+                "you don't need to resend the other files."
+            )
         elif zh and "Specimen is not an identity document" in issue.detail:
             names = ", ".join(
                 doc.filename for doc in case.documents if doc.id in issue.related_document_ids
             )
             issues.append(
                 f"{names} 是你整理的信息摘要，不能代替护照。等方便时，请补护照资料页的清晰扫描或照片；这份摘要不会被算作有效护照。"
+            )
+        elif any(code in issue.detail for code in (
+            "DOCUMENT_GROUNDING_REJECTED", "DOCUMENT_SCHEMA_INVALID",
+            "DOCUMENT_PROVIDER_TIMEOUT", "DOCUMENT_READER_FAILURE",
+        )):
+            names = ", ".join(
+                doc.filename for doc in case.documents if doc.id in issue.related_document_ids
+            )
+            issues.append(
+                f"{names or '这份文件'}已经收到，但这次未能可靠读取内容，暂时还不能算作已核验材料。"
+                "文件已保留，你不用重复发送；这也不表示你的材料有问题。"
+                if zh else
+                f"I've received {names or 'this file'}, but couldn't reliably read its contents. "
+                "It is retained, so you don't need to resend it. This is a reading failure, "
+                "not a finding that your document is incorrect; it has not yet been checked."
             )
         elif zh:
             names = ", ".join(
@@ -1756,6 +1801,10 @@ def blocked_customer_message(case: Case) -> str:
         else (f"Hello {name}," if name else "Hello,")
     )
     acknowledgements = []
+    from visa_agent.workflow.financial_replacement import replacement_receipt
+
+    if receipt := replacement_receipt(case):
+        acknowledgements.append(receipt)
     if acknowledgement := change_acknowledgement(case):
         acknowledgements.append(acknowledgement)
     if case.latest_document_names:
