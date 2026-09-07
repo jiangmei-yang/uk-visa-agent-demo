@@ -1,7 +1,10 @@
 """Applicant-facing facts only, never reviewer metadata or proof of legal status."""
 
 from visa_agent.domain.models import Case
-from visa_agent.domain.sponsor_location_review import current_sponsor_location_values
+from visa_agent.domain.sponsor_location_review import (
+    current_sponsor_location_statements,
+    current_sponsor_location_values,
+)
 
 
 def sponsor_location_snapshot(case: Case) -> dict[str, object] | None:
@@ -9,6 +12,10 @@ def sponsor_location_snapshot(case: Case) -> dict[str, object] | None:
     if case.profile.funding_source != "personal_sponsor" or not case.sponsor_location_statements:
         return None
     values = current_sponsor_location_values(case)
+    try:
+        sources = current_sponsor_location_statements(case)
+    except ValueError:
+        sources = current_sponsor_location_statements(case, selected={})
     return {
         "schema_version": 1,
         "basis": "applicant_reported_not_legal_status_verification",
@@ -19,10 +26,7 @@ def sponsor_location_snapshot(case: Case) -> dict[str, object] | None:
             "value": next(iter(items)) if len(items) == 1 else None,
             "sources": [{"source_event_id": item.source_event_id, "source_excerpt": item.source_excerpt,
                          "context_question_event_id": item.context_question_event_id, "reported_value": item.value}
-                        for item in case.sponsor_location_statements
-                        if item.dimension == dimension and item.identity_epoch == case.sponsor_location_epoch
-                        and (item.sponsor_name, item.sponsor_relationship)
-                        == (case.profile.sponsor_name, case.profile.sponsor_relationship)],
+                        for item in sources if item.dimension == dimension],
         } for dimension, items in values.items()},
     }
 

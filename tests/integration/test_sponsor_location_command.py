@@ -89,3 +89,21 @@ def test_missing_database_is_not_created(tmp_path):
     with pytest.raises(ValueError):
         sponsor_location_command(state_dir=tmp_path, policy_path=POLICY_PATH, case_id="missing")
     assert not (tmp_path / "sandbox.db").exists()
+
+
+def test_conflicting_source_selection_reaches_operator_transaction(tmp_path):
+    from test_sponsor_location_resolution import conflict
+
+    with closing(SQLiteStore(tmp_path / "sandbox.db")) as store:
+        case = conflict(store)
+    plan = sponsor_location_command(state_dir=tmp_path, policy_path=POLICY_PATH, case_id=case.id)
+    assert plan["context"]["current_values"]["residence"] == [False, True]
+    assert plan["decision"]["selected_source_event_ids"] == {}
+    plan["decision"].update(actor="Fictional reviewer", rationale="Read the original source and applicant clarification.",
+        source_and_applicability_checked=True, selected_source_event_ids={"residence": "clarification"})
+    decision = tmp_path / "decision.json"
+    decision.write_text(json.dumps(plan))
+    result = sponsor_location_command(state_dir=tmp_path, policy_path=POLICY_PATH, decision_path=decision)
+    assert result["status"] == "review_saved"
+    assert result["uk_status_evidence_required"] is False
+    assert result["mail_sent"] is False and result["customer_confirmed"] is False

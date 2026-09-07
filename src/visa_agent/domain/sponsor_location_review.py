@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from visa_agent.domain.sponsor_location import SponsorLocationStatement
+
 if TYPE_CHECKING:
     from visa_agent.domain.models import Case
     from visa_agent.domain.policy import Policy
@@ -23,6 +25,7 @@ class SponsorLocationReview(BaseModel):
     rationale: str = Field(min_length=12, max_length=2000)
     reviewed_at: datetime
     uk_status_evidence_required: bool
+    selected_source_event_ids: dict[str, str] = Field(default_factory=dict)
 
 
 def sponsor_location_binding(case: Case) -> str:
@@ -54,14 +57,41 @@ def sponsor_location_applicability(case: Case) -> bool | None:
     return any(True in items for items in values.values())
 
 
-def current_sponsor_location_values(case: Case) -> dict[str, set[bool]]:
-    """Only current-epoch, current-identity source observations can inform intake."""
+def current_sponsor_location_statements(case: Case, *, selected: dict[str, str] | None = None) -> list[SponsorLocationStatement]:
+    """Keep history intact; apply only a source-bound operator resolution.
+
+    Explicit selections are validated against raw current-identity observations,
+    never against an earlier review's already filtered observations.
+    """
     profile = case.profile
+    rows = [item for item in case.sponsor_location_statements
+            if item.identity_epoch == case.sponsor_location_epoch
+            and (item.sponsor_name, item.sponsor_relationship)
+            == (profile.sponsor_name, profile.sponsor_relationship)]
+    if selected is None:
+        review = case.sponsor_location_review
+        selected = (review.selected_source_event_ids if review and review.case_id == case.id
+                    and review.binding_digest == sponsor_location_binding(case) else {})
+    for dimension, event_id in selected.items():
+        raw = [item for item in rows if item.dimension == dimension]
+        chosen = [item for item in raw if item.source_event_id == event_id]
+        if (dimension not in {"residence", "current_presence"}
+                or len({item.value for item in raw}) != 2
+                or len({item.value for item in chosen}) != 1):
+            raise ValueError("Resolution must select an unambiguous current source for a conflicting dimension")
+    return [item for item in rows
+            if item.dimension not in selected or item.source_event_id == selected[item.dimension]]
+
+
+def current_sponsor_location_values(case: Case) -> dict[str, set[bool]]:
+    """Current identity only; stale or malformed review cannot hide a conflict."""
     values: dict[str, set[bool]] = {"residence": set(), "current_presence": set()}
-    for item in case.sponsor_location_statements:
-        if (item.identity_epoch == case.sponsor_location_epoch
-                and (item.sponsor_name, item.sponsor_relationship) == (profile.sponsor_name, profile.sponsor_relationship)):
-            values[item.dimension].add(item.value)
+    try:
+        rows = current_sponsor_location_statements(case)
+    except ValueError:
+        rows = current_sponsor_location_statements(case, selected={})
+    for item in rows:
+        values[item.dimension].add(item.value)
     return values
 
 
@@ -72,6 +102,10 @@ def sponsor_location_policy_digest(policy: Policy) -> str:
 
 def sponsor_location_review_is_current(case: Case, policy: Policy | None = None) -> bool:
     review = case.sponsor_location_review
+    try:
+        current_sponsor_location_statements(case)
+    except ValueError:
+        return False
     applicability = sponsor_location_applicability(case)
     return bool(review and applicability is not None and review.case_id == case.id
                 and review.binding_digest == sponsor_location_binding(case)

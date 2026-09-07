@@ -27,6 +27,7 @@ class LocationDecision(BaseModel):
     actor: str = Field(min_length=2, max_length=120)
     rationale: str = Field(min_length=12, max_length=2000)
     source_and_applicability_checked: Literal[True]
+    selected_source_event_ids: dict[str, str] = Field(default_factory=dict)
 
 
 def sponsor_location_command(*, state_dir: Path, policy_path: Path,
@@ -61,7 +62,8 @@ def sponsor_location_command(*, state_dir: Path, policy_path: Path,
             if decision is not None:
                 review = review_sponsor_location(store, case_id=case.id,
                     expected_fingerprint=decision.expected_fingerprint, actor=decision.actor,
-                    rationale=decision.rationale, policy=policy, today=date.today())
+                    rationale=decision.rationale, policy=policy, today=date.today(),
+                    selected_source_event_ids=decision.selected_source_event_ids)
                 updated = store.get_case(case.id)
                 assert updated is not None
                 return {"status": "review_saved", "case_id": case.id,
@@ -81,7 +83,7 @@ def sponsor_location_command(*, state_dir: Path, policy_path: Path,
                     "statements": [item.model_dump(mode="json") for item in case.sponsor_location_statements]},
                 "decision": {"case_id": case.id, "expected_fingerprint": review_fingerprint(case),
                     "policy_digest": sponsor_location_policy_digest(policy), "actor": "", "rationale": "",
-                    "source_and_applicability_checked": False},
+                    "source_and_applicability_checked": False, "selected_source_event_ids": {}},
             }
         finally:
             store.close()

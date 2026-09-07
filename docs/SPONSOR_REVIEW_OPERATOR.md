@@ -10,9 +10,17 @@ authority boundary; entering an actor name does not authenticate anyone.
    The output includes private sponsor/source information. Save it privately as
    a JSON decision file; do not commit it to GitHub or paste it into public logs.
 3. Read the original statements, identity epoch and both dimensions. An empty
-   dimension or conflicting values cannot be approved by this command. Resolve
-   the outstanding intake/source issue first. The context is informational; edits
-   to it do not change the case or evidence requirement.
+   dimension cannot be approved. If values conflict, obtain the applicant's
+   clarification and process its retained update through the existing reviewed
+   retry procedure first. Do not edit the database or invent a new statement.
+   After reading the registered sources, set `decision.selected_source_event_ids`
+   for each conflicting dimension, for example
+   `{"residence": "the-registered-clarification-event-id"}`. Leave it `{}` when
+   there is no conflict. Only current-identity, unambiguous existing sources can
+   be selected; a dimension with remaining conflict is still rejected. This is
+   an explicit operator decision, never automatic latest-email-wins behavior.
+   Original statements remain in the private case history. Context is informational;
+   edits to it do not change the case or evidence requirement.
 4. Only after actual review, fill `decision.actor`, a substantive
    `decision.rationale`, and set `decision.source_and_applicability_checked` to
    `true`. Do not edit case/policy fingerprints to bypass a stale-plan rejection.
@@ -22,6 +30,9 @@ authority boundary; entering an actor name does not authenticate anyone.
    only the location review hold; it cannot clear unrelated review reasons.
    Resume normal intake only when appropriate. Fresh applicant confirmations,
    document review and the separate final-delivery process are still required.
+   Any new source or identity change invalidates the source selection and requires
+   fresh review. Customer summaries and answer exports use the selected source
+   only while the review is current; they do not expose internal reviewer metadata.
 
 The command never sends email, generates a ZIP, grants processing consent or
 confirms a customer summary. It uses the same exclusive state lock as Gmail.
