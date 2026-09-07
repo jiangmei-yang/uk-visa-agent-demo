@@ -94,7 +94,8 @@ SPONSOR_SCENARIOS: dict[str, list[dict[str, Any]]] = {
                  "I'm a student. My mother Mei Example is paying for my trip. My sponsor does not live in the UK. "
                  "Travel dates are not decided yet.",
          "profile": {"funding_source": "personal_sponsor", "sponsor_name": "Mei Example",
-                     "sponsor_relationship": "mother", "sponsor_is_in_uk": False, "sponsor_address": None},
+                     "sponsor_relationship": "mother", "sponsor_is_in_uk": None, "sponsor_address": None},
+         "location_source_event": "sponsor-address-and-replacement-1",
          "no_intake": True, "deferred_dates": True},
         {"body": "What is the next step?", "expected_questions": ["sponsor_address"], "deferred_dates": True},
         {"body": "I need to check.", "profile": {"sponsor_address": None},
@@ -106,7 +107,8 @@ SPONSOR_SCENARIOS: dict[str, list[dict[str, Any]]] = {
         {"body": "My father Jian Example is paying for my trip instead of my mother. "
                  "My sponsor does not live in the UK. What is the next step?",
          "profile": {"sponsor_name": "Jian Example", "sponsor_relationship": "father",
-                     "sponsor_is_in_uk": False, "sponsor_address": None},
+                     "sponsor_is_in_uk": None, "sponsor_address": None},
+         "location_source_event": "sponsor-address-and-replacement-5",
          "expected_questions": ["sponsor_address"], "deferred_sponsor_address": False, "deferred_dates": True},
         {"body": "34 Another Road, Hong Kong",
          "profile": {"sponsor_address": "34 Another Road, Hong Kong"},
@@ -318,6 +320,22 @@ def check_turn(spec: dict[str, Any], case: Any, reply: str) -> dict[str, bool]:
     if "address_source_event" in spec:
         evidence = case.active_evidence("sponsor_address")
         checks["current_sponsor_address_source"] = len(evidence) == 1 and evidence[0].source_event_id == spec["address_source_event"]
+    if "location_source_event" in spec:
+        from visa_agent.domain.rules import evaluate_gate
+
+        location = [item for item in case.sponsor_location_statements
+                    if item.identity_epoch == case.sponsor_location_epoch
+                    and (item.sponsor_name, item.sponsor_relationship)
+                    == (case.profile.sponsor_name, case.profile.sponsor_relationship)]
+        checks["current_sponsor_residence_source"] = (
+            len(location) == 1 and location[0].dimension == "residence" and location[0].value is False
+            and location[0].source_event_id == spec["location_source_event"]
+        )
+        checks["presence_not_invented_or_waived"] = (
+            case.profile.sponsor_is_in_uk is None
+            and not evaluate_gate(case.model_copy(deep=True), load_policy(ROOT / POLICY_PATH), TODAY)
+                .checks["sponsor_location_applicability_review_current"]
+        )
     if "paused" in spec:
         checks["preparation_control"] = case.preparation_paused == spec["paused"]
     if "saved_style" in spec:
@@ -429,6 +447,8 @@ def main() -> None:
                         "persisted_case_matches": store.get_case(case.id).model_dump() == case.model_dump()})
                     row.update({"completed": True, "checks": checks, "plan": plan, "reply": reply,
                         "profile": case.profile.model_dump(mode="json"), "requested_fields": case.last_requested_fields,
+                        "sponsor_location_statements": [item.model_dump(mode="json") for item in case.sponsor_location_statements],
+                        "sponsor_location_epoch": case.sponsor_location_epoch,
                         "application_records": case.application_records.model_dump(mode="json") if case.application_records else None,
                         "deferred_fields": case.deferred_fields, "topics": case.customer_question_topics,
                         "reply_style": case.reply_style, "reply_style_source_event_id": case.reply_style_source_event_id,
