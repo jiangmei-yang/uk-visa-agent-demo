@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import unicodedata
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -175,6 +176,29 @@ def _money_is_grounded(item: FinancialObservation, pages: list[str]) -> bool:
     )
 
 
+def _complete_omitted_financial_fields(item: FinancialObservation, pages: list[str]) -> FinancialObservation:
+    """Recover omitted keys only from complete, literal labelled quotations.
+
+    Explicit nulls, supplied values, unquoted text and ambiguous excerpts are not
+    repaired. The normal financial checks still validate every completed value.
+    """
+    if item.confidence < 0.95 or item.kind != "closing_balance":
+        return item
+    updates: dict[str, object] = {}
+    if "as_of" not in item.model_fields_set and _grounded(item.date_excerpt, item.date_page, pages):
+        match = re.fullmatch(r"as of\s+(\d{4}-\d{2}-\d{2})\.?", item.date_excerpt.strip(), re.I)
+        if match:
+            with suppress(ValueError):
+                updates["as_of"] = date.fromisoformat(match[1])
+    if ("account_reference" not in item.model_fields_set and item.account_page is not None
+            and item.account_excerpt is not None
+            and _grounded(item.account_excerpt, item.account_page, pages)):
+        match = re.fullmatch(r"Account ending:\s*([A-Za-z0-9]{2,20})\.?", item.account_excerpt.strip(), re.I)
+        if match:
+            updates["account_reference"] = match[1]
+    return item.model_copy(update=updates) if updates else item
+
+
 def validate_document(
     proposal: DocumentProposal, pages: list[str], *, method: str, version: str
 ) -> DocumentReadResult:
@@ -207,6 +231,7 @@ def validate_document(
         accepted_confidences.append(item.confidence)
     financial_observations = []
     for financial_item in proposal.financial_observations:
+        financial_item = _complete_omitted_financial_fields(financial_item, pages)
         if not _money_is_grounded(financial_item, pages):
             raise ValueError("A financial observation lacks a grounded subject, amount or currency")
         financial_observations.append(financial_item)
