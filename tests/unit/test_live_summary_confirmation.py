@@ -2,7 +2,6 @@ import pytest
 
 from visa_agent.workflow.conversation import clear_natural_confirmation
 
-
 FULL = "我已逐项核对这封邮件里的资料摘要，姓名、生日、出行日期、住址、收入、资金来源和旅行记录都准确，没有遗漏或更改。请继续整理材料。"
 
 

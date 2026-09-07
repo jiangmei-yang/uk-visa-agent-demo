@@ -9,6 +9,15 @@ at the edges, deterministic rules and delivery gates at the centre.
 **使用说明：[中文快速开始](SUBMISSION.md)** ·
 [English setup guide](START_HERE.md)
 
+[Agent 与稳定交付设计（中文）](docs/RELIABILITY_DESIGN_ZH.md) ·
+[最新 Gmail 部署实测](docs/GMAIL_DEPLOYMENT_2026-09-07.md) ·
+[操作演示准备](docs/DEMO_RECORDING_PLAN_ZH.md)
+
+Latest real-mail acceptance: receipt, attachments, corrections and natural profile confirmation
+were exercised on the deployed application source `8ca6efb`. The travel-history operator-review
+gate still blocks this case's final pack; no current full-flow recording or ZIP-recipient acceptance
+is claimed. The 5,673 passing local tests are not evidence of unattended end-to-end success.
+
 ## What the demo proves
 
 The featured case is an adult PhD student applying from Hong Kong to attend a London conference.
