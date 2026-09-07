@@ -6,7 +6,7 @@ from test_consultant_value import APPLICANT, POLICY, TODAY, Model, _patch
 
 from visa_agent.domain.models import Case, CaseProfile, CaseStatus, InboundEvent
 from visa_agent.domain.rules import evaluate_gate
-from visa_agent.llm.guarded import GuardedLLM
+from visa_agent.llm.guarded import GuardedLLM, deterministic_fallback_message
 from visa_agent.storage.sqlite import SQLiteStore
 from visa_agent.workflow.conversation import _profile_question_text
 from visa_agent.workflow.service import WorkflowService
@@ -45,6 +45,12 @@ def test_partial_location_continues_intake_then_reviews_complete_information(tmp
         assert partial.profile.sponsor_is_in_uk is None
         assert not evaluate_gate(partial, POLICY, TODAY).checks["sponsor_location_applicability_review_current"]
         assert missing in _profile_question_text(partial, "sponsor_is_in_uk")
+        partial.question_plan = ["sponsor_is_in_uk"]
+        partial.last_requested_fields = ["sponsor_is_in_uk"]
+        rendered = deterministic_fallback_message(partial, "blocked")
+        assert "Next, I need to know whether the sponsor lives in the UK" not in rendered
+        assert "接着确认资助人是否住在英国" not in rendered
+        assert missing in rendered
         assert not partial.profile_confirmed and not partial.final_summary_confirmed
     # Persistence, not a model's transient chat memory, carries the first answer.
     with closing(SQLiteStore(path)) as store:

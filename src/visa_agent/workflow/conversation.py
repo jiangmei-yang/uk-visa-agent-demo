@@ -816,6 +816,10 @@ def _single_question_context(case: Case, question_fields: list[str]) -> str:
     # The reviewed home-address question already explains purpose and ownership.
     if key == "current_address":
         return ""
+    if key == "sponsor_is_in_uk" and case.sponsor_location_statements:
+        # The dimension-specific question already acknowledges the known part
+        # and explains the distinction. A legacy residence preface contradicts it.
+        return ""
     if case.customer_language == "zh":
         if key == "sponsor_identity" and _current_parent_sponsor_hint(case):
             return "接着把实际资助人确认清楚，这样资助信、资金材料和关系证明才能对应起来。"
