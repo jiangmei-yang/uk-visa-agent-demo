@@ -1,0 +1,14 @@
+{
+  "scope": "Four unchanged fictional PDFs; fresh current-source extraction, not recipient delivery",
+  "report": "financial_document_deepseek_2026-09-07-v19.json",
+  "sha256": "4a977eca8ccc71d104c5192946af5e901e670430b1d27017c0c6007f7b2df960",
+  "calls": 4,
+  "passed": 4,
+  "failed": 0,
+  "tokens": 8742,
+  "bound_git_head": "40d2b1ce8fd399917c1029b007997ba47ec8dd2d",
+  "implementation_manifest_entries": 101,
+  "previous_receipt_left_unchanged": "financial_document_current_2026-09-07-v18.json",
+  "mailbox_calls": 0,
+  "real_documents": 0
+}
