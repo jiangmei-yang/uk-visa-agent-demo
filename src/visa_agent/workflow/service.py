@@ -459,6 +459,16 @@ class WorkflowService:
             if not grounded.requires_human_review and not grounded.ambiguities:
                 patch.updates.extend(grounded.updates)
                 literal_employer_fields = {item.field for item in grounded.updates}
+        if (case.profile.visit_purpose is None and not any(item.field == "visit_purpose" for item in patch.updates)
+                and not patch.requires_human_review and not patch.ambiguities
+                and not getattr(self.llm, "last_extraction_fallback", False)):
+            from visa_agent.workflow.explicit_visit_purpose import explicit_holiday_statement
+
+            if holiday_source := explicit_holiday_statement(customer_event.body):
+                recovered = validate_case_patch(customer_event, CasePatch(updates=[FactUpdate(
+                    field="visit_purpose", value="tourism", source_excerpt=holiday_source, confidence=1)], ambiguities=[]))
+                if not recovered.requires_human_review and not recovered.ambiguities:
+                    patch.updates.extend(recovered.updates)
         self._require_processing(case, processing_epoch)
         record_plan = plan_record_intake(
             customer_event, case.application_records, case_id=case.id,
