@@ -1956,6 +1956,8 @@ def blocked_customer_message(case: Case) -> str:
 
 
 def confirmation_message(case: Case, *, profile_only: bool = False) -> str:
+    from visa_agent.workflow.sponsor_location_summary import sponsor_location_summary_rows
+
     if case.preparation_paused:
         return paused_customer_message(case)
     zh = case.customer_language == "zh"
@@ -1966,6 +1968,8 @@ def confirmation_message(case: Case, *, profile_only: bool = False) -> str:
     )
     rows = []
     for field, value in case.profile.model_dump(mode="json").items():
+        if field == "sponsor_is_in_uk" and case.sponsor_location_statements:
+            continue  # The separate source observations supersede this ambiguous legacy display.
         if value is not None and not (field == "nationality" and case.profile.nationality_country):
             display = str(value)
             if isinstance(value, bool):
@@ -1981,6 +1985,7 @@ def confirmation_message(case: Case, *, profile_only: bool = False) -> str:
                 if zh
                 else f"- {fact_label(case, field)}: {display}"
             )
+    rows.extend(sponsor_location_summary_rows(case))
     text = ("\n\n".join(case.customer_answers) + "\n\n" if case.customer_answers else "")
     if case.latest_preparation_action == "resume" and (receipt := preparation_control_receipt(case)):
         text = receipt + "\n\n" + text
