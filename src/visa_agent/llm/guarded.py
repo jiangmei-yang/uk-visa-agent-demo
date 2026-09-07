@@ -87,7 +87,7 @@ _OTHER_PERSON_SUBJECT = re.compile(
     r"plans?|wants?|needs?|intends?|hopes?|appl(?:y|ies|ied|ying)|travels?|will|would|can|could|"
     r"says?|said|asks?|asked|wrote|told)\b|"
     rf"(?:^|[,，;:；：。])\s*(?:我(?:的)?|我们(?:的)?|我們(?:的)?|他(?:的)?|她(?:的)?|他们(?:的)?|他們(?:的)?|她们(?:的)?|她們(?:的)?|这位|這位|那位)?"
-    rf"(?:{_CJK_OTHER_PERSON})(?:[㐀-鿿]{{1,4}})?(?:是|有|曾|住|居住|工作|上班|读书|讀書|打算|计划|計劃|想|要|会|會|将|將|申请|申請|出生|持)",
+    rf"(?:{_CJK_OTHER_PERSON})(?:[㐀-鿿]{{1,4}})?(?:是|有|曾|住|居住|工作|上班|读书|讀書|打算|计划|計劃|准备|準備|想|要|会|會|将|將|申请|申請|出生|持)",
     re.I,
 )
 _OTHER_PERSON_POSSESSIVE = re.compile(
@@ -217,7 +217,7 @@ _SEMANTIC_VALUE_PATTERNS: dict[str, dict[str, tuple[re.Pattern[str], ...]]] = {
                 r"(?:旅游|旅遊|观光|觀光|度假|自由行)|"
                 r"(?:这次|這次|本次|目的).{0,8}(?:是|为|為)?.{0,6}"
                 r"(?:旅游|旅遊|观光|觀光|度假|自由行)|"
-                r"(?:申请|申請|办理|辦理|想办|想辦).{0,10}(?:英国|英國)?.{0,5}"
+                r"(?:申请|申請|办理|辦理|想办|想辦|准备|準備).{0,10}(?:英国|英國)?.{0,5}"
                 r"(?:旅游|旅遊|自由行)(?:签证|簽證)?|"
                 r"^(?:(?:主要|主要目的)(?:是|为|為)?|"
                 r"(?:想|打算|计划|計劃))?(?:去|前往|到)?(?:英国|英國)?"
@@ -607,7 +607,7 @@ def _controlled_profile_value_is_grounded(event: InboundEvent, update: FactUpdat
 def _evidence_sentences(event: InboundEvent, update: FactUpdate) -> list[str]:
     """Return current-message sentences that actually contain the model's excerpt."""
     latest = unicodedata.normalize("NFKC", latest_reply_text(event.body))
-    excerpt = _normalise_evidence(update.source_excerpt).strip(" .!?;。！？；")
+    excerpt = _normalise_evidence(unicodedata.normalize("NFKC", update.source_excerpt)).strip(" .!?;。！？；")
     if not excerpt:
         return []
     return [
@@ -620,7 +620,7 @@ def _evidence_sentences(event: InboundEvent, update: FactUpdate) -> list[str]:
 
 def _evidence_clauses(sentence: str, update: FactUpdate) -> list[str]:
     """Narrow a sentence at subject-changing boundaries without losing conditions."""
-    excerpt = _normalise_evidence(update.source_excerpt)
+    excerpt = _normalise_evidence(unicodedata.normalize("NFKC", update.source_excerpt)).strip(" .!?;。！？；")
     clauses = re.split(
         r"[,，]|\b(?:but|whereas|while)\b|\band(?=\s+(?:i|he|she|they)\b)|"
         r"但是|不过|不過|但|而(?=我|他|她)",
@@ -634,7 +634,7 @@ def _evidence_clauses(sentence: str, update: FactUpdate) -> list[str]:
 def _hypothetical_controls_evidence(sentence: str, update: FactUpdate) -> bool:
     """Treat a marker as governing evidence only when it appears before that evidence."""
     text = _normalise_evidence(sentence)
-    excerpt = _normalise_evidence(update.source_excerpt)
+    excerpt = _normalise_evidence(unicodedata.normalize("NFKC", update.source_excerpt)).strip(" .!?;。！？；")
     positions = [match.start() for match in re.finditer(re.escape(excerpt), text)]
     if not positions:
         return False

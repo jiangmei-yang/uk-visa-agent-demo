@@ -182,10 +182,14 @@ def _conditional_common_evidence_orientation(case: Case, *, no_links: bool) -> s
         known_zh.append(purpose_zh)
         known_en.append(purpose_en)
     if case.profile.nationality_country:
-        known_zh.append(f"你持{case.profile.nationality_country}护照")
+        from visa_agent.workflow.consultant_overview import _zh_country
+
+        known_zh.append(f"你持{_zh_country(case.profile.nationality_country)}护照")
         known_en.append(f"you hold a {case.profile.nationality_country} passport")
     if case.profile.application_country:
-        known_zh.append(f"准备在{case.profile.application_country}递交")
+        from visa_agent.workflow.consultant_overview import _zh_country
+
+        known_zh.append(f"准备在{_zh_country(case.profile.application_country)}递交")
         known_en.append(f"you plan to apply in {case.profile.application_country}")
     missing_zh = [label for value, label in (
         (case.profile.nationality_country, "护照国家或地区"),

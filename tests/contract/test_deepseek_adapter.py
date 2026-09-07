@@ -139,6 +139,9 @@ def test_document_diagnostic_capture_retains_success_and_invalid_json() -> None:
     assert "also include a full_name item in facts" in instructions
     assert "subject_name does not replace this required identity fact" in instructions
     assert "sponsor name only in financial_observations, not full_name" in instructions
+    assert "An enrolment/student letter need not identify who pays for the trip" in instructions
+    assert "their absence alone does not require review" in instructions
+    assert "Still require review for unreadable text" in instructions
 
     completions.content = "not valid JSON"
     with pytest.raises(ValidationError):
