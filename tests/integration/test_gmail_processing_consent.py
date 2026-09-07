@@ -138,15 +138,20 @@ def test_public_consultation_replies_without_personal_processing_or_duplicate_se
         store.close()
 
 
-def test_service_request_direct_reply_without_consent_code(harness):
+@pytest.mark.parametrize("enquiry", [
+    "我的姓名是 Lin Chen，我想去英国旅游，日期还没定。",
+    "My name is Lin Chen. I want to visit the UK for a holiday; my dates are not fixed.",
+])
+def test_service_request_direct_reply_without_consent_code(harness, enquiry):
     harness.args.processing_interaction = "service_request"
-    harness.add("ordinary-service", "我的姓名是 Lin Chen，我想去英国旅游，日期还没定。")
+    harness.add("ordinary-service", enquiry)
     harness.run()
     assert len(harness.extracted) == 1
     assert len(harness.sent) == 1
     body = harness.sent[0]["body"]
     assert "授权参考码" not in body and "PC-" not in body
-    assert "资料说明" in body and "DeepSeek" in body
+    assert all(term not in body for term in (
+        "资料说明", "DeepSeek", "Information handling", "AI 服务", "授权参考码"))
     harness.run()
     assert len(harness.sent) == 1
     harness.add("stop-service", "请停止处理我的资料")

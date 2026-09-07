@@ -4,7 +4,6 @@ import pytest
 
 from tests.unit.test_processing_consent import event
 from visa_agent.privacy.consent import ConsentLedger, ProcessingConsentRequired, ProcessingScope
-from visa_agent.privacy.customer_copy import service_information
 from visa_agent.storage.sqlite import SQLiteStore
 
 
@@ -62,9 +61,3 @@ def test_existing_notices_cannot_be_silently_bypassed(tmp_path):
     assert not ledger.allowed(store.get_case(result.case_id))
     store.close()
 
-
-@pytest.mark.parametrize("language", ["zh", "en"])
-def test_information_has_no_code_or_agreement_instruction(language):
-    text = service_information("deepseek", language)
-    assert "DeepSeek" in text
-    assert "PC-" not in text and "授权参考码" not in text and "If you agree" not in text
