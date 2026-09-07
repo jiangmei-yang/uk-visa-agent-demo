@@ -5,6 +5,26 @@ requirements reference; recommendations about vendors or libraries are not
 themselves proof of product completion. Automated pass counts are not a substitute
 for these outcomes.
 
+## Latest checkpoint (September 7, after reception repair)
+
+The current application source is `0b188d5`; see
+[current source and clean-container checks](CURRENT_SOURCE_CHECK_2026-09-07.md).
+Fresh complete journey + pacing is 22/22 and financial extraction is 4/4,
+both source-bound development tests, not a universal accuracy score.
+The live Gmail worker accepts ordinary new senders and uses the explicitly
+configured `service_request` interaction; it does not demand a consent code from
+each new sender. That operator configuration is not a recorded customer grant.
+Withdrawal handling and the legacy explicit-consent mode remain separate controls;
+see [service interaction](GMAIL_SERVICE_INTERACTION.md).
+
+The ordinary tourism Gmail journey has real correction and same-account statement
+replacement evidence, but still lacks a recipient-side final ZIP. The remaining
+fictional identity/residence documents have not been silently approved. See
+[real journey evidence](GMAIL_TOURISM_JOURNEY_2026-09-07.md). Full recording,
+current GitHub/CI publication, independent usability and real WhatsApp acceptance
+remain incomplete. Earlier checkpoint paragraphs below describe their dated
+versions and must not override this current runtime description.
+
 Current unreleased work: [application records](APPLICATION_RECORDS_WORKING.md)
 adds revisioned travel/contact entries, explicit none/unknown/partial/full-list
 assertions, source-bound confirmation invalidation and bundled Chinese PDF glyphs.
