@@ -411,6 +411,9 @@ def evaluate_gate(case: Case, policy: Policy, today: date) -> GateResult:
     critical_with_provenance = all(case.active_evidence(key) for key in required_facts)
     checks = {
         "preparation_active": not case.preparation_paused,
+        "no_unresolved_human_review": (
+            case.status != CaseStatus.HUMAN_REVIEW_REQUIRED and not case.human_review_reason
+        ),
         "route_in_scope": in_scope,
         "applicant_age_at_least_18": bool(
             case.profile.date_of_birth and calculate_age(case.profile.date_of_birth, today) >= 18

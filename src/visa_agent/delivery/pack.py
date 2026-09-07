@@ -398,6 +398,9 @@ def _preparation_control_rejection(case: Case, store: SQLiteStore) -> str | None
     current = store.get_case(case.id)
     if not ConsentLedger(store).allowed(current or case):
         return "Processing consent is required; pack generation and access are withheld."
+    if any(snapshot.status == CaseStatus.HUMAN_REVIEW_REQUIRED or snapshot.human_review_reason
+           for snapshot in (case, current) if snapshot is not None):
+        return "Unresolved human review blocks pack generation and access; reload and resolve the current review first."
     if case.preparation_paused or (current is not None and current.preparation_paused):
         return "Preparation is paused; pack generation and access are withheld."
     if current is not None and case.preparation_control_epoch != current.preparation_control_epoch:

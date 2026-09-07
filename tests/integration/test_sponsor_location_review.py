@@ -73,6 +73,10 @@ def test_other_risk_is_not_removed(tmp_path):
         saved = store.get_case(case.id)
         assert saved.status == CaseStatus.HUMAN_REVIEW_REQUIRED
         assert saved.human_review_reason == "Unresolved refusal history"
+        gate = evaluate_gate(saved, POLICY, TODAY)
+        assert gate.checks["sponsor_location_applicability_review_current"]
+        assert not gate.checks["no_unresolved_human_review"]
+        assert not gate.allowed
 
 
 def test_normal_intake_can_continue_after_review_without_reasking_legacy_location(tmp_path):
