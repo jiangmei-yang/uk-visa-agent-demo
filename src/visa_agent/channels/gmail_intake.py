@@ -42,11 +42,15 @@ def discover_messages(adapter: GmailAdapter, journal: GmailSyncJournal, query: s
     return False
 
 
-def scope_rejection(message: Message, sender: str, mailbox: str, subject: str | None) -> str | None:
+def scope_rejection(message: Message, sender: str | None, mailbox: str, subject: str | None) -> str | None:
     senders = [address.casefold() for _, address in getaddresses(message.get_all("From", []))]
     recipients = [address.casefold() for _, address in getaddresses(message.get_all("To", []))]
-    if senders != [sender.casefold()] or mailbox.casefold() not in recipients:
+    if (len(senders) != 1 or "@" not in senders[0] or mailbox.casefold() not in recipients
+            or (sender is not None and senders != [sender.casefold()])):
         return "OUTSIDE_REGISTERED_CORRESPONDENCE"
+    if (senders[0] == mailbox.casefold()
+            or senders[0].split("@", 1)[0] in {"mailer-daemon", "postmaster"}):
+        return "SELF_OR_BOUNCE_MESSAGE"
     if len(message.get_all("Subject", [])) > 1:
         return "AMBIGUOUS_SUBJECT"
     if subject is not None and str(message.get("Subject", "")).removeprefix("Re: ") != subject:
@@ -59,7 +63,7 @@ def scope_rejection(message: Message, sender: str, mailbox: str, subject: str | 
     return None
 
 
-def ordered_candidates(adapter: GmailAdapter, journal: GmailSyncJournal, *, sender: str,
+def ordered_candidates(adapter: GmailAdapter, journal: GmailSyncJournal, *, sender: str | None,
                        mailbox: str, after: int, subject: str | None) -> list[str]:
     state = journal.checkpoint()
     if state is None or state.phase != "ready":

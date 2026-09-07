@@ -227,3 +227,9 @@ of that new message, not an unchanged-state reload. The following completed idle
 The full local suite has 1,179 passes, but the final 24-case development probe still omitted three
 questions. A separate eight-case first holdout pass does not cancel those failures. This remains
 an incremental registered-sender test service, not a completed or generally reliable public adviser.
+# Current intake configuration
+
+For ordinary customer enquiries, use the [all-sender setup and migration guide](docs/GMAIL_SERVICE_INTERACTION.md).
+`--accept-new-senders` removes the former single-sender restriction without removing case ownership,
+automatic-mail filters or final delivery review. Older registered-sender examples below describe the
+bounded development mode, not a requirement for customers to preregister their address.

@@ -216,14 +216,21 @@ class ConsentLedger:
         row = self.store.connection.execute("SELECT scope_json FROM processing_scope WHERE singleton=1").fetchone()
         return None if row is None else ProcessingScope(**json.loads(row["scope_json"]))
 
-    def configure(self, scope: ProcessingScope) -> None:
+    def configure(self, scope: ProcessingScope, *, migrate_service: bool = False) -> None:
         with self.store.atomic_write():
             previous = self.scope()
             if (previous is not None and previous.interaction != scope.interaction
                     and self.store.list_cases()):
-                raise ProcessingConsentRequired(
-                    "Use a fresh state directory when changing the processing interaction; "
-                    "existing notice promises and withdrawals must not be overridden")
+                if not (migrate_service and scope.interaction == "service_request"):
+                    raise ProcessingConsentRequired(
+                        "Use a fresh state directory or explicitly migrate to service interaction; "
+                        "existing notice promises and withdrawals must not be overridden")
+                self.store.connection.execute(
+                    "INSERT INTO processing_service_cutover VALUES (1,?,?,?) "
+                    "ON CONFLICT(singleton) DO UPDATE SET received_after=excluded.received_after,"
+                    "previous_scope_id=excluded.previous_scope_id,service_scope_id=excluded.service_scope_id",
+                    (datetime.now(UTC).isoformat(), previous.id, scope.id),
+                )
             # Reconstructing the old JSON with today's notice would silently
             # recompute its hash. Compare the actual persisted scope instead.
             current = self.store.connection.execute(
@@ -280,6 +287,11 @@ class ConsentLedger:
     def _record(self, case_id: str) -> Any:
         return self.store.connection.execute("SELECT * FROM processing_consent WHERE case_id=?", (case_id,)).fetchone()
 
+    def service_cutover(self) -> datetime | None:
+        row = self.store.connection.execute(
+            "SELECT received_after FROM processing_service_cutover WHERE singleton=1").fetchone()
+        return None if row is None else _utc(datetime.fromisoformat(row["received_after"]))
+
     def _state(self, case: Case, scope: ProcessingScope, status: str, epoch: int) -> None:
         self.store.connection.execute(
             "INSERT INTO processing_consent(case_id,status,scope_id,epoch,contact,channel,thread_id,updated_at) "
@@ -325,6 +337,12 @@ class ConsentLedger:
                     or _contact(case.applicant_contact, case.primary_channel) != _contact(event.sender, event.channel)):
                 # Neither authorize nor disclose the applicant's thread to a different sender.
                 raise ProcessingConsentRequired("Processing authorization sender does not match the case")
+            cutoff = self.service_cutover() if scope.interaction == "service_request" else None
+            if cutoff is not None and _utc(event.received_at) <= cutoff:
+                # Do not replay messages retained under an earlier consent promise.
+                # New replies use service policy, never a fabricated applicant grant.
+                self._defer(event, case)
+                return ConsentResult("defer", case.id)
             audited = self.store.connection.execute(
                 "SELECT * FROM processing_consent_events WHERE event_id=?", (event.id,)
             ).fetchone()
@@ -573,10 +591,13 @@ class ConsentLedger:
         clause = " AND case_id=?" if case_id is not None else ""
         parameters = (case_id,) if case_id is not None else ()
         rows = self.store.connection.execute(
-            "SELECT event_id FROM processing_deferred_events WHERE completed_at IS NULL" + clause
+            "SELECT event_id,received_at FROM processing_deferred_events WHERE completed_at IS NULL" + clause
             + " ORDER BY received_at,event_id", parameters,
         ).fetchall()
-        return [str(row["event_id"]) for row in rows]
+        scope = self.scope()
+        cutoff = self.service_cutover() if scope and scope.interaction == "service_request" else None
+        return [str(row["event_id"]) for row in rows
+                if cutoff is None or _utc(datetime.fromisoformat(row["received_at"])) > cutoff]
 
     def mark_completed(self, event_id: str) -> None:
         with self.store.atomic_write():

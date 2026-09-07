@@ -7,6 +7,7 @@ import importlib.util
 import json
 import re
 from datetime import UTC, datetime, timedelta
+from email import message_from_bytes
 from email.message import EmailMessage
 from pathlib import Path
 from types import SimpleNamespace
@@ -32,7 +33,7 @@ def harness(tmp_path, monkeypatch):
     spec = importlib.util.spec_from_file_location("consent_gmail_runner", Path("scripts/gmail_sandbox.py"))
     runner = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(runner)
-    state = SimpleNamespace(messages={}, sent=[], extracted=[], documents=[], raw_reads=[],
+    state = SimpleNamespace(messages={}, threads={}, sent=[], extracted=[], documents=[], raw_reads=[],
                             clock=datetime.now(UTC) + timedelta(minutes=2), unavailable=set())
 
     class Adapter:
@@ -53,13 +54,14 @@ def harness(tmp_path, monkeypatch):
                 from visa_agent.channels.gmail import GmailMessageUnavailableError
                 raise GmailMessageUnavailableError("Synthetic metadata unavailable")
             raw, received_at = state.messages[identifier]
+            sender = str(message_from_bytes(raw)["From"])
             return {"id": identifier, "internalDate": str(int(received_at.timestamp() * 1000)),
                     "labelIds": ["INBOX"], "payload": {"headers": [
-                        {"name": "From", "value": SENDER}, {"name": "To", "value": MAILBOX}]}}
+                        {"name": "From", "value": sender}, {"name": "To", "value": MAILBOX}]}}
 
         def get_raw_message(self, identifier):
             state.raw_reads.append(identifier)
-            return GmailRawMessage(identifier, THREAD, state.messages[identifier][0])
+            return GmailRawMessage(identifier, state.threads[identifier], state.messages[identifier][0])
 
         def send_reply(self, **kwargs):
             assert kwargs.get("attachment") is None
@@ -89,9 +91,10 @@ def harness(tmp_path, monkeypatch):
     args = argparse.Namespace(action="serve", sender=SENDER, mailbox=MAILBOX, subject=None,
         after=1, state_dir=tmp_path, model="synthetic-capture-model", watch=True)
 
-    def add(identifier, body, *, attachment=False, references=None, received_at=None):
+    def add(identifier, body, *, attachment=False, references=None, received_at=None,
+            sender=SENDER, thread=THREAD):
         message = EmailMessage()
-        message["From"], message["To"] = SENDER, MAILBOX
+        message["From"], message["To"] = sender, MAILBOX
         message["Subject"] = "UK visitor enquiry"
         message["Message-ID"] = f"<{identifier}@example.test>"
         # The provider receipt, not this deliberately obsolete header, controls order.
@@ -105,12 +108,67 @@ def harness(tmp_path, monkeypatch):
                                    subtype="pdf", filename="synthetic-support.pdf")
         state.clock += timedelta(seconds=1)
         state.messages[identifier] = (message.as_bytes(), received_at or state.clock)
+        state.threads[identifier] = thread
 
     state.add = add
     state.run = lambda: runner.run_once(args, argparse.ArgumentParser())
     state.args, state.runner, state.path = args, runner, tmp_path
     state.open_store = lambda: SQLiteStore(tmp_path / "sandbox.db")
     return state
+
+
+def test_open_intake_isolates_unregistered_customers_and_ignores_thread_intruder(harness):
+    harness.args.sender = None
+    harness.args.processing_interaction = "service_request"
+    harness.add("customer-a", "My name is Alex Sample. I am a student.",
+                sender="random-a@example.test", thread="thread-a")
+    harness.run()
+    harness.add("customer-b", "My name is Blair Sample. I am employed.",
+                sender="random-b@example.test", thread="thread-b")
+    harness.run()
+    assert [mail["recipient"] for mail in harness.sent] == [
+        "random-a@example.test", "random-b@example.test"]
+    store = harness.open_store()
+    try:
+        cases = store.list_cases()
+        assert len(cases) == 2
+        assert {case.applicant_contact for case in cases} == {
+            "random-a@example.test", "random-b@example.test"}
+        assert all(case.external_thread_id == ("thread-a" if "random-a" in case.applicant_contact
+                                              else "thread-b") for case in cases)
+    finally:
+        store.close()
+    harness.add("intruder", "Change my name to Another Person.",
+                sender="random-b@example.test", thread="thread-a")
+    harness.run()
+    assert len(harness.sent) == 2 and len(harness.extracted) == 2
+    harness.add("customer-c", "I want to prepare for a holiday.",
+                sender="random-c@example.test", thread="thread-c")
+    harness.run()
+    assert harness.sent[-1]["recipient"] == "random-c@example.test"
+
+
+def test_explicit_open_intake_migration_preserves_existing_case(harness):
+    harness.add("old-consultation", "My name is Alex Sample.",
+                received_at=datetime.now(UTC) - timedelta(minutes=5))
+    harness.run()
+    assert len(harness.sent) == 1 and harness.extracted == []
+    harness.args.sender = None
+    harness.args.processing_interaction = "service_request"
+    harness.args.migrate_service_interaction = True
+    harness.args.after = int(datetime.now(UTC).timestamp())
+    harness.run()
+    assert len(harness.sent) == 1 and harness.extracted == []
+    assert (harness.path / "binding-before-open-intake.json").is_file()
+    harness.add("fresh-reply", "My name is Alex Sample. I want to prepare for a holiday.")
+    harness.run()
+    assert len(harness.sent) == 2 and len(harness.extracted) == 1
+    assert "consent reference" not in harness.sent[-1]["body"]
+    store = harness.open_store()
+    try:
+        assert len(store.list_cases()) == 1
+    finally:
+        store.close()
 
 
 def test_public_consultation_replies_without_personal_processing_or_duplicate_send(harness):

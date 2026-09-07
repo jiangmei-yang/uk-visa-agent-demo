@@ -1,5 +1,7 @@
 """Service interaction is an operator policy, never fabricated customer consent."""
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
 
 from tests.unit.test_processing_consent import event
@@ -61,3 +63,26 @@ def test_existing_notices_cannot_be_silently_bypassed(tmp_path):
     assert not ledger.allowed(store.get_case(result.case_id))
     store.close()
 
+
+def test_explicit_migration_preserves_stop_and_never_replays_old_mail(tmp_path):
+    store = SQLiteStore(tmp_path / "migration.db")
+    ledger = ConsentLedger(store)
+    ledger.configure(ProcessingScope("Example", "offline"))
+    old = event(1, "My name is Old Example.", received_at=datetime.now(UTC) - timedelta(hours=1))
+    first = ledger.handle(old, "p")
+    ledger.handle(event(2, "请停止处理我的资料", external_thread_id="stopped-thread"), "p")
+    target = ProcessingScope("Example", "offline", interaction="service_request")
+    ledger.configure(target, migrate_service=True)
+    cutover = ledger.service_cutover()
+    ledger.configure(target, migrate_service=True)
+    assert ledger.service_cutover() == cutover
+    assert ledger.handle(old, "p").action == "defer"
+    assert old.id not in ledger.deferred_ids()
+    fresh = event(3, "My name is New Example.", received_at=datetime.now(UTC) + timedelta(seconds=1))
+    assert ledger.handle(fresh, "p").action == "allow"
+    assert not ledger.allowed(store.get_case_by_thread("stopped-thread"))
+    assert store.get_case(first.case_id) is not None
+    assert store.connection.execute(
+        "SELECT 1 FROM processing_consent_events WHERE action='granted'").fetchone() is None
+    assert all(row["status"] == "FAILED" for row in store.list_outbox())
+    store.close()

@@ -111,6 +111,12 @@ CREATE TABLE IF NOT EXISTS processing_scope (
     scope_id TEXT NOT NULL,
     scope_json TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS processing_service_cutover (
+    singleton INTEGER PRIMARY KEY CHECK(singleton=1),
+    received_after TEXT NOT NULL,
+    previous_scope_id TEXT NOT NULL,
+    service_scope_id TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS processing_consent (
     case_id TEXT PRIMARY KEY,
     status TEXT NOT NULL DEFAULT 'unknown',

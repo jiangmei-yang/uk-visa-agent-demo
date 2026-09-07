@@ -31,7 +31,7 @@ class StoredDraft:
 
 
 class AutomaticGmailReplySender(GmailReplySender):
-    def __init__(self, adapter: GmailAdapter, store: SQLiteStore, allowed_sender: str,
+    def __init__(self, adapter: GmailAdapter, store: SQLiteStore, allowed_sender: str | None,
                  *, allow_guarded_drafts: bool = False) -> None:
         super().__init__(adapter)
         self.store = store
@@ -56,7 +56,7 @@ class AutomaticGmailReplySender(GmailReplySender):
                 addresses = [a.casefold() for _, a in getaddresses([event.sender])]
                 if (case is None or case.primary_channel != 'gmail' or event.channel != 'gmail'
                         or not ConsentLedger(self.store).allowed(case)
-                        or addresses != [self.allowed_sender.casefold()]
+                        or (self.allowed_sender is not None and addresses != [self.allowed_sender.casefold()])
                         or addresses != [a.casefold() for _, a in getaddresses([case.applicant_contact])]
                         or event.id != row['id'] or event.external_thread_id != case.external_thread_id
                         or case.status not in HELD_RECEIPT_STATES[row['reason_code']]
@@ -127,7 +127,7 @@ class AutomaticGmailReplySender(GmailReplySender):
             """).fetchall()
             for row in rows:
                 recipients = [address.casefold() for _, address in getaddresses([row["recipient"] or ""])]
-                if recipients != [self.allowed_sender.casefold()]:
+                if self.allowed_sender is not None and recipients != [self.allowed_sender.casefold()]:
                     continue
                 result = self.store.connection.execute("""
                     UPDATE outbox SET status='FAILED', last_error='Obsolete unsent reply withheld',
@@ -142,7 +142,7 @@ class AutomaticGmailReplySender(GmailReplySender):
             "SELECT * FROM outbox WHERE id = ?", (request.outbox_id,)
         ).fetchone()
         recipients = [address.casefold() for _, address in getaddresses([request.recipient])]
-        if row is None or recipients != [self.allowed_sender.casefold()]:
+        if row is None or (self.allowed_sender is not None and recipients != [self.allowed_sender.casefold()]):
             raise PermanentChannelError("Automatic reply is outside the registered sender scope")
         if request.attachment is not None or row["message_type"] == "ready":
             raise PermanentChannelError("Final delivery requires reviewed dispatch")
@@ -152,6 +152,10 @@ class AutomaticGmailReplySender(GmailReplySender):
         if latest["id"] != request.outbox_id:
             raise PermanentChannelError("Obsolete reply withheld in favour of current case state")
         case = self.store.get_case(row["case_id"])
+        if (case is None or len(recipients) != 1
+                or recipients != [a.casefold() for _, a in getaddresses([case.applicant_contact])]
+                or request.thread_id != case.external_thread_id):
+            raise PermanentChannelError("Reply recipient or thread does not match its customer case")
         if case is None or row["message_type"] not in {
             "blocked", "awaiting_profile_confirmation", "awaiting_confirmation", "held_update_received",
             *CONTROL_MESSAGE_TYPES,
