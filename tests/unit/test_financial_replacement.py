@@ -20,6 +20,7 @@ BODY = ("护照姓名是 Lin Chen，原来的银行流水把姓拼错成了 Lin 
     "请用 bank_statement_corrected.pdf 替换 bank_statement_original.pdf。",
     "Please replace bank_statement_original.pdf with bank_statement_corrected.pdf.",
     "附件 bank_statement_corrected.pdf 是同一个账户尾号1234、同一期间2026年8月的更正版，请用它替换 bank_statement_original.pdf；持有人是我本人，余额没有变化。",
+    "再确认一下：附件 bank_statement_corrected.pdf 是同一账户的更正版，请用它替换 bank_statement_original.pdf。",
 ])
 def test_explicit_current_replacement_pair(body):
     assert replacement_names(body) == ("bank_statement_corrected.pdf", "bank_statement_original.pdf")

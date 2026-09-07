@@ -32,6 +32,7 @@ def replacement_names(body: str) -> tuple[str, str] | None:
                      clause, re.I) for clause in clauses):
         return None
     for clause in clauses:
+        clause = re.sub(r"^(?:再确认一下|确认一下|补充说明|补充确认)\s*[:：]\s*", "", clause)
         # A later refusal or condition must not be split away from an imperative.
         if re.search(r"不|别|暂缓|取消|等我|确认后|\b(?:not|don't|never|cancel|wait|unless|if)\b",
                      clause, re.I):
