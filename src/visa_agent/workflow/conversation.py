@@ -1407,8 +1407,8 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
     issues = []
     for issue in case.open_blockers():
         if issue.code == "EVIDENCE_CONFLICT_FULL_NAME":
-            names = sorted({str(item.value) for item in case.active_evidence("full_name")})
-            variants = " / ".join(names)
+            name_variants = sorted({str(item.value) for item in case.active_evidence("full_name")})
+            variants = " / ".join(name_variants)
             issues.append(
                 f"姓名写法不一致：目前收到的资料分别写了 {variants}。请核对护照上的拼写；"
                 "如果是证明文件写错了，请补发更正版。如果文件属于资助人，请告诉我你们的关系。"
@@ -1439,6 +1439,16 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
                 if doc.status == DocumentStatus.NEEDS_CERTIFIED_TRANSLATION
             )
             issues.append(f"还缺认证翻译：{names}。请同时保留原文，我会把翻译和原件对应起来。")
+        elif "fictional specimen" in issue.detail.casefold() and "not valid" in issue.detail.casefold():
+            names = ", ".join(doc.filename for doc in case.documents if doc.id in issue.related_document_ids)
+            issues.append(
+                f"{names or '这份文件'}注明不能用于申请，不能作为正式证明。请补发由对应机构出具的有效文件；"
+                "其他已收到的材料不用重发。"
+                if zh else
+                f"{names or 'This document'} is marked as not valid for an application. "
+                "Please provide a valid document issued by the relevant institution; "
+                "you don't need to resend the other files."
+            )
         elif zh and "Specimen is not an identity document" in issue.detail:
             names = ", ".join(
                 doc.filename for doc in case.documents if doc.id in issue.related_document_ids

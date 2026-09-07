@@ -41,6 +41,19 @@ def example() -> Case:
 
 
 @pytest.mark.parametrize("language", ["zh", "en"])
+def test_explicit_invalid_specimen_gets_actionable_replacement_request(language):
+    case = example()
+    case.customer_language = language
+    case.issues.append(Issue(id="invalid-specimen", code="UNCLASSIFIED_DOCUMENT_d",
+        title="Internal review", detail="Document is a fictional specimen and explicitly not valid for any application.",
+        severity=IssueSeverity.BLOCKER))
+    message = reply_items(case)[0][0]
+    assert ("对应机构出具" if language == "zh" else "relevant institution") in message
+    assert "人工" not in message
+    assert case.open_blockers()
+
+
+@pytest.mark.parametrize("language", ["zh", "en"])
 def test_name_conflict_tells_customer_the_actual_difference(language):
     case = example()
     case.customer_language = language
