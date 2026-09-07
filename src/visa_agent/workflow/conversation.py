@@ -9,6 +9,7 @@ from datetime import date
 
 from visa_agent.domain.models import Case, DocumentStatus, Requirement
 from visa_agent.domain.rules import profile_fact_complete, required_profile_facts
+from visa_agent.domain.sponsor_location_review import current_sponsor_location_values
 from visa_agent.workflow.advice_preferences import (
     prefers_brief_reply,
     reply_style_request,
@@ -1244,6 +1245,16 @@ def _sponsor_identity_question(case: Case, *, relationship_also_missing: bool) -
 
 def _profile_question_text(case: Case, field: str) -> str:
     zh = case.customer_language == "zh"
+    if field == "sponsor_is_in_uk" and case.sponsor_location_statements:
+        values = current_sponsor_location_values(case)
+        if len(values["residence"]) == 1 and not values["current_presence"]:
+            return ("资助人的居住情况已记下。资助人目前人在英国吗？如果还不清楚，可以先查一下。"
+                    if zh else "I've noted where your sponsor lives. Is your sponsor physically in the UK at present? "
+                    "It's fine to check if you're not sure.")
+        if len(values["current_presence"]) == 1 and not values["residence"]:
+            return ("资助人目前的所在地已记下。资助人平时住在英国吗？这与暂时去英国是两回事。"
+                    if zh else "I've noted your sponsor's current location. Does your sponsor usually live in the UK, "
+                    "rather than just visiting?")
     if field == "sponsor_name":
         return _sponsor_identity_question(case, relationship_also_missing=False)
     question = (

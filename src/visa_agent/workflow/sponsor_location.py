@@ -3,6 +3,7 @@
 from visa_agent.domain.models import Case, CaseStatus, InboundEvent, WorkflowStage
 from visa_agent.domain.rules import advance_stage
 from visa_agent.domain.sponsor_location import parse_sponsor_location_statements
+from visa_agent.domain.sponsor_location_review import current_sponsor_location_values
 
 LOCATION_REVIEW_REASON = ("Sponsor residence and current presence were recorded separately; "
                          "review UK-status evidence applicability before resuming preparation.")
@@ -30,6 +31,11 @@ def record_sponsor_location(case: Case, event: InboundEvent) -> bool:
     case.latest_changes.pop("sponsor_is_in_uk", None)
     case.profile_confirmed = False
     case.final_summary_confirmed = False
+    values = current_sponsor_location_values(case)
+    if any(not items for items in values.values()) and not any(len(items) > 1 for items in values.values()):
+        # Incomplete information is ordinary intake, not an exceptional risk.
+        # The independent applicability gate still blocks final delivery.
+        return True
     case.status = CaseStatus.HUMAN_REVIEW_REQUIRED
     advance_stage(case, WorkflowStage.HUMAN_REVIEW_REQUIRED)
     if LOCATION_REVIEW_REASON not in (case.human_review_reason or ""):

@@ -48,14 +48,21 @@ def sponsor_location_applicability(case: Case) -> bool | None:
     if (profile.funding_source != "personal_sponsor" or not profile.sponsor_name
             or not profile.sponsor_relationship):
         return None
+    values = current_sponsor_location_values(case)
+    if any(len(items) != 1 for items in values.values()):
+        return None
+    return any(True in items for items in values.values())
+
+
+def current_sponsor_location_values(case: Case) -> dict[str, set[bool]]:
+    """Only current-epoch, current-identity source observations can inform intake."""
+    profile = case.profile
     values: dict[str, set[bool]] = {"residence": set(), "current_presence": set()}
     for item in case.sponsor_location_statements:
         if (item.identity_epoch == case.sponsor_location_epoch
                 and (item.sponsor_name, item.sponsor_relationship) == (profile.sponsor_name, profile.sponsor_relationship)):
             values[item.dimension].add(item.value)
-    if any(len(items) != 1 for items in values.values()):
-        return None
-    return any(True in items for items in values.values())
+    return values
 
 
 def sponsor_location_policy_digest(policy: Policy) -> str:
