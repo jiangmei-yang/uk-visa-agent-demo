@@ -194,9 +194,17 @@ def delete_case(case_id: str, request: Request) -> Response:
 
 @app.get("/api/cases/{case_id}/pack")
 def get_pack(case_id: str) -> Response:
+    from visa_agent.delivery.simulation import require_simulation_archive
+    from visa_agent.storage.simulation import require_simulation_binding
+
     request_store = SQLiteStore(settings.database_path)
     try:
         case = request_store.get_case(case_id)
+        if case is not None:
+            try:
+                require_simulation_binding(request_store, case)
+            except ValueError as error:
+                raise HTTPException(status_code=409, detail=str(error)) from error
         if case is not None and not ConsentLedger(request_store).allowed(case):
             raise HTTPException(status_code=409, detail="Processing consent is required before pack access")
         processing_epoch = ConsentLedger(request_store).epoch(case_id)
@@ -232,6 +240,10 @@ def get_pack(case_id: str) -> Response:
         raise HTTPException(status_code=404, detail="Review pack is not available") from error
     if hashlib.sha256(content).hexdigest() != registered["sha256"]:
         raise HTTPException(status_code=409, detail="Review pack integrity check failed")
+    try:
+        require_simulation_archive(case, content)
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
     # A revocation arriving while the archive is read must stop this response.
     # Bytes already delivered to a client cannot be recalled by this local gate.
     verify_store = SQLiteStore(settings.database_path)

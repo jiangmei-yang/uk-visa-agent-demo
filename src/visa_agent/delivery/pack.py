@@ -7,6 +7,7 @@ import shutil
 import tempfile
 import zipfile
 from datetime import date
+from functools import partial
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -45,7 +46,7 @@ PALE_BLUE = HexColor("#EEF4FC")
 PALE_GREEN = HexColor("#EAF7F0")
 
 
-def _page_frame(pdf: canvas.Canvas, document: SimpleDocTemplate) -> None:
+def _page_frame(pdf: canvas.Canvas, document: SimpleDocTemplate, *, label: str = "") -> None:
     width, height = A4
     pdf.saveState()
     pdf.setFillColor(BLUE)
@@ -54,7 +55,8 @@ def _page_frame(pdf: canvas.Canvas, document: SimpleDocTemplate) -> None:
     pdf.line(18 * mm, 15 * mm, width - 18 * mm, 15 * mm)
     pdf.setFillColor(MUTED)
     pdf.setFont("Helvetica", 7.5)
-    pdf.drawString(18 * mm, 10 * mm, "UK Visa Preparation - Human review pack")
+    footer = label if label.startswith("FICTIONAL DEMONSTRATION") else "UK Visa Preparation - Human review pack"
+    pdf.drawString(18 * mm, 10 * mm, footer)
     pdf.drawRightString(width - 18 * mm, 10 * mm, f"Page {document.page}")
     pdf.restoreState()
 
@@ -141,7 +143,8 @@ def _pdf(
         # There is no following content to separate. A trailing spacer can
         # overflow an otherwise full table page and create a footer-only page.
         story.append(table)
-    document.build(story, onFirstPage=_page_frame, onLaterPages=_page_frame)
+    frame = partial(_page_frame, label=label)
+    document.build(story, onFirstPage=frame, onLaterPages=frame)
 
 
 def _write_zip(source_dir: Path, target: Path) -> None:
@@ -369,7 +372,8 @@ def _document_index_pdf(path: Path, rows: list[str], label: str) -> None:
         Paragraph("Document index", title_style),
         table,
     ]
-    document.build(story, onFirstPage=_page_frame, onLaterPages=_page_frame)
+    frame = partial(_page_frame, label=label)
+    document.build(story, onFirstPage=frame, onLaterPages=frame)
 
 
 def generate_pack(
@@ -395,6 +399,12 @@ def generate_pack(
 
 
 def _preparation_control_rejection(case: Case, store: SQLiteStore) -> str | None:
+    from visa_agent.storage.simulation import require_simulation_binding
+
+    try:
+        require_simulation_binding(store, case)
+    except ValueError as error:
+        return str(error)
     current = store.get_case(case.id)
     if not ConsentLedger(store).allowed(current or case):
         return "Processing consent is required; pack generation and access are withheld."
@@ -467,7 +477,8 @@ def _generate_pack(
     if case.delivery_revision > 1:
         case_dir = case_dir / f"revision-{case.delivery_revision}"
     revision_suffix = f"_revision-{case.delivery_revision}" if case.delivery_revision > 1 else ""
-    zip_path = output_root / f"visa_application_pack_{case.id}{revision_suffix}.zip"
+    prefix = "fictional_preparation_pack" if case.simulation else "visa_application_pack"
+    zip_path = output_root / f"{prefix}_{case.id}{revision_suffix}.zip"
     try:
         _check_materialization_paths(case_dir, zip_path, output_root)
         zip_location = zip_path.resolve()
@@ -541,7 +552,8 @@ def _materialize_fresh_pack(
     support_dir = pack_dir / "supporting_documents"
     support_dir.mkdir(parents=True, exist_ok=True)
     audit_dir.mkdir(parents=True, exist_ok=True)
-    label = CaseStatus.READY_FOR_HUMAN_REVIEW.value
+    label = ("FICTIONAL DEMONSTRATION - NOT FOR APPLICATION" if case.simulation
+             else CaseStatus.READY_FOR_HUMAN_REVIEW.value)
 
     _pdf(
         pack_dir / "00_READ_ME_FIRST.pdf",
@@ -632,6 +644,13 @@ def _materialize_fresh_pack(
         if item.status == IssueStatus.OPEN
     ] or ["No open issues in the recorded preparation checks. Human review is still required."]
     _pdf(pack_dir / "06_open_issues.pdf", "Open issues", open_issues, label)
+    if case.simulation is not None:
+        from visa_agent.delivery.simulation import MANIFEST_NAME, simulation_manifest
+
+        (pack_dir / MANIFEST_NAME).write_text(
+            json.dumps(simulation_manifest(case), ensure_ascii=False, sort_keys=True, indent=2),
+            encoding="utf-8",
+        )
     for document in case.documents:
         if document.status != DocumentStatus.ACCEPTED_FOR_REVIEW:
             continue

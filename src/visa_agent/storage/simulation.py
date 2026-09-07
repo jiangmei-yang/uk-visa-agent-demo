@@ -65,3 +65,14 @@ def register_simulation(
             (case.id, proposed.model_dump_json()),
         )
         return proposed
+
+
+def require_simulation_binding(store: SQLiteStore, case: Case) -> None:
+    """A copied case flag alone can never authorize specimen processing or release."""
+    registration = get_simulation(store, case)
+    if case.simulation != registration:
+        raise ValueError("Fictional case snapshot and operator registration disagree")
+    if registration is None and any(
+        item.extraction_method == "registered_fictional_identity_specimen" for item in case.evidence
+    ):
+        raise ValueError("Registered specimen evidence cannot become an ordinary case")

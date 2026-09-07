@@ -237,6 +237,12 @@ class OutboxDispatcher:
             raise PermanentChannelError("The channel's free-form reply window has expired")
         attachment: tuple[str, bytes] | None = None
         if str(row["message_type"]) == "ready":
+            from visa_agent.storage.simulation import require_simulation_binding
+
+            try:
+                require_simulation_binding(self.store, case)
+            except ValueError as error:
+                raise ReadyReplyAuthorityError(str(error)) from error
             latest = self.store.connection.execute(
                 "SELECT id FROM outbox WHERE case_id=? AND case_revision=? "
                 "AND message_type='ready' ORDER BY rowid DESC LIMIT 1",
@@ -269,6 +275,12 @@ class OutboxDispatcher:
             pack_bytes = pack_path.read_bytes()
             if hashlib.sha256(pack_bytes).hexdigest() != registered["sha256"]:
                 raise PermanentChannelError("Final pack integrity check failed; review before sending")
+            from visa_agent.delivery.simulation import require_simulation_archive
+
+            try:
+                require_simulation_archive(case, pack_bytes)
+            except ValueError as error:
+                raise ReadyReplyAuthorityError(str(error)) from error
             # Send these exact verified bytes, never reopen a mutable path after verification.
             if str(row.get("channel")) != "whatsapp_twilio":
                 attachment = (pack_path.name, pack_bytes)

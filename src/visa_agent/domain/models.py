@@ -8,6 +8,7 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 from visa_agent.domain.application_records import ApplicationRecordLedger
 from visa_agent.domain.record_review import ApplicationRecordReview
+from visa_agent.domain.simulation import SimulationRegistration
 from visa_agent.domain.sponsor_location import SponsorLocationStatement
 from visa_agent.domain.sponsor_location_review import SponsorLocationReview
 
@@ -232,6 +233,7 @@ class Case(BaseModel):
         validation_alias=AliasChoices("applicant_contact", "applicant_email")
     )
     primary_channel: str = "email"
+    simulation: SimulationRegistration | None = None
     status: CaseStatus = CaseStatus.DRAFT
     stage: WorkflowStage = WorkflowStage.NEW
     profile: CaseProfile = Field(default_factory=CaseProfile)

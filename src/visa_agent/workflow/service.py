@@ -270,6 +270,12 @@ class WorkflowService:
                 return case, False, plan
 
         processing_epoch = self._require_processing(case)
+        from visa_agent.storage.simulation import get_simulation
+
+        registration = get_simulation(self.store, case)
+        if case.simulation is not None and case.simulation != registration:
+            raise ValueError("Fictional case registration is missing or changed")
+        case.simulation = registration
         prior_outbox = [row for row in self.store.list_outbox() if row["case_id"] == case.id]
         reconcile_answered_advice(case, prior_outbox)
         sent_events = {row["event_id"] for row in prior_outbox if row["status"] == "SENT"}
@@ -1284,6 +1290,10 @@ class WorkflowService:
         # not permission to send applicant data to a model.
         processing_epoch = self._require_processing(case)
         # Only the audited local document-review operation supplies an attempt ID.
+        from visa_agent.documents.simulation import read_simulation_document
+        from visa_agent.storage.simulation import require_simulation_binding
+
+        require_simulation_binding(self.store, case)
         # Ordinary inbound delivery always retains hash deduplication. A reread keeps
         # the original customer source event, but records distinct extraction IDs.
         existing_hashes = {document.sha256 for document in case.documents}
@@ -1298,7 +1308,8 @@ class WorkflowService:
                 continue
             document_id = stable_id("doc", f"{digest}:{reread_attempt_id}" if reread_attempt_id else digest)
             try:
-                inspection = self.document_reader(path)
+                inspection = (read_simulation_document(path, case.simulation, self.document_reader)
+                              if case.simulation is not None else self.document_reader(path))
                 kind, language, page_count, facts = (
                     inspection.kind,
                     inspection.language,
@@ -1409,7 +1420,7 @@ class WorkflowService:
                         confidence=inspection.confidence,
                         provenance_state=(
                             ProvenanceState.DEMO_SYNTHETIC
-                            if inspection.method == "deterministic_pdf_fixture_extractor"
+                            if inspection.method in {"deterministic_pdf_fixture_extractor", "registered_fictional_identity_specimen"}
                             else ProvenanceState.EXTRACTED_UNVERIFIED
                         ),
                     )

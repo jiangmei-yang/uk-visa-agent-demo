@@ -1098,6 +1098,12 @@ def deterministic_fallback_message(case: Case, plan: str) -> str:
     if plan == "blocked":
         return blocked_customer_message(case)
     if plan == "ready":
+        if case.simulation is not None:
+            return (
+                "材料包已整理好，请先看说明和信息摘要，再核对各份文件。这个独立演示案件使用虚构样本，材料包不可用于实际签证申请，也没有递交任何申请。"
+                if case.customer_language == "zh" else
+                "Your preparation pack is ready. Please check the notes, summary and supporting files. This independent demonstration uses fictional specimens; the pack cannot be used for a visa application, and nothing has been submitted."
+            )
         if case.next_step_advice is not None:
             receipt_case = case.model_copy(update={"next_step_advice": None, "customer_answers": []})
             return "\n\n".join([*case.customer_answers, deterministic_fallback_message(receipt_case, plan)])

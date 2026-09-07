@@ -2021,6 +2021,9 @@ def confirmation_message(case: Case, *, profile_only: bool = False) -> str:
         if zh
         else "I've brought your details together below. Please check that I've understood them correctly."
     )
+    if case.simulation is not None:
+        intro += ("这是独立虚构演示案件，样本和材料包不可用于实际申请。" if zh else
+                  " This is an independent fictional demonstration; its specimens and pack cannot be used for an application.")
     rows = []
     for field, value in case.profile.model_dump(mode="json").items():
         if field == "sponsor_is_in_uk" and case.sponsor_location_statements:
