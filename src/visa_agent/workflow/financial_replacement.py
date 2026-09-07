@@ -100,3 +100,26 @@ def apply_statement_replacement(case: Case, event: InboundEvent) -> bool:
         provenance_state=ProvenanceState.EXTRACTED_UNVERIFIED,
     ))
     return True
+
+
+def replacement_receipt(case: Case) -> str | None:
+    pair = replacement_names(case.latest_customer_message)
+    if pair is None:
+        return None
+    for new in case.documents:
+        if new.filename != pair[0] or new.status != DocumentStatus.ACCEPTED_FOR_REVIEW:
+            continue
+        old = next((doc for doc in case.documents if doc.id == new.supersedes_document_id
+                    and doc.filename == pair[1] and doc.status == DocumentStatus.SUPERSEDED), None)
+        if old is None or not any(ev.fact_key == "document_replacement"
+            and ev.value == {"old_document_id": old.id, "new_document_id": new.id}
+            and not ev.superseded for ev in case.evidence):
+            continue
+        return (
+            f"已经按你的说明改用 {new.filename}。旧版 {old.filename} 已保留归档，"
+            "不再作为当前资金证明参与核对。"
+            if case.customer_language == "zh" else
+            f"I've switched to {new.filename} as requested. The previous {old.filename} is retained "
+            "in the record and is no longer used as current financial evidence."
+        )
+    return None

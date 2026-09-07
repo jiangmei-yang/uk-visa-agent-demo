@@ -4,7 +4,11 @@ from datetime import UTC, datetime
 import pytest
 
 from visa_agent.domain.models import Case, Document, DocumentStatus, Evidence, InboundEvent
-from visa_agent.workflow.financial_replacement import apply_statement_replacement, replacement_names
+from visa_agent.workflow.financial_replacement import (
+    apply_statement_replacement,
+    replacement_names,
+    replacement_receipt,
+)
 
 BODY = ("护照姓名是 Lin Chen，原来的银行流水把姓拼错成了 Lin Chan。"
         "附件是更正后的 bank_statement_corrected.pdf，请用它替换之前的 bank_statement_original.pdf，"
@@ -128,3 +132,19 @@ def test_regular_workflow_ingestion_applies_customer_instruction_without_new_upl
         assert not store.list_outbox()
     finally:
         store.close()
+
+
+@pytest.mark.parametrize("language", ["zh", "en"])
+def test_receipt_requires_completed_audited_replacement(language):
+    from visa_agent.workflow.conversation import blocked_customer_message
+
+    case, event = example()
+    case.customer_language = language
+    case.latest_customer_message = BODY
+    assert replacement_receipt(case) is None
+    assert apply_statement_replacement(case, event)
+    receipt = replacement_receipt(case)
+    assert receipt and "bank_statement_corrected.pdf" in receipt
+    assert receipt in blocked_customer_message(case)
+    case.evidence.pop()
+    assert replacement_receipt(case) is None

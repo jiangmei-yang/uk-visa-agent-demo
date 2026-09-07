@@ -1801,6 +1801,10 @@ def blocked_customer_message(case: Case) -> str:
         else (f"Hello {name}," if name else "Hello,")
     )
     acknowledgements = []
+    from visa_agent.workflow.financial_replacement import replacement_receipt
+
+    if receipt := replacement_receipt(case):
+        acknowledgements.append(receipt)
     if acknowledgement := change_acknowledgement(case):
         acknowledgements.append(acknowledgement)
     if case.latest_document_names:
