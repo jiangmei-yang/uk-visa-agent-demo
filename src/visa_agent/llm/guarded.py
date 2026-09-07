@@ -871,7 +871,7 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
         # must not silently become residential/application-location facts.
         cues = {
             "application_country": r"appl(?:y|ying|ication)|申请|递交|提交|(?:准备|打算|计划)在.{1,12}办(?:理)?$",
-            "current_address": r"address|residen|live|living|住址|居住|住在|家在|地址",
+            "current_address": r"address|residen|live|living|住址|居住|住在|家在|地址|现在住|目前住",
             "nationality": r"passport|citizen|national|国籍|护照|公民|国人|\b(?:Chinese|British|American|Canadian|French|German|Indian|Australian)\b",
             "nationality_country": r"passport|citizen|national|国籍|护照|公民|国人|\b(?:Chinese|British|American|Canadian|French|German|Indian|Australian)\b",
         }

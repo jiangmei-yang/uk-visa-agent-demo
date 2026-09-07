@@ -29,7 +29,8 @@ def residence_duration_is_grounded(value: object, excerpt: str, body: str, *, se
     current_home = re.search(
         r"\bI(?:\s+have|'ve|’ve)?\s+(?:lived|been living)\s+at\s+my\s+current\s+(?:home|address)\b|"
         r"我(?:在)?(?:目前|现在|現在|现|現)(?:的)?(?:住址|地址|家)(?:已经|已經|已)?住|"
-        r"我在(?:这个|這個)(?:住址|地址|家)(?:已经|已經|已)?住", context, re.I)
+        r"我在(?:这个|這個)(?:住址|地址|家)(?:已经|已經|已)?住|"
+        r"(?:^|[，,])\s*(?:我)?(?:现在|目前)住(?:在)?[^。！？;；,，]{2,150}[，,]\s*(?:已经|已)?住", context, re.I)
     duration = re.fullmatch(r"(?:(?:about|around|approximately)\s+)?(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
                             r"\s+(?:years?|months?)(?:\s+and\s+\d+\s+months?)?|"
                             r"(?:大概|大约|大約|约|約)?[\d一二三四五六七八九十两兩]+(?:年(?:半|[\d一二三四五六七八九十]+个月)?|个?月)(?:左右)?",

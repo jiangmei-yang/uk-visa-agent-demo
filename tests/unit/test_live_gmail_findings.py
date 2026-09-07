@@ -4,7 +4,9 @@ from datetime import UTC, datetime
 
 import pytest
 
+from visa_agent.domain.address_evidence import address_detail_is_sufficient
 from visa_agent.domain.models import Case, InboundEvent
+from visa_agent.domain.residence_duration import residence_duration_is_grounded
 from visa_agent.llm.guarded import validate_case_patch
 from visa_agent.llm.ports import CasePatch, FactUpdate
 from visa_agent.workflow.adviser_guidance import _conditional_common_evidence_orientation
@@ -36,3 +38,16 @@ def test_chinese_orientation_localises_known_countries_without_changing_facts():
     assert "中国护照" in message and "在香港递交" in message
     assert "China" not in message and "Hong Kong" not in message
     assert case.model_dump_json() == before
+
+
+def test_mixed_script_home_and_duration_are_preserved():
+    body = "现在住香港九龙88 Example Road，已经住了两年。"
+    event = InboundEvent(id="home", external_thread_id="home", sender="fictional@example.test",
+                         subject="补充情况", body=body, received_at=datetime.now(UTC))
+    patch = CasePatch(updates=[FactUpdate(field="current_address", value="香港九龙88 Example Road",
+                                         source_excerpt=body, confidence=1)], ambiguities=[])
+    assert validate_case_patch(event, patch).updates == patch.updates
+    assert address_detail_is_sufficient("香港九龙88 Example Road")
+    assert not address_detail_is_sufficient("香港九龙")
+    assert residence_duration_is_grounded("两年", "已经住了两年", body)
+    assert not residence_duration_is_grounded("两年", "已经住了两年", "我的朋友" + body)

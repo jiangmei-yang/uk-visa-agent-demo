@@ -68,6 +68,11 @@ def address_detail_is_sufficient(value: str | None) -> bool:
     if re.search(r"\b(?:unknown|tbc|tbd|not (?:known|sure|decided)|to follow)\b|"
                  r"不确定|不清楚|未确定|待补|待定|还没(?:定|确定)", text):
         return False
+    # Mixed-script addresses often put a CJK locality directly before an English
+    # numbered street (e.g. 香港九龙88 Example Road), without a comma.
+    if re.fullmatch(r"[\u3400-\u9fff]{2,}\s*\d+[a-z]?(?:[-/]\d+)?\s+"
+                    r"[a-z][a-z '\-]{1,90}\s+(?:road|rd|street|st|lane|ln|avenue|ave|drive|way)", text):
+        return True
     components = [part.strip() for part in re.split(r"[,，、،;；\n]", text) if part.strip()]
     # A street locator needs an actual house/building identifier and locality,
     # not merely 'High Street' or a city plus a postcode.
