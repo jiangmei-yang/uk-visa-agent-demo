@@ -29,7 +29,11 @@ fi
 for attempt in {1..90}; do
   if curl --fail --silent --max-time 2 http://127.0.0.1:8000/health >/dev/null 2>&1; then
     echo "The Demo is ready. Opening your browser..."
-    open http://127.0.0.1:8000
+    if ! open http://127.0.0.1:8000; then
+      echo "The Demo is running, but your browser could not be opened automatically."
+      echo "Open http://127.0.0.1:8000 manually in your browser."
+      read "?Press Return to close..."
+    fi
     echo "You may close this window. Use STOP_DEMO.command when finished."
     exit 0
   fi

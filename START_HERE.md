@@ -60,7 +60,9 @@ prove delivery. An `.env` file alone is not automatically loaded by the worker.
 
 ## If the browser does not open
 
-Open <http://127.0.0.1:8000> manually. If it still does not load, confirm Docker Desktop is running,
+On macOS, if the automatic browser launch fails, the start window stays open with the manual
+address; the already-running Demo is preserved. Open <http://127.0.0.1:8000> manually.
+If it still does not load, confirm Docker Desktop is running,
 then double-click the start file again. The launcher prints a clear error and the recent container
 logs if startup fails.
 
