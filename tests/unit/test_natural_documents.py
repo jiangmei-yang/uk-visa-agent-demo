@@ -70,6 +70,34 @@ def test_natural_evidence_retains_page_excerpt_and_model_provenance() -> None:
     assert not result.requires_review
 
 
+@pytest.mark.parametrize("kind", ["student_letter", "itinerary_description"])
+@pytest.mark.parametrize("field", ["funding_source", "occupation_status"])
+@pytest.mark.parametrize("invalid", ["uncertain", "unquoted"])
+def test_optional_inference_does_not_erase_grounded_document(kind, field, invalid):
+    text = "Student travel record for Lin Chen. Own savings."
+    candidate = DocumentProposal(
+        kind=kind, language="en", classification_page=1,
+        classification_excerpt="Student travel record", confidence=0.99,
+        facts=[
+            DocumentFact(field="full_name", value="Lin Chen", page=1,
+                         excerpt="for Lin Chen", confidence=1),
+            DocumentFact(field=field, value="self" if field == "funding_source" else "student",
+                         page=1, excerpt="Own savings" if invalid == "uncertain" else "Invented",
+                         confidence=0.9 if invalid == "uncertain" else 1),
+        ],
+    )
+    result = validate_document(candidate, [text], method="text", version="regression")
+    assert result.kind == kind
+    assert set(result.facts) == {"full_name"}
+    assert result.confidence == 0.99
+    assert not result.requires_review
+    candidate.requires_review = True
+    candidate.review_reason = "Explicit specimen warning"
+    held = validate_document(candidate, [text], method="text", version="regression")
+    assert held.requires_review
+    assert held.review_reason == "Explicit specimen warning"
+
+
 @pytest.mark.parametrize(
     "change", ["invented_excerpt", "wrong_page", "invented_date", "low_confidence", "invented_name"]
 )

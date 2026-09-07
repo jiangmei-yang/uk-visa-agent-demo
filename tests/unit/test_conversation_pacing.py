@@ -10,6 +10,8 @@ from visa_agent.domain.models import (
     DocumentStatus,
     Evidence,
     InboundEvent,
+    Issue,
+    IssueSeverity,
 )
 from visa_agent.domain.policy import load_policy
 from visa_agent.domain.rules import build_requirements, evaluate_gate
@@ -36,6 +38,23 @@ def example() -> Case:
     case.profile.nationality_country = "China"
     case.profile.application_country = "Hong Kong"
     return case
+
+
+@pytest.mark.parametrize("language", ["zh", "en"])
+@pytest.mark.parametrize("reason", ["DOCUMENT_GROUNDING_REJECTED", "DOCUMENT_SCHEMA_INVALID",
+                                    "DOCUMENT_PROVIDER_TIMEOUT", "DOCUMENT_READER_FAILURE"])
+def test_document_read_failure_is_not_presented_as_customer_error(language, reason):
+    case = example()
+    case.customer_language = language
+    case.issues.append(Issue(id="read-failure", code="UNCLASSIFIED_DOCUMENT_d",
+                             title="Document needs manual classification", detail=reason,
+                             severity=IssueSeverity.BLOCKER))
+    issues, _, _ = reply_items(case)
+    assert len(issues) == 1
+    assert "人工" not in issues[0]
+    assert reason not in issues[0]
+    assert ("未能可靠读取" if language == "zh" else "couldn't reliably read") in issues[0]
+    assert case.open_blockers()  # Better wording must never waive the delivery gate.
 
 
 def test_status_correction_explains_that_an_old_student_letter_no_longer_proves_current_work() -> None:

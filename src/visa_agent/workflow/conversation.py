@@ -1426,6 +1426,21 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
             issues.append(
                 f"{names} 是你整理的信息摘要，不能代替护照。等方便时，请补护照资料页的清晰扫描或照片；这份摘要不会被算作有效护照。"
             )
+        elif any(code in issue.detail for code in (
+            "DOCUMENT_GROUNDING_REJECTED", "DOCUMENT_SCHEMA_INVALID",
+            "DOCUMENT_PROVIDER_TIMEOUT", "DOCUMENT_READER_FAILURE",
+        )):
+            names = ", ".join(
+                doc.filename for doc in case.documents if doc.id in issue.related_document_ids
+            )
+            issues.append(
+                f"{names or '这份文件'}已经收到，但这次未能可靠读取内容，暂时还不能算作已核验材料。"
+                "文件已保留，你不用重复发送；这也不表示你的材料有问题。"
+                if zh else
+                f"I've received {names or 'this file'}, but couldn't reliably read its contents. "
+                "It is retained, so you don't need to resend it. This is a reading failure, "
+                "not a finding that your document is incorrect; it has not yet been checked."
+            )
         elif zh:
             names = ", ".join(
                 doc.filename for doc in case.documents if doc.id in issue.related_document_ids

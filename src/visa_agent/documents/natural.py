@@ -181,7 +181,15 @@ def validate_document(
     if not _grounded(proposal.classification_excerpt, proposal.classification_page, pages):
         raise ValueError("Document classification lacks a source excerpt on the stated page")
     facts: dict[str, tuple[str, int, str]] = {}
+    accepted_confidences: list[float] = []
     for item in proposal.facts:
+        # Optional profile inferences must not erase independently grounded document
+        # evidence. Discard uncertain inferences, never promote them to case facts.
+        # Identity, dates and financial evidence keep their strict validation below.
+        if item.field in {"occupation_status", "funding_source"} and (
+            item.confidence < 0.95 or not _grounded(item.excerpt, item.page, pages)
+        ):
+            continue
         if item.confidence < 0.95 or not _grounded(item.excerpt, item.page, pages):
             raise ValueError("Document fact lacks sufficiently grounded page evidence")
         if item.field.endswith("_date") or item.field == "date_of_birth":
@@ -196,6 +204,7 @@ def validate_document(
         if item.field in facts and facts[item.field][0] != item.value:
             raise ValueError("Conflicting document facts require review")
         facts[item.field] = (item.value, item.page, item.excerpt)
+        accepted_confidences.append(item.confidence)
     financial_observations = []
     for financial_item in proposal.financial_observations:
         if not _money_is_grounded(financial_item, pages):
@@ -257,7 +266,7 @@ def validate_document(
         facts,
         method,
         version,
-        min([proposal.confidence] + [item.confidence for item in proposal.facts]
+        min([proposal.confidence] + accepted_confidences
             + [financial_item.confidence for financial_item in financial_observations]),
         proposal.requires_review
         or proposal.confidence < 0.95
