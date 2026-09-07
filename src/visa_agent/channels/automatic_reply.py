@@ -181,6 +181,15 @@ class AutomaticGmailReplySender(GmailReplySender):
             render_mode = 'reviewed_fallback' if guard.last_render_fallback else 'guarded_draft'
             render_error = guard.last_render_error
         # Persist the exact body before the side effect, including on a send-response crash.
+        scope = consent.scope()
+        if scope is not None and scope.interaction == 'service_request' and not is_control:
+            from visa_agent.privacy.customer_copy import service_information
+
+            previously_sent = self.store.connection.execute(
+                "SELECT 1 FROM outbox WHERE case_id=? AND status='SENT' LIMIT 1", (case.id,),
+            ).fetchone()
+            if previously_sent is None:
+                body += '\n\n' + service_information(scope.provider, case.customer_language)
         with self.store.connection:
             self.store.connection.execute(
                 "UPDATE outbox SET payload = ?, reply_render_mode=?, reply_render_error=? "

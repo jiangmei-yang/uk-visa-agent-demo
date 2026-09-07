@@ -40,8 +40,11 @@ class ProcessingScope:
     provider: str
     model: str
     version: str = "2026-09-05"
+    interaction: Literal["explicit_consent", "service_request"] = "explicit_consent"
 
     def __post_init__(self) -> None:
+        if self.interaction not in {"explicit_consent", "service_request"}:
+            raise ValueError("Unknown processing interaction")
         for value in (self.provider, self.model, self.version):
             if not isinstance(value, str) or not value.strip() or len(value) > 160:
                 raise ValueError("Processing scope requires bounded provider, model and version")
@@ -51,7 +54,10 @@ class ProcessingScope:
 
     @property
     def id(self) -> str:
-        content = {**asdict(self), "notice": self.notice, "purpose": _PURPOSE}
+        values = asdict(self)
+        if self.interaction == "explicit_consent":
+            values.pop("interaction")  # Preserve existing notice/grant fingerprints.
+        content = {**values, "notice": self.notice, "purpose": _PURPOSE}
         return hashlib.sha256(json.dumps(content, sort_keys=True).encode()).hexdigest()
 
     @property
@@ -119,7 +125,8 @@ def _control_parts(body: str) -> _ControlParts:
             r"^I\s+(?:hereby\s+)?(?:withdraw|revoke)\s+(?:my\s+)?consent\b"
             r"|^(?:please\s+)?stop\s+processing\s+my\b"
             r"|^我(?:现在)?撤回.{0,16}(?:同意|授权)|^我不再同意.{0,20}(?:处理|资料|信息)"
-            r"|^请停止处理我的(?:资料|信息|材料)", clause, re.I,
+            r"|^(?:请)?(?:停止|不要再|别再|不用再)处理(?:我的)?(?:资料|信息|材料)"
+            r"|^(?:请)?停止处理$", clause, re.I,
         ):
             found.append(("withdrawn", clause[:320], part.start(), part.end()))
         elif re.search(
@@ -211,6 +218,12 @@ class ConsentLedger:
 
     def configure(self, scope: ProcessingScope) -> None:
         with self.store.atomic_write():
+            previous = self.scope()
+            if (previous is not None and previous.interaction != scope.interaction
+                    and self.store.list_cases()):
+                raise ProcessingConsentRequired(
+                    "Use a fresh state directory when changing the processing interaction; "
+                    "existing notice promises and withdrawals must not be overridden")
             # Reconstructing the old JSON with today's notice would silently
             # recompute its hash. Compare the actual persisted scope instead.
             current = self.store.connection.execute(
@@ -224,7 +237,11 @@ class ConsentLedger:
             )
             for case in self.store.list_cases():
                 old_epoch = self.epoch(case.id)
-                self._state(case, scope, "unknown", old_epoch + 1)
+                record = self._record(case.id)
+                status = (record["status"] if scope.interaction == "service_request"
+                          and record is not None and record["status"] in {"declined", "withdrawn"}
+                          else "unknown")
+                self._state(case, scope, status, old_epoch + 1)
                 self._invalidate(case)
 
     def required(self, case: Case) -> bool:
@@ -239,7 +256,8 @@ class ConsentLedger:
             contact = _contact(case.applicant_contact, case.primary_channel)
         except ProcessingConsentRequired:
             return False
-        return bool(row is not None and row["status"] == "granted" and row["scope_id"] == scope.id
+        accepted = {"unknown", "granted"} if scope.interaction == "service_request" else {"granted"}
+        return bool(row is not None and row["status"] in accepted and row["scope_id"] == scope.id
                     and row["contact"] == contact and row["channel"] == case.primary_channel
                     and row["thread_id"] == case.external_thread_id)
 
@@ -344,6 +362,13 @@ class ConsentLedger:
                 self._audit(event, case, scope, action, excerpt)
                 self._queue(case, event, scope, "processing_receipt", customer_receipt(action, reply_language(event.body, case.customer_language)))
                 return ConsentResult("control", case.id)
+            if scope.interaction == "service_request":
+                # Operator-selected service workflow, NOT a recorded applicant grant.
+                # Withdrawal remains terminal here; no automatic resume or notice loop.
+                if self.allowed(case):
+                    return ConsentResult("allow", case.id)
+                self._defer(event, case)
+                return ConsentResult("defer", case.id)
             if action in {"granted", "unclear"}:
                 if action == "granted" and self._notice_sent_before(case, event, excerpt):
                     mixed = bool(parsed.business_body or attachments)
@@ -486,6 +511,8 @@ class ConsentLedger:
             )
 
     def _notice(self, case: Case, event: InboundEvent, scope: ProcessingScope) -> None:
+        if scope.interaction == "service_request":
+            return
         record = self._record(case.id)
         if record is not None and record["notice_outbox_id"]:
             return

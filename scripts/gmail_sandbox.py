@@ -122,6 +122,10 @@ def main() -> None:
         help="Optional exact subject; omit to accept ordinary subjects from the allowed sender",
     )
     parser.add_argument("--model", default="deepseek-v4-flash")
+    parser.add_argument("--processing-interaction", choices=("explicit_consent", "service_request"),
+                        default="explicit_consent",
+                        help="service_request removes the consent-code exchange for a fresh deployment; "
+                             "does not create applicant consent or override existing notices")
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument(
         "--watch", action="store_true", help="Repeat prepare or controlled serve cycles"
@@ -195,7 +199,8 @@ def run_once(args: argparse.Namespace, parser: argparse.ArgumentParser, *,
     try:
         ledger = ConsentLedger(store)
         if not fixture_without_processing_consent and args.action in {"prepare", "serve", "send-reviewed"}:
-            ledger.configure(ProcessingScope(provider="DeepSeek", model=args.model))
+            ledger.configure(ProcessingScope(provider="DeepSeek", model=args.model,
+                interaction=getattr(args, "processing_interaction", "explicit_consent")))
         # Resolve previous uncertain sends even if intake/model processing fails this cycle.
         # This only observes provider state; dispatch still waits for successful intake.
         if args.action == "serve":

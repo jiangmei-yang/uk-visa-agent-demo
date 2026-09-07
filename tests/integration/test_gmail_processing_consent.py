@@ -138,6 +138,29 @@ def test_public_consultation_replies_without_personal_processing_or_duplicate_se
         store.close()
 
 
+def test_service_request_direct_reply_without_consent_code(harness):
+    harness.args.processing_interaction = "service_request"
+    harness.add("ordinary-service", "我的姓名是 Lin Chen，我想去英国旅游，日期还没定。")
+    harness.run()
+    assert len(harness.extracted) == 1
+    assert len(harness.sent) == 1
+    body = harness.sent[0]["body"]
+    assert "授权参考码" not in body and "PC-" not in body
+    assert "资料说明" in body and "DeepSeek" in body
+    harness.run()
+    assert len(harness.sent) == 1
+    harness.add("stop-service", "请停止处理我的资料")
+    harness.run()
+    assert len(harness.extracted) == 1
+    store = harness.open_store()
+    try:
+        assert not ConsentLedger(store).allowed(store.list_cases()[0])
+        assert store.connection.execute(
+            "SELECT 1 FROM processing_consent_events WHERE action='granted'").fetchone() is None
+    finally:
+        store.close()
+
+
 @pytest.mark.parametrize("attachment,body", [
     (True, "您好，我想办理英国签证，需要提供什么资料？"),
     (False, "我的出生日期是1997年7月1日，申请入口是什么？"),

@@ -3,6 +3,17 @@
 import re
 
 
+def service_information(provider: str, language: str) -> str:
+    """Non-blocking information, not a request for or evidence of consent."""
+    provider = {"deepseek": "DeepSeek", "hkgai": "HKGAI"}.get(provider.casefold(), provider)
+    if language == "zh":
+        return (f"资料说明：本服务会保存你提供的信息和材料，并使用 {provider} 辅助整理和回复。"
+                "如需停止处理、导出或删除本地资料，直接回复告诉我们即可。")
+    return (f"Information handling: we retain the information and documents you provide and use {provider} "
+            "to help organise them and prepare replies. Reply to request a stop to processing, "
+            "or export or deletion of local records.")
+
+
 def reply_language(body: str, fallback: str = "en") -> str:
     from visa_agent.workflow.conversation import latest_reply_text
 
