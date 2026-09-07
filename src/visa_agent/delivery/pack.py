@@ -183,6 +183,8 @@ def _cover_letter_context(case: Case) -> str:
 
 
 def _profile_rows(case: Case) -> list[str]:
+    from visa_agent.workflow.sponsor_location_summary import sponsor_location_summary_rows
+
     labels = {
         "date_of_birth": "Date of birth",
         "nationality_country": "Country of nationality",
@@ -248,7 +250,12 @@ def _profile_rows(case: Case) -> list[str]:
         f"{labels.get(field, field.replace('_', ' ').capitalize())}: "
         f"{value if value is not None else 'Not provided'}"
         for field, value in profile.items()
+        if not (field == "sponsor_is_in_uk" and case.sponsor_location_statements)
     ]
+    # Pack language is English regardless of the customer's correspondence
+    # preference. Render current source-bound facts, not the legacy boolean.
+    rows.extend(row.removeprefix("- ") for row in sponsor_location_summary_rows(
+        case.model_copy(update={"customer_language": "en"})))
     if case.application_records is not None:
         rows.extend(application_record_rows(case.application_records))
     return rows

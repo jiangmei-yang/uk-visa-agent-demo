@@ -68,3 +68,17 @@ def test_changing_a_displayed_dimension_changes_both_confirmation_fingerprints()
     case.sponsor_location_statements[1] = case.sponsor_location_statements[1].model_copy(update={"value": False})
     after = [summary_fingerprint(case, include_documents=value) for value in (False, True)]
     assert all(a != b for a, b in zip(before, after, strict=True))
+
+
+@pytest.mark.parametrize("language", ["en", "zh"])
+def test_pack_profile_rows_use_same_facts_in_english_without_legacy_boolean(language):
+    from visa_agent.delivery.pack import _profile_rows
+
+    case = example(language)
+    before = case.model_dump_json()
+    rows = _profile_rows(case)
+    assert "Sponsor lives in the UK (as reported by you): No" in rows
+    assert "Sponsor currently physically in the UK (as reported by you): Yes" in rows
+    assert not any(row.startswith("Sponsor is in the UK:") for row in rows)
+    assert not any("private-source-id" in row for row in rows)
+    assert case.model_dump_json() == before
