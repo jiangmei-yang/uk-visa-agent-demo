@@ -22,6 +22,12 @@ _UNCERTAIN_OR_CHOICE = re.compile(
     r"也许|也許|可能|不确定|不確定|还没定|還沒定|或者|還是|考虑中|可能会|可能會",
     re.I,
 )
+_DATE_ONLY_DEFERRAL = re.compile(
+    r"(?:具体哪天|具體哪天|(?:具体|具體|旅行|出行|旅游|旅遊)?日期)"
+    r"(?:我)?(?:还|還|尚)?(?:没定|沒定|没确定|沒確定|未定|不确定|不確定)|"
+    r"(?:my |the )?(?:travel |trip )?dates? (?:is |are )?"
+    r"(?:not (?:yet )?(?:fixed|set|decided)|undecided)", re.I,
+)
 _OTHER_APPLICANT = re.compile(
     r"\b(?:my|our|his|her|their|a|the)\s+"
     r"(?:friend|aunt|uncle|cousin|spouse|wife|husband|partner|mother|father|"
@@ -298,7 +304,10 @@ def funding_source_value_is_grounded(
             # A choice or uncertainty before/in the payer statement governs
             # that statement. A later independent date deferral does not turn
             # an already-explicit payer into an uncertain funding arrangement.
-            if _UNCERTAIN_OR_CHOICE.search(sentence[:start]) or _UNCERTAIN_OR_CHOICE.search(clause):
+            prior_clauses = [part.strip() for part in re.split(r"[,，]", sentence[:start])]
+            relevant_prefix = ",".join(part for part in prior_clauses
+                                       if not _DATE_ONLY_DEFERRAL.fullmatch(part))
+            if _UNCERTAIN_OR_CHOICE.search(relevant_prefix) or _UNCERTAIN_OR_CHOICE.search(clause):
                 continue
             if _NEGATED_FUNDING.search(clause):
                 continue
