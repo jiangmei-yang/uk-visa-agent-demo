@@ -9,6 +9,7 @@ import zipfile
 from datetime import date
 from html import escape
 from pathlib import Path
+from typing import Any
 
 from reportlab.lib import colors
 from reportlab.lib.colors import HexColor
@@ -180,6 +181,20 @@ def _cover_letter_context(case: Case) -> str:
     else:
         funding = "Adviser note: confirm who will fund the visit before using this draft."
     return f"{occupation} {funding}"
+
+
+def _add_sponsor_location_answers(answers: dict[str, Any], case: Case) -> None:
+    from visa_agent.workflow.sponsor_location_summary import sponsor_location_snapshot
+
+    if not case.sponsor_location_statements:
+        return
+    # Do not present a competing legacy assertion beside the dimension-specific
+    # source data. This edits only the export, never the stored case/evidence.
+    answers["profile"].pop("sponsor_is_in_uk", None)
+    answers["facts"] = [item for item in answers["facts"] if item["key"] != "sponsor_is_in_uk"]
+    snapshot = sponsor_location_snapshot(case)
+    if snapshot is not None:
+        answers["sponsor_location"] = snapshot
 
 
 def _profile_rows(case: Case) -> list[str]:
@@ -603,6 +618,7 @@ def _materialize_fresh_pack(
     }
     if case.application_records is not None:
         answers["application_records"] = case.application_records.customer_snapshot()
+    _add_sponsor_location_answers(answers, case)
     (pack_dir / "05_application_answers.json").write_text(
         json.dumps(answers, indent=2, ensure_ascii=False, sort_keys=True, default=str) + "\n",
         encoding="utf-8",

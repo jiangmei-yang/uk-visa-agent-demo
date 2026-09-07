@@ -4,6 +4,29 @@ from visa_agent.domain.models import Case
 from visa_agent.domain.sponsor_location_review import current_sponsor_location_values
 
 
+def sponsor_location_snapshot(case: Case) -> dict[str, object] | None:
+    """Structured customer facts with explicit completeness, no review authority."""
+    if case.profile.funding_source != "personal_sponsor" or not case.sponsor_location_statements:
+        return None
+    values = current_sponsor_location_values(case)
+    return {
+        "schema_version": 1,
+        "basis": "applicant_reported_not_legal_status_verification",
+        "sponsor_name": case.profile.sponsor_name,
+        "sponsor_relationship": case.profile.sponsor_relationship,
+        "dimensions": {dimension: {
+            "state": "unknown" if not items else "conflicting" if len(items) > 1 else "reported",
+            "value": next(iter(items)) if len(items) == 1 else None,
+            "sources": [{"source_event_id": item.source_event_id, "source_excerpt": item.source_excerpt,
+                         "context_question_event_id": item.context_question_event_id, "reported_value": item.value}
+                        for item in case.sponsor_location_statements
+                        if item.dimension == dimension and item.identity_epoch == case.sponsor_location_epoch
+                        and (item.sponsor_name, item.sponsor_relationship)
+                        == (case.profile.sponsor_name, case.profile.sponsor_relationship)],
+        } for dimension, items in values.items()},
+    }
+
+
 def sponsor_location_summary_rows(case: Case) -> list[str]:
     if case.profile.funding_source != "personal_sponsor" or not case.sponsor_location_statements:
         return []
