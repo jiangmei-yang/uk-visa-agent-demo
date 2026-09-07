@@ -15,6 +15,7 @@ from visa_agent.workflow.customer_questions import (
 @pytest.mark.parametrize("body,language", [
     ("先别问我问题。申请表到底去哪里打开？给一个官方入口就好。", "zh"),
     ("英国访客签证在哪里申请？只要官方链接。", "zh"),
+    ("先给我一个官方申请入口就好，其他的之后再说。", "zh"),
     ("Where do I open the visitor application form? Just give me the official application link.", "en"),
     ("Where can I apply for a visitor visa? Only the official link please.", "en"),
 ])

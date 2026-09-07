@@ -1320,7 +1320,7 @@ def _application_entry_only_requested(body: str) -> bool:
            for clause in clauses):
         return False
     return any(re.fullmatch(
-        r"(?:请)?(?:只要|只给我?|给我?一个)(?:官方)?(?:申请)?(?:入口|链接)(?:就好|即可|就行)?|"
+        r"(?:请)?(?:先)?(?:只要|只给我?|给我?一个)(?:官方)?(?:申请)?(?:入口|链接)(?:就好|即可|就行)?|"
         r"(?:please\s+)?(?:just|only)\s+(?:(?:give|send)\s+me\s+)?(?:the|an?)?\s*"
         r"(?:official\s+)?(?:application\s+)?(?:link|url)(?:\s+please)?",
         clause.strip(" 。.!！?？"), re.I,

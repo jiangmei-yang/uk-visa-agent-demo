@@ -30,6 +30,9 @@ def public_consultation(body: str, today: date) -> str | None:
         r"(?:a |the )?(?:UK|British)(?: visitor| tourist)? visa[?.!]*", text, re.I,
     ))
     holiday = bool(re.fullmatch(r"(?:去)?旅游[。！!]*|(?:a )?holiday[.!]*|tourism[.!]*", text, re.I))
+    # Only use purpose inside the already full-matched public enquiry, never a
+    # keyword in quoted, negated, personal or unrelated text.
+    holiday = holiday or (introductory and bool(re.search(r"旅游|\btourist\b", text, re.I)))
     if introductory or holiday:
         if not CHECKED_AT <= today <= REVIEW_AFTER:
             return ("可以先了解准备流程。具体材料要求我需要先复核最新官方说明；暂时不用发送证件或账户资料。"
