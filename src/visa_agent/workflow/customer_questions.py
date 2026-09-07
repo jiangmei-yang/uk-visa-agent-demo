@@ -31,6 +31,7 @@ from visa_agent.workflow.income_clarification import (
     income_answer,
     income_question,
     only_guarantee_question,
+    only_income_evidence_question,
 )
 from visa_agent.workflow.intent_matching import (
     EXPLICIT_VISITOR_ROUTE_PATTERN,
@@ -1831,6 +1832,13 @@ def grounded_customer_answer_plan(
     """Reviewed facts only, capped at three relevant answers, never a case-state update."""
     current = latest_reply_text(body)
     semantic = validated_customer_questions(current, semantic_questions or [])
+    if (CHECKED_AT <= today <= REVIEW_AFTER and case is not None
+            and case.profile.occupation_status == "self_employed"):
+        # A covered preparation question does not also need a generic refusal.
+        # Match the entire proposed excerpt; keep unrelated unsupported requests.
+        semantic = [item for item in semantic if not (
+            item.topic == "unsupported" and only_income_evidence_question(item.source_excerpt)
+        )]
     if (CHECKED_AT <= today <= REVIEW_AFTER and only_guarantee_question(current)
             and not _request_has_other_route(current, current)):
         semantic = [item for item in semantic if not (

@@ -35,6 +35,16 @@ def guarantee_question(text: str) -> bool:
     ) for clause in _current_clauses(text))
 
 
+def only_income_evidence_question(text: str) -> bool:
+    """A covered question plus optional payslip context, not other unknown requests."""
+    clauses = _current_clauses(text)
+    return bool(clauses) and income_question(text) == "income_evidence" and all(
+        income_question(clause) == "income_evidence"
+        or re.fullmatch(r"I (?:don't|do not) (?:get|have) payslips|我(?:没有|没)工资单", clause.strip(), re.I)
+        for clause in clauses
+    )
+
+
 def only_guarantee_question(text: str) -> bool:
     """Remove only a redundant generic boundary, not other unanswered questions."""
     clauses = _current_clauses(text)

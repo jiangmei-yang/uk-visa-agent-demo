@@ -7,6 +7,7 @@ from visa_agent.workflow.income_clarification import (
     guarantee_question,
     income_answer,
     income_question,
+    only_income_evidence_question,
 )
 
 
@@ -28,6 +29,19 @@ def test_not_a_current_own_request(wrapper, question):
 
 def test_no_self_employment_assumption():
     assert income_answer("income_evidence", "en", self_employed=False) is None
+
+
+@pytest.mark.parametrize("body,covered", [
+    ("I don't get payslips. What should I use to explain my income?", True),
+    ("没有工资单我用什么说明收入？", True),
+    ("我没有工资单。没有工资单用什么说明收入？", True),
+    ("What should I use to explain my income? How can I avoid tax?", False),
+    ("没有工资单用什么说明收入？怎么避税？", False),
+    ('Please translate "What should I use to explain my income?"', False),
+    ("If I apply later, what should I use to explain my income?", False),
+])
+def test_generic_boundary_removal_requires_entire_covered_request(body, covered):
+    assert only_income_evidence_question(body) == covered
 
 
 def test_transfers_need_own_transfer_context_and_a_question():
