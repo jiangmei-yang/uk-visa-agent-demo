@@ -113,6 +113,44 @@ def harness(tmp_path, monkeypatch):
     return state
 
 
+def test_public_consultation_replies_without_personal_processing_or_duplicate_send(harness):
+    harness.add("public-start", "您好，我想办理英国签证，需要提供什么资料？")
+    harness.run()
+    assert len(harness.sent) == 1
+    assert "gov.uk" in harness.sent[0]["body"]
+    assert "授权参考码" not in harness.sent[0]["body"]
+    harness.add("public-followup", "旅游")
+    harness.run()
+    assert len(harness.sent) == 2
+    assert "日期没定" in harness.sent[1]["body"]
+    harness.run()
+    assert len(harness.sent) == 2
+    assert harness.extracted == [] and harness.documents == []
+    store = harness.open_store()
+    try:
+        case = store.list_cases()[0]
+        assert not case.latest_customer_message
+        assert not ConsentLedger(store).allowed(case)
+        assert ConsentLedger(store).deferred_ids(case.id) == []
+        assert all(row["message_type"] == "public_consultation" and row["status"] == "SENT"
+                   for row in store.list_outbox())
+    finally:
+        store.close()
+
+
+@pytest.mark.parametrize("attachment,body", [
+    (True, "您好，我想办理英国签证，需要提供什么资料？"),
+    (False, "我的出生日期是1997年7月1日，申请入口是什么？"),
+])
+def test_personal_material_still_requires_permission(harness, attachment, body):
+    harness.add("personal", body, attachment=attachment)
+    harness.run()
+    assert len(harness.sent) == 1
+    assert "授权参考码" in harness.sent[0]["body"]
+    assert harness.extracted == [] and harness.documents == []
+    assert not (harness.path / "attachments").exists()
+
+
 def test_preview_never_decodes_or_saves_attachments_or_logs_body(tmp_path, monkeypatch):
     store = SQLiteStore(tmp_path / "state.db")
     try:

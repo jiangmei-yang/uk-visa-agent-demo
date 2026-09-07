@@ -20,7 +20,7 @@ from visa_agent.domain.models import Case, InboundEvent
 from visa_agent.privacy.customer_copy import customer_notice, customer_receipt, reply_language
 from visa_agent.storage.sqlite import SQLiteStore
 
-CONTROL_MESSAGE_TYPES = frozenset({"processing_notice", "processing_receipt"})
+CONTROL_MESSAGE_TYPES = frozenset({"processing_notice", "processing_receipt", "public_consultation"})
 _PURPOSE = "UK visitor visa preparation: extract supplied facts, review documents, draft advice"
 # Stable internal scope contract. Customer mail uses customer_copy instead;
 # presentation edits must not silently grant consent or revoke existing consent.
@@ -70,6 +70,7 @@ class ConsentResult:
     granted: bool = False
     business_body: str | None = None
     grant_business: bool = False
+    public_answer: bool = False
 
 
 def _contact(value: str, channel: str) -> str:
@@ -327,7 +328,7 @@ class ConsentLedger:
                     if parsed.action != "granted" or parsed.statement != audited["excerpt"]:
                         raise ProcessingConsentRequired("Mixed processing statement no longer matches its audit")
                     return ConsentResult("allow", case.id, business_body=parsed.business_body, grant_business=True)
-                return ConsentResult("control", case.id)
+                return ConsentResult("control", case.id, public_answer=audited["action"] == "public_consultation")
             record = self._record(case.id)
             if record is None or record["scope_id"] != scope.id:
                 self._state(case, scope, "unknown", self.epoch(case.id))
@@ -359,6 +360,16 @@ class ConsentLedger:
                 return ConsentResult("control", case.id)
             if self.allowed(case):
                 return ConsentResult("allow", case.id)
+            # Only public, reviewed guidance can bypass the personal-processing
+            # gate. Never inspect attachments, extract facts or persist the body.
+            if not attachments and self._record(case.id)["status"] == "unknown":
+                from visa_agent.privacy.public_consultation import public_consultation
+
+                answer = public_consultation(event.body, datetime.now(UTC).date())
+                if answer:
+                    self._audit(event, case, scope, "public_consultation", "")
+                    self._queue(case, event, scope, "public_consultation", answer)
+                    return ConsentResult("control", case.id, public_answer=True)
             self._defer(event, case)
             self._notice(case, event, scope)
             return ConsentResult("defer", case.id)
@@ -487,7 +498,7 @@ class ConsentLedger:
 
     def _queue(self, case: Case, event: InboundEvent, scope: ProcessingScope, kind: str, payload: str) -> str:
         epoch = self.epoch(case.id)
-        token = f"{case.id}:{scope.id}:{epoch}:{kind}:{event.id if kind == 'processing_receipt' else ''}"
+        token = f"{case.id}:{scope.id}:{epoch}:{kind}:{event.id if kind != 'processing_notice' else ''}"
         outbox_id = "privacy-" + hashlib.sha256(token.encode()).hexdigest()[:32]
         reply_to = event.rfc_message_id or f"<{event.id}>"
         deadline = (event.received_at + timedelta(hours=24)).isoformat() if event.channel == "whatsapp_twilio" else None

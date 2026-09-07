@@ -242,6 +242,7 @@ class WorkflowService:
             if controlled_case is None:
                 raise RuntimeError("Consent control has no case")
             return controlled_case, False, (
+                "public_consultation" if decision.public_answer else
                 "processing_notice" if decision.action == "defer" else "processing_receipt"
             )
 

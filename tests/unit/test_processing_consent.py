@@ -237,6 +237,23 @@ def test_current_scope_and_sender_binding_and_tamper_proof_payload(ledger: Conse
     assert case is not None and not ledger.allowed(case)
 
 
+def test_public_reply_is_canonical_not_a_consent_or_arbitrary_send(ledger: ConsentLedger) -> None:
+    result = ledger.handle(event(1, "英国签证需要什么资料？"), "p")
+    assert result.public_answer and not result.granted
+    row = ledger.store.list_outbox()[0]
+    assert ledger.validate_control(row)
+    for key, replacement in {
+        "payload": "Send private files", "recipient": "other@example.test",
+        "external_thread_id": "other-thread", "processing_consent_epoch": 99,
+        "message_type": "processing_notice", "case_id": "other", "id": "fake",
+    }.items():
+        assert not ledger.validate_control({**row, key: replacement})
+    ledger.handle(event(2, "I withdraw my consent to processing my information."), "p")
+    assert not ledger.validate_control(row)
+    result = ledger.handle(event(3, "英国签证需要什么资料？"), "p")
+    assert not result.public_answer and not result.granted
+
+
 def test_scope_change_revokes_grants_and_clears_legacy_confirmation(ledger: ConsentLedger) -> None:
     case = grant(ledger)
     case.profile_confirmed = case.final_summary_confirmed = True
@@ -292,7 +309,7 @@ def test_business_outbox_captures_canonical_consent_epoch(ledger: ConsentLedger)
     ledger.store.commit_event(case, event(3), "blocked", "Safe offline business reply")
     row = next(row for row in ledger.store.list_outbox() if row["event_id"] == "fictional-3")
     assert row["processing_consent_epoch"] == ledger.epoch(case.id) == 1
-    assert {"processing_notice", "processing_receipt"} == CONTROL_MESSAGE_TYPES
+    assert {"processing_notice", "processing_receipt", "public_consultation"} == CONTROL_MESSAGE_TYPES
 
 
 def test_current_grant_cannot_move_to_different_thread_or_multiple_contacts(ledger: ConsentLedger) -> None:

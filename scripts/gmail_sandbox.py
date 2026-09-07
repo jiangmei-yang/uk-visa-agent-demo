@@ -39,7 +39,7 @@ class PackPreparationError(RuntimeError):
     """Committed applicant work still has unresolved materialization; never imply delivery."""
 
 
-PRIVACY_MESSAGE_TYPES = ("processing_notice", "processing_receipt")
+PRIVACY_MESSAGE_TYPES = ("processing_notice", "processing_receipt", "public_consultation")
 
 
 def _resume_consent_deferred(ledger: ConsentLedger, store: SQLiteStore,

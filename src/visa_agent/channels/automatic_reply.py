@@ -121,7 +121,7 @@ class AutomaticGmailReplySender(GmailReplySender):
                 SELECT old.id, old.recipient FROM outbox old
                 WHERE old.channel='gmail' AND old.status='PENDING' AND old.attempt_count=0
                   AND old.message_type IN ('blocked','awaiting_profile_confirmation','awaiting_confirmation',
-                                           'held_update_received','processing_notice','processing_receipt')
+                                           'held_update_received','processing_notice','processing_receipt','public_consultation')
                   AND EXISTS (SELECT 1 FROM outbox newer
                               WHERE newer.case_id=old.case_id AND newer.rowid>old.rowid)
             """).fetchall()
