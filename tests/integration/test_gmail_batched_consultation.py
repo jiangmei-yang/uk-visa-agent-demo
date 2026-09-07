@@ -71,7 +71,9 @@ def conversation(harness, monkeypatch):
 
 
 def _activate(conversation):
-    conversation.add("greeting", "Hello.")
+    # Public reception does not request personal-data processing. This fixture
+    # exercises the legacy consent-gated business path, not a bare greeting.
+    conversation.add("greeting", "Hello. Please help me prepare my documents.")
     conversation.run()
     notice = conversation.sent[-1]
     reference = re.search(r"PC-[A-F0-9]{12}", notice["body"]).group()
