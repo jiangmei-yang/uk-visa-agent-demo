@@ -10,6 +10,11 @@ from typing import Any
 from visa_agent.domain.models import Case, InboundEvent
 
 SCHEMA = """
+CREATE TABLE IF NOT EXISTS simulation_registrations (
+    case_id TEXT PRIMARY KEY,
+    registration_json TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE IF NOT EXISTS cases (
     id TEXT PRIMARY KEY,
     thread_id TEXT NOT NULL UNIQUE,
