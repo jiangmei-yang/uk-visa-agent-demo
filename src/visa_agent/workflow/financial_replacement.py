@@ -39,6 +39,7 @@ def replacement_names(body: str) -> tuple[str, str] | None:
         for pattern in (
             rf"请用\s*(?P<new>{_FILE})\s*替换(?:之前的|原来的|旧的)?\s*(?P<old>{_FILE})",
             rf"附件是(?:更正后的|修正后的)?\s*(?P<new>{_FILE})\s*[,，]\s*请用它替换(?:之前的|原来的|旧的)?\s*(?P<old>{_FILE})",
+            rf"附件\s*(?P<new>{_FILE})\s*是(?:(?!\.pdf)[^。！？;；]){{1,180}}(?:更正版|修正版)\s*[,，]\s*请用它替换(?:之前的|原来的|旧的)?\s*(?P<old>{_FILE})",
             rf"please replace\s+(?P<old>{_FILE})\s+with\s+(?P<new>{_FILE})",
         ):
             match = re.match(pattern + r"(?=$|[,，;；])", clause.strip(), re.I)

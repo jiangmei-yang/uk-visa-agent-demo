@@ -19,6 +19,7 @@ BODY = ("护照姓名是 Lin Chen，原来的银行流水把姓拼错成了 Lin 
     BODY.replace("更正后的 ", "更正后的\n").replace("之前的 ", "之前的\n"),
     "请用 bank_statement_corrected.pdf 替换 bank_statement_original.pdf。",
     "Please replace bank_statement_original.pdf with bank_statement_corrected.pdf.",
+    "附件 bank_statement_corrected.pdf 是同一个账户尾号1234、同一期间2026年8月的更正版，请用它替换 bank_statement_original.pdf；持有人是我本人，余额没有变化。",
 ])
 def test_explicit_current_replacement_pair(body):
     assert replacement_names(body) == ("bank_statement_corrected.pdf", "bank_statement_original.pdf")
@@ -32,6 +33,9 @@ def test_explicit_current_replacement_pair(body):
     "请用 new.pdf 替换 old.pdf，等我确认后再操作。", "请用 new.pdf 替换 old.pdf，不要现在操作。",
     "请用 new.pdf 替换 old.pdf。请用 other.pdf 替换 old.pdf。",
     "新的文件是 new.pdf，旧的是 old.pdf。", "请用 same.pdf 替换 same.pdf。",
+    "附件 new.pdf 是同一账户的更正版，请用它替换 old.pdf，但不要现在操作。",
+    "如果附件 new.pdf 是同一账户的更正版，请用它替换 old.pdf。",
+    "附件 new.pdf 是 other.pdf 的更正版，请用它替换 old.pdf。",
 ])
 def test_noncommands_do_not_replace(body):
     assert replacement_names(body) is None
