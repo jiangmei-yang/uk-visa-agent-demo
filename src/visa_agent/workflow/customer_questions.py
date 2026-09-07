@@ -903,7 +903,7 @@ def _unsafe_application_proposal_scope(body: str, excerpt: str) -> bool:
         r"^(?:如果|假如|假设|除非|只要)|\b(?:if|unless|assuming|suppose|provided)\b",
         normalize_intent_text(sentence).strip(),
         re.I,
-    ) for sentence in containing_sentences):
+    ) and not _standalone_chinese_link_preference(sentence) for sentence in containing_sentences):
         return True
     clauses = [clause for clause in _active_clauses(body)
                if _overlapping_excerpt(excerpt, clause)]
@@ -917,7 +917,7 @@ def _unsafe_application_proposal_scope(body: str, excerpt: str) -> bool:
         r"guarantee\w*|sufficient|enough|refusal|refused|fake|forg\w*|fabricat\w*|bypass|override)\b",
         normalize_intent_text(clause),
         re.I,
-    ) for clause in clauses)
+    ) and not _standalone_chinese_link_preference(clause) for clause in clauses)
 
 
 def _scoped_fee_context(body: str, fee_clauses: list[str]) -> str:
@@ -1301,6 +1301,32 @@ def _capped_answers(answers: list[tuple[str, str]], language: str) -> list[str]:
     return capped_answer_plan(answers, language).answers
 
 
+def _standalone_chinese_link_preference(body: str) -> bool:
+    return bool(re.fullmatch(
+        r"只要(?:官方)?(?:申请)?(?:入口|链接)(?:就好|即可|就行)?", body.strip(" 。.!！?？\n"),
+    ))
+
+
+def _application_entry_only_requested(body: str) -> bool:
+    """Current explicit presentation preference, not permission to omit other questions."""
+    # In this exact standalone preference, Chinese "只要" means "only want",
+    # not "provided that". Do not normalize a larger conditional sentence.
+    preference_body = re.sub(
+        r"(^|[。！？\n])只要((?:官方)?(?:申请)?(?:入口|链接))(?:就好|即可|就行)?(?=[。！？\n]|$)",
+        r"\1只给我\2", body,
+    )
+    clauses = _preference_current_clauses(preference_body)
+    if any(re.search(r"流程|顺序|步骤|详细|\b(?:steps|sequence|process|in detail)\b", clause, re.I)
+           for clause in clauses):
+        return False
+    return any(re.fullmatch(
+        r"(?:请)?(?:只要|只给我?|给我?一个)(?:官方)?(?:申请)?(?:入口|链接)(?:就好|即可|就行)?|"
+        r"(?:please\s+)?(?:just|only)\s+(?:(?:give|send)\s+me\s+)?(?:the|an?)?\s*"
+        r"(?:official\s+)?(?:application\s+)?(?:link|url)(?:\s+please)?",
+        clause.strip(" 。.!！?？"), re.I,
+    ) for clause in clauses)
+
+
 def _reviewed_answer(topic: str, language: str, *, body: str = "", case: Case | None = None) -> str:
     if topic == "route_orientation":
         return (
@@ -1445,7 +1471,13 @@ def _reviewed_answer(topic: str, language: str, *, body: str = "", case: Case | 
         source = APPLICATION_SOURCE
     elif topic == "application":
         no_links = wants_no_links(body)
-        if language == "zh":
+        if _application_entry_only_requested(body) and not no_links:
+            answer = (
+                "如果需要 Standard Visitor 签证，可以从这个 GOV.UK 官方页面开始申请。"
+                if language == "zh" else
+                "If you need a Standard Visitor visa, start from this official GOV.UK application page."
+            )
+        elif language == "zh":
             location = (
                 "正式入口是 GOV.UK 的 Standard Visitor 在线申请页"
                 if no_links else
@@ -2150,7 +2182,7 @@ def grounded_customer_answer_plan(
             context = (bank_text if topic == "bank_period" else translation_text if topic == "translation"
                        else application_text if topic == "application" else active_text
                        if topic == "sponsor_support" else "\n".join(topic_clauses))
-            if topic == "application" and wants_no_links(current):
+            if topic == "application" and (wants_no_links(current) or _application_entry_only_requested(current)):
                 # The answer still needs the current display preference even
                 # though application_text deliberately contains only the request clause.
                 context = current
