@@ -25,7 +25,10 @@ recipient delivery. Historical reports are retained unchanged.
 The first full run in this batch returned 5,423 passed and three failures: two
 outdated current-report references, plus an old test expecting public FAQs to be
 held until personal-data consent. Fresh reports and the changed-flow regression
-above address those findings; a subsequent full run is required for release evidence.
+above address those findings. The subsequent unfiltered local full run on
+`91e48ea` passed all 5,426 tests in 115.05 seconds, with one Starlette/httpx
+deprecation warning and no skips. Ruff and mypy also passed. GitHub CI is a
+separate execution and is not implied by these local results.
 
 Gmail currently runs the public-consultation changes. A new ordinary inquiry was
 composed in Outlook and Send was clicked; this alone does not establish recipient
