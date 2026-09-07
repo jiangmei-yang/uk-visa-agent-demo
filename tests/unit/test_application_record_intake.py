@@ -39,6 +39,31 @@ def plan(body, records=(), assertions=(), ledger=None, identifier="record-intake
                               records=list(records), declarations=list(assertions))
 
 
+@pytest.mark.parametrize("body", [
+    "我在英国没有亲属，也没有联系人。",
+    "我在英國沒有親屬，也沒有聯絡人。",
+])
+def test_coordinated_uk_contact_absence_preserves_supplied_trip(body):
+    trip = "我在2024年7月1日至7月7日去过日本旅游。"
+    result = plan(trip + body,
+                  [proposed(trip, country="日本", period="2024年7月1日至7月7日")],
+                  [assertion(body, kind="uk_contact", state="none_declared")])
+    assert result.changed and not result.requires_review
+    assert result.ledger.collection_state("uk_contact") == "none_declared"
+    assert len(result.ledger.current()) == 1
+    assert result.ledger.collection_state("travel") == "partial"
+
+
+@pytest.mark.parametrize("body", [
+    "如果我在英国没有亲属，也没有联系人呢？",
+    "我朋友在英国没有亲属，也没有联系人。",
+    "我在英国没有亲属，但是有联系人。",
+])
+def test_coordinated_contact_absence_does_not_drop_scope_or_positive_contact(body):
+    result = plan(body, assertions=[assertion(body, kind="uk_contact", state="none_declared")])
+    assert not result.changed
+
+
 @pytest.mark.parametrize("body,country,period", [
     ("I visited Japan in May 2023.", "Japan", "May 2023"),
     ("I have been to Japan in May 2023.", "Japan", "May 2023"),

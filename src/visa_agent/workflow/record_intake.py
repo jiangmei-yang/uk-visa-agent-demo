@@ -75,7 +75,7 @@ _STATE = {
 }
 _NONE_DECLARATION = {
     "travel": re.compile(r"\bI\s+(?:have\s+never\s+(?:travelled|traveled)\s+abroad|have\s+no\s+(?:past\s+)?travel\s+history)\b|我(?:从未|從未|未曾|从来没有|從來沒有)(?:出国|出國|出境)|我(?:没有|沒有)(?:出境|出国|出國|旅行)(?:记录|記錄|历史|歷史)", re.I),
-    "uk_contact": re.compile(r"\bI\s+(?:have\s+no|do\s+not\s+have\s+any)\s+UK\s+contacts?\b|\bI\s+have\s+no\s+(?:relatives?\s+or\s+)?contacts?\s+in\s+the\s+UK\b|我在(?:英国|英國)(?:没有|沒有)(?:(?:亲属|親屬)[或和])?(?:联系人|聯絡人)|我(?:没有|沒有)(?:英国|英國)(?:联系人|聯絡人)", re.I),
+    "uk_contact": re.compile(r"\bI\s+(?:have\s+no|do\s+not\s+have\s+any)\s+UK\s+contacts?\b|\bI\s+have\s+no\s+(?:relatives?\s+or\s+)?contacts?\s+in\s+the\s+UK\b|我在(?:英国|英國)(?:没有|沒有)(?:(?:亲属|親屬)(?:[或和]|[，,]\s*也(?:没有|沒有)))?(?:联系人|聯絡人)|我(?:没有|沒有)(?:英国|英國)(?:联系人|聯絡人)", re.I),
 }
 _COMPLETE_DECLARATION = {
     "travel": re.compile(r"\b(?:this|that)\s+is\s+my\s+(?:full|complete)\s+travel\s+history\b|\bmy\s+travel\s+history\s+is\s+(?:complete|exhaustive)\b|(?:这|這|以上)(?:就)?是我的?(?:全部|完整)(?:旅行|出境)(?:记录|記錄|历史|歷史)|我的?(?:旅行|出境)(?:记录|記錄|历史|歷史)(?:已经|已經|已)?列全", re.I),
