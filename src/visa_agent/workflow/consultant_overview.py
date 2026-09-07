@@ -333,8 +333,10 @@ def _zh_first_action(case: Case) -> str:
             if case.profile.funding_source == "self" else ""
         )
         return (
-            "先向学校申请在读证明。日期还没定不影响先做这一项；"
-            "拿到后先核对姓名、在读状态、出具日期和学校联系信息。" + funding
+            "先向学校申请在读证明。"
+            + ("日期还没定不影响先做这一项；" if not (
+                case.profile.planned_arrival_date and case.profile.planned_departure_date) else "")
+            + "拿到后先核对姓名、在读状态、出具日期和学校联系信息。" + funding
         )
     if case.profile.occupation_status == "employed":
         funding = (
@@ -360,7 +362,10 @@ def _en_first_action(case: Case) -> str:
         return "First ask the funding department to confirm the covered costs and payment method before it issues the formal letter."
     if case.profile.occupation_status == "student":
         action = (
-            "Request the enrolment letter first. You can do that before fixing the travel dates; when it is ready, "
+            "Request the enrolment letter first. "
+            + ("You can do that before fixing the travel dates; " if not (
+                case.profile.planned_arrival_date and case.profile.planned_departure_date) else "")
+            + "When it is ready, "
             "check your name, current status, issue date and the school's contact details."
         )
         if case.profile.funding_source == "self":

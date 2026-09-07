@@ -13,7 +13,7 @@ from datetime import date
 from pathlib import Path
 from typing import Literal, Protocol
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pypdf import PdfReader
 
 from visa_agent.documents.processor import inspect_pdf
@@ -303,13 +303,20 @@ class NaturalPDFReader:
             raise ValueError("PDF text exceeds the bounded model input; no silent truncation")
         # Do not treat protocol-like lines embedded in customer documents as instructions.
         method = "bounded_pdf_ocr_extraction" if scanned else "bounded_pdf_text_extraction"
+        validating = False
         try:
             proposal = self.model.extract_document(pages)
+            validating = True
             return validate_document(proposal, pages, method=method, version=self.model.version)
-        except Exception:
+        except Exception as error:
             # Retain the file for review, without treating provider failure as valid evidence.
+            code = ("DOCUMENT_GROUNDING_REJECTED" if validating else
+                    "DOCUMENT_SCHEMA_INVALID" if isinstance(error, ValidationError) else
+                    "DOCUMENT_PROVIDER_TIMEOUT" if isinstance(error, TimeoutError)
+                    or type(error).__name__ == "APITimeoutError" else "DOCUMENT_READER_FAILURE")
             return DocumentReadResult(
-                "unknown", "other", len(pages), {}, method, self.model.version, 0, True
+                "unknown", "other", len(pages), {}, method, self.model.version, 0, True,
+                f"{code}: extraction did not produce a reliable structured document; retry or review is required."
             )
 
     @staticmethod
