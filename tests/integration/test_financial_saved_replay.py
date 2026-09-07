@@ -47,7 +47,7 @@ REPORTS = [ROOT / "eval_output" / name for name in (
 )]
 PDFS = ROOT / "output" / "pdf" / "financial-document-eval"
 ROLLOUT = ROOT / "eval_output" / "financial_document_rollout_2026-09-05.json"
-CURRENT_REPORT = ROOT / "eval_output" / "financial_document_deepseek_2026-09-07-v19.json"
+CURRENT_REPORT = ROOT / "eval_output" / "financial_document_deepseek_2026-09-07-v20.json"
 POLICY = load_policy(ROOT / "knowledge" / "uk_standard_visitor_2026-02-25.yaml")
 TODAY = date(2026, 9, 5)
 
@@ -82,7 +82,7 @@ def test_v8_missing_identity_remains_a_review_instead_of_waiving_required_facts(
 
 def test_current_provider_run_is_bound_to_complete_source_prompt_schema_and_pdf_set() -> None:
     report = json.loads(CURRENT_REPORT.read_text())
-    run_entry = json.loads((ROOT / "eval_output" / "financial_document_current_2026-09-07-v19.json").read_text())
+    run_entry = json.loads((ROOT / "eval_output" / "financial_document_current_2026-09-07-v20.json").read_text())
     assert run_entry["report"] == CURRENT_REPORT.name
     assert hashlib.sha256(CURRENT_REPORT.read_bytes()).hexdigest() == run_entry["sha256"]
     assert report["evidence_contract_version"] == "financial-document-probe-v2"

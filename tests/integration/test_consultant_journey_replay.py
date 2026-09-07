@@ -101,7 +101,7 @@ def test_negative_natural_facts_are_not_positive_updates(tmp_path, body):
 
 
 def test_current_journey_report_binds_all_source_and_probe():
-    report = json.loads(Path("eval_output/consultant_journey_2026-09-07-v11.json").read_text())
+    report = json.loads(Path("eval_output/consultant_journey_2026-09-07-v12.json").read_text())
     assert report["completed"] and report["all_passed"]
     assert report["check_contract"] == "consultant-journey-v5"
     assert report["maximum_model_calls"] == len(report["results"]) == 22
