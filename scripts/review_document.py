@@ -49,6 +49,8 @@ def main(argv: Sequence[str] | None = None, *,
     parser.add_argument("--model", default="deepseek-v4-flash")
     parser.add_argument("--allow-model-processing", action="store_true",
                         help="Retry only: explicitly authorize this operator-requested cloud reread")
+    parser.add_argument("--recheck-enrolment-role", action="store_true",
+                        help="Explicit audited reread of a held student letter after a document-role parser repair; never identity or money approval")
     args = parser.parse_args(argv)
     database = args.state_dir / "sandbox.db"
     if not database.is_file():
@@ -63,6 +65,8 @@ def main(argv: Sequence[str] | None = None, *,
         parser.error("Retry requires --allow-model-processing; applicant processing consent must already be established")
     if args.action != "retry" and args.allow_model_processing:
         parser.error("--allow-model-processing applies only to retry")
+    if args.recheck_enrolment_role and args.action != "retry":
+        parser.error("--recheck-enrolment-role applies only to retry")
     with exclusive_state(args.state_dir):
         store = SQLiteStore(database)
         try:
@@ -107,7 +111,8 @@ def main(argv: Sequence[str] | None = None, *,
             try:
                 action_id = recover_document(workflow, case_id=args.case, document_id=args.document,
                     replacement_document_id=args.replacement, expected_fingerprint=args.fingerprint,
-                    actor=args.actor, reason=args.reason)
+                    actor=args.actor, reason=("Enrolment-role recheck: " + args.reason if args.recheck_enrolment_role else args.reason),
+                    recheck_enrolment_role=args.recheck_enrolment_role)
             except ValueError as error:
                 parser.error(str(error))
             updated = store.get_case(args.case)

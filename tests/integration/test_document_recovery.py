@@ -76,6 +76,46 @@ def test_explicit_readable_replacement_resolves_only_its_old_blocker(tmp_path, m
     store.close()
 
 
+@pytest.mark.parametrize("passes", [True, False])
+def test_explicit_enrolment_role_recheck_runs_reader_and_keeps_failed_results(tmp_path, monkeypatch, passes):
+    store, workflow, case, _ = setup(tmp_path, monkeypatch)
+    try:
+        old = case.documents[0]
+        old.kind = "student_letter"
+        old.status = DocumentStatus.HUMAN_REVIEW_REQUIRED
+        store.save_case(case)
+        with pytest.raises(ValueError, match="unreadable or unknown"):
+            recover(workflow, case)
+        calls = []
+        def reader(path):
+            calls.append(path)
+            return DocumentReadResult("student_letter", "en", 1, {}, method="role_recheck",
+                                      requires_review=not passes, review_reason=None if passes else "Unclear student identity")
+        monkeypatch.setattr(workflow, "document_reader", reader)
+        recover(workflow, case, recheck_enrolment_role=True)
+        updated = store.get_case(case.id)
+        assert len(calls) == 1
+        assert updated.documents[-1].sha256 == old.sha256
+        assert (updated.documents[0].status == DocumentStatus.SUPERSEDED) == passes
+        assert not updated.profile_confirmed and not updated.final_summary_confirmed
+        assert not store.list_outbox() and updated.delivery_path is None
+    finally:
+        store.close()
+
+
+@pytest.mark.parametrize("kind", ["passport", "status_document", "bank_statement", "unknown"])
+def test_enrolment_recheck_never_releases_other_document_roles(tmp_path, monkeypatch, kind):
+    store, workflow, case, _ = setup(tmp_path, monkeypatch)
+    try:
+        case.documents[0].kind = kind
+        store.save_case(case)
+        with pytest.raises(ValueError, match="cannot reclassify"):
+            recover(workflow, case, recheck_enrolment_role=True)
+        assert store.get_case(case.id) == case
+    finally:
+        store.close()
+
+
 def test_audited_same_bytes_retry_reruns_reader_and_preserves_previous_failure(tmp_path, monkeypatch):
     store, workflow, case, _ = setup(tmp_path, monkeypatch)
     calls = []

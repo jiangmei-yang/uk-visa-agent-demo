@@ -35,17 +35,18 @@ def _source_unchanged(document: Document) -> None:
         raise ValueError("Retained document source integrity check failed")
 
 
-def _recoverable(case: Case, document: Document) -> bool:
+def _recoverable(case: Case, document: Document, *, recheck_enrolment_role: bool = False) -> bool:
     # A recognized but rejected identity document, specimen, missing identity fact or
     # low-confidence known-kind classification is NOT this technical recovery case.
-    return document.kind == "unknown" and document.status in {
+    eligible_kind = document.kind == "unknown" or (recheck_enrolment_role and document.kind == "student_letter")
+    return eligible_kind and document.status in {
         DocumentStatus.NEEDS_REPLACEMENT, DocumentStatus.HUMAN_REVIEW_REQUIRED,
     } and any(issue.code in {
         f"UNREADABLE_DOCUMENT_{document.id}", f"UNCLASSIFIED_DOCUMENT_{document.id}",
     } for issue in case.open_blockers())
 
 
-def _retry_lineage(workflow: WorkflowService, case: Case, selected: Document) -> list[Document]:
+def _retry_lineage(workflow: WorkflowService, case: Case, selected: Document, *, recheck_enrolment_role: bool = False) -> list[Document]:
     """Resolve only explicit, same-source retry links created by a committed audit."""
     documents = {doc.id: doc for doc in case.documents}
     root = selected
@@ -86,14 +87,14 @@ def _retry_lineage(workflow: WorkflowService, case: Case, selected: Document) ->
                 raise ValueError("Document retry lineage lacks its committed review authorization")
             lineage.append(child)
         cursor += 1
-    if any(not _recoverable(case, doc) for doc in lineage):
+    if any(not _recoverable(case, doc, recheck_enrolment_role=recheck_enrolment_role) for doc in lineage):
         raise ValueError("This retry lineage contains a non-technical review result; separate review required")
     return lineage
 
 
 def recover_document(workflow: WorkflowService, *, case_id: str, document_id: str,
                      expected_fingerprint: str, actor: str, reason: str,
-                     replacement_document_id: str | None = None) -> str:
+                     replacement_document_id: str | None = None, recheck_enrolment_role: bool = False) -> str:
     """Recover one specified failed document under a local operator's asserted identity.
 
 No applicant event is forged, no held event is acknowledged, no reply is queued, and
@@ -102,6 +103,8 @@ blocker; the original failure stays open. Unexpected transaction errors roll bac
 """
     if not 2 <= len(actor.strip()) <= 120 or not 12 <= len(reason.strip()) <= 2000:
         raise ValueError("Provide an operator name and a substantive document-review reason")
+    if recheck_enrolment_role and replacement_document_id is not None:
+        raise ValueError("Enrolment-role recheck must run the reader on the retained original")
     store = workflow.store
     with store.atomic_write():
         case = store.get_case(case_id)
@@ -115,9 +118,11 @@ blocker; the original failure stays open. Unexpected transaction errors roll bac
         ).fetchone():
             raise ValueError("Reconcile uncertain sends before document review")
         old = next((doc for doc in case.documents if doc.id == document_id), None)
-        if old is None or not _recoverable(case, old):
+        if recheck_enrolment_role and (old is None or old.kind != "student_letter"):
+            raise ValueError("Enrolment-role recheck cannot reclassify identity or financial documents")
+        if old is None or not _recoverable(case, old, recheck_enrolment_role=recheck_enrolment_role):
             raise ValueError("Select an unreadable or unknown document with its open technical blocker")
-        lineage = _retry_lineage(workflow, case, old)
+        lineage = _retry_lineage(workflow, case, old, recheck_enrolment_role=recheck_enrolment_role)
         replacement = None
         if replacement_document_id is not None:
             replacement = next((doc for doc in case.documents if doc.id == replacement_document_id), None)
@@ -146,7 +151,7 @@ blocker; the original failure stays open. Unexpected transaction errors roll bac
             replacement = case.documents[-1]
             replacement.retry_of_document_id = old.id
             _source_unchanged(old)
-        successful = replacement.kind != "unknown" and replacement.status in {
+        successful = (replacement.kind == "student_letter" if recheck_enrolment_role else replacement.kind != "unknown") and replacement.status in {
             DocumentStatus.ACCEPTED_FOR_REVIEW, DocumentStatus.NEEDS_CERTIFIED_TRANSLATION,
         }
         if successful:
