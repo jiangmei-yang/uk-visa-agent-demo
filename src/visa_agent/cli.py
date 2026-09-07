@@ -66,9 +66,25 @@ def main() -> None:
     review_apply_parser = subparsers.add_parser("record-review-apply", help="Apply an explicitly completed local operator decision; never sends mail")
     review_apply_parser.add_argument("--state-dir", type=Path, required=True)
     review_apply_parser.add_argument("--decision-file", type=Path, required=True)
+    location_plan = subparsers.add_parser("sponsor-review-plan", help="Inspect sponsor location sources; no approval or mail")
+    location_plan.add_argument("--state-dir", type=Path, required=True)
+    location_plan.add_argument("--case-id", required=True)
+    location_apply = subparsers.add_parser("sponsor-review-apply", help="Apply explicit local sponsor applicability review; never sends mail")
+    location_apply.add_argument("--state-dir", type=Path, required=True)
+    location_apply.add_argument("--decision-file", type=Path, required=True)
     args = parser.parse_args()
     settings = Settings.from_env()
-    if args.command in {"record-review-plan", "record-review-apply"}:
+    if args.command in {"sponsor-review-plan", "sponsor-review-apply"}:
+        from visa_agent.workflow.sponsor_location_command import sponsor_location_command
+
+        try:
+            location_result = sponsor_location_command(state_dir=args.state_dir, policy_path=settings.policy_path,
+                case_id=args.case_id if args.command == "sponsor-review-plan" else None,
+                decision_path=args.decision_file if args.command == "sponsor-review-apply" else None)
+        except (ValueError, OSError, RuntimeError, sqlite3.Error) as error:
+            parser.error(str(error))
+        print(json.dumps(location_result, ensure_ascii=False, indent=2))
+    elif args.command in {"record-review-plan", "record-review-apply"}:
         from visa_agent.workflow.record_review_command import record_review_command
 
         try:
