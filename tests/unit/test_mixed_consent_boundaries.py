@@ -185,7 +185,7 @@ class LedgerJourney:
         assert row["status"] == "SENT" and row["provider_message_id"]
         assert self.ledger.validate_control(row)
         assert sent.body == row["payload"]
-        match = re.search(r"Consent reference: (PC-[A-F0-9]{12})", sent.body)
+        match = re.search(r"consent reference (PC-[A-F0-9]{12})", sent.body)
         assert match is not None
         statement = EN_GRANT.replace(REFERENCE, match[1])
         return decision.case_id, statement
@@ -336,7 +336,9 @@ def test_old_audited_mixed_grant_cannot_regrant_after_current_authority_changes(
         assert len(current_notices) == 1
         assert current_notices[0]["status"] == "PENDING"
         assert current_notices[0]["event_id"] == original.id
-        assert "new-offline-model" in current_notices[0]["payload"]
+        assert journey.ledger.scope().model == "new-offline-model"
+        assert journey.ledger.reference(case_id) in current_notices[0]["payload"]
+        assert "new-offline-model" not in current_notices[0]["payload"]
         assert journey.ledger.reference(case_id) in current_notices[0]["payload"]
     else:
         # Refusal is not an invitation to keep soliciting authorization merely

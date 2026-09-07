@@ -364,7 +364,9 @@ def test_changed_model_requires_new_notice_before_any_new_material_is_saved(harn
         assert ConsentLedger(store).deferred_ids() == ["new-model-message"]
         notices = [row for row in store.list_outbox() if row["message_type"] == "processing_notice"]
         assert len(notices) == 2
-        current = [row for row in notices if "different-synthetic-model" in row["payload"]]
+        reference = ConsentLedger(store).reference(store.list_cases()[0].id)
+        assert ConsentLedger(store).scope().model == "different-synthetic-model"
+        current = [row for row in notices if reference in row["payload"]]
         assert len(current) == 1 and current[0]["status"] == "SENT"
     finally:
         store.close()

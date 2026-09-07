@@ -17,10 +17,13 @@ from typing import Any, Literal
 from uuid import NAMESPACE_URL, uuid5
 
 from visa_agent.domain.models import Case, InboundEvent
+from visa_agent.privacy.customer_copy import customer_notice, customer_receipt, reply_language
 from visa_agent.storage.sqlite import SQLiteStore
 
 CONTROL_MESSAGE_TYPES = frozenset({"processing_notice", "processing_receipt"})
 _PURPOSE = "UK visitor visa preparation: extract supplied facts, review documents, draft advice"
+# Stable internal scope contract. Customer mail uses customer_copy instead;
+# presentation edits must not silently grant consent or revoke existing consent.
 _NOTICE = """信息处理说明 / Information processing notice
 
 为协助准备英国访客签证，我们会在本系统保存你提供的信息和文件，并把邮件及材料中的文字交给 {provider} 的 {model} 模型，用于提取资料、检查材料及准备回复。授权范围包括本线程之前尚未处理的邮件和材料。
@@ -338,7 +341,7 @@ class ConsentLedger:
                 self._state(case, scope, action, self.epoch(case.id) + 1)
                 self._invalidate(case)
                 self._audit(event, case, scope, action, excerpt)
-                self._queue(case, event, scope, "processing_receipt", self._receipt(action))
+                self._queue(case, event, scope, "processing_receipt", customer_receipt(action, reply_language(event.body, case.customer_language)))
                 return ConsentResult("control", case.id)
             if action in {"granted", "unclear"}:
                 if action == "granted" and self._notice_sent_before(case, event, excerpt):
@@ -349,7 +352,7 @@ class ConsentLedger:
                                 has_attachments=attachments)
                     if mixed:
                         self._defer(event, case)
-                    self._queue(case, event, scope, "processing_receipt", self._receipt("granted"))
+                    self._queue(case, event, scope, "processing_receipt", customer_receipt("granted", reply_language(event.body, case.customer_language)))
                     return ConsentResult("defer" if mixed else "control", case.id, granted=True)
                 self._audit(event, case, scope, "grant_not_effective", excerpt)
                 self._notice(case, event, scope)
@@ -476,27 +479,11 @@ class ConsentLedger:
         if record is not None and record["notice_outbox_id"]:
             return
         reference = self.reference(case.id)
-        payload = (scope.notice + f"\n\n授权参考码 / Consent reference: {reference}\n"
-                   f"我同意按这份说明处理本线程信息和材料（授权参考码 {reference}）。\n"
-                   "I consent to the processing described in this notice "
-                   f"(consent reference {reference}).")
+        payload = customer_notice(scope.provider, reference, reply_language(event.body, case.customer_language))
         outbox_id = self._queue(case, event, scope, "processing_notice", payload)
         self.store.connection.execute(
             "UPDATE processing_consent SET notice_outbox_id=? WHERE case_id=?", (outbox_id, case.id),
         )
-
-    @staticmethod
-    def _receipt(action: str) -> str:
-        if action == "granted":
-            return ("已记录这份信息处理说明下的同意；本线程之前尚未处理的邮件会在后续处理。"
-                    "这不会替你确认申请摘要，也不会恢复已暂停的准备。\n\n"
-                    "Your processing consent has been recorded. Earlier unprocessed messages in this thread "
-                    "can now be processed. This does not confirm an application summary or resume paused preparation.")
-        return ("已记录你拒绝或撤回信息处理同意。后续资料处理及业务回复已停止；"
-                "已有本地记录和已发送记录仍保留，不代表已删除。你可以联系操作人员申请导出或删除。\n\n"
-                "Your refusal or withdrawal has been recorded. Further information processing and business replies "
-                "are stopped. Existing local records and send records remain; this is not a deletion receipt. "
-                "Contact the operator to request export or deletion.")
 
     def _queue(self, case: Case, event: InboundEvent, scope: ProcessingScope, kind: str, payload: str) -> str:
         epoch = self.epoch(case.id)

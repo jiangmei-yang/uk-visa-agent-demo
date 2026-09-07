@@ -298,7 +298,7 @@ def test_scope_upgrade_between_mixed_grant_and_business_sends_new_notice_not_bus
     case, epoch, deferred, audit, rows = _state(mixed)
     notices = [row for row in rows if row["message_type"] == "processing_notice"]
     assert len(notices) == 2 and notices[-1]["status"] == "SENT"
-    replacement = next(sent for sent in mixed.sent if "new-synthetic-model" in sent["body"])
+    replacement = next(sent for sent in mixed.sent if sent["body"] == notices[-1]["payload"])
     new_reference = re.search(r"PC-[A-F0-9]{12}", replacement["body"]).group()
     assert new_reference != reference and deferred == ["mixed-grant"]
     store = mixed.open_store()

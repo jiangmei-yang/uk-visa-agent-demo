@@ -16,6 +16,7 @@ from visa_agent.privacy.consent import (
     ProcessingConsentRequired,
     ProcessingScope,
 )
+from visa_agent.privacy.customer_copy import customer_notice
 from visa_agent.storage.sqlite import SQLiteStore
 
 BASE = datetime(2030, 1, 2, 12, tzinfo=UTC)
@@ -89,11 +90,11 @@ def test_unknown_minimal_case_and_deferred_metadata_never_persist_content(ledger
     assert sensitive not in dumped and "never-open-this" not in dumped and "secret-value" not in dumped
     rows = ledger.store.list_outbox()
     assert len(rows) == 1 and rows[0]["message_type"] == "processing_notice"
-    assert rows[0]["payload"].startswith(SCOPE.notice)
+    assert rows[0]["payload"] == customer_notice(SCOPE.provider, ledger.reference(case.id), "en")
     assert rows[0]["reply_subject"] == "Re: Private example"
     assert ledger.validate_control(rows[0])
-    assert "earlier, unprocessed messages" in rows[0]["payload"]
-    assert "do not promise provider deletion or non-training" in rows[0]["payload"]
+    assert "including earlier messages" in rows[0]["payload"]
+    assert "cannot promise deletion or non-training on the provider's behalf" in rows[0]["payload"]
     with pytest.raises(ProcessingConsentRequired):
         ledger.require(case)
 
@@ -248,7 +249,8 @@ def test_scope_change_revokes_grants_and_clears_legacy_confirmation(ledger: Cons
     current = ledger.store.get_case(case.id)
     assert current is not None and not current.profile_confirmed and not current.final_summary_confirmed
     assert not ledger.handle(event(3, GRANT), "p").granted
-    assert any(row["payload"].startswith(changed.notice) for row in ledger.store.list_outbox())
+    assert any(row["payload"] == customer_notice(changed.provider, ledger.reference(case.id), "en")
+               for row in ledger.store.list_outbox())
 
 
 def test_old_consented_stage_never_migrates_to_processing_grant(tmp_path: Path) -> None:
