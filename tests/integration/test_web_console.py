@@ -62,7 +62,7 @@ def test_review_console_and_pack_download(tmp_path: Path) -> None:
     assert "Recorded sample walkthrough" in body
     assert "Service response:" in body
     assert "Event ends 16 Sep" in body
-    assert "15 deterministic case checks" in body
+    assert "16 deterministic case checks" in body  # Includes independent human-review gate.
     assert "no email sent here" in body
     assert "not the current case’s message history" in body
     assert body.index("Current outcome") < body.index("Delivery gate")

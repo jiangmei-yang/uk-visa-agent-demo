@@ -212,6 +212,12 @@ def next_fact_questions(case: Case) -> list[str]:
         "route_confirmed_standard_visitor",
     ]
     required = required_profile_facts(case)
+    if case.sponsor_location_statements:
+        # Finish identifying/contacting the current sponsor before the extra
+        # presence follow-up. This preserves the existing address dialogue;
+        # the independent location gate still requires review before release.
+        priority.remove("sponsor_address")
+        priority.insert(priority.index("sponsor_is_in_uk"), "sponsor_address")
     ordered = priority + sorted(required - set(priority))
     missing = [
         field
