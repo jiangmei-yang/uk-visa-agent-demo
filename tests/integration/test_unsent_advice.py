@@ -231,28 +231,35 @@ def test_reported_conditional_or_negated_question_is_not_an_actual_unsent_reques
     assert_fee_not_answered(continued)
 
 
-def test_original_faqs_are_not_processed_or_carried_before_actual_sent_processing_consent(tmp_path):
+def test_public_faqs_are_answered_without_consent_and_not_replayed_as_personal_intake(tmp_path):
     journey = ConsentJourney(tmp_path)
     try:
         fee = journey.event(QUESTION["en"]["fees"])
         application = journey.event(QUESTION["en"]["application"])
         journey.process(fee, proposal(questions=[("fees", fee.body)]))
+        journey.dispatch("public_consultation")
         journey.process(application, proposal(questions=[("application", application.body)]))
         assert journey.model.extracted == journey.model.rendered == journey.reads == []
         assert journey.case().customer_answers == [] and journey.case().unsent_advice == []
         exported = json.dumps(journey.store.export_case_data(journey.case().id), ensure_ascii=False)
         assert fee.body not in exported and application.body not in exported
         assert not journey.ledger.allowed(journey.case())
+        journey.dispatch("public_consultation")
+        fee_row = next(row for row in journey.rows(fee) if row["message_type"] == "public_consultation")
+        application_row = next(row for row in journey.rows(application)
+                               if row["message_type"] == "public_consultation")
+        assert fee_row["status"] == application_row["status"] == "SENT"
+        assert re.search(r"£\s*\d", fee_row["payload"])
+        assert_application_answer(application_row["payload"])
         journey.pure_grant()  # Existing helper captures the current notice through the real sender.
         assert journey.model.extracted == []
         journey.reopen()
+        sent_count = len(journey.gmail.sent)
         journey.process(fee)
         journey.process(application)
-        journey.dispatch("blocked")
-        row = next(row for row in journey.rows(application) if row["message_type"] == "blocked")
-        assert row["status"] == "SENT" and row["payload"] == journey.gmail.sent[-1]["body"]
-        assert_application_answer(row["payload"])
-        assert re.search(r"£\s*\d", row["payload"]), row["payload"]
-        assert [item.id for item in journey.model.extracted] == [fee.id, application.id]
+        journey.dispatch("blocked", "public_consultation")
+        assert len(journey.gmail.sent) == sent_count
+        assert not any(row["message_type"] == "blocked" for row in journey.rows(application))
+        assert journey.model.extracted == []
     finally:
         journey.store.close()

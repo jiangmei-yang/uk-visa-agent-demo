@@ -1,15 +1,13 @@
-# Start here — interviewer walkthrough
+# Getting started
 
-This repository is a self-contained assessment Demo. It uses synthetic applicant data and does not
+The default local example uses synthetic applicant data and does not
 need an OpenAI key, Gmail login, or internet access after the first Docker build.
 
 ## Start the Demo
 
 1. Install and open [Docker Desktop](https://www.docker.com/products/docker-desktop/).
-2. For the current development candidate, select the **codex/application-records**
-   branch on GitHub, then choose **Code → Download ZIP** and extract it. Downloading
-   the default `main` branch does not include the newer candidate repairs. This
-   branch is for assessment; it is not a claim that final acceptance is complete.
+2. On the default **main** branch, choose **Code → Download ZIP** and extract it.
+   This is a development version; validation limits are documented below.
 3. On macOS, double-click `START_DEMO.command`. On Windows, double-click
    `START_DEMO_WINDOWS.bat`.
 4. Wait for the browser to open the review console. The first launch may take a few minutes.
@@ -31,7 +29,7 @@ In the console:
 4. check the displayed summary, confirm it, and download the released pack;
 5. return to the finished case to inspect the evidence ledger, superseded document, and rule results.
 
-The guided test is synthetic and deterministic, so it needs no API key and gives every interviewer
+The guided example is synthetic and deterministic, so it needs no API key and gives every user
 the same auditable result. The repository separately includes a real DeepSeek full-workflow report;
 that live provider is not silently used by the credential-free page.
 
@@ -66,5 +64,5 @@ If it still does not load, confirm Docker Desktop is running,
 then double-click the start file again. The launcher prints a clear error and the recent container
 logs if startup fails.
 
-This is document-preparation assessment software, not legal advice, an eligibility decision, or a
+This is document-preparation software, not legal advice, an eligibility decision, or a
 visa-submission service.

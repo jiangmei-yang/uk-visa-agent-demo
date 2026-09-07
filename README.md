@@ -3,11 +3,11 @@
 A constrained, email-first UK Standard Visitor visa document-preparation agent: natural language
 at the edges, deterministic rules and delivery gates at the centre.
 
-> Assessment software using synthetic data only. It does not give legal advice, decide eligibility,
+> The offline example uses synthetic data only. This software does not give legal advice, decide eligibility,
 > submit an application, or predict an outcome.
 
-**面试交付入口：[中文 5 分钟运行说明与要求对照](SUBMISSION.md)** ·
-[English interviewer walkthrough](START_HERE.md)
+**使用说明：[中文快速开始](SUBMISSION.md)** ·
+[English setup guide](START_HERE.md)
 
 ## What the demo proves
 
@@ -73,7 +73,7 @@ A real two-turn Gmail experiment received four fictional ordinary PDFs, answered
 booking question and applied a date correction without re-upload. The identity summary stayed
 withheld: this is not yet a complete ordinary-document-to-final-pack acceptance test.
 
-## Easiest path for an interviewer
+## Quick start
 
 Development evidence: a [fresh isolated container check](docs/CONTAINER_ACCEPTANCE_B2F1CFC_2026-09-07.md)
 verified startup, the synthetic three-message lab, ZIP download and identical
@@ -254,7 +254,7 @@ For local DeepSeek use, place the key in `.secrets/deepseek_api_key.txt` and set
 provider-only app. It exposes `/health` and the Twilio webhook—not the review console, case API, or
 pack download. The webhook remains fail-closed until Twilio test credentials are supplied.
 
-Live mode is intentionally not part of the default assessment path. Gmail evidence and WhatsApp
+Live mode is intentionally separate from the default offline example. Gmail evidence and WhatsApp
 local-contract evidence are reported separately; neither may be generalized into a production claim.
 
 The local review app binds to `127.0.0.1` in Docker. A case can be exported as JSON from the review
@@ -274,7 +274,7 @@ mailbox deletion or removal of independently retained uploads/backups. See `HUMA
 The official pages used by the current consultant guidance were rechecked on **2026-09-05**. The
 versioned Standard Visitor supporting-document snapshot remains `2026-02-25`, matching that
 GOV.UK publication's update date. Rules contain source metadata and a review deadline. The
-synthetic replay freezes its evaluation clock at 2026-09-02 so the assessment remains reproducible;
+synthetic replay freezes its evaluation clock at 2026-09-02 so the example remains reproducible;
 live/API readiness checks use the actual current date and block after the review deadline. The
 policy snapshot expires on 2026-10-02 and the reviewed-answer window currently ends on 2026-10-04;
 operations must use the earlier **2026-10-02** cutoff and recheck sources before extending either date.
