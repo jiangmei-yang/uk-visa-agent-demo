@@ -64,7 +64,8 @@ def test_case_records_survive_sqlite_reopen_and_match_both_summary_projections(t
     for text in [confirmation_message(saved), "\n".join(_profile_rows(saved))]:
         assert all(value in text for value in ["Japan", "May 2023", "tourism", "Fictional Example",
                                               "sister", "1 Fictional Street, London"])
-        assert "not yet been confirmed" in text
+        assert "applicant declarations are not independent verification" in text
+        assert "the list has not been confirmed as exhaustive" in text
     assert not saved.profile_confirmed and not saved.final_summary_confirmed
     assert saved.profile == case.profile  # contact is not sponsor, address or risk flag
 

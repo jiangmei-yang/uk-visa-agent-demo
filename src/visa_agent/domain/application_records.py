@@ -348,8 +348,8 @@ def application_record_rows(ledger: ApplicationRecordLedger, language: str = "en
               {"country": "Country/territory", "period": "Travel period", "purpose": "Purpose",
                "name": "Name", "relationship": "Relationship to you", "address": "Address", "phone": "Phone",
                "passport_number": "Passport number", "support_details": "Accommodation or other support"})
-    rows = ["以下是已提供的记录，尚未确认旅行历史或联系人信息完整。" if zh else
-            "Recorded entries below; travel-history and contact completeness have not yet been confirmed."]
+    rows = ["以下逐项列出你的声明和已提供的记录；客户声明不代表已经独立核验。" if zh else
+            "Your declarations and recorded details are listed below; applicant declarations are not independent verification."]
     for kind in RECORD_KINDS:
         label = ({"travel": "旅行记录", "uk_contact": "英国亲属或联系人"} if zh else
                  {"travel": "Travel history", "uk_contact": "UK relatives or contacts"})[kind]
