@@ -326,6 +326,15 @@ def plan_record_intake(
             explicit_uncertainty = bool(_STATE["unknown"].search(context))
             no_other_contacts = (assertion.kind == "uk_contact" and bool(_NO_OTHER_CONTACTS.search(context))
                                  and not re.search(re.escape(context) + r"\s*[?？]", body))
+            explicit_empty_contacts = (
+                assertion.kind == "uk_contact"
+                and re.fullmatch(r"我在(?:英国|英國)(?:没有|沒有)(?:亲属|親屬)[，,]\s*也(?:没有|沒有)(?:联系人|聯絡人)[。.]?", context)
+                and not re.search(re.escape(context) + r"\s*[?？]", body)
+            )
+            if explicit_empty_contacts and assertion.state == "complete_declared":
+                # Source semantics, not the model's enum, control this explicit
+                # empty list. The ledger still rejects absence over live entries.
+                assertion = assertion.model_copy(update={"state": "none_declared", "source_excerpt": context})
             if no_other_contacts and assertion.state in {"none_declared", "complete_declared"}:
                 # 'No others' asserts list scope, not an empty list. Bind the
                 # whole current sentence, retaining its subject and UK scope,

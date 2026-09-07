@@ -64,6 +64,27 @@ def test_coordinated_contact_absence_does_not_drop_scope_or_positive_contact(bod
     assert not result.changed
 
 
+def test_live_mislabelled_contact_completeness_uses_explicit_empty_source():
+    trip = "我在2024年7月1日至7月7日去过日本旅游"
+    complete = "这就是我的全部旅行记录，没有其他出境旅行"
+    contacts = "我在英国没有亲属，也没有联系人"
+    result = plan(trip + "。" + complete + "。" + contacts + "。",
+                  [proposed(trip, country="日本", period="2024年7月1日至7月7日")],
+                  [assertion(complete, state="complete_declared"),
+                   assertion(contacts, kind="uk_contact", state="complete_declared")])
+    assert result.changed and not result.requires_review
+    assert result.ledger.collection_state("travel") == "complete_declared"
+    assert result.ledger.collection_state("uk_contact") == "none_declared"
+    assert len(result.ledger.current()) == 1
+
+
+@pytest.mark.parametrize("suffix", ["？", "，但我有一个朋友在英国。", "，除了我姐姐。"])
+def test_empty_contact_normalization_never_discards_a_question_or_exception(suffix):
+    body = "我在英国没有亲属，也没有联系人" + suffix
+    result = plan(body, assertions=[assertion(body, kind="uk_contact", state="complete_declared")])
+    assert not result.changed
+
+
 @pytest.mark.parametrize("body,country,period", [
     ("I visited Japan in May 2023.", "Japan", "May 2023"),
     ("I have been to Japan in May 2023.", "Japan", "May 2023"),
