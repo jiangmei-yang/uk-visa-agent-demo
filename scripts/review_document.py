@@ -87,7 +87,8 @@ def main(argv: Sequence[str] | None = None, *,
 
                 consent = ConsentLedger(store)
                 configured = consent.scope()
-                expected = ProcessingScope(provider="DeepSeek", model=args.model)
+                expected = ProcessingScope(provider="DeepSeek", model=args.model,
+                    interaction=configured.interaction if configured else "explicit_consent")
                 if configured is None or (args.action == "retry" and configured.id != expected.id):
                     parser.error("Establish applicant consent for this provider/model through the registered Gmail service first")
                 try:

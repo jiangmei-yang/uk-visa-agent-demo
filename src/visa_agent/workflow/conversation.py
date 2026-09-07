@@ -1406,7 +1406,27 @@ def reply_items(case: Case) -> tuple[list[str], list[str], list[str]]:
     zh = case.customer_language == "zh"
     issues = []
     for issue in case.open_blockers():
-        if zh and issue.code == "DATE_CONFLICT":
+        if issue.code == "EVIDENCE_CONFLICT_FULL_NAME":
+            names = sorted({str(item.value) for item in case.active_evidence("full_name")})
+            variants = " / ".join(names)
+            issues.append(
+                f"姓名写法不一致：目前收到的资料分别写了 {variants}。请核对护照上的拼写；"
+                "如果是证明文件写错了，请补发更正版。如果文件属于资助人，请告诉我你们的关系。"
+                if zh else
+                f"The names differ across your information: {variants}. Please check the passport spelling. "
+                "If a supporting document has an error, please send a corrected copy; "
+                "if it belongs to a sponsor, please explain your relationship."
+            )
+        elif issue.code.startswith("FINANCIAL_OWNER_MISMATCH_"):
+            names = ", ".join(doc.filename for doc in case.documents if doc.id in issue.related_document_ids)
+            issues.append(
+                f"{names or '资金证明'}上的持有人姓名与档案不一致，目前不能当作对应人员的资金证明。"
+                "请确认这份文件属于谁，或补发持有人信息正确的版本。"
+                if zh else
+                f"The holder's name on {names or 'the financial evidence'} does not match the recorded person. "
+                "Please tell me whose document it is, or send a copy with the correct holder details."
+            )
+        elif zh and issue.code == "DATE_CONFLICT":
             evidence = case.active_evidence("invitation_event_end_date")
             end = str(evidence[-1].value) if evidence else "邀请函所列日期"
             issues.append(

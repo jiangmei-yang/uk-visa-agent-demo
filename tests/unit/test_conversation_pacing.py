@@ -41,6 +41,23 @@ def example() -> Case:
 
 
 @pytest.mark.parametrize("language", ["zh", "en"])
+def test_name_conflict_tells_customer_the_actual_difference(language):
+    case = example()
+    case.customer_language = language
+    for index, name in enumerate(("Lin Chen", "Lin Chan")):
+        case.evidence.append(Evidence(id=f"name-{index}", fact_key="full_name", value=name,
+            source_event_id="received", source_excerpt=name, extraction_method="test", model_version="test",
+            confidence=1))
+    case.issues.append(Issue(id="name-conflict", code="EVIDENCE_CONFLICT_FULL_NAME",
+        title="Internal conflict", detail="Internal review instruction", severity=IssueSeverity.BLOCKER))
+    message = reply_items(case)[0][0]
+    assert "Lin Chen" in message and "Lin Chan" in message
+    assert "Internal" not in message and "人工" not in message
+    assert ("更正版" if language == "zh" else "corrected copy") in message
+    assert case.open_blockers()
+
+
+@pytest.mark.parametrize("language", ["zh", "en"])
 @pytest.mark.parametrize("reason", ["DOCUMENT_GROUNDING_REJECTED", "DOCUMENT_SCHEMA_INVALID",
                                     "DOCUMENT_PROVIDER_TIMEOUT", "DOCUMENT_READER_FAILURE"])
 def test_document_read_failure_is_not_presented_as_customer_error(language, reason):

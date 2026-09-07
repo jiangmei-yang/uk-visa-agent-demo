@@ -302,6 +302,45 @@ def test_cli_inspect_replace_and_gated_retry_use_only_existing_locked_state(tmp_
     assert '"outcome": "recovered"' in capsys.readouterr().out
 
 
+@pytest.mark.parametrize("mode", ["service", "wrong_model", "withdrawn", "explicit_ungranted"])
+def test_cli_retry_respects_registered_interaction_and_processing_boundary(tmp_path, monkeypatch, capsys, mode):
+    monkeypatch.syspath_prepend(str(Path("scripts").resolve()))
+    import review_document
+
+    from visa_agent.privacy.consent import ConsentLedger, ProcessingScope
+
+    store, _, case, _ = setup(tmp_path, monkeypatch)
+    ledger = ConsentLedger(store)
+    ledger.configure(ProcessingScope(provider="DeepSeek", model="deepseek-v4-flash",
+        interaction="explicit_consent" if mode == "explicit_ungranted" else "service_request"))
+    if mode == "withdrawn":
+        ledger.handle(InboundEvent(id="withdraw", channel="gmail", external_thread_id=case.external_thread_id,
+            sender=case.applicant_contact, subject="Stop", body="I withdraw my consent to processing my information.",
+            received_at=datetime.now(UTC)), case.policy_version)
+    case = store.get_case(case.id)
+    store.close()
+    (tmp_path / "case.db").rename(tmp_path / "sandbox.db")
+    calls = []
+    def factory(model):
+        calls.append(model)
+        return lambda path: DocumentReadResult("student_letter", "en", 1, {}, method="test_reader")
+    monkeypatch.setattr(review_document, "_cloud_reader", factory)
+    args = ["retry", "--state-dir", str(tmp_path), "--case", case.id,
+        "--document", case.documents[0].id, "--fingerprint", review_fingerprint(case),
+        "--actor", "Automated test operator", "--reason", "Retry the exact retained document after reader repair.",
+        "--allow-model-processing"]
+    if mode == "wrong_model":
+        args += ["--model", "another-model"]
+    if mode == "service":
+        review_document.main(args)
+        assert calls == ["deepseek-v4-flash"]
+        assert '"outcome": "recovered"' in capsys.readouterr().out
+    else:
+        with pytest.raises(SystemExit):
+            review_document.main(args)
+        assert not calls
+
+
 @pytest.mark.parametrize("mode", ["reread", "replacement"])
 def test_repeated_failed_reads_then_recovery_resolve_only_the_audited_lineage(tmp_path, monkeypatch, mode):
     store, workflow, case, _ = setup(tmp_path, monkeypatch)
