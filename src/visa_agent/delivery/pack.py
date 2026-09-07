@@ -7,7 +7,6 @@ import shutil
 import tempfile
 import zipfile
 from datetime import date
-from functools import partial
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -46,7 +45,7 @@ PALE_BLUE = HexColor("#EEF4FC")
 PALE_GREEN = HexColor("#EAF7F0")
 
 
-def _page_frame(pdf: canvas.Canvas, document: SimpleDocTemplate, *, label: str = "") -> None:
+def _page_frame(pdf: canvas.Canvas, document: SimpleDocTemplate) -> None:
     width, height = A4
     pdf.saveState()
     pdf.setFillColor(BLUE)
@@ -55,8 +54,7 @@ def _page_frame(pdf: canvas.Canvas, document: SimpleDocTemplate, *, label: str =
     pdf.line(18 * mm, 15 * mm, width - 18 * mm, 15 * mm)
     pdf.setFillColor(MUTED)
     pdf.setFont("Helvetica", 7.5)
-    footer = label if label.startswith("FICTIONAL DEMONSTRATION") else "UK Visa Preparation - Human review pack"
-    pdf.drawString(18 * mm, 10 * mm, footer)
+    pdf.drawString(18 * mm, 10 * mm, "UK Visa Preparation - Human review pack")
     pdf.drawRightString(width - 18 * mm, 10 * mm, f"Page {document.page}")
     pdf.restoreState()
 
@@ -143,8 +141,7 @@ def _pdf(
         # There is no following content to separate. A trailing spacer can
         # overflow an otherwise full table page and create a footer-only page.
         story.append(table)
-    frame = partial(_page_frame, label=label)
-    document.build(story, onFirstPage=frame, onLaterPages=frame)
+    document.build(story, onFirstPage=_page_frame, onLaterPages=_page_frame)
 
 
 def _write_zip(source_dir: Path, target: Path) -> None:
@@ -372,8 +369,7 @@ def _document_index_pdf(path: Path, rows: list[str], label: str) -> None:
         Paragraph("Document index", title_style),
         table,
     ]
-    frame = partial(_page_frame, label=label)
-    document.build(story, onFirstPage=frame, onLaterPages=frame)
+    document.build(story, onFirstPage=_page_frame, onLaterPages=_page_frame)
 
 
 def generate_pack(
@@ -552,13 +548,14 @@ def _materialize_fresh_pack(
     support_dir = pack_dir / "supporting_documents"
     support_dir.mkdir(parents=True, exist_ok=True)
     audit_dir.mkdir(parents=True, exist_ok=True)
-    label = ("FICTIONAL DEMONSTRATION - NOT FOR APPLICATION" if case.simulation
-             else CaseStatus.READY_FOR_HUMAN_REVIEW.value)
+    label = CaseStatus.READY_FOR_HUMAN_REVIEW.value
 
     _pdf(
         pack_dir / "00_READ_ME_FIRST.pdf",
         "Read me first",
         [
+            *(["This pack uses example information to demonstrate the preparation process."]
+              if case.simulation else []),
             "This preparation pack organises materials for human review. It is not legal advice, "
             "does not determine eligibility, does not submit an application, and does not predict an outcome.",
             f"Delivery revision: {case.delivery_revision}. This version is a preparation record, "

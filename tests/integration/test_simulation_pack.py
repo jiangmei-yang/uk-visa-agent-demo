@@ -37,9 +37,17 @@ def test_pack_summary_and_ready_reply_retain_simulation_scope(tmp_path):
         require_simulation_archive(case, archive.read_bytes())
         with ZipFile(archive) as zipped:
             assert MANIFEST_NAME in zipped.namelist()
-            for name in ("00_READ_ME_FIRST.pdf", "01_case_summary.pdf", "03_document_index.pdf", "04_cover_letter_draft.pdf"):
+            generated = [name for name in zipped.namelist() if name.endswith(".pdf") and "/" not in name]
+            for name in generated:
                 for page in PdfReader(BytesIO(zipped.read(name))).pages:
-                    assert "FICTIONAL DEMONSTRATION - NOT FOR APPLICATION" in page.extract_text()
+                    assert "FICTIONAL DEMONSTRATION" not in page.extract_text()
+                    assert "NOT FOR APPLICATION" not in page.extract_text()
+            readme = " ".join(page.extract_text() for page in PdfReader(BytesIO(zipped.read("00_READ_ME_FIRST.pdf"))).pages)
+            assert "uses example information" in readme
+            for name in generated:
+                if name != "00_READ_ME_FIRST.pdf":
+                    assert all("uses example information" not in page.extract_text()
+                               for page in PdfReader(BytesIO(zipped.read(name))).pages)
         assert "fictional" in deterministic_fallback_message(case, "ready")
         assert "fictional" in confirmation_message(case)
         with store.connection:
