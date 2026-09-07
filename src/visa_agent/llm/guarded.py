@@ -1006,6 +1006,12 @@ def validate_case_patch(event: InboundEvent, proposed: CasePatch) -> CasePatch:
 
 
 def deterministic_fallback_message(case: Case, plan: str) -> str:
+    from visa_agent.workflow.reception import reception_message
+
+    if not case.latest_document_names and (reception := reception_message(
+        case.latest_customer_message, case.customer_language,
+    )):
+        return reception
     if case.status == CaseStatus.HUMAN_REVIEW_REQUIRED:
         message = (
             "这部分我还不能可靠判断，需要人工核实后才能继续，不能直接给你确定答复。你发来的信息和文件都已保留，暂时不用重新发送。"
@@ -1164,6 +1170,14 @@ class GuardedLLM:
         )
 
     def render_message(self, case: Case, plan: str) -> str:
+        from visa_agent.workflow.reception import reception_message
+
+        if not case.latest_document_names and (reception := reception_message(
+            case.latest_customer_message, case.customer_language,
+        )):
+            self.last_render_fallback = False
+            self.last_render_error = None
+            return reception
         if not self.allow_model_rendering:
             # The default live Gmail path sends the reviewed deterministic
             # composer. Do not pay for a model draft that the channel boundary

@@ -10,10 +10,13 @@ def public_consultation(body: str, today: date) -> str | None:
     from visa_agent.workflow.conversation import latest_reply_text
     from visa_agent.workflow.customer_questions import grounded_customer_answer_plan
     from visa_agent.workflow.guidance_freshness import CHECKED_AT, REVIEW_AFTER
+    from visa_agent.workflow.reception import reception_message
 
     text = latest_reply_text(body).strip()
     if not text or len(text) > 700:
         return None
+    if reception := reception_message(text, reply_language(text)):
+        return reception
     # Requests to assess an individual's records are not public consultation.
     if re.search(
         r"\d{4}|@|护照号|身份证|出生|生日|我叫|姓名|住址|账号|账户余额|我的材料|附件|帮我核对|"
